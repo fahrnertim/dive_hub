@@ -3,7 +3,7 @@
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
   ArrowDown, ArrowRightLeft, ArrowUp, Award, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, TriangleAlert,
-  CircleCheck, CircleUser, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Shield, ShieldOff,
+  CircleCheck, CircleUser, Clock, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Shield, ShieldOff,
   Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, Wrench, X, type LucideIcon,
 } from 'lucide-react';
 
@@ -60,6 +60,8 @@ const ICONS = {
   success: CircleCheck,
   danger: CircleAlert,
   warning: TriangleAlert,
+  /** A send or delete that waits for its time (ADR 0056). */
+  waiting: Clock,
   /** Sending a Dive to a Target, and connecting to one (ADR 0024). */
   send: CloudUpload,
   signIn: LogIn,

@@ -107,6 +107,15 @@ export function providerContract(name: string, make: () => ContractHarness) {
       }
     });
 
+    it('every Provider declares fetchEveryMinutes, null without dive import', () => {
+      const { limits, data } = make().adapter.capabilities;
+      expect(limits.fetchEveryMinutes).not.toBeUndefined();
+      if (!data.dives) expect(limits.fetchEveryMinutes).toBeNull();
+      if (limits.fetchEveryMinutes !== null) expect(Number.isInteger(limits.fetchEveryMinutes) && limits.fetchEveryMinutes > 0).toBe(true);
+      // A hand-over reads nothing back, so there is nothing to fetch.
+      if (data.dives?.export?.delivery === 'handed_over') expect(limits.fetchEveryMinutes).toBeNull();
+    });
+
     it('declares capabilities that match what it does', () => {
       const { adapter } = make();
       const c = adapter.capabilities;

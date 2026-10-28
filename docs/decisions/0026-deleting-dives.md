@@ -9,7 +9,10 @@ date: 2026-10-05
 
 ## Status
 Accepted – 2026-10-05. Amended by [ADR 0027](0027-providers-as-adapters.md) (2026-10-05): deleting asks every Provider
-the Dive is at (`alsoAt`, `stillAt`, `provider_*` codes) instead of SSI by name.
+the Dive is at (`alsoAt`, `stillAt`, `provider_*` codes) instead of SSI by name. Amended by
+[ADR 0056](0056-two-way-exchange-and-automation.md) (built 2026-10-27, piece 6): with a Connection's "Delete at the
+Provider" on, the Dive is deleted here first and at the Provider after a 5-minute quiet period; the list of deleted dives
+shows that waiting or stopped delete in the place of the reminder. Off, this ADR stands.
 
 ## Context
 The [data model](../spec/data-model.md) says deletes are soft (A5), and ADR 0024 says deleting a Dive offers to delete

@@ -5,6 +5,7 @@ import { and, asc, desc, eq, ilike, isNotNull, isNull, or, sql, type SQL, type S
 import type { Db, Tx } from '../db/client.js';
 import { dive, diveCentreSite, diveSite, revision, siteImport } from '../db/schema.js';
 import { writeRevision, type Changes } from '../dives/revisions.js';
+import { noteSiteChange } from '../providers/waiting-push-queue.js';
 import type { Position, SiteWaterType } from '../vocabulary.js';
 import { IMPORTED_FIELDS, type ImportedValues } from './import/site-source.js';
 import { isUniqueViolation, SiteError } from './site-error.js';
@@ -213,6 +214,8 @@ export function createSiteService(db: Db) {
           .set({ ...toColumns(input), version: sql`${diveSite.version} + 1`, updatedAt: new Date() })
           .where(eq(diveSite.id, id));
         await writeRevision(tx, 'dive_site', id, { type: 'user', id: actor.userId }, 'edit', changes);
+        // The name and position go out with each Dive there (ADR 0056).
+        if (changes.name || changes.position) await noteSiteChange(tx, id, new Date());
       });
     },
 
@@ -272,6 +275,8 @@ export function createSiteService(db: Db) {
         const by = { type: 'user' as const, id: actor.userId };
         await writeRevision(tx, 'dive_site', kept.id, by, 'merge', changes);
         await writeRevision(tx, 'dive_site', merged.id, by, 'merge', { mergedInto: { from: null, to: { id: kept.id, name: kept.name } } });
+        // Dives already at the kept site now carry the position it took from the merged one (ADR 0056).
+        if (fill.position !== undefined) await noteSiteChange(tx, kept.id, new Date());
       });
     },
 
@@ -297,6 +302,7 @@ export function createSiteService(db: Db) {
         }
         await tx.update(diveSite).set({ ...toColumns(fill), version: sql`${diveSite.version} + 1`, updatedAt: new Date() }).where(eq(diveSite.id, id));
         await writeRevision(tx, 'dive_site', id, { type: 'user', id: actor.userId }, 'adopt', changes);
+        if (changes.name || changes.position) await noteSiteChange(tx, id, new Date());
       });
     },
 

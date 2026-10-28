@@ -12,7 +12,10 @@ Accepted – 2026-10-07 (owner). Built on 2026-10-07: slice 18b (merging, moving
 what the builds settled is in the two amendments below. Amends
 [ADR 0016](0016-recording-decisions-and-divers.md) ("Needs your decision" also holds logbook checks; moving a linked
 Dive) and [ADR 0030](0030-importing-dives-from-providers.md) (entries are no longer kept out of that panel). Designed in
-[Logbook housekeeping](../research/2026-10-07-logbook-housekeeping.md).
+[Logbook housekeeping](../research/2026-10-07-logbook-housekeeping.md). Amended by
+[ADR 0056](0056-two-way-exchange-and-automation.md) (built 2026-10-24 and 2026-10-27): "Needs your decision" also holds
+a run's Conflicts per Dive and Connection, and a merge of two Dives at the same Provider deletes the merged-away copy
+there as a delete with "Delete at the Provider" on does.
 
 ## Context
 - A Recording is matched to Dives only when it arrives. A Dive that moves afterwards (its time corrected at the

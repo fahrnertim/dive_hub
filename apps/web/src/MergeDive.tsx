@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError, diveProvidersQuery, keys, mergeCandidatesQuery, nearbyDivesQuery, unwrap, type DiveView, type LogbookCheckView, type MergeCandidateView, type ProviderView } from './api.ts';
 import { announce } from './lib/announce.ts';
-import { deleteChoice } from './lib/deletion.ts';
+import { deleteChoice, type CopyAt } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { useNames, useProviders, useProviderText } from './lib/providers.ts';
 import { Button, Dialog, Muted, Notice } from './ui/index.ts';
@@ -101,9 +101,10 @@ export function MergePicker({ dive: d, onClose }: { dive: DiveView; onClose: () 
 }
 
 /** What the dialog says about the copy at a Provider of the Dive that isn't kept, in the Provider's words. */
-function CopySentence({ provider: p, number, canDelete }: { provider: ProviderView; number: number | null; canDelete: boolean }) {
+function CopySentence({ provider: p, number, how }: { provider: ProviderView; number: number | null; how: 'ask' | 'cannot' | 'itself' }) {
   const pt = useProviderText(p);
-  return <p>{pt(canDelete ? 'deleteAsk' : 'deleteCannot', { number: number ?? '' })}</p>;
+  const key = { ask: 'deleteAsk', cannot: 'deleteCannot', itself: 'deletesItself' } as const;
+  return <p>{pt(key[how], { number: number ?? '' })}</p>;
 }
 
 /**
@@ -113,7 +114,7 @@ function CopySentence({ provider: p, number, canDelete }: { provider: ProviderVi
  * fails, nothing is merged.
  */
 export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
-  dive: MergeSide; other: MergeSide & Pick<MergeCandidateView, 'keeps' | 'bothAt' | 'at'>;
+  dive: MergeSide; other: MergeSide & Pick<MergeCandidateView, 'keeps' | 'bothAt' | 'at' | 'deletesItself'>;
   onClose: () => void;
   /** On the logbook: stay there instead of opening the kept Dive. */
   stay?: boolean; onMerged?: () => void;
@@ -129,8 +130,10 @@ export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
   const leaving = keepsThis ? other.id : d.id;
   // Only where both Dives are at a Provider is there a dive left over at it.
   const statuses = useQuery({ ...diveProvidersQuery(leaving), enabled: other.bothAt.length > 0 });
-  const all = other.bothAt.length === 0 ? { ask: [], cannot: [] } : deleteChoice(statuses.data) ?? (statuses.error ? { ask: [], cannot: [] } : undefined);
-  const choice = all && { ask: all.ask.filter((c) => other.bothAt.includes(c.provider)), cannot: all.cannot.filter((c) => other.bothAt.includes(c.provider)) };
+  const none = { ask: [], cannot: [], itself: [] };
+  const all = other.bothAt.length === 0 ? none : deleteChoice(statuses.data, other.deletesItself) ?? (statuses.error ? none : undefined);
+  const inBoth = (list: CopyAt[]) => list.filter((c) => other.bothAt.includes(c.provider));
+  const choice = all && { ask: inBoth(all.ask), cannot: inBoth(all.cannot), itself: inBoth(all.itself) };
   const moves = other.at.filter((c) => !other.bothAt.includes(c.provider));
   const merge = useMutation({
     mutationFn: async (alsoThere: boolean) => unwrap(await api.POST('/api/dives/{id}/merge', {
@@ -156,8 +159,9 @@ export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
       <p>{(d.recordings === 0) !== (other.recordings === 0) && `${t('merge.whyRecording')} `}{t('merge.takes')}</p>
       {keepsThis && moves.length > 0 && <p>{t('merge.linkMoves', { name: names(moves.map((c) => providerOf(c.provider).name)) })}</p>}
       <p>{t('merge.other')}</p>
-      {choice?.ask.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} canDelete />)}
-      {choice?.cannot.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} canDelete={false} />)}
+      {choice?.ask.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} how="ask" />)}
+      {choice?.cannot.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} how="cannot" />)}
+      {choice?.itself.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} how="itself" />)}
       {!choice && <Muted>{t('common.loading')}</Muted>}
       {merge.error && (
         <Notice tone="danger">

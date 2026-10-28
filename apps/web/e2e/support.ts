@@ -666,3 +666,37 @@ export async function clearPushRuns(api: APIRequestContext) {
   }
   await api.post('/e2e/push-runs/clear', { data: {}, headers });
 }
+
+/** The Connection that carries the Dive's sends to SSI. */
+export async function ssiConnectionOf(api: APIRequestContext, diveId: string): Promise<string> {
+  const status = await (await api.get(`/api/dives/${diveId}/providers/ssi`)).json() as { connection: { id: string } | null };
+  return status.connection!.id;
+}
+
+/** An entry of the queue of Waiting pushes in a given state, put there by a test-only route of the e2e server (ADR 0056). */
+export async function queueEntry(
+  api: APIRequestContext, diveId: string,
+  entry: {
+    state: 'waiting' | 'held' | 'stopped'; reason?: string; action?: 'send' | 'delete'; connectionId?: string;
+    /** With reason `exists`: the dive already at the Provider. */
+    detail?: { remoteId: string; remoteNumber: number | null; startsAt: string };
+  },
+) {
+  const connectionId = entry.connectionId ?? await ssiConnectionOf(api, diveId);
+  await api.post('/e2e/waiting-push/set', { data: { diveId, provider: 'ssi', ...entry, connectionId }, headers });
+}
+
+/** The queue of Waiting pushes empty again. */
+export async function clearQueue(api: APIRequestContext) {
+  await api.post('/e2e/waiting-push/clear', { data: {}, headers });
+}
+
+/**
+ * What the Connection shows of its last fetch (an Import with this outcome is made and tied to it) and, with `unsent`,
+ * the new Dives it offers to send (null: no offer). `clear`: neither. By a test-only route of the e2e server.
+ */
+export async function fetchState(
+  api: APIRequestContext, connectionId: string, state: { clear?: boolean; created?: number; updated?: number; skipped?: number; unsent?: string[] | null },
+) {
+  await api.post('/e2e/connection/fetch-state', { data: { id: connectionId, ...state }, headers });
+}

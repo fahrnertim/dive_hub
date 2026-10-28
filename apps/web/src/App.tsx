@@ -1,8 +1,8 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './Account.tsx';
-import { divesQuery, meQuery, setupQuery, type Me } from './api.ts';
+import { api, divesQuery, meQuery, setupQuery, type Me } from './api.ts';
 import { DiveList, LogbookHeader } from './DiveList.tsx';
 import { listOfDiveAddress, logbookParams, type LogbookParams } from './lib/logbook.ts';
 import { sitesParams } from './lib/sites-list.ts';
@@ -62,11 +62,26 @@ function useLanguage(me: Me | null | undefined) {
   }, [i18n, wanted]);
 }
 
+/**
+ * Opening Dive Hub asks for the fetch of every Connection whose schedule is on and whose last fetch is over an hour old
+ * (ADR 0056): once per start, after sign-in, not on every page or render. The server queues; nothing is waited for, and
+ * a failure is not the User's concern (the schedule tries again).
+ */
+function useFetchOnOpening(signedIn: boolean) {
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!signedIn || asked.current) return;
+    asked.current = true;
+    void api.POST('/api/connections/fetch-due').catch(() => undefined);
+  }, [signedIn]);
+}
+
 export function App() {
   const { t } = useTranslation();
   const route = useRoute();
   const me = useQuery(meQuery());
   useLanguage(me.data);
+  useFetchOnOpening(!!me.data);
   useFocusOnNavigate(route);
   useTypingMark();
 
@@ -148,7 +163,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const params = new URLSearchParams(query);
   const diveId = /^\/dives\/([\w-]+)$/.exec(path!)?.[1];
   if (diveId) return <DiveDetail key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
-  if (path === '/account') return <AccountPage tab={accountTab(params)} />;
+  if (path === '/account') return <AccountPage tab={accountTab(params)} connection={params.get('connection') ?? undefined} />;
   if (path === '/divers') return <DiversPage open={params.get('certifications') ?? undefined} />;
   if (path === '/review') return <ReviewPage tab={reviewTab(params)} />;
   if (path === '/sites') return <SitesPage params={sitesParams(params)} />;

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import {
-  Checkbox as AriaCheckbox, Label, Radio, RadioGroup as AriaRadioGroup,
-  type CheckboxProps as AriaCheckboxProps, type RadioGroupProps as AriaRadioGroupProps,
+  Checkbox as AriaCheckbox, Label, Radio, RadioGroup as AriaRadioGroup, Switch as AriaSwitch,
+  type CheckboxProps as AriaCheckboxProps, type RadioGroupProps as AriaRadioGroupProps, type SwitchProps as AriaSwitchProps,
 } from 'react-aria-components';
 
 export function Checkbox({ children, ...props }: Omit<AriaCheckboxProps, 'className' | 'children'> & { children: ReactNode }) {
@@ -12,6 +12,16 @@ export function Checkbox({ children, ...props }: Omit<AriaCheckboxProps, 'classN
       </span>
       {children}
     </AriaCheckbox>
+  );
+}
+
+/** A setting that takes effect the moment it is switched (role switch); a choice made with a button to save is a Checkbox. */
+export function Switch({ children, ...props }: Omit<AriaSwitchProps, 'className' | 'children'> & { children: ReactNode }) {
+  return (
+    <AriaSwitch {...props} className="switch">
+      <span className="switch-track" aria-hidden="true"><span className="switch-thumb" /></span>
+      {children}
+    </AriaSwitch>
   );
 }
 

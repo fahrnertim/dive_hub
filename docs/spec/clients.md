@@ -326,6 +326,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     goes to the deleted dives and can be restored.
   - **Must ask about each Provider both Dives are at** (`bothAt`), in the same dialog, as when deleting: the dive of the
     one not kept stays there unless the User chooses to delete it there too (`alsoAt`). Without a Connection it stays.
+    **Not for a Provider in `deletesItself`:** the Connection of the Dive not kept deletes there by itself, 5 minutes after the
+    merge (restoring that Dive cancels it); don't ask, and say so ("Will be deleted in {{provider}} in 5 min").
     On a provider_* error nothing is merged: say so with the reason.
   - `POST /api/dives/{id}/merge` with `version`, `otherId`, `otherVersion` (`dive_changed` 409, `merge_not_possible` 400
     for the same Dive or Dives of two Divers). **The answer is the kept Dive, which may be the other one: follow its
@@ -343,6 +345,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - **Must ask about every Provider the Dive is at in the same dialog** (`GET /api/dives/{id}/providers`, each `current`):
     "Delete here and in SSI" (`alsoAt: ['ssi']`) or "Delete only here", saying SSI's app can't bring it back. Without a
     Connection for its Diver at a Provider, say it stays there and don't offer deleting it there. Don't preselect either.
+    **Not for a Provider whose status says `deletesItself`:** its Connection deletes there by itself 5 minutes after the
+    delete here, and Undo within that time cancels it; don't ask (`alsoAt` for it is ignored), say it will be deleted there.
   - **On a provider_* error the Dive stays here:** say so with the reason, and offer both again. With several Providers
     each is checked before any is deleted, so usually nothing was deleted; but when one fails after another's copy was
     deleted, the refusal's `providers` says so (`copy: deleted`): say which copy is gone. *Web:* says "Nothing was
@@ -353,6 +357,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - **Must remind while a deleted Dive is still at a Provider** (`stillAt` not empty): say so on the Dive with "Delete
     in SSI" per Provider (`DELETE /api/dives/{id}/providers/{provider}`, confirmed), and where the User lands (the logbook).
     The reminder may be dismissed for a visit; it comes back while the dive is there. *Web:* `DeletedDives.tsx`.
+  - **Must show `waiting`** (the queue of Waiting pushes): a `delete` that waits goes out at `dueAt` ("Will be deleted in
+    {{provider}} in {{minutes}} min"); a `held` one says why (`reason`), a `stopped` one "Couldn't delete it in {{provider}}:
+    {{reason}}" (the problem code's text).
 - **History:** a restored Dive's history shows "Deleted" and "Restored" (causes `delete`, `restore`; their change
   `deletedAt` needs no line of its own). *Web:* `DiveHistory.tsx`.
 - **History:** an import from a Provider writes `fill` (what a Dive lacked, from the Provider's dive: `site`,
@@ -707,10 +714,72 @@ differently, found while sending a Dive. One entry per Dive and Provider waits u
 page, beside the gone dives: `entries` carry the Dive's number, time, depth, duration and site, the `remoteId`, and
 `fields`, each with `hub` and `provider` values said as in the import preview. An entry whose Dive is deleted or whose
 remote dive is no longer the Dive's current one is not listed. Only the Connection's owner sees it. A Push run makes
-them: it sends the Dive without the field. Deciding is the Dive's send with `conflicts`
-([Sending a Dive](#sending-a-dive-to-a-provider-ssi)); a successful send that settles the fields removes the entry.
+them: it sends the Dive without the field, and so does a scheduled fetch ([Sending by itself](#sending-by-itself)).
+Deciding is the choice per field sent to `POST /api/dives/{id}/providers/{provider}/decision` (`conflicts`), which queues
+the Dive due now; the Dive's own page keeps sending at once with `conflicts` ([Sending a Dive](#sending-a-dive-to-a-provider-ssi)).
+A send that settles the fields removes the entry.
+**A second kind of entry** (`kind: exists`, `fields` empty, `existing` names the dive at the Provider): the Provider already
+has a dive at the Dive's time and the Dive's send waits for the User. Say "{{provider}} already has a dive at this time"
+with the dive's number and time, and two buttons, "Link to it" and "Create a new one" (`decision` with `onExisting: link`
+or `create`). An `exists` entry leaves the list once chosen; a `conflict` entry stays, with `queued: true`, until the send
+settles: show it as waiting, without the choices, and take it from `queued` (not from client state: a reload or a second
+device shows the same). A Conflict found again after the choice has `queued: false`: ask again. Tell the kinds by `kind`; a client that doesn't know a kind shows
+the Dive with a link to its page.
 *Web:* `ProviderConflicts.tsx` (the choice per field, on the Dive's page where the send button was, and on the Review
 page), `ProviderConflictsSection.tsx` (the Review section), `PushRun.tsx` (the run report's line).
+
+### Sending by itself
+([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md); the settings of a Connection, the queue of Waiting
+pushes, the scheduled fetch.) A Connection can send a changed or new Dive, delete at the Provider, and fetch the account's
+dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (settings, summary, offer), `WaitingPush.tsx`, `ProviderConflictsSection.tsx` (decisions).
+- **Settings** (`PATCH /api/connections/{id}`): `sendChanges` ("Send changes automatically"), `sendNewDives` ("Send new
+  dives automatically"), `deleteAtProvider` ("Delete at {{provider}} when I delete here", with the help text: restoring the
+  dive later creates it at {{provider}} again as a new entry, and a verification it had there is lost; Dive Hub can't see
+  whether a dive there is verified) and `fetchEveryMinutes` ("Fetch from {{provider}}": every hour 60, every 6 hours 360,
+  once a day 1440; 360 preselected when turned on; `null` is off). They come back on `GET /api/connections` with
+  `offers`: **show a setting only when its offer is true** and the intervals of `offers.fetchEvery` (the Provider's
+  `limits.fetchEveryMinutes` is the shortest, already applied). Turning one on queues nothing that changed before. 400
+  `provider_unsupported` (the Provider can't) and 400 `fetch_interval_too_short` (below its minimum) are translated; turning
+  off is always accepted. The fetch also needs the Connection's import mode "link and fill" or "also create".
+- **Must show the state of a Dive's Waiting push** (`waiting` on each row of `GET /api/dives`, on `GET /api/dives/{id}/providers`
+  and `.../{provider}` as `waiting` (one or null), and on deleted dives): a list row gets a small icon (`aria-hidden`, with a
+  text label), the Dive's page the words, next to Send. Texts with `{{provider}}` the Provider's name:
+  - `waiting`: "Waiting to send to {{provider}}"; a `delete`: "Will be deleted in {{provider}} in {{minutes}} min" (from `dueAt`).
+  - `held` (warning icon, the reason as its label), by `reason`: `sign_in` "Won't be sent to {{provider}} until you sign in";
+    `requirements` "Needs a site with a position before it can go to {{provider}}" (link to the fix); `exists`
+    "{{provider}} already has a dive at this time: decide under Needs your decision"; `removes_verification` "Sending would
+    remove the verification in {{provider}}: send it yourself to confirm" (the Dive's Send confirms it).
+  - `stopped` (error icon): "Couldn't send to {{provider}}: {{reason}}" / "Couldn't delete it in {{provider}}: {{reason}}"
+    (`reason` is a problem code; use its translated text) with **Retry** (`POST /api/dives/{id}/providers/{provider}/retry`,
+    204, also for an entry that waits already (a second click changes nothing); 404 `waiting_push_not_found` only when
+    the Dive has no entry there any more, 404 `dive_not_found` for a Dive that isn't the User's, 404 `connection_not_found`
+    when the entry runs through another User's Connection).
+  - Saving a Dive while its Connection needs a sign-in says at once, on its page, that it won't be sent until the User signs in.
+  - The manual Send on the Dive's page sends at once and removes the entry. No toasts; none of these texts time out.
+- **The Connection shows** `waiting` (how many are waiting, held and stopped), and `lastFetch` ("Last fetched {{when}}: {{new}}
+  new, {{updated}} updated, {{waiting}} wait for you"; `at` is the time of the fetch's Import; `waitingForYou` counts ambiguous
+  entries and dives of a computer with no choice yet, with a link to a manual import that asks; `conflicts` counts the
+  Connection's open Conflicts apart, with a link to Needs your decision, where they are decided, never to the import; null
+  before the first fetch). A reason `no_computer_choice` in an import outcome is translated.
+- **Must offer the unsent dives** (`unsentDives` not empty): an Import created more than 20 Dives and none was queued. Each
+  such Import adds its Dives to the offer (an earlier one stays); the list holds those still without a remote dive at the
+  Provider, so it shrinks by what a Push run sends. Say "{{count}} new dives weren't sent automatically" with "Send them to
+  {{provider}}" (the Push run preview for these ids, `POST /api/connections/{id}/push-runs/preview` with `dives.ids`) and
+  "Dismiss" (`POST /api/connections/{id}/unsent-dives/dismiss`, 204: the whole offer). Empty means no offer, whatever the
+  Imports were.
+- **An Import's result links to that offer** (`unsentTo` on `GET /api/imports` and `/api/imports/{id}`: per Connection of
+  the User that left the Import's new Dives out, `connectionId`, `provider` and `count`, how many of them are still
+  unsent): say "{{count}} new dives weren't sent to {{provider}} by themselves" with a link to that Connection's settings,
+  where the offer is. Empty: say nothing. *Web:* `ImportPanel.tsx` (`#/account?tab=connections&connection=<id>`).
+- **Must call `POST /api/connections/fetch-due` once per app start** (after sign-in); it answers `{ queued }`, fetches
+  nothing itself, and queues a fetch only for Connections with the schedule on whose last fetch is more than an hour
+  old. Don't poll it.
+- **Must not ask before deleting a copy at a Provider whose status says `deletesItself`** (see Deleting a Dive and
+  Merging): say it will be deleted there in 5 minutes, and that Undo cancels it. Ask only for the others.
+- **Decisions go through the queue:** "Link to it", "Create a new one" and the choice per Conflict
+  (`POST /api/dives/{id}/providers/{provider}/decision`, 204, body `{ onExisting }` and/or `{ conflicts }`, at least one) queue
+  the Dive due now; the worker sends it, so the Dive's state shows `waiting` briefly. Keeping Dive Hub's value in an
+  import's conflicts does the same.
 
 ### Logbook checks
 ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md); `GET /api/logbook-checks`, computed each time)
@@ -722,7 +791,9 @@ page), `ProviderConflictsSection.tsx` (the Review section), `PushRun.tsx` (the r
   keeps several) and link to them.
 - **Show the rule's text on every pair of `entry_apart_from_recording`,** also when it is the only kind in the list (the
   list's heading says "at the same time", which isn't so here), with both local start times and how far apart they are.
-  Such a pair is never `obvious`: it is merged only by the User's own click on that pair. After a merge the kept Dive may be
+  Such a pair is never `obvious`: it is merged only by the User's own click on that pair. **A pair's `other.deletesItself`**
+  (a subset of `other.bothAt`) lists the Providers where the Connection of the Dive not kept deletes by itself after the
+  merge: a merge from a check doesn't ask about them (as in the dialog under Dives; leave them out of `alsoAt`). After a merge the kept Dive may be
   outdated at the Provider: sending its start time there can remove the Provider's verification of the entry (SSI's dive
   centre QR), so say so before sending.
 - **A check can be about one Dive** (`other: null`, `rule: short_shallow_dive`, rule version 3): a Dive with a Recording

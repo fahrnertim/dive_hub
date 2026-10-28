@@ -1,8 +1,8 @@
 // Conflicts with a Provider, stored per Dive and Provider and listed for "Needs your decision": the service the send
 // will call (record, openFields, close) and the listing route, against a fake ledger Provider and the real database.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { eq } from 'drizzle-orm';
-import { connection, providerConflict, push } from '../src/db/schema.js';
+import { eq, sql } from 'drizzle-orm';
+import { connection, providerConflict, push, waitingPush } from '../src/db/schema.js';
 import { close, openFields, record, type ConflictField } from '../src/providers/conflicts.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -25,7 +25,7 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
   let bob: string;
   let diverId: string;
   let connectionId: string;
-  const ledger = createFakeLedger();
+  const ledger = createFakeLedger({ imports: true });
 
   const call = (method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, payload?: object, cookie = ann) =>
     ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
@@ -81,6 +81,21 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     expect((await listed()).connections).toEqual([]);
   });
 
+  it('a choice marks the entry queued, from the server; a Conflict found again is open again', async () => {
+    const { diveId, remoteId } = await sentDive();
+    await record(t.db, entry(diveId, remoteId));
+    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: false }]);
+    const decided = await call('POST', '/api/dives/' + diveId + '/providers/ledger/decision', { conflicts: { notes: 'hub', maxDepthM: 'hub' } });
+    expect(decided.statusCode).toBe(204);
+    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: true }]);
+    // The send ends in a new Conflict for the Dive: the question is open again. The choice was queued a moment before
+    // (moved back here rather than waiting: the queue and the Conflict both take the time from `new Date()`, no Clock).
+    await t.db.update(waitingPush).set({ changedAt: sql`${waitingPush.changedAt} - interval '1 second'` }).where(eq(waitingPush.diveId, diveId));
+    await record(t.db, entry(diveId, remoteId, fields('Ray')));
+    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: false }]);
+    await t.db.delete(waitingPush).where(eq(waitingPush.diveId, diveId));
+  });
+
   it('recording twice keeps one entry with the newer fields', async () => {
     const { diveId, remoteId } = await sentDive();
     await record(t.db, entry(diveId, remoteId));
@@ -115,6 +130,84 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     expect((await listed()).connections[0]!.entries).toHaveLength(1);
     await call('DELETE', `/api/connections/${own.id}`, undefined, bob);
     expect((await ctx.app.inject({ method: 'GET', url: '/api/provider-conflicts' })).statusCode).toBe(401);
+  });
+
+  /** A Dive sent with notes "Turtle", whose notes are "Manta" at the ledger now, with an open entry on its notes. */
+  const openOnNotes = async () => {
+    const { diveId, remoteId } = await sentDive();
+    const version = (await json<{ version: number }>('GET', `/api/dives/${diveId}`)).version;
+    await call('PATCH', `/api/dives/${diveId}`, { version, notes: 'Turtle' });
+    expect((await call('POST', `/api/dives/${diveId}/providers/ledger`, {})).statusCode).toBeLessThan(300);
+    ledger.dives.get(remoteId)!.notes = 'Manta';
+    await record(t.db, entry(diveId, remoteId, [{ field: 'notes', hub: 'Turtle', provider: 'Manta' }]));
+    await t.db.update(connection).set({ importMode: 'add', fetchEveryMinutes: 60, lastFetchedAt: null }).where(eq(connection.id, connectionId));
+    return { diveId, remoteId };
+  };
+  const notesOf = async (diveId: string) => (await json<{ notes: string | null }>('GET', `/api/dives/${diveId}`)).notes;
+  /** A manual import with these choices, run as the worker runs it. */
+  const manualImport = async (conflicts: { remoteId: string; field: string; choice: string }[] = []) => {
+    const started = await call('POST', `/api/connections/${connectionId}/dive-import`, { computers: [], decisions: [], conflicts });
+    expect(started.statusCode).toBe(202);
+    return ctx.imports.processImport(started.json<{ id: string }>().id);
+  };
+
+  it('an open Conflict holds its fields in an import', async () => {
+    const { diveId } = await openOnNotes();
+    const [before] = await t.db.select().from(providerConflict);
+    // Changed only at the ledger since the send, but held by the open entry: neither a fetch nor a manual import takes it.
+    await ctx.providers.scheduledFetch.fetch(connectionId);
+    const fetched = (await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.lastFetchImportId!;
+    await ctx.imports.processImport(fetched);
+    await manualImport();
+    expect(await notesOf(diveId)).toBe('Turtle');
+    // Raised once: the same entry, found when it was found.
+    const after = await t.db.select().from(providerConflict);
+    expect(after).toHaveLength(1);
+    expect(after[0]).toMatchObject({ foundAt: before!.foundAt, fields: [{ field: 'notes', hub: 'Turtle', provider: 'Manta' }] });
+    // Nor does a send as the worker makes it send the clashed field.
+    const annId = (await t.db.select({ userId: connection.userId }).from(connection).where(eq(connection.id, connectionId)))[0]!.userId;
+    await ctx.providers.pushes.send(annId, diveId, 'ledger', { onConflict: 'defer' });
+    expect([...ledger.dives.values()].map((d) => d.notes)).toEqual(['Manta']);
+    expect(await notesOf(diveId)).toBe('Turtle');
+    expect(await openFields(t.db, diveId, 'ledger')).toEqual(['notes']);
+  });
+
+  it('a manual preview\'s choice closes the open entry', async () => {
+    const { diveId, remoteId } = await openOnNotes();
+    const preview = await json<{ counts: { changed: number }; conflicts: { diveId: string; field: string; hub: unknown; provider: unknown }[] }>(
+      'GET', `/api/connections/${connectionId}/dive-import`,
+    );
+    expect(preview.conflicts).toMatchObject([{ diveId, field: 'notes', hub: 'Turtle', provider: 'Manta' }]);
+    expect(preview.counts.changed).toBe(0);
+    await manualImport([{ remoteId, field: 'notes', choice: 'provider' }]);
+    expect(await notesOf(diveId)).toBe('Manta');
+    expect(await openFields(t.db, diveId, 'ledger')).toEqual([]);
+    expect((await listed()).connections).toEqual([]);
+  });
+
+  it('keeping Dive Hub\'s value in a manual preview closes the field and queues the Dive', async () => {
+    const { diveId, remoteId } = await openOnNotes();
+    await t.db.delete(waitingPush);
+    await manualImport([{ remoteId, field: 'notes', choice: 'hub' }]);
+    expect(await notesOf(diveId)).toBe('Turtle');
+    expect(await openFields(t.db, diveId, 'ledger')).toEqual([]);
+    expect(await t.db.select().from(waitingPush)).toMatchObject([
+      { diveId, provider: 'ledger', connectionId, action: 'send', state: 'waiting', options: { conflicts: { notes: 'hub' } } },
+    ]);
+  });
+
+  it('keeping Dive Hub\'s value queues nothing through a Connection that is no longer the Diver\'s', async () => {
+    const { diveId, remoteId } = await openOnNotes();
+    await t.db.delete(waitingPush);
+    const bobsDiver = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', undefined, bob)).find((d) => d.isOwn)!.id;
+    await t.db.update(connection).set({ diverId: bobsDiver }).where(eq(connection.id, connectionId));
+    try {
+      await manualImport([{ remoteId, field: 'notes', choice: 'hub' }]);
+      expect(await t.db.select().from(waitingPush)).toEqual([]);
+    } finally {
+      await t.db.update(connection).set({ diverId }).where(eq(connection.id, connectionId));
+    }
+    expect(diveId).toBeTruthy();
   });
 
   it('leaves out the Connection of a Provider this instance does not offer', async () => {

@@ -338,6 +338,14 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .provider-import h4 { font-size: var(--text-sm); font-weight: var(--weight-semibold); margin: 0; }
 .provider-import .muted, .provider-import p { margin: 0; }
 .provider-import-part { display: grid; gap: var(--space-3); }
+/* What a Connection does by itself (ADR 0056): the switches, each help text under its switch, the summary of the last fetch. */
+.provider-settings { display: grid; gap: var(--space-1); }
+.provider-settings .radio-group { margin-left: calc(2.25rem + var(--space-2)); }
+.provider-settings-help { margin: calc(-1 * var(--space-1)) 0 var(--space-2) calc(2.25rem + var(--space-2)); font-size: var(--text-sm); }
+.provider-fetch-summary p { margin: 0; }
+.provider-fetch-summary { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+.provider-conflict-question { margin: var(--space-2) 0; font-weight: var(--weight-semibold); }
+.provider-conflict-question .muted { font-weight: var(--weight-regular); }
 /* Fields changed both here and at a Provider (ADR 0056): one choice per field, where the send button was. */
 .provider-conflicts { display: grid; gap: var(--space-3); min-width: 0; }
 .provider-conflicts > h3 { font-size: var(--text-md); margin: 0; }
@@ -597,3 +605,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .certification-summary { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
 .certification-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-3); }
 .certification-suggestions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+/* A Dive's Waiting push (ADR 0056): an icon with the words, in a logbook row and beside Send. */
+.waiting-push { display: inline-flex; align-items: center; gap: var(--space-1); margin: 0; }
+.waiting-push-stopped .icon { color: var(--color-danger); }
+.waiting-push-panel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }

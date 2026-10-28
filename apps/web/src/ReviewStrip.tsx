@@ -9,7 +9,7 @@ import { LinkButton } from './ui/index.ts';
  */
 export function ReviewStrip() {
   const { t, i18n } = useTranslation();
-  const { recordings, pairs, shortDives, goneAt, conflicts, total } = useWaiting();
+  const { recordings, pairs, shortDives, goneAt, conflicts, exists, total } = useWaiting();
   const providers = useProviders();
   if (total === 0) return null;
   const parts = [
@@ -18,6 +18,7 @@ export function ReviewStrip() {
     ...(shortDives > 0 ? [t('review.strip.shortDives', { count: shortDives })] : []),
     ...Object.entries(goneAt).map(([id, count]) => t('review.strip.gone', { count, name: providers.data?.find((p) => p.id === id)?.name ?? id })),
     ...(conflicts > 0 ? [t('review.strip.conflicts', { count: conflicts })] : []),
+    ...(exists > 0 ? [t('review.strip.exists', { count: exists })] : []),
   ];
   const list = new Intl.ListFormat(i18n.language, { style: 'long', type: 'conjunction' }).format(parts);
   return (

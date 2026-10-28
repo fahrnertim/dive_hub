@@ -13,8 +13,11 @@ import { AiAccess } from './AiAccess.tsx';
 import { Connections } from './Connections.tsx';
 import { Button, ConfirmButton, Form, Notice, PageHeader, Panel, RadioGroup, Table, TextField } from './ui/index.ts';
 
-/** The signed-in User's own account: display settings, password, and where they're signed in. */
-export function AccountPage({ tab }: { tab: AccountTab }) {
+/**
+ * The signed-in User's own account: display settings, password, and where they're signed in. `connection`: the
+ * Connection whose settings the page goes to (a link from an Import's result).
+ */
+export function AccountPage({ tab, connection }: { tab: AccountTab; connection?: string | undefined }) {
   const { t } = useTranslation();
   usePageTitle(t('account.title'));
   return (
@@ -32,7 +35,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
           <Sessions />
         </>
       )}
-      {tab === 'connections' && <Connections />}
+      {tab === 'connections' && <Connections focus={connection} />}
       {tab === 'ai' && <AiAccess />}
     </>
   );

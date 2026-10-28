@@ -7,9 +7,10 @@ import { useNames, useProviders, useProviderText } from './lib/providers.ts';
 import { Button, Dialog, Muted, Notice } from './ui/index.ts';
 
 /** What the dialog says about one copy: delete it there too, or it stays there (in the Provider's words where it has them). */
-function CopySentence({ provider: p, copy, canDelete }: { provider: ProviderView; copy: CopyAt; canDelete: boolean }) {
+function CopySentence({ provider: p, copy, how }: { provider: ProviderView; copy: CopyAt; how: 'ask' | 'cannot' | 'itself' }) {
   const pt = useProviderText(p);
-  return <p>{pt(canDelete ? 'deleteAsk' : 'deleteCannot', { number: copy.remoteNumber ?? '' })}</p>;
+  const key = { ask: 'deleteAsk', cannot: 'deleteCannot', itself: 'deletesItself' } as const;
+  return <p>{pt(key[how], { number: copy.remoteNumber ?? '' })}</p>;
 }
 
 /**
@@ -25,7 +26,7 @@ export function DeleteDiveDialog({ dive: d, name, onClose }: { dive: Pick<DiveVi
   const providers = useProviders();
   const statuses = useQuery(diveProvidersQuery(d.id));
   // Without the state at the Providers the server still knows: a copy then stays there, with the reminder.
-  const choice = deleteChoice(statuses.data) ?? (statuses.error ? { ask: [], cannot: [] } : undefined);
+  const choice = deleteChoice(statuses.data) ?? (statuses.error ? { ask: [], cannot: [], itself: [] } : undefined);
   const providerOf = (id: string) => providers.data?.find((p) => p.id === id) ?? { id, name: id } as ProviderView;
   const remove = useMutation({
     mutationFn: async (alsoThere: boolean) => unwrap(await api.DELETE('/api/dives/{id}', {
@@ -35,7 +36,7 @@ export function DeleteDiveDialog({ dive: d, name, onClose }: { dive: Pick<DiveVi
       const numberAt = (id: string) => [...(choice?.ask ?? []), ...(choice?.cannot ?? [])].find((c) => c.provider === id)?.remoteNumber ?? null;
       updateDeletion({
         justDeleted: {
-          id: d.id, name,
+          id: d.id, name, byThemselves: (choice?.itself ?? []).map((c) => providerOf(c.provider).name),
           copies: result.providers.map((r) => ({ provider: r.provider, name: providerOf(r.provider).name, copy: r.copy, remoteNumber: numberAt(r.provider) })),
         },
       });
@@ -51,8 +52,9 @@ export function DeleteDiveDialog({ dive: d, name, onClose }: { dive: Pick<DiveVi
   return (
     <Dialog title={t('dive.deleteTitle', { name })} isOpen onOpenChange={(open) => !open && !remove.isPending && onClose()}>
       <p>{t('dive.deleteBody')}</p>
-      {choice?.ask.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} copy={c} canDelete />)}
-      {choice?.cannot.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} copy={c} canDelete={false} />)}
+      {choice?.ask.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} copy={c} how="ask" />)}
+      {choice?.cannot.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} copy={c} how="cannot" />)}
+      {choice?.itself.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} copy={c} how="itself" />)}
       {!choice && <Muted>{t('common.loading')}</Muted>}
       {remove.error && (
         <Notice tone="danger">

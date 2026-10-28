@@ -26,7 +26,7 @@ import { computerDive, createFakeSsi, fakeCard, handTypedDive } from './fake-ssi
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { createMerging } from '../src/dives/merging.js';
 import { createDiverService } from '../src/divers/diver-service.js';
-import { dive, pushRun } from '../src/db/schema.js';
+import { connection, dive, importJob, pushRun, waitingPush } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { createInvitations } from '../src/users/invitations.js';
 import { createSetup } from '../src/users/setup.js';
@@ -115,7 +115,7 @@ const fakeSsi = createFakeSsi({
   ],
 });
 const quick = <A extends { capabilities: { limits: { pauseMs: number; run: unknown } } }>(adapter: A): A => ({
-  ...adapter, capabilities: { ...adapter.capabilities, limits: { pauseMs: 0, run: { pauseMs: 150, maxDives: 100 } } },
+  ...adapter, capabilities: { ...adapter.capabilities, limits: { ...adapter.capabilities.limits, pauseMs: 0, run: { pauseMs: 150, maxDives: 100 } } },
 });
 const providers = createProviderLayer({
   db, blobs, secrets: createSecretBox(Buffer.alloc(32, 9)),
@@ -165,7 +165,7 @@ for (const record of [
 ]) fakeSsi.addDive(6_100_200, record);
 
 // Uploads made by the tests are processed in the background, as in the real app.
-const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, providers.certifications, app.log);
+const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, providers.waitingPushes, providers.scheduledFetch, providers.certifications, app.log);
 // Test-only (never in the production app): a browser test changes a dive in an SSI account's logbook, as the User would
 // in SSI's app (ADR 0030: changes taken back). By the account's e-mail and SSI's dive number or ID; only the fields given.
 app.post('/e2e/fake-ssi/dive', { schema: { hide: true } }, async (request) => {
@@ -229,6 +229,62 @@ app.post('/e2e/fake-ssi/clear-dives', { schema: { hide: true } }, async (request
 // Test-only: a run that ended stays in the logbook's strip until dismissed, in each browser's own storage; the tests that
 // start runs remove them, so other tests see no strip.
 app.post('/e2e/push-runs/clear', { schema: { hide: true } }, async () => { await db.delete(pushRun); return { ok: true }; });
+
+// Test-only: an entry of the queue in a given state (the worker would settle a real one within a minute): by the Dive,
+// its Connection and the Provider. `dueInMs` counts from now; the tests that look at it clear it afterwards.
+app.post('/e2e/waiting-push/set', { schema: { hide: true } }, async (request) => {
+  const b = request.body as {
+    diveId: string; connectionId: string; provider: string; action?: 'send' | 'delete';
+    state: 'waiting' | 'held' | 'stopped'; reason?: string | null; dueInMs?: number;
+    /** With reason `exists`: the dive already at the Provider. */
+    detail?: { remoteId: string; remoteNumber: number | null; startsAt: string };
+  };
+  const now = new Date();
+  const row = {
+    diveId: b.diveId, connectionId: b.connectionId, provider: b.provider, action: b.action ?? 'send', state: b.state,
+    reason: b.reason ?? null, detail: b.detail ?? null, dueAt: new Date(now.getTime() + (b.dueInMs ?? 3_600_000)), changedAt: now,
+  };
+  await db.insert(waitingPush).values(row).onConflictDoUpdate({ target: [waitingPush.diveId, waitingPush.provider], set: row });
+  return { ok: true };
+});
+
+// Test-only: every entry of the queue is removed.
+app.post('/e2e/waiting-push/clear', { schema: { hide: true } }, async () => { await db.delete(waitingPush); return { ok: true }; });
+
+// Test-only: what the Connection shows of its last fetch and of the new Dives it offers to send (ADR 0056): an Import with
+// that outcome is made and tied to it. `unsent` lists Dives the Import "created".
+app.post('/e2e/connection/fetch-state', { schema: { hide: true } }, async (request) => {
+  const b = request.body as { id: string; clear?: boolean; created?: number; updated?: number; skipped?: number; unsent?: string[] | null };
+  const [conn] = await db.select().from(connection).where(eq(connection.id, b.id));
+  if (!conn) return { ok: false };
+  if (b.clear) {
+    await db.update(connection).set({ lastFetchImportId: null, unsentImportIds: [] }).where(eq(connection.id, conn.id));
+    return { ok: true };
+  }
+  const entries = (result: 'created' | 'updated' | 'skipped', n: number, ids: string[] = []) => Array.from({ length: n }, (_, i) => ({
+    fileName: `fake-${result}-${i}`, result, ...(result === 'skipped' && { reason: 'ambiguous' as const }), ...(ids[i] && { diveId: ids[i] }),
+  }));
+  const [made] = await db.insert(importJob).values({
+    userId: conn.userId, status: 'done', uploadName: conn.provider, provider: conn.provider, connectionId: conn.id, finishedAt: new Date(),
+    outcome: [...entries('created', b.created ?? 0), ...entries('updated', b.updated ?? 0), ...entries('skipped', b.skipped ?? 0)],
+  }).returning({ id: importJob.id });
+  await db.update(connection).set({ lastFetchImportId: made!.id }).where(eq(connection.id, conn.id));
+  if (b.unsent !== undefined) {
+    const [offer] = b.unsent === null ? [] : await db.insert(importJob).values({
+      userId: conn.userId, status: 'done', uploadName: conn.provider, provider: conn.provider, connectionId: conn.id, finishedAt: new Date(),
+      outcome: entries('created', b.unsent.length, b.unsent),
+    }).returning({ id: importJob.id });
+    await db.update(connection).set({ unsentImportIds: offer ? [offer.id] : [] }).where(eq(connection.id, conn.id));
+  }
+  return { ok: true };
+});
+
+// Test-only: a Connection that keeps no password needs a new sign-in (signing in again sets it right).
+app.post('/e2e/connection/needs-sign-in', { schema: { hide: true } }, async (request) => {
+  const { id } = request.body as { id: string };
+  await db.update(connection).set({ state: 'needs_sign_in', keepSignedIn: false }).where(eq(connection.id, id));
+  return { ok: true };
+});
 
 await app.listen({ host: '127.0.0.1', port });
 console.log(`e2e server ready on http://localhost:${port}`);

@@ -10,7 +10,7 @@ import { managedDiverIds } from '../dives/dive-service.js';
 import { DiverError } from '../divers/diver-error.js';
 import { externalDiver, mergeExternalDiver, participations } from '../divers/merge.js';
 import type { SecretBox } from '../secrets/secret-box.js';
-import { TurnTimeout, type Leases } from './leases.js';
+import { realClock, TurnTimeout, type Clock, type Leases } from './leases.js';
 import { ProviderError, type ActionContext, type ProviderAdapter, type SignInInput } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
@@ -38,8 +38,38 @@ type Credentials =
 
 const purpose = (id: string) => `connection:${id}`;
 
-export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: Leases }) {
+/** The intervals of a scheduled fetch the User can choose, in minutes: every hour, 6 hours, once a day. */
+export const FETCH_INTERVALS = [60, 360, 1440] as const;
+export type FetchInterval = (typeof FETCH_INTERVALS)[number];
+
+/** What the automation settings of a Connection are for: the Provider takes dives by API, deletes them, and lists its dives. */
+export function automationOffers(adapter: ProviderAdapter) {
+  const { data, limits } = adapter.capabilities;
+  const sends = data.dives?.export?.delivery === 'confirmed';
+  const minimum = data.dives?.import?.operations.includes('list') ? limits.fetchEveryMinutes : null;
+  return {
+    sendChanges: sends,
+    sendNewDives: sends,
+    deleteAtProvider: sends && !!data.dives?.export?.operations.includes('delete'),
+    fetchEvery: minimum === null ? [] : FETCH_INTERVALS.filter((m) => m >= minimum),
+    /** The shortest interval the Provider allows; null: no scheduled fetch. */
+    fetchMinimum: minimum,
+  };
+}
+
+/** The settings a User changes on a Connection; a missing one stays. */
+export interface AutomationSettings {
+  sendChanges?: boolean;
+  sendNewDives?: boolean;
+  deleteAtProvider?: boolean;
+  fetchEveryMinutes?: FetchInterval | null;
+}
+
+export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: Leases; clock?: Clock }) {
   const { db, registry, secrets, leases } = deps;
+  const clock = deps.clock ?? realClock;
+  /** When the Provider last answered the Connection: a stopped Waiting push wakes on any later answer (ADR 0056). */
+  const usedNow = () => new Date(clock.now());
 
   /** Runs `fn` on the Connection's turn; a turn that doesn't come in time is `provider_busy`. */
   async function onTurn<T>(adapter: ProviderAdapter, connectionId: string, fn: (row: ConnectionRow | null) => Promise<T>): Promise<T> {
@@ -92,6 +122,24 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
     }
   }
 
+  function checkFollowNumbers(row: { provider: string }, follow: boolean) {
+    const adapter = registry.get(row.provider);
+    if (follow && !adapter.capabilities.data.dives?.export?.numbers) throw new ProviderServiceError('provider_unsupported', named(adapter));
+  }
+
+  function checkAutomation(row: { provider: string }, settings: AutomationSettings) {
+    const adapter = registry.get(row.provider);
+    const offers = automationOffers(adapter);
+    for (const key of ['sendChanges', 'sendNewDives', 'deleteAtProvider'] as const) {
+      if (settings[key] && !offers[key]) throw new ProviderServiceError('provider_unsupported', named(adapter));
+    }
+    const every = settings.fetchEveryMinutes;
+    if (every !== undefined && every !== null) {
+      if (offers.fetchMinimum === null) throw new ProviderServiceError('provider_unsupported', named(adapter));
+      if (every < offers.fetchMinimum) throw new ProviderServiceError('fetch_interval_too_short', named(adapter));
+    }
+  }
+
   return {
     /** Whether the server can keep passwords (DIVEHUB_ENCRYPTION_KEY is set). */
     canKeepPasswords: secrets.available,
@@ -103,6 +151,8 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
         accountId: connection.accountId, accountLabel: connection.accountLabel, keepSignedIn: connection.keepSignedIn,
         importMode: connection.importMode, importWindowMinutes: connection.importWindowMinutes, followNumbers: connection.followNumbers,
         state: connection.state, lastUsedAt: connection.lastUsedAt, createdAt: connection.createdAt,
+        sendChanges: connection.sendChanges, sendNewDives: connection.sendNewDives, deleteAtProvider: connection.deleteAtProvider,
+        fetchEveryMinutes: connection.fetchEveryMinutes, lastFetchImportId: connection.lastFetchImportId,
       }).from(connection).innerJoin(diver, eq(diver.id, connection.diverId))
         .where(eq(connection.userId, userId)).orderBy(connection.createdAt);
       // A Provider this instance no longer has stays in the database but isn't offered.
@@ -119,9 +169,29 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
      */
     async setFollowNumbers(userId: string, connectionId: string, follow: boolean) {
       const row = await ownConnection(userId, connectionId);
-      const adapter = registry.get(row.provider);
-      if (follow && !adapter.capabilities.data.dives?.export?.numbers) throw new ProviderServiceError('provider_unsupported', named(adapter));
+      checkFollowNumbers(row, follow);
       await db.update(connection).set({ followNumbers: follow, updatedAt: new Date() }).where(eq(connection.id, row.id));
+    },
+
+    /**
+     * Changes what the Connection does by itself (ADR 0056). A setting is turned on only where the Provider can
+     * (`provider_unsupported`), and an interval below the Provider's minimum is `fetch_interval_too_short`; turning off
+     * is always allowed. Nothing is refused halfway: all or none. Turning a setting on queues nothing that changed before.
+     */
+    async setAutomation(userId: string, connectionId: string, settings: AutomationSettings) {
+      const row = await ownConnection(userId, connectionId);
+      checkAutomation(row, settings);
+      await db.update(connection).set({ ...settings, updatedAt: new Date() }).where(eq(connection.id, row.id));
+    },
+
+    /**
+     * Throws what `setAutomation` and `setFollowNumbers` would refuse for these parts, writing nothing: a change made of
+     * several parts checks them all first, so a refusal leaves the Connection as it was.
+     */
+    async checkChanges(userId: string, connectionId: string, parts: { automation?: AutomationSettings | undefined; follow?: boolean | undefined }) {
+      const row = await ownConnection(userId, connectionId);
+      if (parts.automation) checkAutomation(row, parts.automation);
+      if (parts.follow !== undefined) checkFollowNumbers(row, parts.follow);
     },
 
     /** One of the User's Connections, or `connection_not_found`. */
@@ -161,7 +231,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
         await tx.insert(connection).values({
           id, userId, diverId, provider, accountId: signedIn.account.id, accountLabel: signedIn.account.label,
           keepSignedIn: fields.keepSignedIn, credentials: seal(id, credentialsFrom(input, signedIn.access, fields.keepSignedIn)),
-          lastUsedAt: new Date(),
+          lastUsedAt: usedNow(),
         });
       });
       return id;
@@ -177,7 +247,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       if (signedIn.account.id !== row.accountId) throw new ProviderServiceError('provider_other_account', named(adapter));
       await db.update(connection).set({
         credentials: seal(row.id, credentialsFrom(input, signedIn.access, fields.keepSignedIn)),
-        keepSignedIn: fields.keepSignedIn, state: 'active', lastUsedAt: new Date(), updatedAt: new Date(),
+        keepSignedIn: fields.keepSignedIn, state: 'active', lastUsedAt: usedNow(), updatedAt: new Date(),
       }).where(eq(connection.id, row.id));
     },
 
@@ -224,7 +294,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
           }
           try {
             const result = await fn({ connectionId: row.id, accountId: row.accountId, access });
-            await db.update(connection).set({ lastUsedAt: new Date(), state: 'active' }).where(eq(connection.id, row.id));
+            await db.update(connection).set({ lastUsedAt: usedNow(), state: 'active' }).where(eq(connection.id, row.id));
             return result;
           } catch (error) {
             if (!(error instanceof ProviderError && error.reason === 'signed_out') || attempt > 1) throw asProblem(error, adapter);

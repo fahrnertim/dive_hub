@@ -11,6 +11,8 @@ date: 2026-10-06
 Accepted – 2026-10-06. Amends [ADR 0030](0030-importing-dives-from-providers.md) (the fields an import fills and takes
 back gain lead and the cylinder). Built so far: Cylinders (ADR 0045) and the Dive's lead, feedback and suit
 ([as built](#slice-a-as-built-the-dives-values)); SSI's lead ([part 2](#slice-a-part-2-as-built-ssis-lead)) and the Diver's body weight ([part 3](#slice-a-part-3-as-built-body-weight-of-a-diver)); the estimate is not. Designed in the [weight calculator note](../research/2026-10-06-weight-calculator.md).
+Amended by [ADR 0056](0056-two-way-exchange-and-automation.md) (2026-10-24): "never removes" no longer holds; a weight
+emptied at the Provider removes the Dive's one Lead entry, unless a Recording brought it.
 
 ## Context
 The owner wants tools that may later form a **dive planner**, starting with a weight calculator fed by a rule of thumb,

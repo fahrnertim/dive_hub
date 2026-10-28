@@ -103,6 +103,8 @@ export interface Capabilities {
      * Null: no runs. A Provider whose delivery is `handed_over` must declare null.
      */
     run: { pauseMs: number; maxDives: number } | null;
+    /** The shortest interval of a scheduled fetch of the Provider's dives, in minutes; null for none. */
+    fetchEveryMinutes: number | null;
   };
 }
 

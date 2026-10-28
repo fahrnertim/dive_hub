@@ -11,12 +11,12 @@ describe('deleteChoice', () => {
   });
 
   it('asks nothing about a Provider the Dive isn\'t at', () => {
-    expect(deleteChoice([{ provider: 'ssi', connection, current: null }])).toEqual({ ask: [], cannot: [] });
-    expect(deleteChoice([])).toEqual({ ask: [], cannot: [] });
+    expect(deleteChoice([{ provider: 'ssi', connection, current: null }])).toEqual({ ask: [], cannot: [], itself: [] });
+    expect(deleteChoice([])).toEqual({ ask: [], cannot: [], itself: [] });
   });
 
   it('asks whether to delete it there too while its Diver is connected', () => {
-    expect(deleteChoice([{ provider: 'ssi', connection, current }])).toEqual({ ask: [{ provider: 'ssi', remoteNumber: 8 }], cannot: [] });
+    expect(deleteChoice([{ provider: 'ssi', connection, current }])).toEqual({ ask: [{ provider: 'ssi', remoteNumber: 8 }], cannot: [], itself: [] });
     // Signing in again may still work (a kept password); the server says if not.
     expect(deleteChoice([{ provider: 'ssi', connection: { ...connection, state: 'needs_sign_in' }, current }])?.ask).toHaveLength(1);
   });
@@ -25,7 +25,15 @@ describe('deleteChoice', () => {
     expect(deleteChoice([
       { provider: 'ssi', connection: null, current: { ...current, remoteNumber: null } },
       { provider: 'padi', connection, current },
-    ])).toEqual({ ask: [{ provider: 'padi', remoteNumber: 8 }], cannot: [{ provider: 'ssi', remoteNumber: null }] });
+    ])).toEqual({ ask: [{ provider: 'padi', remoteNumber: 8 }], cannot: [{ provider: 'ssi', remoteNumber: null }], itself: [] });
+  });
+
+  it('does not ask about a Provider whose Connection deletes by itself, by its status or by a merge pair', () => {
+    expect(deleteChoice([{ provider: 'ssi', connection, current, deletesItself: true }])).toEqual({
+      ask: [], cannot: [], itself: [{ provider: 'ssi', remoteNumber: 8 }],
+    });
+    expect(deleteChoice([{ provider: 'ssi', connection, current }], ['ssi'])?.ask).toEqual([]);
+    expect(deleteChoice([{ provider: 'ssi', connection, current }], ['padi'])?.ask).toHaveLength(1);
   });
 });
 

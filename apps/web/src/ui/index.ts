@@ -2,7 +2,7 @@
 // Styles: ./ui.css. Pages use these instead of raw form elements.
 export { Form } from './Form.tsx';
 export { Button, LinkButton } from './Button.tsx';
-export { Checkbox, RadioGroup } from './Choice.tsx';
+export { Checkbox, RadioGroup, Switch } from './Choice.tsx';
 export { ToggleChip } from './Chip.tsx';
 export { Avatar, DiverAvatar } from './Avatar.tsx';
 export { BackLink, Badge, BrandMark, Muted, Notice, PageHeader, Panel, Table } from './Layout.tsx';

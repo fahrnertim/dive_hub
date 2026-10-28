@@ -211,8 +211,9 @@ export const OUTCOME_REASONS = [
   // The same dive is here from a file that holds more (Suunto's JSON beside its FIT, ADR 0037).
   'fuller_copy_here',
   // A Provider's dive (ADR 0030): sent by Dive Hub (already ours); a logbook entry matching no Dive while the import only
-  // adds; several Dives and no decision that still fits; left out by the User.
-  'sent_by_dive_hub', 'no_match', 'ambiguous', 'left_out',
+  // adds; several Dives and no decision that still fits; left out by the User; in an unattended fetch, a dive of a
+  // computer the User hasn't chosen for yet.
+  'sent_by_dive_hub', 'no_match', 'ambiguous', 'left_out', 'no_computer_choice',
 ] as const;
 export type OutcomeReason = (typeof OUTCOME_REASONS)[number];
 
@@ -269,6 +270,8 @@ export interface ProviderImportPlan {
   windowMinutes: number;
   /** The Connection's Diver: an import still runs after the Connection is gone. */
   diverId: string;
+  /** A scheduled or on-opening fetch: it takes what is safe by itself and leaves the rest for the User. */
+  unattended?: boolean;
 }
 
 /** One ingestion of what a User delivered at once. */
@@ -841,12 +844,27 @@ export const connection = pgTable(
     importComputers: jsonb('import_computers').$type<Record<string, ComputerChoice>>().notNull().default({}),
     /** Whether dives are numbered at the Provider as in Dive Hub (ADR 0048); off until the User turns it on. */
     followNumbers: boolean('follow_numbers').notNull().default(false),
+    /** Automation (ADR 0056): send a changed Dive, send a new one, delete at the Provider when deleted here; all off until chosen. */
+    sendChanges: boolean('send_changes').notNull().default(false),
+    sendNewDives: boolean('send_new_dives').notNull().default(false),
+    deleteAtProvider: boolean('delete_at_provider').notNull().default(false),
+    /** A scheduled fetch every 60, 360 or 1440 minutes; null for none. */
+    fetchEveryMinutes: integer('fetch_every_minutes'),
+    lastFetchedAt: timestamp('last_fetched_at', { withTimezone: true }),
+    /** The Import of the last fetch, for the summary. */
+    lastFetchImportId: uuid('last_fetch_import_id').references(() => importJob.id, { onDelete: 'set null' }),
+    /**
+     * The Imports whose new Dives weren't queued (too many at once): the offer to send them, oldest first, each once. An
+     * Import deleted since offers nothing (its outcome is gone), so no foreign key is needed.
+     */
+    unsentImportIds: uuid('unsent_import_ids').array().notNull().default(sql`'{}'`),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     uniqueIndex('connection_user_diver_provider_uq').on(t.userId, t.diverId, t.provider),
     check('connection_import_window_ck', sql`${t.importWindowMinutes} in (5, 15, 30, 60)`),
+    check('connection_fetch_every_ck', sql`${t.fetchEveryMinutes} in (60, 360, 1440)`),
   ],
 );
 
@@ -1024,6 +1042,43 @@ export const providerConflict = pgTable(
     foundAt: timestamp('found_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.diveId, t.provider] }), index('provider_conflict_connection_idx').on(t.connectionId)],
+);
+
+export const waitingPushAction = pgEnum('waiting_push_action', ['send', 'delete']);
+export const waitingPushState = pgEnum('waiting_push_state', ['waiting', 'held', 'stopped']);
+
+/** What a queued send was decided with: what to do on an `exists` answer, and the choice per Conflict field. */
+export interface WaitingPushOptions {
+  onExisting?: 'link' | 'create';
+  conflicts?: Record<string, 'hub' | 'provider'>;
+}
+
+/**
+ * A Dive waiting to go to a Provider by itself (ADR 0056): one entry per Dive and Provider. `waiting` is due at
+ * `dueAt`; `held` needs the User (`reason`: requirements, sign_in, exists, removes_verification); `stopped` failed
+ * for good (`reason` is the problem code).
+ */
+export const waitingPush = pgTable(
+  'waiting_push',
+  {
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(),
+    connectionId: uuid('connection_id').notNull().references(() => connection.id, { onDelete: 'cascade' }),
+    action: waitingPushAction('action').notNull(),
+    state: waitingPushState('state').notNull().default('waiting'),
+    reason: text('reason'),
+    options: jsonb('options').$type<WaitingPushOptions>().notNull().default({}),
+    /** The dive already at the Provider, when known: for a delete and for an `exists` answer. */
+    detail: jsonb('detail').$type<{ remoteId: string; remoteNumber: number | null; startsAt: string }>(),
+    dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    firstFailedAt: timestamp('first_failed_at', { withTimezone: true }),
+    stoppedAt: timestamp('stopped_at', { withTimezone: true }),
+    /** The last note of a change to the Dive: the quiet period counts from it. */
+    changedAt: timestamp('changed_at', { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.diveId, t.provider] }), index('waiting_push_due_idx').on(t.connectionId, t.state, t.dueAt)],
 );
 
 /** One Dive of a Push run: what is done with it, where it stands, and the Push it made. */

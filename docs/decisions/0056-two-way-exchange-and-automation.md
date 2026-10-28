@@ -1,15 +1,17 @@
 ---
 title: "ADR 0056: Two-way exchange and automation for integrations"
-summary: For every Provider, the send gets the import's three-way rule (a change made only at the Provider comes back instead of being overwritten; a change on both sides is a clash), unattended clashes wait in "Needs your decision" per Dive and Connection, and a Connection can send on change (one coalesced entry per Dive, sent after 2 quiet minutes, skipped when the fingerprint is unchanged), send new Dives and delete at the Provider by setting (both off by default), and fetch on a schedule no faster than the Provider declares; unattended runs renew a sign-in only with a kept password. Amended 2026-10-24 - a manual send asks a clash on the Dive's page, a Push run leaves it in "Needs your decision"; a removal is a change both ways (tank and lead too, amending 0031 and 0045). Amends 0026, 0027, 0030, 0031, 0038, 0045, 0047.
-status: proposed
+summary: For every Provider, the send gets the import's three-way rule (a change made only at the Provider comes back instead of being overwritten; a change on both sides is a clash), unattended clashes wait in "Needs your decision" per Dive and Connection, and a Connection can send on change (one coalesced entry per Dive, sent after 2 quiet minutes, skipped when the fingerprint is unchanged), send new Dives and delete at the Provider by setting (both off by default), and fetch on a schedule no faster than the Provider declares; unattended runs renew a sign-in only with a kept password. Amended 2026-10-24 - a manual send asks a clash on the Dive's page, a Push run leaves it in "Needs your decision"; a removal is a change both ways (tank and lead too, amending 0031 and 0045). Amended 2026-10-27 - the queue is a table of Waiting pushes (30 s quiet period for a send, 5 min for a delete), unattended sends never duplicate or remove a verification, choices in "Needs your decision" queue the Dive, `limits.fetchEveryMinutes`, a fetch on opening. Amends 0026, 0027, 0030, 0031, 0038, 0045, 0047.
+status: accepted
 date: 2026-10-23
 ---
 
 # ADR 0056: Two-way exchange and automation for integrations
 
 ## Status
-Proposed – 2026-10-23. From the owner's design session of 2026-10-23
-([design](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md)); the owner accepts it (or doesn't).
+Accepted – 2026-10-28 (owner). Proposed 2026-10-23, from the owner's design session of 2026-10-23
+([design](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md)). Built: the three-way send (piece 3,
+2026-10-24) and automation for every Provider (piece 6, 2026-10-27,
+[plan](../superpowers/plans/2026-10-27-provider-automation.md)).
 
 ## Context
 - The import already compares per field with a base, three-way ([ADR 0030](0030-importing-dives-from-providers.md),
@@ -74,6 +76,31 @@ From the [design's "Piece 3" section](../superpowers/specs/2026-10-23-ssi-app-al
   [ADR 0045](0045-tank-pressure-cylinders-and-sac-on-a-dive.md) ("never removes"):** a weight or tank emptied at the
   Provider removes the Dive's one Lead entry or its one Cylinder, unless a Recording brought it.
 - **The Provider's `fields`** governs every direction: the send, the import's three-way and its fill.
+
+## Amended 2026-10-27 (owner, before piece 6's plan)
+From the [design's "Piece 6" section](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md#piece-6-settled-2026-10-27).
+- **The quiet period** is 30 seconds for a send (Dive Hub saves only on Save, so it covers a quick second save) and
+  5 minutes for a delete (the time to Undo), not 2 minutes.
+- **The queue is a table**: one Waiting push per Dive and Provider, visible on the Dive, in the logbook and on the
+  Connection; the worker sends it through the ordinary Push, one Connection at a time. Held while something here must
+  change (a requirement, a sign-in, a decision); after a Provider was unreachable, retried for a day and then stopped
+  until Retry or the Provider's next successful call; stopped at once after a refusal.
+- **Unattended, never a duplicate or a lost verification:** a dive at the same time already at the Provider waits in
+  "Needs your decision" (link or create); an update that would remove a verification waits for the User's Send.
+- **A resolved Conflict and every choice in "Needs your decision" queue the Dive, due now**, whatever the settings (as
+  "keep queues a send" said); nothing in "Needs your decision" sends directly.
+- **Send new Dives** skips an Import that creates more than 20 Dives; it offers a Push run instead.
+- **With "Delete at the Provider" on, the Dive is deleted here first** and at the Provider after the quiet period
+  (amends [ADR 0026](0026-deleting-dives.md)'s order for this setting only); the list of deleted dives shows the waiting
+  or stopped delete in the place of 0026's reminder. Off, 0026 stands. A merge of two Dives both at the Provider treats
+  the merged-away Dive's copy the same way ([ADR 0038](0038-logbook-checks-and-merging-dives.md)).
+- **The Dive's Connection decides** (the one its current Push was made through): its settings apply whoever changed
+  the Dive, and a Connection now at another account never sends the Dive by itself.
+- **An open Conflict holds its fields in every import too**, so a newer Original doesn't send a clash as a change.
+- **The interval**: `limits.fetchEveryMinutes` (null: no scheduled fetch); SSI 60. The User chooses every hour, 6 hours
+  or a day; a scheduled fetch also runs when the User opens Dive Hub and the last is more than an hour old. Dives from a
+  dive computer with no choice yet are skipped and counted, like `ambiguous` ones; its Conflicts wait in "Needs your
+  decision" as a send's do.
 
 ## Consequences
 - A change made in a Provider's app is no longer lost when Dive Hub sends first.

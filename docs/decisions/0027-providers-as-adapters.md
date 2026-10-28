@@ -14,6 +14,8 @@ every Provider the Dive is at, not SSI by name). Amended on 2026-10-05 by the [c
 (the [follow-ups](../research/2026-10-05-provider-layer-follow-ups.md)). Amended by [ADR 0029](0029-push-requirements-and-buddies.md)
 (2026-10-05): "what an export needs" became Push requirements (`requirements`, `unmet`, `provider_requirements_unmet`
 replacing `needsSiteIdFrom` and `provider_site_id_missing`); adapters get Participants and may declare `buddies`.
+Amended by [ADR 0056](0056-two-way-exchange-and-automation.md) (built 2026-10-24 and 2026-10-27): the send is
+three-way, and an adapter declares `limits.fetchEveryMinutes`; unattended sends go through the same pacing.
 
 ## Context
 The [SSI integration review](../research/2026-10-05-ssi-integration-review.md) found the SSI code sound but not generic:

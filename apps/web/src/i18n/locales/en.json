@@ -217,7 +217,8 @@
       "sent_by_dive_hub": "sent from Dive Hub",
       "no_match": "no dive here at that time",
       "ambiguous": "several dives here at that time, or only one that is probably no dive; choose in the preview",
-      "left_out": "left out by you"
+      "left_out": "left out by you",
+      "no_computer_choice": "from a dive computer you haven’t chosen for yet; choose in a manual import"
     },
     "errorCode": {
       "unsupported_file": "This is neither a dive file (FIT, Suunto JSON) nor a zip archive.",
@@ -496,6 +497,8 @@
     "push_run_going": "This run is still going; it can be dismissed when it has ended.",
     "push_run_not_stopped": "Only a stopped run can be continued.",
     "provider_unsupported": "{{name}} doesn’t offer that.",
+    "fetch_interval_too_short": "{{name}} can’t be fetched from that often. Choose a longer interval.",
+    "waiting_push_not_found": "This dive isn’t waiting to go to the service any more, so there is nothing to retry.",
     "provider_import_off": "Importing dives from {{name}} is off. Choose what the import may do first.",
     "provider_site_data_not_confirmed": "Confirm the explanation about {{name}}’s missing licence first.",
     "provider_site_unknown": "{{name}} has no site with this ID.",
@@ -760,8 +763,19 @@
     "title": "Changed in both places ({{count}})",
     "titleConnection": "Changed in both places in {{name}}: {{diver}} ({{count}})",
     "intro": "A run sent these dives to {{name}} without these values: they were changed both here and in {{name}} since the last exchange. Choose which to keep; the dive is then sent again with your choice.",
-    "sent": "{{dive}} was sent to {{name}} with your choices.",
-    "again": "{{dive}} was changed in both places again. Choose once more."
+    "queued": {
+      "conflicts": "{{dive}} will be sent to {{name}} with your choices.",
+      "exists-link": "{{dive}} will be linked with the dive in {{name}}.",
+      "exists-create": "{{dive}} will be created in {{name}} as a new dive."
+    },
+    "existsTitle": "Already in {{name}} ({{count}})",
+    "existsTitleConnection": "Already in {{name}}: {{diver}} ({{count}})",
+    "existsIntro": "Sending these dives to {{name}} waits for you: it has a dive at the same time, and Dive Hub doesn’t make a second one by itself.",
+    "exists": "{{name}} already has a dive at this time",
+    "existsDive": "It is dive {{number}} in {{name}}, {{time}}.",
+    "existsDiveNoNumber": "It is the dive in {{name}} at {{time}}.",
+    "link": "Link to it",
+    "create": "Create a new one"
   },
   "review": {
     "title": "Review",
@@ -788,6 +802,8 @@
       "gone_other": "{{count}} dives no longer in {{name}}",
       "conflicts_one": "{{count}} dive with values changed in both places",
       "conflicts_other": "{{count}} dives with values changed in both places",
+      "exists_one": "{{count}} dive that is already at a Provider",
+      "exists_other": "{{count}} dives that are already at a Provider",
       "go": "Review them"
     }
   },
@@ -795,6 +811,7 @@
     "notice": "{{name}} deleted.",
     "noticeKept": "{{name}} deleted. It is still in {{provider}}, as dive {{number}}: you can delete it there under “Deleted dives”.",
     "noticeBoth": "{{name}} deleted, here and in {{provider}}. Undo brings it back here only.",
+    "noticeItself": "It will be deleted in {{provider}} in 5 minutes. Undo cancels that.",
     "reminder_one": "A dive you deleted is still in {{name}}.",
     "reminder_other": "{{count}} dives you deleted are still in {{name}}.",
     "showList": "Show deleted dives",
@@ -1551,7 +1568,52 @@
     "nothingToFill": "Nothing to fill in: these divers already have what {{name}} says.",
     "chain": "Set the number with the dives in its way",
     "heldOnlyThere": "That dive is only in {{name}}, not in your logbook.",
-    "heldImport": "Import the dives from {{name}}"
+    "heldImport": "Import the dives from {{name}}",
+    "waitingPush": {
+      "waiting": "Waiting to send to {{name}}",
+      "deleting": "Will be deleted in {{name}} in {{minutes}} min",
+      "held": {
+        "sign_in": "Won’t be sent to {{name}} until you sign in",
+        "requirements": "Needs a site with a position before it can go to {{name}}",
+        "exists": "{{name}} already has a dive at this time: decide under Needs your decision",
+        "removes_verification": "Sending would remove the verification in {{name}}: send it yourself to confirm"
+      },
+      "stopped": {
+        "send": "Couldn’t send to {{name}}: {{reason}}",
+        "delete": "Couldn’t delete it in {{name}}: {{reason}}"
+      },
+      "retry": "Retry",
+      "fix": "See what is needed"
+    },
+    "deletesItself": "It is also in {{name}}, as dive {{number}}, and will be deleted there in 5 minutes. Undo cancels it.",
+    "automation": {
+      "title": "Automatic",
+      "titleDiver": "Automatic: {{diver}}",
+      "saved": "Saved.",
+      "sendChanges": "Send changes automatically",
+      "sendNewDives": "Send new dives automatically",
+      "deleteAtProvider": "Delete at {{name}} when I delete here",
+      "deleteHelp": "Restoring the dive later creates it at {{name}} again as a new entry, and a verification it had there is lost. Dive Hub can’t see whether a dive there is verified.",
+      "fetch": "Fetch from {{name}}",
+      "fetchEvery": "How often",
+      "everyHour": "every hour",
+      "every6Hours": "every 6 hours",
+      "onceADay": "once a day",
+      "fetchNeedsImport": "A fetch does nothing while the import below is off.",
+      "lastFetch": "Last fetched {{when}}: {{new}} new, {{updated}} updated, {{waiting}} wait for you",
+      "askImport": "Decide them in an import",
+      "queueWaiting": "{{count}} waiting to send",
+      "queueHeld": "{{count}} held",
+      "queueStopped": "{{count}} stopped",
+      "unsent_one": "{{count}} new dive wasn’t sent automatically",
+      "unsent_other": "{{count}} new dives weren’t sent automatically",
+      "unsentSend": "Send them to {{name}}",
+      "unsentByImport_one": "{{count}} new dive wasn’t sent to {{name}} by itself.",
+      "unsentByImport_other": "{{count}} new dives weren’t sent to {{name}} by themselves.",
+      "unsentOpen": "Open the {{name}} settings to send them",
+      "conflicts_one": "{{count}} conflict waits in Needs your decision",
+      "conflicts_other": "{{count}} conflicts wait in Needs your decision"
+    }
   },
   "providers": {
     "ssi": {

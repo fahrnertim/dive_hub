@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectAccessible, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, conflictAtSsi, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, readyForSsi, resetDive, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, tankPodDive
+  clearPushRuns, clearQueue, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -627,6 +627,36 @@ for (const v of variants) {
       await goodPage(page, title('My account'), v);
     });
 
+    // What the Connection does by itself (ADR 0056): the switches, the last fetch with what waits, and the offer of unsent new dives.
+    test('my account, automatic sending and fetching: the settings, the last fetch, the offer', { tag: ['@account'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      const id = await deletableDive(request);
+      const connectionId = await ssiConnectionOf(request, id);
+      await fetchState(request, connectionId, { created: 2, updated: 1, skipped: 3, unsent: [id] });
+      try {
+        await page.goto('/#/account?tab=connections');
+        await expect(page.getByRole('region', { name: v.english ? /^Automatic/ : /^Automatisch/ })).toBeVisible();
+        await expect(page.getByText(v.english ? /^Last fetched / : /^Zuletzt abgerufen /)).toBeVisible();
+        await goodPage(page, title('My account'), v);
+      } finally {
+        await fetchState(request, connectionId, { clear: true });
+      }
+    });
+
+    // Waiting under Needs your decision: a dive the Provider already has (ADR 0056).
+    test('review, a dive already at SSI', { tag: ['@dives'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      const id = await deletableDive(request);
+      try {
+        await queueEntry(request, id, { state: 'held', reason: 'exists', detail: { remoteId: '555', remoteNumber: 12, startsAt: '2026-03-05 08:00' } });
+        await page.goto('/#/review');
+        await expect(page.getByText(v.english ? /^SSI already has a dive at this time/ : /^SSI hat schon einen Tauchgang zu dieser Zeit/)).toBeVisible();
+        await goodPage(page, title('Review'), v);
+      } finally {
+        await clearQueue(request);
+      }
+    });
+
     // Importing dives from SSI (ADR 0030), with Lena's logbook: the setting, the preview with a computer and a decision
     // (the entry on 13 August always has two dives to choose from), the outcome, and a dive without a recording.
     test('my account, importing dives from SSI: the preview, then the outcome', { tag: ['@account'] }, async ({ page, request }) => {
@@ -935,6 +965,43 @@ for (const v of variants) {
         await goodPage(page, title('Review'), v);
       } finally {
         await cancelWaitingImports(request);
+      }
+    });
+
+    test('a dive stopped on its way to SSI, in the logbook and on its page, with Retry', { tag: ['@dives'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      const id = await deletableDive(request);
+      await leaveSsi(request, id);
+      try {
+        await queueEntry(request, id, { state: 'stopped', reason: 'provider_unavailable' });
+        const n = await diveNumber(request, id);
+        const text = v.english ? /^Couldn’t send to SSI: / : /^Konnte nicht an SSI gesendet werden: /;
+        await page.goto('/#/');
+        await expect(diveRows(page).getByText(text)).toBeVisible();
+        await goodPage(page, title('Logbook'), v);
+        await page.goto(`/#/dives/${id}`);
+        await expect(page.getByRole('group', { name: 'SSI' }).getByText(text)).toBeVisible();
+        await expect(page.getByRole('group', { name: 'SSI' }).getByRole('button', { name: v.english ? 'Retry' : 'Erneut versuchen' })).toBeVisible();
+        await goodPage(page, title(`Dive ${n}`), v);
+      } finally {
+        await clearQueue(request);
+      }
+    });
+
+    test('a deleted dive that SSI will delete by itself, in the deleted dives', { tag: ['@dives'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      const id = await deletableDive(request);
+      const connectionId = await ssiConnectionOf(request, id);
+      try {
+        const { version } = await (await request.get(`/api/dives/${id}`)).json() as { version: number };
+        await request.delete(`/api/dives/${id}`, { data: { version }, headers });
+        await queueEntry(request, id, { action: 'delete', state: 'waiting', connectionId });
+        await page.goto('/#/review?tab=deleted');
+        await expect(page.getByText(v.english ? /^Will be deleted in SSI in \d+ min/ : /^Wird in \d+ Min\. in SSI gelöscht/)).toBeVisible();
+        await goodPage(page, title('Review'), v);
+      } finally {
+        await clearQueue(request);
+        await deletableDive(request);
       }
     });
 

@@ -295,6 +295,13 @@
       "when": 1793042453997,
       "tag": "0041_account_list_entry",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793080304634,
+      "tag": "0042_provider_automation",
+      "breakpoints": true
     }
   ]
 }

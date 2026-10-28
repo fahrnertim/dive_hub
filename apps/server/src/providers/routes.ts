@@ -11,10 +11,13 @@ import { ImportView, toImportView } from '../routes.js';
 import { SOURCE_INFO } from '../sites/sources.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import type { BuddyService } from './buddy-service.js';
-import type { ConnectionService } from './connection-service.js';
+import { automationOffers, type ConnectionService } from './connection-service.js';
 import type { DiveImportService } from './dive-import.js';
 import type { ConflictService } from './conflicts.js';
 import type { GoneDiveService } from './gone-dives.js';
+import type { WaitingPushService } from './waiting-push-service.js';
+import { WaitingPushViewSchema } from './waiting-push-view.js';
+import type { ScheduledFetch } from './scheduled-fetch.js';
 import { SYNCED_FIELDS } from './three-way.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
 import { pushRunRoutes } from './push-run-routes.js';
@@ -36,6 +39,8 @@ export interface ProviderRouteDeps {
   sitePicks: SitePickService;
   diveImports: DiveImportService;
   goneDives: GoneDiveService;
+  waitingPushes: WaitingPushService;
+  scheduledFetch: ScheduledFetch;
   conflicts: ConflictService;
   certifications: CertificationService;
 }
@@ -111,6 +116,9 @@ const ProviderView = Type.Object({
       pauseMs: Type.Integer({ description: 'Pause between two Dives of a Push run' }),
       maxDives: Type.Integer({ description: 'The most Dives one Push run sends; start again for the rest' }),
     }, { description: 'ADR 0047; null: the Provider takes no Push runs' })),
+    fetchEveryMinutes: Nullable(Type.Integer({
+      description: 'The shortest interval of a scheduled fetch of its dives, in minutes; null: no scheduled fetch. A Connection\'s `offers.fetchEvery` is already narrowed by it',
+    })),
   }),
 });
 
@@ -134,6 +142,36 @@ const ConnectionView = Type.Object({
     }),
     windowMinutes: Type.Integer({ description: 'How far apart in local time a logbook entry and a Dive here may start, on the same day' }),
   }, { description: 'What importing this account\'s dives may do (ADR 0030); null when the Provider imports no dives' })),
+  sendChanges: Type.Boolean({ description: 'Send a changed Dive by itself, 30 seconds after its last change (ADR 0056)' }),
+  sendNewDives: Type.Boolean({ description: 'Send a new Dive of the Diver by itself' }),
+  deleteAtProvider: Type.Boolean({
+    description: 'Delete the Dive\'s copy at the Provider by itself, 5 minutes after the Dive is deleted here (Undo cancels it)',
+  }),
+  fetchEveryMinutes: Nullable(Type.Union([Type.Literal(60), Type.Literal(360), Type.Literal(1440)], {
+    description: 'Fetch the account\'s dives by itself every 60, 360 or 1440 minutes; null: not',
+  })),
+  offers: Type.Object({
+    sendChanges: Type.Boolean(), sendNewDives: Type.Boolean(), deleteAtProvider: Type.Boolean(),
+    fetchEvery: Type.Array(Type.Integer(), { description: 'The intervals to offer, in minutes; none: the Provider has no scheduled fetch' }),
+  }, { description: 'Which settings to show: only what the Provider can' }),
+  waiting: Type.Object({ waiting: Type.Integer(), held: Type.Integer(), stopped: Type.Integer() }, {
+    description: 'How many Waiting pushes of the Connection are in each state',
+  }),
+  lastFetch: Nullable(Type.Object({
+    at: DateTime,
+    created: Type.Integer({ description: 'New Dives' }),
+    updated: Type.Integer({ description: 'Dives changed or filled' }),
+    waitingForYou: Type.Integer({
+      description: 'Ambiguous entries and dives of a computer with no choice yet: they wait for the User (a manual import asks about them)',
+    }),
+    conflicts: Type.Integer({
+      description: 'Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import',
+    }),
+  }, { description: 'The last scheduled fetch that started an Import, as that Import came out; null before the first' })),
+  unsentDives: Type.Array(Type.String(), {
+    description: 'The new Dives of a large Import (more than 20) that were not sent by themselves: offer to send them (a Push run for these ids: '
+      + 'POST /api/connections/{id}/push-runs/preview with dives.ids) or Dismiss (POST /api/connections/{id}/unsent-dives/dismiss). Empty: no offer',
+  }),
 });
 
 const LeftOut = Type.Object({
@@ -196,6 +234,16 @@ const ConflictValue = Type.Union([Type.String(), Type.Number(), Type.Array(Type.
 });
 /** A User's choice for one Conflict: the Dive's value goes out (hub), or the Provider's comes in (provider). */
 const ConflictChoice = Type.Enum(['hub', 'provider']);
+/** The choice per field of a Conflict; a field that is no Conflict any more is ignored. */
+const ConflictChoices = Type.Object({
+  site: Type.Optional(ConflictChoice), notes: Type.Optional(ConflictChoice), buddies: Type.Optional(ConflictChoice),
+  cylinder: Type.Optional(ConflictChoice), lead: Type.Optional(ConflictChoice), startsAt: Type.Optional(ConflictChoice),
+  durationSeconds: Type.Optional(ConflictChoice), maxDepthM: Type.Optional(ConflictChoice), avgDepthM: Type.Optional(ConflictChoice),
+  waterTemperatureC: Type.Optional(ConflictChoice),
+}, {
+  additionalProperties: false,
+  description: "Per Conflict: hub sends the Dive's value, provider takes the Provider's. A field that is no Conflict any more is ignored",
+});
 
 /** One field changed on both sides, differently: both values as the import preview says them (ADR 0056). */
 const ConflictFieldView = Type.Object({
@@ -206,6 +254,11 @@ const ConflictFieldView = Type.Object({
 
 const StatusView = Type.Object({
   provider: Type.String(),
+  deletesItself: Type.Boolean({
+    description: 'The Dive\'s Connection deletes at the Provider by itself (5 minutes after the Dive is deleted here; Undo cancels it): '
+      + 'don\'t ask about deleting the copy there, and don\'t send `alsoAt` for it (docs/spec/clients.md)',
+  }),
+  waiting: Type.Union([Type.Null(), WaitingPushViewSchema], { description: 'The Dive\'s entry in the queue of Waiting pushes for this Provider (ADR 0056); null when none' }),
   connection: Nullable(Type.Object({ id: Type.String(), state: Type.Enum(['active', 'needs_sign_in']), accountLabel: Type.String() }, {
     description: 'The Connection of the Dive\'s Diver; null when that Diver is not connected to this Provider',
   })),
@@ -244,10 +297,10 @@ const Existing = Type.Object({
 
 export const PROVIDER_STATUS: Partial<Record<ProblemCode, number>> = {
   dive_not_found: 404, diver_not_found: 404, connection_not_found: 404,
-  invalid_input: 400, encryption_key_missing: 400, provider_wrong_credentials: 400, provider_unsupported: 400,
+  invalid_input: 400, encryption_key_missing: 400, provider_wrong_credentials: 400, provider_unsupported: 400, fetch_interval_too_short: 400,
   provider_already_connected: 409, provider_account_taken: 409, provider_other_account: 409, provider_not_connected: 409,
   provider_sign_in_needed: 409, provider_requirements_unmet: 409, provider_not_sent: 409, provider_dive_gone: 409, provider_busy: 409,
-  push_run_active: 409, push_run_nothing_to_send: 409, push_run_not_found: 404, push_run_not_active: 409, push_run_going: 409, push_run_not_stopped: 409,
+  push_run_active: 409, push_run_nothing_to_send: 409, push_run_not_found: 404, push_run_not_active: 409, push_run_going: 409, push_run_not_stopped: 409, waiting_push_not_found: 404,
   provider_number_taken: 409, provider_numbers_off: 409, provider_number_nothing_to_set: 409,
   site_not_found: 404, external_id_taken: 409, provider_site_unknown: 422, provider_buddy_not_found: 404,
   diver_external_id_taken: 409, diver_external_id_connected: 409, diver_not_editable: 403,
@@ -321,7 +374,7 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
   };
 }
 
-export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, sitePicks, diveImports, goneDives, conflicts, certifications }) => {
+export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, sitePicks, diveImports, goneDives, waitingPushes, scheduledFetch, conflicts, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
@@ -334,16 +387,32 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   const DiveProviderParams = Type.Object({ id: Type.String({ format: 'uuid' }), provider: ProviderParam });
 
   const importsDives = (provider: string) => !!providers.list().find((a) => a.id === provider)?.capabilities.data.dives?.import?.operations.includes('list');
-  const connectionView = (c: Awaited<ReturnType<ConnectionService['list']>>[number]): Static<typeof ConnectionView> => {
-    const { importMode, importWindowMinutes, followNumbers, ...rest } = c;
-    return {
-      ...rest, lastUsedAt: c.lastUsedAt?.toISOString() ?? null, createdAt: c.createdAt.toISOString(),
-      diveNumbers: hasNumbers(c.provider) ? { follow: followNumbers } : null,
-      diveImport: importsDives(c.provider) ? { mode: importMode, windowMinutes: importWindowMinutes } : null,
-    };
+  type ListedConnection = Awaited<ReturnType<ConnectionService['list']>>[number];
+  /** The Connections with what they show besides the row: offers, the queue's counts, the last fetch and the unsent Dives. */
+  const connectionViews = async (userId: string, rows: ListedConnection[]): Promise<Static<typeof ConnectionView>[]> => {
+    const shown = await waitingPushes.overview(rows);
+    // Conflicts that wait for the User, whenever they were found: apart from what a manual import asks about.
+    const clashes = new Map((await conflicts.waiting(userId)).map((c) => [c.connectionId, c.entries.filter((e) => e.kind === 'conflict').length]));
+    return rows.map((c) => {
+      const { importMode, importWindowMinutes, followNumbers, lastFetchImportId: _, ...rest } = c;
+      const { waiting, lastFetch, unsentDives } = shown.get(c.id)!;
+      const { fetchMinimum: __, ...offers } = automationOffers(providers.get(c.provider));
+      return {
+        // The column's check keeps it to the three intervals.
+        ...rest, fetchEveryMinutes: c.fetchEveryMinutes as 60 | 360 | 1440 | null, lastUsedAt: c.lastUsedAt?.toISOString() ?? null, createdAt: c.createdAt.toISOString(),
+        diveNumbers: hasNumbers(c.provider) ? { follow: followNumbers } : null,
+        diveImport: importsDives(c.provider) ? { mode: importMode, windowMinutes: importWindowMinutes } : null,
+        offers, waiting, unsentDives,
+        lastFetch: lastFetch && {
+          at: lastFetch.at.toISOString(), created: lastFetch.created, updated: lastFetch.updated,
+          waitingForYou: lastFetch.skipped, conflicts: clashes.get(c.id) ?? 0,
+        },
+      };
+    });
   };
   const hasNumbers = (provider: string) => !!providers.list().find((a) => a.id === provider)?.capabilities.data.dives?.export?.numbers;
-  const oneConnection = async (userId: string, id: string) => connectionView((await connections.list(userId)).find((c) => c.id === id)!);
+  const oneConnection = async (userId: string, id: string) =>
+    (await connectionViews(userId, (await connections.list(userId)).filter((c) => c.id === id)))[0]!;
   type Status = Awaited<ReturnType<PushService['status']>>;
   const statusView = (s: Status): Static<typeof StatusView> =>
     ({ ...s, current: s.current && { ...s.current, sentAt: s.current.sentAt.toISOString() }, pushes: s.pushes.map(pushView) });
@@ -363,7 +432,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       summary: 'The User\'s Connections to Providers (one per Diver and Provider at most)',
       response: { 200: Type.Array(ConnectionView) },
     },
-  }, async (request) => (await connections.list(request.user!.id)).map(connectionView));
+  }, async (request) => connectionViews(request.user!.id, await connections.list(request.user!.id)));
 
   app.post('/connections/:provider', {
     schema: {
@@ -518,8 +587,11 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
 
   app.patch('/connections/:id', {
     schema: {
-      summary: 'Change what importing the account\'s dives may do, the matching window, the choice per dive computer (ADR 0030), and whether dives are numbered at the Provider as in Dive Hub (ADR 0048)',
-      description: 'diveNumbers.follow turns on numbering at the Provider; it sends nothing by itself. 400 provider_unsupported at a Provider that declares no numbers. At least one of the two.',
+      summary: 'Change what importing the account\'s dives may do, the matching window, the choice per dive computer (ADR 0030), whether dives are numbered at the Provider as in Dive Hub (ADR 0048), and what the Connection does by itself (ADR 0056)',
+      description: 'diveNumbers.follow turns on numbering at the Provider; it sends nothing by itself. 400 provider_unsupported at a Provider that declares no numbers. '
+        + 'sendChanges, sendNewDives and deleteAtProvider turn on sending, sending new Dives and deleting by itself; fetchEveryMinutes (60, 360, 1440, or null for off) the scheduled fetch. '
+        + 'Turning one on queues nothing that changed before. Only what `offers` of the Connection lists: 400 provider_unsupported otherwise (turning off is always allowed), '
+        + '400 fetch_interval_too_short for an interval below the minimum of the Provider. At least one property.',
       params: IdParams,
       body: Type.Object({
         diveImport: Type.Optional(Type.Object({
@@ -528,11 +600,23 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
           computers: Type.Optional(ComputerChoices),
         }, { additionalProperties: false })),
         diveNumbers: Type.Optional(Type.Object({ follow: Type.Boolean() }, { additionalProperties: false })),
+        sendChanges: Type.Optional(Type.Boolean()),
+        sendNewDives: Type.Optional(Type.Boolean()),
+        deleteAtProvider: Type.Optional(Type.Boolean()),
+        fetchEveryMinutes: Type.Optional(Nullable(Type.Union([Type.Literal(60), Type.Literal(360), Type.Literal(1440)], {
+          description: '60, 360 or 1440; null turns the scheduled fetch off',
+        }))),
       }, { additionalProperties: false, minProperties: 1 }),
       response: { 200: ConnectionView, ...errors },
     },
   }, async (request) => {
-    const { diveImport, diveNumbers } = request.body;
+    const { diveImport, diveNumbers, ...automation } = request.body;
+    const userId = request.user!.id;
+    // Every part is checked before any is written: a refusal in one changes nothing.
+    const parts = Object.keys(automation).length > 0;
+    await connections.checkChanges(userId, request.params.id, { ...(parts && { automation }), ...(diveNumbers && { follow: diveNumbers.follow }) });
+    if (diveImport) await diveImports.checkSettings(userId, request.params.id);
+    if (parts) await connections.setAutomation(userId, request.params.id, automation);
     if (diveImport) {
       const { computers, ...set } = diveImport;
       await diveImports.settings(request.user!.id, request.params.id, {
@@ -732,17 +816,28 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       durationSeconds: Type.Number(),
       maxDepthM: Nullable(Type.Number()),
       site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
-      remoteId: Type.String(),
+      kind: Type.Enum(['conflict', 'exists'], {
+        description: 'conflict: fields changed on both sides, the User chooses per field. exists: the Provider already has a dive at the Dive\'s time and the send waits (fields is empty): '
+          + '"<Provider> already has a dive at this time" with "Link to it" and "Create a new one"',
+      }),
+      remoteId: Type.String({ description: 'conflict: the remote dive the Conflict is about. exists: the dive at the Provider' }),
       fields: Type.Array(ConflictFieldView),
+      existing: Nullable(Type.Object({
+        remoteId: Type.String(), remoteNumber: Nullable(Type.Integer()),
+        startsAt: Type.String({ description: 'Local time as the Provider keeps it, "YYYY-MM-DD HH:MM"' }),
+      }, { description: 'With kind exists: that dive at the Provider' })),
       foundAt: DateTime,
+      queued: Type.Boolean({ description: 'conflict: the User chose and the Dive waits to be sent with the choices; the entry stays listed until the send settles. A Conflict found again after the choice is not queued' }),
     })),
   });
 
   app.get('/provider-conflicts', {
     schema: {
-      summary: 'Conflicts with a Provider that wait for the choice of the User, per Connection; no call to a Provider',
-      description: 'A Conflict is a field changed on both sides, differently, found while sending a Dive. One entry per Dive and Provider, '
-        + 'with both values of each field. The User chooses per field, the Dive Hub value preselected, by sending the Dive again with `conflicts`. '
+      summary: 'What waits for the choice of the User ("Needs your decision"), per Connection; no call to a Provider',
+      description: 'A Conflict (kind conflict) is a field changed on both sides, differently, found while sending or fetching a Dive. One entry per Dive and Provider, '
+        + 'with both values of each field. The User chooses per field, the Dive Hub value preselected; the choice goes to POST /api/dives/{id}/providers/{provider}/decision '
+        + 'with `conflicts` (or sends the Dive from its page with `conflicts`). A Dive the Provider already has a dive for (kind exists) waits for "Link to it" or '
+        + '"Create a new one": the same route with `onExisting`. A choice queues the Dive, due now: an exists entry leaves the list, a conflict entry stays with queued true until the send settles. '
         + 'An entry whose Dive is deleted, or whose remote dive is no longer the current one of the Dive, is not listed.',
       response: { 200: Type.Object({ connections: Type.Array(ConflictsView) }), ...errors },
     },
@@ -813,6 +908,64 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     if (request.body.allowed && request.body.confirm !== true) return reply.code(400).send(problem('provider_site_data_not_confirmed'));
     await diveImports.allowSiteData(request.user!.id, request.params.provider, request.body.allowed);
     return { providers: (await diveImports.siteData()).map(siteDataView) };
+  });
+
+  app.post('/connections/fetch-due', {
+    schema: {
+      summary: 'The User opened Dive Hub: fetch from each of their Connections with "Fetch from <Provider>" on whose last fetch is more than an hour old (ADR 0056)',
+      description: 'Clients call it once when they start. Each fetch runs in the background as an unattended Import, never sooner than the '
+        + 'Provider\'s minimum; a Connection that needs a sign-in, has its import off, or has an import waiting or running is left out. '
+        + 'Answers how many fetches were queued.',
+      response: { 200: Type.Object({ queued: Type.Integer() }), 401: Problem },
+    },
+  }, async (request) => ({ queued: await scheduledFetch.fetchDue(request.user!.id) }));
+
+  app.post('/connections/:id/unsent-dives/dismiss', {
+    schema: {
+      summary: 'Dismiss the offer to send the new Dives of a large Import (ADR 0056)',
+      description: "The Dives stay as they are and can be sent later. The Connection's owner only (others: 404).",
+      params: IdParams, response: { 204: Type.Null(), 404: Problem },
+    },
+  }, async (request, reply) => {
+    await waitingPushes.dismissOffer(request.user!.id, request.params.id);
+    return reply.code(204).send(null);
+  });
+
+  const DecisionBody = Type.Object({
+    onExisting: Type.Optional(Type.Enum(['link', 'create'], { description: 'link: tie the Dive to the dive at the Provider. create: a second dive' })),
+    conflicts: Type.Optional(ConflictChoices),
+  }, { additionalProperties: false, minProperties: 1 });
+
+  app.post('/dives/:id/providers/:provider/retry', {
+    schema: {
+      summary: 'Retry a Waiting push that is stopped or held: it waits again, due now (ADR 0056)',
+      description: '404 dive_not_found for a Dive that is none of the User\'s Divers\' (also for one that does not exist), 404 waiting_push_not_found when '
+        + 'the Dive has no entry for the Provider (an entry that waits already answers 204 and stays as it is), 404 connection_not_found when the entry is on another User\'s Connection '
+        + '(sends go out as the Connection\'s User).',
+      params: DiveProviderParams, response: { 204: Type.Null(), 404: Problem },
+    },
+  }, async (request, reply) => {
+    await waitingPushes.retry(request.user!.id, request.params.id, request.params.provider);
+    return reply.code(204).send(null);
+  });
+
+  app.post('/dives/:id/providers/:provider/decision', {
+    schema: {
+      summary: 'The User\'s decision for a Dive at a Provider: it is queued as a send, due now, with this choice (ADR 0056)',
+      description: 'From "Needs your decision", by the entry\'s kind. `exists` (the Provider already has a dive at the Dive\'s time): `onExisting` '
+        + 'link ties the Dive to that dive and updates it, create makes a second dive there. `conflict` (a field changed on both sides): '
+        + '`conflicts` per field, hub sends the Dive\'s value over the Provider\'s, provider takes the Provider\'s value into the Dive here (a '
+        + 'Revision of the User\'s) and leaves that field as it is there; the other fields go out as usual. It sends nothing at once: the worker sends, one Dive after another, paced for the Provider '
+        + '(the Dive\'s page keeps POST /api/dives/{id}/providers/{provider}, which sends at once). At least one property; 404 dive_not_found, '
+        + '404 connection_not_found as for Retry.',
+      params: DiveProviderParams, body: DecisionBody, response: { 204: Type.Null(), 400: Problem, 404: Problem },
+    },
+  }, async (request, reply) => {
+    const { onExisting, conflicts: choices } = request.body;
+    await waitingPushes.decide(request.user!.id, request.params.id, request.params.provider, {
+      ...(onExisting && { onExisting }), ...(choices && { conflicts: choices }),
+    });
+    return reply.code(204).send(null);
   });
 
   app.delete('/connections/:id', {
@@ -892,15 +1045,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       params: DiveProviderParams,
       body: Type.Object({
         onExisting: Type.Optional(Type.Enum(['link', 'create'])),
-        conflicts: Type.Optional(Type.Object({
-          site: Type.Optional(ConflictChoice), notes: Type.Optional(ConflictChoice), buddies: Type.Optional(ConflictChoice),
-          cylinder: Type.Optional(ConflictChoice), lead: Type.Optional(ConflictChoice), startsAt: Type.Optional(ConflictChoice),
-          durationSeconds: Type.Optional(ConflictChoice), maxDepthM: Type.Optional(ConflictChoice), avgDepthM: Type.Optional(ConflictChoice),
-          waterTemperatureC: Type.Optional(ConflictChoice),
-        }, {
-          additionalProperties: false,
-          description: 'Per Conflict: hub sends the Dive\'s value, provider takes the Provider\'s. A field that is no Conflict any more is ignored',
-        })),
+        conflicts: Type.Optional(ConflictChoices),
       }, { additionalProperties: false }),
       response: {
         200: Type.Object({

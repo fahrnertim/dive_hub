@@ -163,7 +163,7 @@ automatic exchange without clash handling would overwrite edits made in SSI's ap
    how to see that from one account is for the builder to find].
 5. **Buddies** (revised in "Piece 5, settled" below; checked 2026-10-27, [note](../../research/2026-10-27-ssi-buddy-checks.md); done: [plan](../plans/2026-10-27-ssi-buddies.md)). **Checks:** an added entry appears in the app's
    buddy list and on the dive; a name-only entry is kept (both [T]).
-6. **Automation** (above), for every Provider.
+6. **Automation** (above; revised in "Piece 6, settled" below; done: [plan](../plans/2026-10-27-provider-automation.md)), for every Provider.
 7. **Fewer reads** (above).
 
 **Later:** gear and gear sets, after equipment.
@@ -371,6 +371,154 @@ spelling of the name, e-mail, photo); SSI never merges two entries with one acco
   the User's action, never from a send; `OutgoingParticipant` keeps carrying accounts only (ADR 0029).
 - **Privacy flaws at SSI** (owner): recorded in the research note; a report to SSI is parked.
 
+## Piece 6, settled 2026-10-27
+
+From a fifth session with the owner, before piece 6's plan. It fills what the "Exchange" section leaves open and
+**changes** three things there: the quiet period (30 seconds for a send, 5 minutes for a delete, not 2 minutes), the
+queue's place (a table), and a resolved Conflict (queued, not sent at once). Recorded in
+[ADR 0056](../../decisions/0056-two-way-exchange-and-automation.md) (amended 2026-10-27). Generic throughout: nothing
+here names SSI except its declared interval.
+
+### The Waiting push (the queue)
+
+- **Visible, so a table** (owner wants to see it; the table is my call): one **Waiting push** per Dive and Provider (as
+  Conflicts and leases are keyed: several Users managing one Diver have Connections to the same account, and two entries
+  would send twice), carrying the Connection whose setting or User queued it. Fields (names the builder's): action (`send`
+  or `delete`), due at, state, reason, attempts, first failure at. Dive and Connection foreign keys `on delete cascade`.
+  Not Graphile Worker jobs alone: the icons, the pause, "stopped" and waking up need the state readable and changeable,
+  and the worker's jobs live in its private schema.
+- **Which Connection decides** (my call, from the builder check): a Diver can have several Connections to one Provider
+  (one per managing User), and one may even point at another account. For an update or a delete, the **Dive's
+  Connection** decides: the one its current Push at the Provider was made through (`push.connection_id`); its settings
+  apply whoever changed the Dive, and the entry is sent as its User. A Dive whose current Push has no Connection (it was
+  removed) or whose Connection's account is no longer the one the remote dive was sent to is never sent by itself; a
+  manual send links it again. For a new Dive, the Diver's oldest Connection to the Provider with "Send new dives" on.
+- **States** (my call):
+  - `waiting`: goes out when due.
+  - `held`: can't go out until something here changes; the reason says what. Reasons: a blocking requirement unmet (no
+    site, a site without a position), the Connection needs a sign-in, a dive at the same time already at the Provider
+    (waits in "Needs your decision", below), an update that would remove a verification (`updateRemovesVerification`).
+    It goes out after the save, sign-in or decision that clears it.
+  - `stopped`: failed and no longer tried by itself; the reason is the problem code. Retry makes it `waiting`, due now.
+  - Sending holds the Dive's lease (`leases.ts`) as every send does; a state for it is not needed.
+- **What queues it**:
+  - **Send on change** on: a change to a Dive the Connection has a live remote dive for. Queued on the Dive's change
+    (every change to a Dive writes a Revision; my call: queue where Dive Revisions are written, plus the paths that change
+    what is sent without one, such as a site merge, piece 4, and a change to the Dive's site; the builder lists them and
+    tests each kind). Queuing too often is harmless: nothing goes out when the fingerprint equals the last Push's
+    (`changedSinceSent`). A Dive from an import of the same Provider is not sent back.
+  - **Send new dives** on: a Dive of the Connection's Diver that has no remote dive at the Provider, as soon as it exists
+    here, imported or typed in (owner). Everything later is an update (owner). An Import that creates **more than 20 Dives**
+    queues none of them; its result offers a Push run for them instead (my call, so a first import of a whole history
+    doesn't send hundreds of creates unseen). Counted per Import and receiving Connection: every kind of Import that
+    creates Dives (a file upload, a manual or scheduled import from another Provider). The offer stands on that
+    Connection ("21 new dives weren't sent automatically", opening the Push run's preview for them) until a run is started
+    or the User dismisses it, so a scheduled one isn't missed; a manual Import's result links to it too. The `imports`
+    module tells the generic layer which Dives an Import created; it doesn't know the queue (ADR 0053; the seam is the
+    builder's). A restored Dive whose remote dive was deleted counts as new (the setting's text says so, below).
+  - **Delete at the Provider** on: deleting a Dive that has a live remote dive replaces its Waiting push with a `delete`,
+    due **5 minutes** later (owner). The Dive is deleted here first (this changes ADR 0026's order, SSI first, for this
+    setting only). Restoring it (Undo, or from the list of deleted dives) in that time removes the entry. Off: the delete
+    dialog asks as [ADR 0026](../../decisions/0026-deleting-dives.md) says; for a Dive at two Providers it asks only for
+    those whose setting is off (my call).
+  - **Merging two Dives** (owner): where both are at the Provider, the setting applies to the merged-away Dive's copy
+    as to a delete (no question, deleted there after 5 minutes, a restore in that time cancels it), so the Provider
+    doesn't keep both. Where only one is there, its link moves to the kept Dive as today ([ADR 0038](../../decisions/0038-logbook-checks-and-merging-dives.md)).
+  - **Where a delete's state shows** (my call): the Dive has left the logbook, so on the list of deleted dives, in the
+    place of ADR 0026's reminder: "Will be deleted in SSI in 4 minutes" while it waits, "Couldn't delete it in SSI:
+    <reason>" with Retry when stopped (the existing "Delete in SSI" stays), and in the Connection's count. The logbook's
+    Undo notice says the delete in SSI waits until then.
+  - **The User**, whatever the settings: resolving a Conflict with "keep Dive Hub's", choosing "Link to it" or "Create a
+    new one" for a dive already at the Provider, and Retry each queue the Dive due now (owner: as SSI's app sends every
+    save through its queue, and as ADR 0056 already said "keep queues a send").
+- **Coalescing** (owner): one entry per Dive; a further change moves its due time to 30 seconds after that change (it
+  goes out once the Dive has been quiet for 30 seconds; Dive Hub saves only on Save, so this covers a quick second save).
+  A change during a send queues the Dive once more. The manual Send on the Dive's page sends at once and removes the
+  entry (owner: never a reason to wait).
+- **The worker** (my call): one Graphile Worker job per Connection with a job key (`waiting-pushes:<connection>`),
+  run at the earliest due time. It sends one entry through the ordinary `pushes.send` or `pushes.remove` as the
+  Connection's User (nothing goes out another way than from the Dive's page, as a Push run does), then queues itself
+  again after the Provider's `pauseMs`. While a Push run of the Connection is queued or running, the job waits for it to
+  end. A Dive a run already sent is then up to date and goes out as nothing.
+- **Unattended rules** (owner and my calls):
+  - Never a duplicate: where a manual send would answer `exists` (the Provider has a dive at the same time), the entry
+    is `held` and "Needs your decision" gets a new kind of entry, "<Provider> already has a dive at this time", with
+    "Link to it" and "Create a new one" (owner).
+  - An update that would remove a verification is never sent by itself: `held`, and the Dive's page says so. Send there
+    confirms it, as today.
+  - Conflicts: the Dive goes out without the clashed fields and the Conflict waits in "Needs your decision" (ADR 0056;
+    the entry's run is empty).
+- **Failures and retries** (my proposal, owner agreed):
+  - Signed out with the password kept: the Connection signs in again and the send is retried (exists today).
+  - `provider_sign_in_needed` (a token only): the Connection's entries are `held`, its job isn't queued again; signing
+    in queues it.
+  - `provider_unavailable` (down, maintenance, network) and `internal_error`: tried again after 5 minutes, 30 minutes, 2
+    hours, then every 6 hours, until 24 hours after the first failure; then `stopped`.
+  - `internal_error` (Dive Hub's own fault) gets the same retries but, once stopped, wakes only by Retry: SSI answering
+    doesn't fix a bug here (my call). The stopped reason keeps the problem code, so waking can tell them apart.
+  - **Waking up** (owner): an entry stopped as unavailable becomes `waiting`, due now, at the next successful call of any
+    Connection to the same Provider (a send, a fetch, a sign-in): SSI answering anyone means it is back.
+  - `provider_refused`, `provider_not_stored`, `provider_dive_gone` and the rest: `stopped` at once (it would fail the
+    same way again); only Retry wakes it. A gone dive is ADR 0051's finding as today.
+- **What the User sees** (owner):
+  - The logbook: a small icon on a Dive that waits ("waiting to send to <Provider>"), and an error icon with a Retry on a
+    stopped one. A held one shows a warning icon with the reason as its label. Icons are `aria-hidden` with a text label
+    (design system).
+  - The Dive's page: the same state in words ("Waiting to send to SSI", "Won't be sent to SSI until you sign in",
+    "Couldn't send to SSI: <reason>", with Retry; "Needs a site with a position before it can go to SSI", linking to the
+    fix), next to the existing Send.
+  - When the Connection already needs a sign-in, saving a Dive says at once on its page that it won't be sent until the
+    User signs in (owner: as soon as possible, before they leave). No toasts: the app has none and errors don't time out.
+  - The Connection: its settings, how many wait and how many stopped.
+  - A browser notification when the tab is closed (Web Push) is **not** in this piece (owner): a channel for every kind
+    of notice, its own decision; [backlog 0008](../../backlog/0008-web-push-notices.md).
+
+### The settings (per Connection, all off by default)
+
+- **Send changes automatically** (send on change), **Send new dives automatically**, **Delete at <Provider> when I delete
+  here** (the text: restoring the Dive later creates it at <Provider> again as a new entry, and a verification it had
+  there is lost; Dive Hub can't see whether a dive there is verified), and **Fetch from <Provider>** with "every hour",
+  "every 6 hours" or "once a day", 6 hours preselected when turned on (owner).
+- **Offered only where the Provider can** (my call): the send settings need dive export by API (not a `handed_over`
+  delivery), the delete setting an export that deletes, the fetch a dive import and a declared interval.
+- **The interval in `Capabilities`** (my call): `limits.fetchEveryMinutes: number | null`, the shortest schedule interval
+  the Provider allows, null for no scheduled fetch. SSI declares 60 (its app's logbook rate, [R]). A choice below it is
+  neither offered nor accepted.
+
+### Fetch on schedule
+
+- **The same Import as a manual one** (design): needs the Connection's import mode "link and fill" or "also create"; a
+  dive only at the Provider becomes a Dive as a manual import makes it; site creation follows the admin's permission as
+  today; gone dives are found as by a manual read (ADR 0051).
+- **When** (owner): at the chosen interval, and when the User opens Dive Hub, for each of their Connections with the
+  schedule on whose last fetch is more than an hour old (and not younger than the Provider's minimum). The web client
+  asks for that once when it starts (a new duty in the [client contract](../../spec/clients.md)). The schedule (my call):
+  a crontab task every minute (it also wakes held and stopped Waiting pushes) queues one job per due Connection (job key `fetch:<connection>`), skipping Connections
+  that need a sign-in or have an import waiting or running.
+- **What it can't decide** is skipped and counted (design; one more case is my call): several candidates and a probable
+  non-dive (`ambiguous`, as today), and dives from a dive computer with no choice yet on the Connection (choosing
+  Recordings or entries for the User could go wrong in a way that is hard to undo). The Connection shows how many wait,
+  linking to a manual import that asks.
+- **A Conflict** found by the fetch: the Dive Hub value stays and the Conflict waits in "Needs your decision" as one from a
+  send (one entry per Dive and Provider; the fields merged into an open entry). "Keep Dive Hub's" queues a send, "take
+  <Provider>'s" writes a Revision; resolving moves the base (ADR 0056).
+- **An open entry holds its fields in every import** (my call, from the builder check; ADR 0056's "while it is open the
+  base stays"): the import's three-way (`dive-import.ts`) reads the open fields as the send does (`openFields`) and leaves
+  them alone, so a newer Original doesn't turn a clash into "changed only here" and send it. A manual import's preview
+  shows such a field as a Conflict; the User's choice there closes it in the entry (asked once, not twice).
+- **What the User sees**: on the Connection, when it last fetched and what came in ("Today 14:02: 2 new, 1 updated, 3
+  wait for you").
+- **Signed out**: as the queue; a token-only Connection's schedule pauses and the Connection shows `provider_sign_in_needed`.
+- **Reads** (anti-goal): a scheduled fetch never reads more often than the Provider's minimum, and the fetch on opening
+  only after an hour. A successful fetch wakes the Provider's stopped entries (above).
+
+### Left to the builder
+
+- Names of the table, columns, routes and jobs; which existing write paths call the queue (each kind tested).
+- How the Dive list and the Dive's page get the state (a field per Provider in the existing answers, or a route), within
+  ADR 0053, and the client contract for it.
+- The migration (the table, the Connection's settings and its last fetch's summary).
+
 ## For the equipment work (owner, recorded here so it isn't lost)
 
 Equipment items ([ADR 0034](../../decisions/0034-equipment-items-and-service-schedules.md), not built yet) need **item groups**: a base
@@ -399,8 +547,8 @@ From the app's code [R]. For the owner to pick from later.
 ## Left to the builder
 
 - Names, files and signatures, within ADR 0053.
-- The quiet period's exact length and where the queue lives (a table, or Graphile Worker jobs with a key).
-- How a Provider declares per-field directions and its schedule interval in `Capabilities`.
+- ~~The quiet period's exact length and where the queue lives~~: settled in "Piece 6, settled" (30 s and 5 min; a table).
+- How a Provider declares per-field directions in `Capabilities` (its schedule interval: "Piece 6, settled").
 - Which pieces need a migration; the client contract ([docs/spec/clients.md](../../spec/clients.md)) for new settings
   and notices.
 

@@ -8,6 +8,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading, refocusAfterRemoval } from './lib/focus.ts';
 import { reviewHref } from './lib/review.ts';
 import { exporting, useNames, useProviders, useProviderText } from './lib/providers.ts';
+import { WaitingPushState } from './WaitingPush.tsx';
 import { Button, ConfirmButton, LinkButton, Muted, Notice, Panel } from './ui/index.ts';
 
 /** "Dive 9", or the Dive's time when it has no number. */
@@ -77,6 +78,7 @@ function JustDeletedNotice({ just, dive: d }: { just: JustDeleted; dive: Deleted
   return (
     <Notice tone="success">
       <p>{t(notice.key, { name: just.name, provider: names(notice.copies.map((c) => c.name)), number: notice.copies[0]?.remoteNumber ?? '' })}</p>
+      {just.byThemselves.length > 0 && <p>{t('deleted.noticeItself', { provider: names(just.byThemselves) })}</p>}
       {restore.error && <p>{errorText(restore.error)}</p>}
       <div className="form-actions">
         <Button icon="undo" isPending={restore.isPending} onPress={() => restore.mutate()}>{t('common.undo')}</Button>
@@ -144,6 +146,7 @@ function DeletedRow({ dive: d, list, index, count }: {
         {/* Not deleted by hand (ADR 0038): where it went, so the row explains itself. */}
         {d.mergedInto && <p>{t('deleted.mergedInto')} <a href={`#/dives/${d.mergedInto}`}>{t('deleted.openKept')}</a></p>}
         {d.movedTo && <p>{t('deleted.movedTo')} <a href={`#/dives/${d.movedTo}`}>{t('deleted.openMoved')}</a></p>}
+        {d.waiting.map((w) => <WaitingPushState key={w.provider} push={w} providerName={providerOf(w.provider).name} variant="panel" diveId={d.id} itemName={name} />)}
         {d.stillAt.map((c) => <p key={c.provider}>{t('deleted.stillAt', { name: providerOf(c.provider).name, number: c.remoteNumber ?? '' })}</p>)}
       </div>
       <div className="form-actions">

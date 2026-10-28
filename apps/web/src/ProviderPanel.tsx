@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  api, ApiError, keys, providerSitesQuery, providerStatusQuery, unwrap,
+  api, ApiError, diveListPages, keys, providerSitesQuery, providerStatusQuery, unwrap,
   type ConflictChoices, type ConflictFieldView, type DiveView, type ProviderStatusView, type ProviderView, type PushView, type RequirementView,
   type UnmetView,
 } from './api.ts';
@@ -14,6 +14,7 @@ import { exporting, typedSiteId, useFieldNames, useNames, useProviders, useProvi
 import { accountHref } from './lib/account-tabs.ts';
 import { NumberChainDialog } from './NumberChain.tsx';
 import { ProviderConflicts } from './ProviderConflicts.tsx';
+import { WaitingPushState } from './WaitingPush.tsx';
 import { Badge, Button, ConfirmButton, Dialog, Disclosure, Muted, Notice, SearchList, type SearchListItem } from './ui/index.ts';
 
 type Existing = { remoteId: string; number: number | null; startsAt: string | null; maxDepthM: number | null; durationMinutes: number | null };
@@ -79,11 +80,20 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
   const [listChange, setListChange] = useState<ListChange | null>(null);
   const [finding, setFinding] = useState<{ id: string; name: string } | null>(null);
   const can = (op: (typeof exports.operations)[number]) => exports.operations.includes(op);
+  // `next` is a done send, number or remove: the logbook's row shows the Dive's state at the Provider, so it asks again.
   const refresh = async (next?: ProviderStatusView) => {
     if (next) queryClient.setQueryData(keys.providerStatus(d.id, p.id), next);
     else await queryClient.invalidateQueries({ queryKey: keys.providerStatus(d.id, p.id) });
     await queryClient.invalidateQueries({ queryKey: keys.connections });
+    if (next) await queryClient.invalidateQueries(diveListPages);
   };
+  // The worker settled a Waiting push while the page was open (a Retry, a decision, its due time): the row follows.
+  const waitingState = status.data?.waiting?.state ?? null;
+  const wasWaiting = useRef(waitingState);
+  useEffect(() => {
+    if (wasWaiting.current !== null && wasWaiting.current !== waitingState) void queryClient.invalidateQueries(diveListPages);
+    wasWaiting.current = waitingState;
+  }, [waitingState, queryClient]);
   const send = useMutation({
     mutationFn: (request: SendRequest) => sendDive(d.id, p.id, request),
     onSuccess: async (sent) => {
@@ -154,6 +164,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       {signInNeeded && (
         <Notice tone="danger">{pt('signInNeeded')} <a href={accountHref('connections')}>{pt('goSignIn')}</a></Notice>
       )}
+      {s.waiting && <WaitingPushState push={s.waiting} providerName={p.name} variant="panel" diveId={d.id} />}
       <Requirements provider={p} dive={d} status={s} onFind={setFinding} />
       {listChange && <ListChangeNotice key={JSON.stringify(listChange)} provider={p} change={listChange} onClose={() => setListChange(null)} />}
 

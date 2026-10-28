@@ -459,6 +459,28 @@ One User's request to send many Dives of one Diver to one Provider in one go. It
 _Avoid_: Batch, bulk upload, sync, job
 _German_: Sammelübertragung (on screen: "Tauchgänge an SSI senden")
 
+**Waiting push**:
+A Dive that Dive Hub will send to (or delete at) a Provider by itself, because a Connection's setting or the User's
+choice asked for it: one per Dive and Provider, however often the Dive changes. It goes out after its quiet period; it
+is *held* while something here must change first (a site, a sign-in, a decision) and *stopped* after a failure, until
+Retry or, when the Provider was unreachable, until the Provider answers again. It becomes an ordinary Push when sent
+([ADR 0056](decisions/0056-two-way-exchange-and-automation.md)).
+_Avoid_: Pending upload, outbox, sync job, queue entry
+_German_: Wartende Übertragung (on screen: "Wartet auf Senden an SSI")
+
+**Quiet period**:
+How long a Waiting push waits after the Dive's last change before it goes out (30 seconds), or after its deletion before
+it is deleted at the Provider (5 minutes, the time to Undo). A further change starts it again.
+_Avoid_: Debounce, delay, grace period
+_German_: Wartezeit
+
+**Scheduled fetch**:
+An Import from a Provider that a Connection starts by itself, at the interval the User chose (never more often than the
+Provider allows) and when the User opens Dive Hub after an hour. It does what a manual import does; what only the User
+can decide waits for a manual one ([ADR 0056](decisions/0056-two-way-exchange-and-automation.md)).
+_Avoid_: Sync, polling, auto-import
+_German_: Abruf nach Zeitplan
+
 **Shared number** (in a Push run):
 The one moment a swap or cycle of dive numbers at a Provider needs: a dive takes the number the next dive still holds, for the length of one save, and that dive moves on with the next. At most one pair shares a number, and none does when the run ends; Dive Hub never ends an action with a duplicate ([ADR 0052](decisions/0052-freeing-dive-numbers.md)). There is no scratch number.
 _Avoid_: Parked number, temporary number, duplicate number

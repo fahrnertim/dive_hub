@@ -103,7 +103,8 @@ describe('codes from the API', () => {
     ['circuit', 'vocabulary.circuit'],
     ['cause', 'history.cause'],
     ['overrides', 'history.field'],
-    ['action', 'provider.action'],
+    // ... and what a Waiting push is, or why it stopped, by what it does (ADR 0056).
+    ['action', 'provider.action', 'provider.waitingPush.stopped'],
     // What a Push did at a Provider, and how an AI access's request ended (ADR 0035).
     ['outcome', 'provider.result', 'aiAccess.outcome'],
     ['notices', 'provider.notice'],

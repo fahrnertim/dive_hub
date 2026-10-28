@@ -56,7 +56,7 @@ export const SSI_CAPABILITIES: Capabilities = {
     certifications: { import: { operations: ['find'] } },
   },
   notices: ['shows_unconfirmed', 'presents_as_app'],
-  limits: { pauseMs: 2000, run: { pauseMs: 5000, maxDives: 100 } },
+  limits: { pauseMs: 2000, run: { pauseMs: 5000, maxDives: 100 }, fetchEveryMinutes: 60 },
 };
 
 /** Minutes since 1970 of SSI's "YYYY-MM-DD HH:MM" (local time, compared with local time). */

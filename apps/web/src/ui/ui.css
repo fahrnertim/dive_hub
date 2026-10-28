@@ -145,6 +145,16 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
 .checkbox[data-focus-visible] .checkbox-box, .radio[data-focus-visible] .radio-dot { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .checkbox[data-hovered] .checkbox-box, .radio[data-hovered]:not([data-selected]) .radio-dot { border-color: var(--color-text-muted); }
 .checkbox[data-disabled], .radio[data-disabled] { opacity: 0.55; cursor: not-allowed; }
+/* A switch: the track is a 3:1 boundary like the other controls; the thumb moves, nothing else animates (reduced motion: none). */
+.switch { display: inline-flex; align-items: flex-start; gap: var(--space-2); cursor: pointer; min-height: 2.5rem; padding-block: calc((2.5rem - 1lh) / 2); }
+.switch-track { flex: none; width: 2.25rem; height: 1.25rem; margin-top: calc((1lh - 1.25rem) / 2); border: 1px solid var(--color-border-strong); border-radius: 999px;
+  background: var(--color-surface); display: flex; align-items: center; padding: 2px; }
+.switch-thumb { width: 0.875rem; height: 0.875rem; border-radius: 50%; background: var(--color-border-strong); transition: translate var(--duration-fast) var(--ease-out); }
+.switch[data-selected] .switch-track { background: var(--color-accent); border-color: var(--color-accent); }
+.switch[data-selected] .switch-thumb { background: var(--color-on-accent); translate: 1rem 0; }
+.switch[data-focus-visible] .switch-track { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.switch[data-hovered]:not([data-selected]) .switch-track { border-color: var(--color-text-muted); }
+.switch[data-disabled] { opacity: 0.55; cursor: not-allowed; }
 .radio-group { display: grid; gap: 0; }
 .radio-group .field-label { margin-bottom: var(--space-1); }
 

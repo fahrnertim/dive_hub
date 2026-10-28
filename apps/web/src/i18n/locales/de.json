@@ -217,7 +217,8 @@
       "sent_by_dive_hub": "von Dive Hub gesendet",
       "no_match": "kein Tauchgang hier zu dieser Zeit",
       "ambiguous": "mehrere Tauchgänge hier zu dieser Zeit, oder nur einer, der wahrscheinlich kein Tauchgang ist; wähle in der Vorschau aus",
-      "left_out": "von dir ausgelassen"
+      "left_out": "von dir ausgelassen",
+      "no_computer_choice": "von einem Tauchcomputer, für den du noch nichts gewählt hast; wähle es bei einem Import von Hand"
     },
     "errorCode": {
       "unsupported_file": "Das ist weder eine Tauchgangsdatei (FIT, Suunto-JSON) noch ein ZIP-Archiv.",
@@ -496,6 +497,8 @@
     "push_run_going": "Dieser Versand läuft noch; ausblenden kann man ihn, wenn er beendet ist.",
     "push_run_not_stopped": "Nur ein angehaltener Versand kann fortgesetzt werden.",
     "provider_unsupported": "{{name}} bietet das nicht an.",
+    "fetch_interval_too_short": "Von {{name}} kann nicht so oft abgerufen werden. Wähle ein längeres Intervall.",
+    "waiting_push_not_found": "Dieser Tauchgang wartet nicht mehr darauf, an den Dienst zu gehen; es gibt nichts zu wiederholen.",
     "provider_import_off": "Der Import von Tauchgängen aus {{name}} ist aus. Wähle zuerst, was der Import darf.",
     "provider_site_data_not_confirmed": "Bestätige zuerst die Erklärung zur fehlenden Lizenz von {{name}}.",
     "provider_site_unknown": "{{name}} kennt keinen Platz mit dieser ID.",
@@ -760,8 +763,19 @@
     "title": "An beiden Stellen geändert ({{count}})",
     "titleConnection": "An beiden Stellen geändert in {{name}}: {{diver}} ({{count}})",
     "intro": "Eine Sendung hat diese Tauchgänge ohne diese Werte an {{name}} geschickt: Sie wurden seit dem letzten Austausch hier und in {{name}} geändert. Wähle, welcher bleibt; der Tauchgang wird dann mit deiner Wahl erneut gesendet.",
-    "sent": "{{dive}} wurde mit deiner Wahl an {{name}} gesendet.",
-    "again": "{{dive}} wurde erneut an beiden Stellen geändert. Wähle noch einmal."
+    "queued": {
+      "conflicts": "{{dive}} wird mit deiner Wahl an {{name}} gesendet.",
+      "exists-link": "{{dive}} wird mit dem Tauchgang in {{name}} verknüpft.",
+      "exists-create": "{{dive}} wird in {{name}} als neuer Tauchgang angelegt."
+    },
+    "existsTitle": "Schon in {{name}} ({{count}})",
+    "existsTitleConnection": "Schon in {{name}}: {{diver}} ({{count}})",
+    "existsIntro": "Das Senden dieser Tauchgänge an {{name}} wartet auf dich: Dort gibt es zur gleichen Zeit einen Tauchgang, und Dive Hub legt nicht von selbst einen zweiten an.",
+    "exists": "{{name}} hat schon einen Tauchgang zu dieser Zeit",
+    "existsDive": "Es ist Tauchgang {{number}} in {{name}}, {{time}}.",
+    "existsDiveNoNumber": "Es ist der Tauchgang in {{name}} am {{time}}.",
+    "link": "Damit verknüpfen",
+    "create": "Neuen anlegen"
   },
   "review": {
     "title": "Durchsicht",
@@ -788,6 +802,8 @@
       "gone_other": "{{count}} Tauchgänge nicht mehr in {{name}}",
       "conflicts_one": "{{count}} Tauchgang mit an beiden Stellen geänderten Werten",
       "conflicts_other": "{{count}} Tauchgänge mit an beiden Stellen geänderten Werten",
+      "exists_one": "{{count}} Tauchgang, den es schon bei einem Anbieter gibt",
+      "exists_other": "{{count}} Tauchgänge, die es schon bei einem Anbieter gibt",
       "go": "Durchsehen"
     }
   },
@@ -795,6 +811,7 @@
     "notice": "{{name}} gelöscht.",
     "noticeKept": "{{name}} gelöscht. Er ist noch in {{provider}}, als Tauchgang {{number}}: Unter „Gelöschte Tauchgänge“ kannst du ihn dort löschen.",
     "noticeBoth": "{{name}} gelöscht, hier und in {{provider}}. Rückgängig holt ihn nur hier zurück.",
+    "noticeItself": "In {{provider}} wird er in 5 Minuten gelöscht. „Rückgängig“ bricht das ab.",
     "reminder_one": "Ein Tauchgang, den du gelöscht hast, ist noch in {{name}}.",
     "reminder_other": "{{count}} Tauchgänge, die du gelöscht hast, sind noch in {{name}}.",
     "showList": "Gelöschte Tauchgänge zeigen",
@@ -1551,7 +1568,52 @@
     "nothingToFill": "Nichts zu ergänzen: Diese Taucher haben schon, was bei {{name}} steht.",
     "chain": "Nummer mit den Tauchgängen im Weg setzen",
     "heldOnlyThere": "Dieser Tauchgang ist nur in {{name}}, nicht in deinem Logbuch.",
-    "heldImport": "Tauchgänge aus {{name}} importieren"
+    "heldImport": "Tauchgänge aus {{name}} importieren",
+    "waitingPush": {
+      "waiting": "Wartet darauf, an {{name}} gesendet zu werden",
+      "deleting": "Wird in {{minutes}} Min. in {{name}} gelöscht",
+      "held": {
+        "sign_in": "Wird nicht an {{name}} gesendet, bis du dich anmeldest",
+        "requirements": "Braucht einen Ort mit Position, bevor er an {{name}} gehen kann",
+        "exists": "{{name}} hat schon einen Tauchgang zu dieser Zeit: Entscheide unter „Braucht deine Entscheidung“",
+        "removes_verification": "Senden würde die Verifizierung in {{name}} entfernen: Sende ihn selbst, um das zu bestätigen"
+      },
+      "stopped": {
+        "send": "Konnte nicht an {{name}} gesendet werden: {{reason}}",
+        "delete": "Konnte in {{name}} nicht gelöscht werden: {{reason}}"
+      },
+      "retry": "Erneut versuchen",
+      "fix": "Ansehen, was fehlt"
+    },
+    "deletesItself": "Er ist auch in {{name}}, als Tauchgang {{number}}, und wird dort in 5 Minuten gelöscht. „Rückgängig“ bricht das ab.",
+    "automation": {
+      "title": "Automatisch",
+      "titleDiver": "Automatisch: {{diver}}",
+      "saved": "Gespeichert.",
+      "sendChanges": "Änderungen automatisch senden",
+      "sendNewDives": "Neue Tauchgänge automatisch senden",
+      "deleteAtProvider": "In {{name}} löschen, wenn ich hier lösche",
+      "deleteHelp": "Wenn du den Tauchgang später wiederherstellst, wird er in {{name}} als neuer Eintrag noch einmal angelegt, und eine Verifizierung, die er dort hatte, geht verloren. Dive Hub kann nicht sehen, ob ein Tauchgang dort verifiziert ist.",
+      "fetch": "Aus {{name}} abrufen",
+      "fetchEvery": "Wie oft",
+      "everyHour": "jede Stunde",
+      "every6Hours": "alle 6 Stunden",
+      "onceADay": "einmal am Tag",
+      "fetchNeedsImport": "Ein Abruf tut nichts, solange der Import darunter aus ist.",
+      "lastFetch": "Zuletzt abgerufen {{when}}: {{new}} neu, {{updated}} aktualisiert, {{waiting}} warten auf dich",
+      "askImport": "In einem Import entscheiden",
+      "queueWaiting": "{{count}} warten aufs Senden",
+      "queueHeld": "{{count}} angehalten",
+      "queueStopped": "{{count}} gestoppt",
+      "unsent_one": "{{count}} neuer Tauchgang wurde nicht automatisch gesendet",
+      "unsent_other": "{{count}} neue Tauchgänge wurden nicht automatisch gesendet",
+      "unsentSend": "An {{name}} senden",
+      "unsentByImport_one": "{{count}} neuer Tauchgang wurde nicht von selbst an {{name}} gesendet.",
+      "unsentByImport_other": "{{count}} neue Tauchgänge wurden nicht von selbst an {{name}} gesendet.",
+      "unsentOpen": "Zum Senden die Einstellungen für {{name}} öffnen",
+      "conflicts_one": "{{count}} Konflikt wartet unter „Braucht deine Entscheidung“",
+      "conflicts_other": "{{count}} Konflikte warten unter „Braucht deine Entscheidung“"
+    }
   },
   "providers": {
     "ssi": {

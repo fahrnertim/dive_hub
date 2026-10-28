@@ -38,6 +38,8 @@ const providers = createProviderLayer({
     client: ssiClient,
     onCall: (call) => app.log.info({ ssi: call }, 'SSI call'),
   })],
+  // The worker's own faults, with the entry they hit, for the operator.
+  log: { error: (detail, message) => app.log.error(detail, message) },
 });
 const auth = createAuth({
   db, baseUrl: config.baseUrl, secret: await loadAuthSecret(config.authSecret, config.dataDir),
@@ -67,7 +69,7 @@ if (setupToken) {
   // Deliberately logged: whoever can read the server log may create the first admin (ADR 0012).
   app.log.warn(`No admin yet. Open ${config.baseUrl}/#/setup and enter this setup token (valid 24 h, until the first admin exists): ${setupToken}`);
 }
-const worker = config.inProcessWorker ? await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, providers.certifications, app.log) : undefined;
+const worker = config.inProcessWorker ? await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, providers.waitingPushes, providers.scheduledFetch, providers.certifications, app.log) : undefined;
 await app.listen({ host: config.host, port: config.port });
 
 const shutdown = async () => {

@@ -74,6 +74,7 @@ test('a note changed only in SSI comes back on update and the page says so', { t
 });
 
 test('a run\'s conflict waits under Needs your decision; Take SSI\'s sends and the entry is gone; the strip counts it', { tag: ['@dives'] }, async ({ page, request }) => {
+  test.setTimeout(240_000);
   const id = await conflictAtSsi(request);
   const n = await diveNumber(request, id);
   try {
@@ -106,10 +107,19 @@ test('a run\'s conflict waits under Needs your decision; Take SSI\'s sends and t
     await notes.getByText('Take SSI’s', { exact: true }).click();
     await page.getByRole('button', { name: `Send with these choices: Dive ${n}` }).click();
 
-    await expect(page.locator('#main').getByText(`Dive ${n} was sent to SSI with your choices.`)).toBeVisible();
-    await expect(heading).toBeHidden();
+    // The choice is queued, not sent: the dive says so and can't be chosen for twice while it waits.
+    await expect(page.locator('#main').getByText(`Dive ${n} will be sent to SSI with your choices.`)).toBeVisible();
+    await expect(page.getByRole('button', { name: `Send with these choices: Dive ${n}` })).toHaveCount(0);
+    await expect(page.getByRole('radiogroup', { name: 'Notes' })).toHaveCount(0);
+    // The server says it is queued: a reload shows the wait (or, once the worker has sent it, nothing), never the choices.
+    await page.reload();
+    await expect(page.getByText('Waiting to send to SSI').or(page.getByText('Nothing waits for your decision.'))).toBeVisible();
+    await expect(page.getByRole('radiogroup', { name: 'Notes' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: `Send with these choices: Dive ${n}` })).toHaveCount(0);
+    // The worker sends it within a minute; the entry then leaves the page by itself, and SSI's notes are taken.
+    await expect.poll(async () => (await status(request, id)).conflicts, { timeout: 120_000 }).toBeNull();
     expect(await notesOf(request, id)).toBe('Reef in SSI');
-    expect((await status(request, id)).conflicts).toBeNull();
+    await expect(heading).toBeHidden({ timeout: 30_000 });
   } finally {
     await clearPushRuns(request);
     await leaveConflict(request);

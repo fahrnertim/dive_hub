@@ -6,6 +6,7 @@ import { api, ApiError, connectionsQuery, diversQuery, keys, unwrap, type Connec
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { connectable, useProviders, useProviderText } from './lib/providers.ts';
+import { ProviderAutomation } from './ProviderAutomation.tsx';
 import { ProviderBuddies } from './ProviderBuddies.tsx';
 import { ProviderDiveImport } from './ProviderDiveImport.tsx';
 import { ProviderDiveNumbers } from './ProviderDiveNumbers.tsx';
@@ -57,12 +58,12 @@ const signInBody = (p: ProviderView, values: Record<string, string | undefined>,
   : { password: values.password!, keepSignedIn: p.signIn.canKeepPassword && keep === 'keep' });
 
 /** The account's Connections (ADR 0024, 0027): a panel per Provider the User can connect to, one Connection per Diver. */
-export function Connections() {
+export function Connections({ focus }: { focus?: string | undefined }) {
   const providers = useProviders();
-  return <>{connectable(providers.data).map((p) => <ProviderConnections key={p.id} provider={p} />)}</>;
+  return <>{connectable(providers.data).map((p) => <ProviderConnections key={p.id} provider={p} focus={focus} />)}</>;
 }
 
-function ProviderConnections({ provider: p }: { provider: ProviderView }) {
+function ProviderConnections({ provider: p, focus }: { provider: ProviderView; focus?: string | undefined }) {
   const { t } = useTranslation();
   const pt = useProviderText(p);
   const errorText = useErrorText();
@@ -126,6 +127,7 @@ function ProviderConnections({ provider: p }: { provider: ProviderView }) {
       {own.map((c) => <ProviderBuddies key={`buddies-${c.id}`} provider={p} connection={c} />)}
       {own.map((c) => <ProviderDiveImport key={`import-${c.id}`} provider={p} connection={c} several={several} />)}
       {own.map((c) => <ProviderDiveNumbers key={`numbers-${c.id}`} provider={p} connection={c} />)}
+      {own.map((c) => <ProviderAutomation key={`automation-${c.id}`} provider={p} connection={c} several={several} focused={focus === c.id} />)}
       {/* ADR 0049: said where the User connects and on the Connection. */}
       {p.notices.includes('presents_as_app') && <Muted>{pt('notice.presents_as_app')}</Muted>}
       {unconnected.length > 0 && <ConnectForm provider={p} divers={unconnected} several={several} />}

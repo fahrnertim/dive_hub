@@ -4,8 +4,9 @@
 // Providers (SSI and the test-only ledger), each is checked first; one that still fails keeps the Dive and says which
 // copies are gone.
 import { eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { dive, recording } from '../src/db/schema.js';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { connection, dive, recording, waitingPush } from '../src/db/schema.js';
+import { DELETE_QUIET_MS, QUIET_MS } from '../src/providers/waiting-push-queue.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -16,6 +17,7 @@ type Outcome = { result: string; diveId?: string; recordingId?: string; reason?:
 type DeletedDive = {
   id: string; version: number; number: number | null; site: { id: string; name: string } | null; deletedAt: string;
   stillAt: { provider: string; remoteNumber: number | null }[];
+  waiting: { provider: string; action: string; state: string; reason: string | null; dueAt: string }[];
 };
 
 describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
@@ -292,6 +294,151 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
       ledger.dives.delete((await at(id, 'ledger')).current!.remoteId);
       expect((await remove(id, both)).json()).toEqual({ providers: [{ provider: 'ssi', copy: 'deleted' }, { provider: 'ledger', copy: 'deleted' }] });
       expect((await at(id, 'ledger')).pushes[0]).toMatchObject({ action: 'delete', state: 'confirmed', remoteGone: true });
+    });
+
+    it('for a Dive at two Providers only the one without the setting is asked', async () => {
+      const id = await sentToBoth('2026-04-04T09:00:00Z');
+      const [ssiRemote, ledgerRemote] = [(await at(id, 'ssi')).current!.remoteId, (await at(id, 'ledger')).current!.remoteId];
+      await t.db.update(connection).set({ deleteAtProvider: true }).where(eq(connection.id, ledgerConnection));
+      expect(await at(id, 'ledger')).toMatchObject({ deletesItself: true });
+      expect(await at(id, 'ssi')).toMatchObject({ deletesItself: false });
+      expect((await remove(id, both)).json()).toEqual({ providers: [{ provider: 'ssi', copy: 'deleted' }, { provider: 'ledger', copy: 'kept' }] });
+      expect(ctx.fakeSsi.dives.get(Number(ssiRemote))!.odin_user_log_deleted).toBe(1);
+      expect(ledger.dives.has(ledgerRemote)).toBe(true);
+      expect(await t.db.select().from(waitingPush)).toMatchObject([{ diveId: id, provider: 'ledger', action: 'delete', state: 'waiting' }]);
+      await t.db.update(connection).set({ deleteAtProvider: false }).where(eq(connection.id, ledgerConnection));
+      await t.db.delete(waitingPush);
+    });
+  });
+
+  describe('delete at the Provider', () => {
+    let ann: string;
+    let connectionId: string;
+    let year = 3200;
+    const rows = () => t.db.select().from(waitingPush);
+    const settings = (set: Partial<typeof connection.$inferInsert>) => t.db.update(connection).set(set).where(eq(connection.id, connectionId));
+    /** A Dive of Ann's that is at the ledger: its remote dive's id. */
+    const sent = async () => {
+      year++;
+      const id = (await upload(`${year}.fit`, makeSyntheticDive({ serialNumber: 555, start: new Date(Date.UTC(year, 4, 1, 9)) }), ann)).diveId!;
+      expect(await json('POST', `/api/dives/${id}/providers/ledger`, ann, {})).toMatchObject({ outcome: 'created' });
+      const status = await json<{ current: { remoteId: string } }>('GET', `/api/dives/${id}/providers/ledger`, ann);
+      return { id, remoteId: status.current.remoteId };
+    };
+    const removeIt = async (id: string, body: object = { alsoAt: ['ledger'] }) =>
+      call('DELETE', `/api/dives/${id}`, ann, { version: (await json<{ version: number }>('GET', `/api/dives/${id}`, ann)).version, ...body });
+    const deletedOf = async (id: string) => (await json<{ dives: DeletedDive[] }>('GET', '/api/dives/deleted', ann)).dives.find((d) => d.id === id)!;
+    const restore = async (id: string) => call('POST', `/api/dives/${id}/restore`, ann, { version: (await deletedOf(id)).version });
+    const untilDue = async () => {
+      const [row] = await rows();
+      ctx.clock.skip(Math.max(0, row!.dueAt.getTime() - ctx.clock.now()));
+    };
+    const step = () => ctx.providers.waitingPushes.step(connectionId);
+
+    beforeAll(async () => {
+      await createUser(ctx.auth, 'ann@example.com');
+      ann = await signIn(ctx.app, 'ann@example.com');
+      ledger.tokens.set('ledger-token-ann', { accountId: 'l-ann', label: 'Ledger of Ann' });
+      const diverId = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', ann)).find((d) => d.isOwn)!.id;
+      connectionId = (await json<{ id: string }>('POST', '/api/connections/ledger', ann, { diverId, token: 'ledger-token-ann', keepSignedIn: false })).id;
+    });
+    beforeEach(async () => {
+      ledger.refuseDelete = false;
+      await t.db.delete(waitingPush);
+      await settings({ deleteAtProvider: true, sendNewDives: false });
+    });
+
+    it('with delete at the Provider on, the Dive is deleted here first and at the Provider after 5 min', async () => {
+      const { id, remoteId } = await sent();
+      expect(await json('GET', `/api/dives/${id}/providers/ledger`, ann)).toMatchObject({ deletesItself: true });
+      const response = await removeIt(id);
+      expect(response.json()).toEqual({ providers: [{ provider: 'ledger', copy: 'kept' }] });
+      expect((await call('GET', `/api/dives/${id}`, ann)).statusCode).toBe(404);
+      expect(ledger.dives.has(remoteId)).toBe(true);
+      const [entry, ...rest] = await rows();
+      expect(rest).toEqual([]);
+      expect(entry).toMatchObject({ diveId: id, provider: 'ledger', action: 'delete', state: 'waiting' });
+      expect(entry!.dueAt.getTime() - entry!.changedAt.getTime()).toBe(DELETE_QUIET_MS);
+      expect(await deletedOf(id)).toMatchObject({
+        stillAt: [{ provider: 'ledger' }], waiting: [{ provider: 'ledger', action: 'delete', state: 'waiting', reason: null, dueAt: entry!.dueAt.toISOString() }],
+      });
+
+      // Not yet a minute before it is due.
+      ctx.clock.skip(DELETE_QUIET_MS - 60_000);
+      expect(await step()).toBeNull();
+      expect(ledger.dives.has(remoteId)).toBe(true);
+      await untilDue();
+      expect(await step()).toBeNull();
+      expect(ledger.dives.has(remoteId)).toBe(false);
+      expect(await rows()).toEqual([]);
+      expect(await deletedOf(id)).toMatchObject({ stillAt: [], waiting: [] });
+    });
+
+    it('Undo within the quiet period cancels the delete', async () => {
+      const { id, remoteId } = await sent();
+      await removeIt(id);
+      expect(await rows()).toHaveLength(1);
+      expect((await restore(id)).statusCode).toBe(200);
+      expect(await rows()).toEqual([]);
+      ctx.clock.skip(DELETE_QUIET_MS + 1000);
+      expect(await step()).toBeNull();
+      expect(ledger.dives.has(remoteId)).toBe(true);
+      expect((await call('GET', `/api/dives/${id}`, ann)).statusCode).toBe(200);
+    });
+
+    it('a restore after the delete went out queues a create when send new dives is on', async () => {
+      const { id, remoteId } = await sent();
+      await settings({ sendNewDives: true });
+      await removeIt(id);
+      await untilDue();
+      await step();
+      expect(ledger.dives.has(remoteId)).toBe(false);
+      // The restore writes the Dive before its Revision, so the queue sees a live Dive without a remote one: new.
+      expect((await restore(id)).statusCode).toBe(200);
+      const [entry, ...rest] = await rows();
+      expect(rest).toEqual([]);
+      expect(entry).toMatchObject({ diveId: id, provider: 'ledger', action: 'send', state: 'waiting' });
+      expect(entry!.dueAt.getTime() - entry!.changedAt.getTime()).toBe(QUIET_MS);
+      await untilDue();
+      expect(await step()).toBeNull();
+      const again = (await json<{ current: { remoteId: string } }>('GET', `/api/dives/${id}/providers/ledger`, ann)).current;
+      expect(again.remoteId).not.toBe(remoteId);
+      expect(ledger.dives.has(again.remoteId)).toBe(true);
+      expect(await rows()).toEqual([]);
+    });
+
+    it('a stopped delete shows on the deleted dives with its reason', async () => {
+      const { id, remoteId } = await sent();
+      await removeIt(id);
+      ledger.refuseDelete = true;
+      await untilDue();
+      await step();
+      expect(ledger.dives.has(remoteId)).toBe(true);
+      expect((await deletedOf(id)).waiting).toEqual([expect.objectContaining({ provider: 'ledger', action: 'delete', state: 'stopped', reason: 'provider_refused' })]);
+    });
+
+    it("a Connection that is no longer the Diver's doesn't delete by itself, so the delete asks", async () => {
+      const { id } = await sent();
+      const [own] = await t.db.select({ diverId: connection.diverId }).from(connection).where(eq(connection.id, connectionId));
+      const timsDiver = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', tim)).find((d) => d.isOwn)!.id;
+      await settings({ diverId: timsDiver });
+      try {
+        expect(await json('GET', `/api/dives/${id}/providers/ledger`, ann)).toMatchObject({ deletesItself: false });
+      } finally {
+        await settings({ diverId: own!.diverId });
+      }
+    });
+
+    it('with the setting off the delete still asks (alsoAt) as today', async () => {
+      await settings({ deleteAtProvider: false });
+      const asked = await sent();
+      expect(await json('GET', `/api/dives/${asked.id}/providers/ledger`, ann)).toMatchObject({ deletesItself: false });
+      expect((await removeIt(asked.id)).json()).toEqual({ providers: [{ provider: 'ledger', copy: 'deleted' }] });
+      expect(ledger.dives.has(asked.remoteId)).toBe(false);
+      const declined = await sent();
+      expect((await removeIt(declined.id, {})).json()).toEqual({ providers: [{ provider: 'ledger', copy: 'kept' }] });
+      expect(ledger.dives.has(declined.remoteId)).toBe(true);
+      expect(await rows()).toEqual([]);
     });
   });
 });

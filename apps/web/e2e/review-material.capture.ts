@@ -10,7 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, diveNumber, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, tankPodDive,
-  clearPushRuns, conflictAtSsi, expireSsiTokens, leaveConflict, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
+  clearPushRuns, clearQueue, conflictAtSsi, fetchState, queueEntry, ssiConnectionOf, expireSsiTokens, leaveConflict, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
@@ -570,6 +570,25 @@ test('review material', async ({ page, request, browser }) => {
     if (want('account')) {
       await page.reload(); await page.getByText('Connected, password kept').waitFor();
       await capture(page, '25-account-ssi-connected', { aria: false });
+      // Sending by itself (ADR 0056): the last fetch with what waits, the offer of unsent new dives, and a dive SSI already has.
+      const automaticDive = await deletableDive(request);
+      const automaticConnection = await ssiConnectionOf(request, automaticDive);
+      await fetchState(request, automaticConnection, { created: 2, updated: 1, skipped: 3, unsent: [automaticDive] });
+      await queueEntry(request, automaticDive, { state: 'held', reason: 'exists', detail: { remoteId: '555', remoteNumber: 12, startsAt: '2026-03-05 08:00' } });
+      await page.reload(); await page.getByText(/^Last fetched/).waitFor();
+      await capture(page, '25a-account-ssi-automatic', { aria: false });
+      await page.goto('/#/review'); await page.getByText(/^SSI already has a dive at this time/).waitFor();
+      await capture(page, '25a2-account-review-dive-already-at-ssi', { aria: false });
+      await setPreferences(request, { language: 'de' });
+      await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
+      await page.reload(); await page.getByText(/^SSI hat schon einen Tauchgang/).waitFor();
+      await capture(page, '25a3-account-review-dive-already-at-ssi-de-phone', { aria: false });
+      await page.goto('/#/account?tab=connections'); await page.getByText(/^Zuletzt abgerufen/).waitFor();
+      await capture(page, '25a4-account-ssi-automatic-de-phone', { aria: false });
+      await fetchState(request, automaticConnection, { clear: true }); await clearQueue(request);
+      await setPreferences(request, { language: 'en' });
+      await page.setViewportSize({ width: 1280, height: 900 }); await page.emulateMedia({ colorScheme: 'light' });
+      await page.goto('/#/account?tab=connections'); await page.reload(); await page.getByText('Connected, password kept').waitFor();
       // The SSI buddy list (ADR 0029): who is in Dive Hub already, adding and linking.
       await page.getByRole('button', { name: /^Show your SSI buddy list/ }).click();
       await page.getByRole('row', { name: /Mia Stone/ }).waitFor();
@@ -792,6 +811,47 @@ test('review material', async ({ page, request, browser }) => {
     await deletableDive(request);
     await setPreferences(request, { language: null });
     await page.emulateMedia({ colorScheme: 'light' });
+  }
+
+  // Sending by itself (ADR 0056), with dive 9: a stopped send in its logbook row and on its page, and a delete at SSI
+  // that waits in the deleted dives; in English on a desktop, in German on a dark phone.
+  if (want('dives')) {
+    const nine = await deletableDive(request);
+    const nineNumber = await diveNumber(request, nine);
+    const connection = await ssiConnectionOf(request, nine);
+    const deleteAtSsi = (on: boolean) => request.patch(`/api/connections/${connection}`, { data: { deleteAtProvider: on }, headers });
+    for (const [language, suffix] of [['en', ''], ['de', '-de-dark-390']] as const) {
+      const de = language === 'de';
+      await setPreferences(request, { language });
+      await page.emulateMedia({ colorScheme: de ? 'dark' : 'light' });
+      await page.setViewportSize(de ? { width: 390, height: 844 } : { width: 1280, height: 900 });
+      await leaveSsi(request, nine);
+      await queueEntry(request, nine, { state: 'stopped', reason: 'provider_unavailable' });
+      await page.goto('/#/'); await page.reload();
+      await page.getByRole('button', { name: `${de ? 'Erneut versuchen' : 'Retry'}: ${de ? 'Nummer' : 'Number'} ${nineNumber}` }).waitFor();
+      await capture(page, `38-logbook-waiting-push-stopped${suffix}`, { aria: !de });
+      await page.goto(`/#/dives/${nine}`); await openLine(page, 'SSI');
+      await page.getByRole('group', { name: 'SSI' }).getByRole('button', { name: de ? 'Erneut versuchen' : 'Retry' }).waitFor();
+      await capture(page, `38a-dive-waiting-push-stopped${suffix}`, { aria: !de });
+      await clearQueue(request);
+      await sendToSsi(request, nine);
+      await deleteAtSsi(true);
+      await page.goto(`/#/dives/${nine}`); await page.reload();
+      await page.getByRole('button', { name: `${de ? 'Mehr: Tauchgang' : 'More: Dive'} ${nineNumber}` }).click();
+      await page.getByRole('menuitem', { name: de ? /^Tauchgang löschen/ : /^Delete dive/ }).click();
+      await page.getByRole('dialog').getByRole('button', { name: de ? 'Tauchgang löschen' : 'Delete dive' }).click();
+      // The delete goes to the logbook with Undo first; the deleted dives after that.
+      await page.getByRole('button', { name: de ? 'Rückgängig' : 'Undo' }).waitFor();
+      await page.goto('/#/review?tab=deleted');
+      await page.getByRole('button', { name: de ? /^Wiederherstellen: .*2026/ : /^Restore: .*2026/ }).first().waitFor();
+      await capture(page, `38b-logbook-deleted-dives-waiting${suffix}`, { aria: !de });
+      await deleteAtSsi(false); await clearQueue(request);
+      await deletableDive(request);
+    }
+    await leaveSsi(request, nine);
+    await setPreferences(request, { language: null });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 1280, height: 900 });
   }
 
   // Merging two Dives (ADR 0038), with dive 31 and a Dive without a Recording beside it: the hint on the dive page and the
