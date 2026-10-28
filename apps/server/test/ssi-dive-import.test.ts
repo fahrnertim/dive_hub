@@ -5,7 +5,7 @@
 // nothing personal of a buddy is stored.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { DIVE_FIELDS } from '../src/providers/provider.js';
+import { DIVE_FIELDS, type DiveField } from '../src/providers/provider.js';
 import { cylinder, dive, importJob, original, recording, revision, sampleSeries } from '../src/db/schema.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
@@ -604,43 +604,63 @@ describe.skipIf(!(await databaseReachable()))('a field the Provider does not imp
   }, 30_000);
 });
 
+/**
+ * A computer's dive imported as a new Dive by SSI's adapter under another id that imports every field but `left`; the
+ * record gets `extra`. Answers the Dive's view and its Recording.
+ */
+async function importedWithout(id: string, left: readonly DiveField[], extra: (base: Record<string, unknown>) => Record<string, unknown>) {
+  const t = await createTestDatabase();
+  const fakeSsi = createFakeSsi();
+  const ssi = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }), now: () => 0 });
+  const fields = Object.fromEntries(DIVE_FIELDS.filter((f) => !left.includes(f)).map((f) => [f, ['import' as const, 'export' as const]]));
+  const partial = {
+    ...ssi, id,
+    capabilities: { ...ssi.capabilities, data: { ...ssi.capabilities.data, dives: { ...ssi.capabilities.data.dives, fields } } },
+  };
+  const ctx = await createTestApp(t, { fakeSsi, extraProviders: [partial] });
+  try {
+    await createUser(ctx.auth, 'tim@example.com');
+    const cookie = await signIn(ctx.app, 'tim@example.com');
+    const call = async (method: 'GET' | 'POST' | 'PATCH', url: string, payload?: object) =>
+      ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
+    const own = ((await call('GET', '/api/divers')).json() as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
+    const connectionId = (await call('POST', `/api/connections/${id}`, { diverId: own, login: 'erika@example.com', password: 'ssi-password', keepSignedIn: false })).json().id;
+    await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'create' } });
+    const base = computerDive({ at: '2025-08-11 14:00', depthM: 22, minutes: 40, manufacturer: 'Garmin', product: 'Descent Mk3', serial: '3333' });
+    fakeSsi.addDive(ERIKA, extra(base));
+    ctx.ssiClock.advance(5 * 60_000);
+    const started = await call('POST', `/api/connections/${connectionId}/dive-import`, { computers: [], decisions: [], conflicts: [] });
+    await ctx.imports.processImport(started.json().id);
+    const done = (await call('GET', `/api/imports/${started.json().id}`)).json() as { outcome: { diveId?: string }[] };
+    const diveId = done.outcome[0]!.diveId!;
+    const view = (await call('GET', `/api/dives/${diveId}`)).json() as { notes: string | null };
+    const [rec] = await t.db.select().from(recording).where(eq(recording.diveId, diveId));
+    const channels = (await t.db.select().from(sampleSeries).where(eq(sampleSeries.recordingId, rec!.id))).map((s) => s.channel);
+    return { view, rec: rec!, channels };
+  } finally {
+    await ctx.app.close();
+    await t.drop();
+  }
+}
+
 describe.skipIf(!(await databaseReachable()))('a field the Provider does not import, on a new Dive', () => {
   it('is neither filled nor put into the Recording', async () => {
-    const t = await createTestDatabase();
-    const fakeSsi = createFakeSsi();
-    const ssi = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }), now: () => 0 });
-    // SSI's adapter under another id, importing everything but notes and heart rate.
-    const fields = Object.fromEntries(DIVE_FIELDS.filter((f) => f !== 'notes' && f !== 'heartRate').map((f) => [f, ['import' as const, 'export' as const]]));
-    const partial = {
-      ...ssi, id: 'ssi_no_notes',
-      capabilities: { ...ssi.capabilities, data: { ...ssi.capabilities.data, dives: { ...ssi.capabilities.data.dives, fields } } },
-    };
-    const ctx = await createTestApp(t, { fakeSsi, extraProviders: [partial] });
-    try {
-      await createUser(ctx.auth, 'tim@example.com');
-      const cookie = await signIn(ctx.app, 'tim@example.com');
-      const call = async (method: 'GET' | 'POST' | 'PATCH', url: string, payload?: object) =>
-        ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
-      const own = ((await call('GET', '/api/divers')).json() as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
-      const connectionId = (await call('POST', '/api/connections/ssi_no_notes', { diverId: own, login: 'erika@example.com', password: 'ssi-password', keepSignedIn: false })).json().id;
-      await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'create' } });
-      const base = computerDive({ at: '2025-08-11 14:00', depthM: 22, minutes: 40, manufacturer: 'Garmin', product: 'Descent Mk3', serial: '3333' });
+    const { view, rec, channels } = await importedWithout('ssi_no_notes', ['notes', 'heartRate'], (base) => {
       const profile = (JSON.parse(String(base.odin_user_log_diveSamples)) as Record<string, unknown>[]).map((s) => ({ ...s, hb: 80, cn: 5 }));
-      fakeSsi.addDive(ERIKA, { ...base, odin_user_log_diveSamples: JSON.stringify(profile), odin_user_log_comment: 'Not imported', odin_user_log_heartRateAvg: 80 });
-      ctx.ssiClock.advance(5 * 60_000);
-      const started = await call('POST', `/api/connections/${connectionId}/dive-import`, { computers: [], decisions: [], conflicts: [] });
-      await ctx.imports.processImport(started.json().id);
-      const done = (await call('GET', `/api/imports/${started.json().id}`)).json() as { outcome: { diveId?: string }[] };
-      const id = done.outcome[0]!.diveId!;
-      expect(((await call('GET', `/api/dives/${id}`)).json() as { notes: string | null }).notes).toBeNull();
-      const [rec] = await t.db.select().from(recording).where(eq(recording.diveId, id));
-      const channels = (await t.db.select().from(sampleSeries).where(eq(sampleSeries.recordingId, rec!.id))).map((s) => s.channel);
-      expect(channels).toEqual(expect.arrayContaining(['depth', 'cns']));
-      expect(channels).not.toContain('heartRate');
-      expect(rec!.summary).not.toHaveProperty('avgHeartRate');
-    } finally {
-      await ctx.app.close();
-      await t.drop();
-    }
+      return { ...base, odin_user_log_diveSamples: JSON.stringify(profile), odin_user_log_comment: 'Not imported', odin_user_log_heartRateAvg: 80 };
+    });
+    expect(view.notes).toBeNull();
+    expect(channels).toEqual(expect.arrayContaining(['depth', 'cns']));
+    expect(channels).not.toContain('heartRate');
+    expect(rec.summary).not.toHaveProperty('avgHeartRate');
+  }, 30_000);
+
+  it("leaves the Provider's max depth and temperatures out of the Recording where it doesn't import them", async () => {
+    const { rec } = await importedWithout('ssi_no_values', ['maxDepthM', 'waterTemperatureC', 'maxTemperatureC', 'profile'], (base) => ({
+      ...base, odin_user_log_watertemp_c: 24, odin_user_log_watertemp_max_c: 26,
+    }));
+    expect(rec.summary).not.toHaveProperty('minTemperatureC');
+    expect(rec.summary).not.toHaveProperty('maxTemperatureC');
+    expect(rec.maxDepthM).toBeNull();
   }, 30_000);
 });

@@ -1041,7 +1041,9 @@ export const providerConflict = pgTable(
     runId: uuid('run_id').references(() => pushRun.id, { onDelete: 'set null' }),
     foundAt: timestamp('found_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [primaryKey({ columns: [t.diveId, t.provider] }), index('provider_conflict_connection_idx').on(t.connectionId)],
+  (t) => [primaryKey({ columns: [t.diveId, t.provider] }), index('provider_conflict_connection_idx').on(t.connectionId),
+    // A run's report counts its entries by run.
+    index('provider_conflict_run_idx').on(t.runId)],
 );
 
 export const waitingPushAction = pgEnum('waiting_push_action', ['send', 'delete']);

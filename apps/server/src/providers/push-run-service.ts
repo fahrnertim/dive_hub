@@ -4,10 +4,11 @@
 // run would do (the preview), and it never calls a Provider.
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, dive, diveSite, providerConflict, push, pushRun, pushRunItem, type PushRunLeftOut } from '../db/schema.js';
+import { connection, dive, diveSite, push, pushRun, pushRunItem, type PushRunLeftOut } from '../db/schema.js';
 import { asksFor, diveListFilter } from '../dives/list-filter.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { isUniqueViolation } from '../sites/site-service.js';
+import { waitingByRun } from './conflicts.js';
 import { planItem, orderItems, type PlanOptions, type Planned } from './push-run-plan.js';
 import type { RemoteDive } from './provider.js';
 import type { PushService } from './push-service.js';
@@ -228,15 +229,11 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
     if (conn.state === 'needs_sign_in') throw new ProviderServiceError('provider_sign_in_needed', named(registry.get(conn.provider)));
   }
 
-  /** Conflicts that still wait and carry these runs' ids: an entry a later send closed is gone, one another run found again carries that run's id. */
-  async function conflictsOf(runIds: string[]) {
-    const waiting = new Map<string, number>();
-    if (runIds.length === 0) return waiting;
-    const rows = await db.select({ runId: providerConflict.runId, n: sql<number>`count(*)`.mapWith(Number) }).from(providerConflict)
-      .where(inArray(providerConflict.runId, runIds)).groupBy(providerConflict.runId);
-    for (const r of rows) if (r.runId) waiting.set(r.runId, r.n);
-    return waiting;
-  }
+  /**
+   * Conflicts that still wait and carry these runs' ids (as "Needs your decision" lists them): an entry a later send
+   * closed is gone, one another run found again carries that run's id.
+   */
+  const conflictsOf = (runIds: string[]) => waitingByRun(db, runIds);
   async function view(row: RunRow) {
     const items = await db.select({ state: pushRunItem.state }).from(pushRunItem).where(eq(pushRunItem.runId, row.id));
     return viewOf(row, countsOf(items), (await conflictsOf([row.id])).get(row.id) ?? 0);

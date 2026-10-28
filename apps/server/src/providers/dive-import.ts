@@ -21,7 +21,7 @@ import { siteOutlook } from '../sites/provider-sites.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import type { ConnectionService } from './connection-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
-import { REFERENCE_PREFIX, type ImportContext, type ImportedDive, type ProviderCylinder } from './provider.js';
+import { REFERENCE_PREFIX, type DiveField, type ImportContext, type ImportedDive, type ProviderCylinder } from './provider.js';
 import { createDiveChanges, importsField, type ProviderRun } from './dive-changes.js';
 import { currentRemote, fingerprintNow } from './remote-state.js';
 import { same, type SyncedField } from './three-way.js';
@@ -296,6 +296,9 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     };
   }
 
+  /** A value the Provider names, where its `dives.fields` let that field in; else null. */
+  const ifImported = <T>(run: ProviderRun, field: DiveField, value: T | null): T | null => (importsField(run, field) ? value : null);
+
   const CHANNEL_FIELD = { depth: 'profile', temperature: 'profile', ndl: 'profile', tankPressure: 'tankPressure', heartRate: 'heartRate', cns: 'cns' } as const;
 
   /** A computer's dive as a Recording, the way a FIT file's would be (ADR 0030); only the values the Provider's `dives.fields` let in. */
@@ -306,13 +309,14 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     });
     const temperatures = series.find((s) => s.channel === 'temperature')?.values ?? [];
     const cns = importsField(run, 'cns');
+    // The Provider's own values only where they come in; else what the profile (when it comes in) says.
+    const minTemperatureC = ifImported(run, 'waterTemperatureC', d.waterTemperatureC) ?? (temperatures.length ? Math.min(...temperatures) : null);
+    const maxTemperatureC = ifImported(run, 'maxTemperatureC', d.maxTemperatureC) ?? (temperatures.length ? Math.max(...temperatures) : null);
     const summary = {
       ...(d.gases.length > 0 && importsField(run, 'gas') && { gases: d.gases }),
       ...(d.gfLow !== null && { gfLow: d.gfLow }), ...(d.gfHigh !== null && { gfHigh: d.gfHigh }),
-      ...((d.waterTemperatureC ?? (temperatures.length ? Math.min(...temperatures) : null)) !== null
-        && { minTemperatureC: d.waterTemperatureC ?? Math.min(...temperatures) }),
-      ...((d.maxTemperatureC ?? (temperatures.length ? Math.max(...temperatures) : null)) !== null
-        && { maxTemperatureC: d.maxTemperatureC ?? Math.max(...temperatures) }),
+      ...(minTemperatureC !== null && { minTemperatureC }),
+      ...(maxTemperatureC !== null && { maxTemperatureC }),
       ...(cns && d.cnsStart !== null && { cnsStart: d.cnsStart }), ...(cns && d.cnsEnd !== null && { cnsEnd: d.cnsEnd }),
       ...summaryValuesOf(run, d),
     };
@@ -326,7 +330,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       recordingKey: `${run.adapter.id}:${d.remoteId}`,
       startsAt: time.startsAt, utcOffsetSeconds: time.utcOffsetSeconds ?? undefined, utcOffsetSource: time.utcOffsetSource,
       durationSeconds: d.durationSeconds,
-      maxDepthM: d.maxDepthM ?? (depths.length ? Math.max(...depths) : undefined), avgDepthM: d.avgDepthM ?? undefined,
+      maxDepthM: ifImported(run, 'maxDepthM', d.maxDepthM) ?? (depths.length ? Math.max(...depths) : undefined), avgDepthM: d.avgDepthM ?? undefined,
       entryPosition: d.entry ?? undefined, exitPosition: d.exit ?? undefined,
       summary, series, events: [],
     };

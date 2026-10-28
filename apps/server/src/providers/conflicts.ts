@@ -2,6 +2,9 @@
 // per Dive and Provider is stored and waits in "Needs your decision" on the Review page. Like the dives gone at a
 // Provider (gone-dives.ts), whether an entry still waits is worked out on reading: its Dive is live and its remote dive
 // is still the Dive's current one. The send records, reads and closes entries; nothing here calls a Provider.
+// Two ways in: the send uses the bare functions (`record`, `entryOf`, `openFields`, `closeFields`, `close`) with its own
+// `Db | Tx`, inside its own flow, so they need nothing but a query handle; the routes' read side is `createConflictService`,
+// which also needs the User's Connections.
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { dive, diveSite, providerConflict, push, waitingPush } from '../db/schema.js';
@@ -67,6 +70,28 @@ export async function close(q: Db | Tx, diveId: string, provider: string): Promi
   await q.delete(providerConflict).where(and(eq(providerConflict.diveId, diveId), eq(providerConflict.provider, provider)));
 }
 
+/** Whether an entry still waits: its Dive is live and its remote dive is still the Dive's current one at that Connection. */
+function stillWaits(entry: { remoteId: string; connectionId: string }, d: { deletedAt: Date | null } | undefined, pushes: PushRow[]): boolean {
+  const current = currentRemote(pushes);
+  return !!d && d.deletedAt === null && current?.remoteId === entry.remoteId && current.connectionId === entry.connectionId;
+}
+
+/** Per run id: how many entries carrying it still wait (as "Needs your decision" lists them). */
+export async function waitingByRun(q: Db | Tx, runIds: string[]): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (runIds.length === 0) return counts;
+  const entries = await q.select().from(providerConflict).where(inArray(providerConflict.runId, runIds));
+  if (entries.length === 0) return counts;
+  const ids = entries.map((e) => e.diveId);
+  const dives = new Map((await q.select({ id: dive.id, deletedAt: dive.deletedAt }).from(dive).where(inArray(dive.id, ids))).map((d) => [d.id, d]));
+  const pushes = await q.select().from(push).where(inArray(push.diveId, ids)).orderBy(desc(push.createdAt), desc(push.id));
+  for (const e of entries) {
+    const own = pushes.filter((p) => p.diveId === e.diveId && p.provider === e.provider);
+    if (e.runId && stillWaits(e, dives.get(e.diveId), own)) counts.set(e.runId, (counts.get(e.runId) ?? 0) + 1);
+  }
+  return counts;
+}
+
 export function createConflictService(deps: { db: Db; connections: ConnectionService }) {
   const { db, connections } = deps;
   return {
@@ -105,8 +130,7 @@ export function createConflictService(deps: { db: Db; connections: ConnectionSer
         });
         const conflicts = entries.flatMap((e) => {
           const d = dives.find((x) => x.id === e.diveId);
-          const current = currentRemote(byDive.get(e.diveId) ?? []);
-          if (!d || d.deletedAt !== null || current?.remoteId !== e.remoteId || current.connectionId !== c.id) return [];
+          if (!d || !stillWaits(e, d, byDive.get(e.diveId) ?? [])) return [];
           return [{ ...shown(d), kind: 'conflict' as const, remoteId: e.remoteId, fields: fieldsOf(e.fields), existing: null, foundAt: e.foundAt,
             queued: (chosen.get(e.diveId)?.getTime() ?? -1) >= e.foundAt.getTime() }];
         });

@@ -542,7 +542,8 @@ From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities 
   - **`deferred`** (with `updated`): the fields left as the Provider has them (from a Push run, a field the Provider
     doesn't take from Dive Hub, or a change there Dive Hub couldn't take, such as a site it doesn't know). Say which.
   - **`status.conflicts`:** an open entry (a Push run left these fields as the Provider has them). Say so on the panel,
-    with both values, and offer to decide (the same send with `conflicts`).
+    with both values, and offer to decide (the same send with `conflicts`). `hub` is the Dive's value now (a Dive edited
+    since the run shows its new value); `provider` is the Provider's as the run found it.
 - **Must show the Provider's `notices`:** `shows_unconfirmed` means it shows the dive as unconfirmed (SSI: only a dive
   center can confirm it there). `presents_as_app` means Dive Hub introduces itself to the Provider as the Provider's own
   app, which the Provider hasn't agreed to and could object to ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)):
@@ -594,7 +595,8 @@ repeatedly).
 - **Say how many Conflicts wait** (`conflicts` on the run, also in the list): a Dive with a Conflict in a run is sent without that field
   (it stays as the Provider has it) and its item keeps `outcome: updated`. One entry per Dive and Provider waits under "Needs your
   decision" (`GET /api/provider-conflicts`). The report says how many wait and links there; the count is of the entries that still
-  carry the run's id, so one a later send closed is not counted.
+  wait and carry the run's id, so one a later send closed, or whose Dive was deleted, is not counted. An entry belongs to the
+  latest run that found it: an earlier run's count drops then, and the report says so.
 - **A run stopped between the two saves of a swap** leaves one pair sharing a number at the Provider until it goes on or the
   next run is made; items with `sharesWithDiveId` that were `sent` say so in the report.
 
@@ -712,7 +714,8 @@ import preview.) *Web:* `GoneDives.tsx`, the Review page, the logbook's strip an
 (`GET /api/provider-conflicts`, per Connection, no call to a Provider.) A Conflict is a field changed on both sides,
 differently, found while sending a Dive. One entry per Dive and Provider waits under "Needs your decision" on the Review
 page, beside the gone dives: `entries` carry the Dive's number, time, depth, duration and site, the `remoteId`, and
-`fields`, each with `hub` and `provider` values said as in the import preview. An entry whose Dive is deleted or whose
+`fields`, each with `hub` and `provider` values said as in the import preview, both as the run found them (the Dive's
+page says `hub` as the Dive is now: [Sending a Dive](#sending-a-dive-to-a-provider-ssi)); a choice sends the Dive's value now. An entry whose Dive is deleted or whose
 remote dive is no longer the Dive's current one is not listed. Only the Connection's owner sees it. A Push run makes
 them: it sends the Dive without the field, and so does a scheduled fetch ([Sending by itself](#sending-by-itself)).
 Deciding is the choice per field sent to `POST /api/dives/{id}/providers/{provider}/decision` (`conflicts`), which queues

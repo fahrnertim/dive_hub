@@ -90,8 +90,9 @@ Where a skill and this project disagree, these rules win. They lived in AGENTS.m
      `jest.fn` and `vi.mock` examples: tests against a real PostgreSQL, at most one `vi.fn`, no `vi.mock`, browser tests
      carry an area tag; commands are `pnpm check` and the ones in [development.md](development.md). `pnpm`, never `npm`,
      wherever a skill says `npm install` or `npm test`.
-  4. **Reviews.** The plan's "Global Constraints" name the rules of [ADR 0053](decisions/0053-module-boundaries.md) and
-     the ADRs the plan touches, so task reviewers check them. After the final whole-branch review, the
+  4. **Reviews.** The plan's "Global Constraints" name the rules of [ADR 0053](decisions/0053-module-boundaries.md),
+     the ADRs the plan touches and, for a plan that changes code, `karpathy-guidelines` (load it before the first task;
+     every changed line traces to a task), so task reviewers check them. After the final whole-branch review, the
      `architecture-review` subagent runs. A finding counts only with `path:line` and the rule, ADR or plan line it breaks.
   5. **Finishing a branch.** Don't ask: once `pnpm check` is green, push the branch and open a PR (owner,
      2026-10-24); CI runs the full check, and the owner merges only on green CI. Never merge locally. When CI fails
