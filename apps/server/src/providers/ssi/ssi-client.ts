@@ -98,8 +98,11 @@ export interface SsiClient {
   cardImageUrl(cardId: string): string;
   /** A card's picture, public by card ID (no token), as PNG bytes; SsiError when it isn't one or is too big. */
   cardImage(url: string): Promise<{ bytes: Uint8Array; mediaType: string }>;
-  /** Creates a dive (`odin_user_log_id: null`) or updates one; returns SSI's dive ID. */
-  save(token: string, record: SsiRecord): Promise<{ id: string }>;
+  /**
+   * Creates a dive (`odin_user_log_id: null`) or updates one; returns SSI's dive ID and the record SSI answers it with
+   * (`result.dive[0]`, null when the answer carries none or another dive's).
+   */
+  save(token: string, record: SsiRecord): Promise<{ id: string; stored: SsiRecord | null }>;
   /** One site by its ID (`get_divesite`); null when SSI doesn't know it (HTTP 404). */
   site(token: string, id: string): Promise<SsiRecord | null>;
   /** Creates a site (`odin_dive_sites_id: null`) from the app's site row; returns SSI's site ID. Sites can't be deleted at SSI. */
@@ -121,6 +124,12 @@ export interface SsiClientOptions {
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const idText = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) && v > 0 ? String(v)
   : typeof v === 'string' && /^[1-9]\d*$/.test(v) ? v : null);
+
+/** The record a stored save's answer carries in `result.dive[0]`, when it is the answered dive's (checked 2026-10-28). */
+function storedRecord(result: unknown, id: string): SsiRecord | null {
+  const first: unknown = isObject(result) && Array.isArray(result.dive) ? result.dive[0] : null;
+  return isObject(first) && idText(first.odin_user_log_id) === id ? first as SsiRecord : null;
+}
 
 /** One entry of the buddy list (`get_buddies`, `logbook_buddies`); a deleted entry, or one with neither name nor account, is none. */
 function readBuddy(b: unknown): SsiBuddy[] {
@@ -242,7 +251,7 @@ export function createSsiClient(options: SsiClientOptions): SsiClient {
       // saves for: "added to Log" with an invented ID (ADR 0049).
       const sent = idText(record.odin_user_log_id);
       if (id && sent && id !== sent) throw new SsiError('not_stored', `save_divelog: SSI answered another dive ID than the one saved; nothing was stored (ok: ${JSON.stringify(answer.ok ?? null)})`);
-      if (id) return { id };
+      if (id) return { id, stored: storedRecord(data.result, id) };
       // SSI's reason, else which fields it sent instead (names only; values may hold personal data).
       const reason = typeof answer.error === 'string' && answer.error ? answer.error
         : `no dive id in the answer (ok: ${JSON.stringify(answer.ok ?? null)}, fields: ${Object.keys(data).join(', ')}${answer === data ? '' : ` / success: ${Object.keys(answer).join(', ')}`})`;

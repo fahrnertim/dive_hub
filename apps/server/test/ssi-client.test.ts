@@ -60,6 +60,38 @@ describe('SSI client', () => {
     expect((await app.logbook(token)).dives).toEqual([]);
   });
 
+  it('hands back the record SSI answers a stored save with (result.dive)', async () => {
+    const answering = (body: object): Fetch => async () => ({ status: 200, text: async () => JSON.stringify(body) });
+    const client = createSsiClient({ url: URL_, fetch: answering({
+      success: { ok: 'updated', error: '', temp_id: '', odin_user_log_id: 28_076_338 },
+      result: { dive: [{ odin_user_log_id: 28_076_338, odin_user_log_nr: 7 }], divestats: {}, potential_duplicate: 0 },
+    }) });
+    expect(await client.save('t', { odin_user_log_id: 28_076_338 }))
+      .toEqual({ id: '28076338', stored: { odin_user_log_id: 28_076_338, odin_user_log_nr: 7 } });
+  });
+
+  it('hands back no record when the answer has none or another dive\'s', async () => {
+    const answering = (result: unknown): Fetch => async () => ({ status: 200, text: async () => JSON.stringify({
+      success: { ok: 'updated', error: '', temp_id: '', odin_user_log_id: 28_076_338 }, result,
+    }) });
+    for (const result of ['updated', { dive: [{ odin_user_log_id: 1 }] }, { dive: [] }]) {
+      const client = createSsiClient({ url: URL_, fetch: answering(result) });
+      expect(await client.save('t', { odin_user_log_id: 28_076_338 })).toEqual({ id: '28076338', stored: null });
+    }
+  });
+
+  it('the fake answers a stored create and update with the record its logbook lists, and an invented one without it', async () => {
+    const fake = createFakeSsi();
+    const app = createSsiClient({ url: URL_, fetch: fake.fetch });
+    const { token } = await app.signIn('erika@example.com', PASSWORD);
+    const created = await app.save(token, { odin_user_log_id: null, odin_user_log_nr: 1 });
+    expect(created.stored).toEqual((await app.logbook(token)).dives[0]);
+    const updated = await app.save(token, { odin_user_log_id: Number(created.id), odin_user_log_nr: 2 });
+    expect(updated).toEqual({ id: created.id, stored: (await app.logbook(token)).dives[0] });
+    const other: Fetch = (url, init) => fake.fetch(url, { ...init, headers: { ...init.headers, 'User-Agent': 'DiveHub (+https://example.org)' } });
+    expect((await createSsiClient({ url: URL_, fetch: other }).save(token, { odin_user_log_id: null })).stored).toBeNull();
+  });
+
   it('tells a refused sign-in from an expired token, an outage and nonsense', async () => {
     const fake = createFakeSsi();
     const client = createSsiClient({ url: URL_, fetch: fake.fetch });
