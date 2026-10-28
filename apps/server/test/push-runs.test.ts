@@ -228,7 +228,8 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect((await statusOf(blocked, 'ssi')).current).toBeNull();
   });
 
-  it("a run sends a Dive with a conflict without that field, the entry waits, and the run's report counts it", async () => {
+  /** A Dive sent by a first run, then its notes changed in SSI and here, and a second run that leaves the Conflict waiting. */
+  const runWithConflict = async () => {
     const id = await upload(day(1));
     await atSsiSite(id);
     await edit(id, 'Reef');
@@ -241,6 +242,11 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     await edit(id, 'Reef here');
     const second = (await start({ dives: all, updates: true }, ssiConnectionId).then((r) => r.json())) as Run;
     await runToEnd(second.id);
+    return { id, remote, second };
+  };
+
+  it("a run sends a Dive with a conflict without that field, the entry waits, and the run's report counts it", async () => {
+    const { id, remote, second } = await runWithConflict();
     const done = await run(second.id);
     expect(done).toMatchObject({ status: 'done', conflicts: 1, counts: { sent: 1 } });
     expect(done.items[0]).toMatchObject({ state: 'sent', outcome: 'updated' });
@@ -250,6 +256,18 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
       { diveId: id, fields: [{ field: 'notes', hub: 'Reef here', provider: 'Reef in SSI' }] },
     ]);
     expect((await json<Run[]>('GET', '/api/push-runs')).find((r) => r.id === second.id)!.conflicts).toBe(1);
+  });
+
+  it("a Conflict whose Dive was deleted no longer counts in its run", async () => {
+    const { id, second } = await runWithConflict();
+    expect((await call('DELETE', `/api/dives/${id}`, { version: await version(id) })).statusCode).toBe(200);
+    expect((await run(second.id)).conflicts).toBe(0);
+  });
+
+  it('an entry a later send closed counts 0 in its run', async () => {
+    const { id, second } = await runWithConflict();
+    expect((await call('POST', `/api/dives/${id}/providers/ssi`, { conflicts: { notes: 'hub' } })).json()).toMatchObject({ outcome: 'updated' });
+    expect((await run(second.id)).conflicts).toBe(0);
   });
 
   /** A Participant on a Dive: an external Diver, with an SSI account when given. */
