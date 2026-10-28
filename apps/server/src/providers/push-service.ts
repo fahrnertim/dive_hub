@@ -9,7 +9,7 @@ import type { Db } from '../db/client.js';
 import { connection, dive, push } from '../db/schema.js';
 import type { SiteSource } from '../sites/sources.js';
 import type { BlobStore } from '../storage/blob-store.js';
-import { close, entryOf, openFields, record as recordConflict, type ConflictField } from './conflicts.js';
+import { close, entryOf, openFields, record as recordConflict, type ConflictField, type StoredConflictField } from './conflicts.js';
 import type { ConnectionRow, ConnectionService } from './connection-service.js';
 import { createDiveChanges, type ProviderRun } from './dive-changes.js';
 import { LeaseBusy, type Leases } from './leases.js';
@@ -314,10 +314,8 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     return { run, remote: read.dive, here, provider, plan, deferred };
   }
 
-  /** These fields with both values, said as the import preview says them. */
-  const shownOf = (x: Exchange, fields: SyncedField[]): Promise<ConflictField[]> => Promise.all(fields.map(async (field) => ({
-    field, hub: await changes.shown(x.run, field, x.here.hub, x.here.row.siteId), provider: await changes.shown(x.run, field, x.provider, null),
-  })));
+  /** These fields with both values, said as the import preview says them, and the Provider's comparable value. */
+  const shownOf = (x: Exchange, fields: SyncedField[]) => changes.conflictFields(x.run, fields, x.here, x.provider);
 
   /** After an update: a Push run's Conflicts wait as the Dive's entry; any other successful send settles the entry. */
   async function settle(x: Exchange, conn: ConnectionRow, diveId: string, remoteId: string, options: SendOptions) {
@@ -348,7 +346,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       ? await action.current(remoteId).catch((error: unknown) => steps.failed('update', error, remoteId)) : undefined;
     if (read === null) return steps.gone(remoteId);
     const x = read ? await exchange(conn, adapter, diveId, remoteId, read, options) : null;
-    if (x && x.plan.conflicts.length > 0) return { result: 'conflicts', conflicts: await shownOf(x, x.plan.conflicts) };
+    if (x && x.plan.conflicts.length > 0) return { result: 'conflicts', conflicts: (await shownOf(x, x.plan.conflicts)).map(({ field, hub, provider }) => ({ field, hub, provider })) };
     // The take commits on its own, before `requirementsMet` and the update: should either fail, the Dive holds the
     // Provider's values, and the next comparison sees both sides equal there, so nothing is taken twice nor lost.
     const applied = x && x.plan.take.length > 0
@@ -404,14 +402,14 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
    * The open entry's fields with Dive Hub's side said from the Dive as it is now (a Dive edited since the run shows its
    * new value); the Provider's side stays as the run found it.
    */
-  async function hubNow(adapter: ProviderAdapter, conn: ConnectionRow | null, userId: string, diverId: string, diveId: string, fields: ConflictField[]) {
+  async function hubNow(adapter: ProviderAdapter, conn: ConnectionRow | null, userId: string, diverId: string, diveId: string, fields: StoredConflictField[]): Promise<ConflictField[]> {
     const run = await changes.runOf(db, userId, adapter, {
       diverId, connectionId: conn?.id ?? null, mode: conn?.importMode ?? 'off', windowMinutes: conn?.importWindowMinutes ?? 15, choices: {},
       context: { people: {}, sites: {} },
     });
     const here = await changes.hubOf(db, run, diveId, null);
-    if (!here) return fields;
-    return Promise.all(fields.map(async (f) => ({ ...f, hub: await changes.shown(run, f.field, here.hub, here.row.siteId) })));
+    if (!here) return fields.map(({ field, hub, provider }) => ({ field, hub, provider }));
+    return Promise.all(fields.map(async (f) => ({ field: f.field, provider: f.provider, hub: await changes.shown(run, f.field, here.hub, here.row.siteId) })));
   }
 
   /** A Dive's state at one Provider. */

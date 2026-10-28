@@ -25,7 +25,7 @@ import { REFERENCE_PREFIX, type DiveField, type ImportContext, type ImportedDive
 import { createDiveChanges, importsField, type ProviderRun } from './dive-changes.js';
 import { currentRemote, fingerprintNow } from './remote-state.js';
 import { same, type SyncedField } from './three-way.js';
-import { closeFields, entryOf, openFields, record as recordConflict, type ConflictField } from './conflicts.js';
+import { closeFields, entryOf, openFields, record as recordConflict, type StoredConflictField } from './conflicts.js';
 import { queueNow } from './waiting-push-queue.js';
 import { withRemembered } from './list-entries.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
@@ -100,7 +100,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export function createDiveImportService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService }) {
   const { db, blobs, registry, connections } = deps;
-  const { runOf, sitesOf, settle, placeTime, changesOf, takeChanges, fill, shown } = createDiveChanges({ db, blobs });
+  const { runOf, sitesOf, settle, placeTime, changesOf, takeChanges, fill, shown, conflictFields } = createDiveChanges({ db, blobs });
 
   /** The Provider's dive import, or `provider_unsupported`. */
   function importer(provider: string) {
@@ -374,13 +374,11 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    */
   async function waitForUser(tx: Tx, run: ProviderRun, diveId: string, d: ImportedDive, found: FoundChanges, fields: SyncedField[]) {
     if (fields.length === 0 || !run.connectionId) return;
-    const now: ConflictField[] = await Promise.all(fields.map(async (field) => ({
-      field, hub: await shown(run, field, found.here.hub, found.here.row.siteId), provider: await shown(run, field, found.provider, null),
-    })));
+    const now = await conflictFields(run, fields, found.here, found.provider);
     const before = await entryOf(tx, diveId, run.adapter.id);
     const kept = before?.remoteId === d.remoteId ? before.fields.filter((f) => !fields.includes(f.field)) : [];
     const merged = [...kept, ...now];
-    const byField = (list: ConflictField[]) => list.toSorted((a, b) => a.field.localeCompare(b.field));
+    const byField = (list: StoredConflictField[]) => list.toSorted((a, b) => a.field.localeCompare(b.field));
     if (before?.remoteId === d.remoteId && isDeepStrictEqual(byField(before.fields), byField(merged))) return;
     await recordConflict(tx, { diveId, provider: run.adapter.id, connectionId: run.connectionId, remoteId: d.remoteId, fields: merged, runId: null });
   }

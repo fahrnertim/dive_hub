@@ -11,7 +11,8 @@ import { dive, diveSite, providerConflict, push, waitingPush } from '../db/schem
 import type { ConnectionService } from './connection-service.js';
 import type { ShownValue } from './dive-changes.js';
 import { currentRemote, type PushRow } from './remote-state.js';
-import type { SyncedField } from './three-way.js';
+import type { Comparable, SyncedField } from './three-way.js';
+import type { SiteSource } from '../sites/sources.js';
 
 /** One field on which the two sides differ, both values said as in the import preview. */
 export interface ConflictField {
@@ -20,16 +21,24 @@ export interface ConflictField {
   provider: ShownValue;
 }
 
+/** A stored field: the shown values and, from 2026-10-28 on, the Provider's value as the comparison sees it. */
+export interface StoredConflictField extends ConflictField {
+  compared?: { provider: Comparable[SyncedField]; siteSource: SiteSource | null };
+}
+
 export interface ConflictEntry {
   diveId: string;
   provider: string;
   connectionId: string;
   remoteId: string;
-  fields: ConflictField[];
+  fields: StoredConflictField[];
   runId: string | null;
 }
 
-const fieldsOf = (stored: unknown): ConflictField[] => stored as ConflictField[];
+const fieldsOf = (stored: unknown): StoredConflictField[] => stored as StoredConflictField[];
+
+/** What the API says of a field: the shown values only. */
+const shownFields = (fields: StoredConflictField[]): ConflictField[] => fields.map(({ field, hub, provider }) => ({ field, hub, provider }));
 
 /** Stores the Conflict of a Dive at a Provider; a newer one for the same Dive and Provider replaces the older. */
 export async function record(q: Db | Tx, entry: ConflictEntry): Promise<void> {
@@ -39,7 +48,7 @@ export async function record(q: Db | Tx, entry: ConflictEntry): Promise<void> {
 }
 
 /** The Dive's entry at the Provider: the remote dive it is about and its fields; null when there is none. */
-export async function entryOf(q: Db | Tx, diveId: string, provider: string): Promise<{ remoteId: string; fields: ConflictField[] } | null> {
+export async function entryOf(q: Db | Tx, diveId: string, provider: string): Promise<{ remoteId: string; fields: StoredConflictField[] } | null> {
   const [row] = await q.select({ remoteId: providerConflict.remoteId, fields: providerConflict.fields }).from(providerConflict)
     .where(and(eq(providerConflict.diveId, diveId), eq(providerConflict.provider, provider)));
   return row ? { remoteId: row.remoteId, fields: fieldsOf(row.fields) } : null;
@@ -131,7 +140,7 @@ export function createConflictService(deps: { db: Db; connections: ConnectionSer
         const conflicts = entries.flatMap((e) => {
           const d = dives.find((x) => x.id === e.diveId);
           if (!d || !stillWaits(e, d, byDive.get(e.diveId) ?? [])) return [];
-          return [{ ...shown(d), kind: 'conflict' as const, remoteId: e.remoteId, fields: fieldsOf(e.fields), existing: null, foundAt: e.foundAt,
+          return [{ ...shown(d), kind: 'conflict' as const, remoteId: e.remoteId, fields: shownFields(fieldsOf(e.fields)), existing: null, foundAt: e.foundAt,
             queued: (chosen.get(e.diveId)?.getTime() ?? -1) >= e.foundAt.getTime() }];
         });
         const exists = asked.flatMap((e) => {

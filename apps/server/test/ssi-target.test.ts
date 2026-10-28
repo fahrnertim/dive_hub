@@ -417,12 +417,15 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       expect(await t.db.select().from(providerConflict).where(eq(providerConflict.diveId, id))).toMatchObject([
         { remoteId, runId: run!.id, fields: [{ field: 'notes', hub: 'Reef here', provider: 'Reef in SSI' }] },
       ]);
+      const [stored] = await t.db.select().from(providerConflict).where(eq(providerConflict.diveId, id));
+      expect(stored!.fields).toEqual([{ field: 'notes', hub: 'Reef here', provider: 'Reef in SSI', compared: { provider: 'Reef in SSI', siteSource: 'ssi' } }]);
       expect((await status(id) as unknown as { conflicts: unknown }).conflicts).toEqual([{ field: 'notes', hub: 'Reef here', provider: 'Reef in SSI' }]);
       // Edited again here: the page shows the Dive's value now, SSI's as the run found it.
       await patch(id, { notes: 'Reef changed' });
       expect((await status(id) as unknown as { conflicts: unknown }).conflicts).toEqual([{ field: 'notes', hub: 'Reef changed', provider: 'Reef in SSI' }]);
 
-      expect((await send({}, id)).json()).toMatchObject({ outcome: 'conflicts', conflicts: [{ field: 'notes', hub: 'Reef changed', provider: 'Reef in SSI' }] });
+      expect((await send({}, id)).json()).toMatchObject({ outcome: 'conflicts' });
+      expect((await send({}, id)).json().conflicts).toEqual([{ field: 'notes', hub: 'Reef changed', provider: 'Reef in SSI' }]);
       expect((await send({ conflicts: { notes: 'hub' } }, id)).json()).toMatchObject({ outcome: 'updated', status: { conflicts: null } });
       expect(ssiDive(remoteId).odin_user_log_comment).toBe('Reef changed');
       expect(await t.db.select().from(providerConflict).where(eq(providerConflict.diveId, id))).toEqual([]);

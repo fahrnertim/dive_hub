@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
 import { connection, providerConflict, push, waitingPush } from '../src/db/schema.js';
-import { close, openFields, record, type ConflictField } from '../src/providers/conflicts.js';
+import { close, openFields, record, type ConflictField, type StoredConflictField } from '../src/providers/conflicts.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -47,7 +47,7 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     { field: 'notes', hub: 'Turtle', provider: notes },
     { field: 'maxDepthM', hub: 18, provider: 19.5 },
   ];
-  const entry = (diveId: string, remoteId: string, f = fields('Manta')) => ({ diveId, provider: 'ledger', connectionId, remoteId, fields: f, runId: null });
+  const entry = (diveId: string, remoteId: string, f: StoredConflictField[] = fields('Manta')) => ({ diveId, provider: 'ledger', connectionId, remoteId, fields: f, runId: null });
 
   beforeAll(async () => {
     t = await createTestDatabase();
@@ -139,7 +139,7 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     await call('PATCH', `/api/dives/${diveId}`, { version, notes: 'Turtle' });
     expect((await call('POST', `/api/dives/${diveId}/providers/ledger`, {})).statusCode).toBeLessThan(300);
     ledger.dives.get(remoteId)!.notes = 'Manta';
-    await record(t.db, entry(diveId, remoteId, [{ field: 'notes', hub: 'Turtle', provider: 'Manta' }]));
+    await record(t.db, entry(diveId, remoteId, [{ field: 'notes', hub: 'Turtle', provider: 'Manta', compared: { provider: 'Manta', siteSource: null } }]));
     await t.db.update(connection).set({ importMode: 'add', fetchEveryMinutes: 60, lastFetchedAt: null }).where(eq(connection.id, connectionId));
     return { diveId, remoteId };
   };
