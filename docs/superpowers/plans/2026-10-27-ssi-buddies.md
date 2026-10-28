@@ -1,7 +1,7 @@
 ---
 title: "Plan: SSI buddies (piece 5)"
 summary: Implementation plan for piece 5 of the SSI alignment - get_buddies and save_buddy in the SSI client and fake, the Provider's buddies.add and setAccount, the remembered list entry (account_list_entry), the send's automatic add by SSI account and link-later, the diver_mapping requirement met by a remembered entry, the Link or add dialog, entries without an account on the buddy list page and in the dive import, and the Push run report of dives sent without someone.
-status: proposed
+status: done
 date: 2026-10-27
 ---
 

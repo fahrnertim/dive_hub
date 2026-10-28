@@ -110,10 +110,12 @@ How the app's calls were read (2026-10-10), for the next time SSI's answers chan
   - `logbook_buddies[]`: the account's buddy list.
   - Statistics.
 - Dive Hub reads it at most once per action before saving: to find the dive it updates, to check for a dive at the same
-  time, to pick the next SSI dive number; and once more after saving (read-back). The read-back is kept for two minutes
-  per Connection and answers the next action's duplicate check and number, so dives sent in a row read n + 1 times;
-  updates and deletes always read afresh ([ADR 0027](../decisions/0027-providers-as-adapters.md)). Actions on one
-  Connection wait 2 s between each other.
+  time, to pick the next SSI dive number. The read is kept for two minutes per Connection and answers the next action's
+  duplicate check and number; updates and deletes always read afresh ([ADR 0027](../decisions/0027-providers-as-adapters.md)).
+  After a save it does not read again: SSI's answer carries the record as stored (`result.dive`), which is the read-back
+  and goes into the kept read (piece 7, [ADR 0057](../decisions/0057-ssi-aligned-with-its-app.md)), so dives sent in a
+  row read once. Only an answer without a usable record (none, another reference or number, fewer samples than sent)
+  is decided by one more read. Actions on one Connection wait 2 s between each other.
 
 ### When Dive Hub calls SSI (checked 2026-10-05)
 
@@ -123,7 +125,7 @@ Only when a User does something. There are no background calls: the worker never
 | User action | Calls |
 |---|---|
 | Connect, or sign in again | `authenticate` |
-| Send a dive (create or update) | `get_divelog` (may come from the kept read-back), `save_divelog`, `get_divelog` (read-back); first `save_divesite` when the dive's site has no ID usable for the account and is made at SSI as a private site |
+| Send a dive (create or update) | `get_divelog` (may come from the kept read), `save_divelog` (its answer is the read-back); one more `get_divelog` only when the answer lacks a usable record; first `save_divesite` when the dive's site has no ID usable for the account and is made at SSI as a private site |
 | Delete a dive that was sent to SSI | `get_divelog` (is it still there?), `save_divelog` (deleted) |
 | Open the SSI site picker on a dive | `get_divelog` (may come from the kept read-back) |
 | Type an SSI site ID on a dive's site | `get_divesite` (is the ID known, public or the account's own private site?) |
@@ -176,7 +178,11 @@ Read from the app's compiled code and one capture; details in the
   `DivesSynchronisation.uploadDives`. How fast the queue is sent is not known [?] (owner's check below).
 - **The save's answer to the app carries the stored dive [R]:** `result.dive` (a list with one record, 387 keys),
   `result.divestats` and `result.potential_duplicate` (seen on an update of a dive without samples). Dive Hub doesn't
-  read `result`.
+  read `result` yet.
+- **The save's answer to Dive Hub carries it too [T]** (2026-10-28, app 5.0.43,
+  [research](../research/2026-10-28-ssi-save-answer-check.md)): a create and an update with the app's User-Agent are
+  answered with `result.dive`, 388 keys equal to the logbook's record, samples included; SSI's invented answer to another
+  User-Agent (ADR 0049) has no `result`. So the answer proves storage without a read.
 - **To read the app's code again:** `adb -s <emulator> shell pm path com.divessi.ssi`, `adb pull` each file; the Dart
   code is `lib/arm64-v8a/libapp.so` in `split_config.arm64_v8a.apk`, and its readable strings hold the call names.
 
@@ -505,7 +511,8 @@ From the research note. Record the result here with date and app version, and tu
 - [ ] The app's upload queue ([research](../research/2026-10-10-ssi-app-bulk-upload.md#owners-checks-open)): log three
   or four manual dives in the emulator in airplane mode, go online with HTTP Toolkit recording. One call or several,
   the gaps between them, the calls that follow.
-- [ ] The save's answer from Dive Hub: does a create's answer hold `result.dive`, and does it hold the samples?
+- [x] The save's answer from Dive Hub: does a create's answer hold `result.dive`, and does it hold the samples? Yes, both,
+  and an update's too; SSI's invented answer holds none ([research](../research/2026-10-28-ssi-save-answer-check.md)).
 - Dive numbers ([ADR 0048](../decisions/0048-dive-numbers.md)), asked 2026-10-09. Run with `round-trip.ts number`
   (it needs `SSI_SITE_ID`; it makes and deletes throwaway dives in 2000; `--pause` waits for Enter between steps)
   ([what it does and what each result switches](../research/2026-10-09-dive-numbers.md#owners-checks-the-builds-first-step)).

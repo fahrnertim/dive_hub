@@ -106,6 +106,8 @@ export interface FakeSsi {
   expiredAnswer: { status: number; body: unknown } | null;
   /** Answer saves as SSI does for a client that isn't its app: with an invented dive ID, storing nothing. */
   dropSaves: boolean;
+  /** Changes the record a stored create or update is answered with (`result.dive`); returning null leaves it out. Null: the record as stored. */
+  answerRecord: ((stored: SsiRecord) => SsiRecord | null) | null;
   /** While set, `save_buddy` answers `{ error }` and saves nothing, as SSI does for a row it refuses. */
   failBuddySaves: boolean;
   /** While set, every token expires right after the next logbook read, as when one runs out in the middle of an action. */
@@ -188,6 +190,7 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
     failWith: null,
     expiredAnswer: null,
     dropSaves: false,
+    answerRecord: null,
     failBuddySaves: false,
     expireAfterRead: false,
     expireAfterSiteSave: false,
@@ -326,20 +329,33 @@ export function createFakeSsi(options: { accounts?: FakeSsiAccount[]; sites?: Fa
         // Since October 2026 SSI stores a save only from its own app's User-Agent; any other gets the answer of a create
         // with an invented ID, for an update too, and nothing is stored (the owner's account, 2026-10-10).
         if (fake.dropSaves || !/^Dart\/\d+\.\d+ \(dart:io\)$/.test(init.headers['User-Agent'] ?? '')) {
-          return answer({ ok: 'added to Log', error: '', temp_id: '', odin_user_log_id: String(900_000_000 + (nextDiveId++ % 100_000_000)) });
+          // Wrapped in `success`, without `result` (checked 2026-10-28).
+          return answer({ success: { ok: 'added to Log', error: '', temp_id: '', odin_user_log_id: String(900_000_000 + (nextDiveId++ % 100_000_000)) } });
         }
+        // A stored save answers with the record as SSI keeps it in `result.dive` (checked 2026-10-28).
+        const result = (dive: SsiRecord) => {
+          const answered = fake.answerRecord ? fake.answerRecord(dive) : dive;
+          return { ...(answered ? { dive: [answered] } : {}), divestats: {}, potential_duplicate: 0 };
+        };
         const id = record.odin_user_log_id;
         if (id === null || id === undefined) {
           const created = nextDiveId++;
-          fake.dives.set(created, { ...stored, odin_user_log_id: created });
-          return answer({ ok: 'added to Log', error: '', temp_id: null, odin_user_log_id: created });
+          const dive = { ...stored, odin_user_log_id: created };
+          fake.dives.set(created, dive);
+          // A create echoes the record sent (its own ID null), with the new ID in `success` (checked 2026-10-28).
+          return answer({
+            ...record, sql_success: true, sql_NEW_odin_user_log_id: created,
+            success: { ok: 'added to Log', error: '', temp_id: '', odin_user_log_id: created }, result: result(dive),
+          });
         }
         const existing = fake.dives.get(Number(id));
         if (!existing || existing.odin_user_log_user_master_id !== accountId) return answer({ ok: '', error: 'not found' });
-        fake.dives.set(Number(id), { ...stored, odin_user_log_id: Number(id) });
-        // An update answers with the usual answer wrapped in `success`, as the real SSI does (checked 2026-10-06).
+        const dive = { ...stored, odin_user_log_id: Number(id) };
+        fake.dives.set(Number(id), dive);
+        // An update answers with the usual answer wrapped in `success`, as the real SSI does (checked 2026-10-06); a
+        // delete's `result` stays its `ok` (its answer is unchecked).
         const ok = stored.odin_user_log_deleted === 1 ? 'deleted' : 'updated';
-        return answer({ success: { ok, error: '', temp_id: '', odin_user_log_id: Number(id) }, result: ok });
+        return answer({ success: { ok, error: '', temp_id: '', odin_user_log_id: Number(id) }, result: ok === 'deleted' ? ok : result(dive) });
       }
       return answer({ error: `unknown action ${what}` }, 400);
     },

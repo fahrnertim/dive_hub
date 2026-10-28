@@ -110,13 +110,35 @@ export interface SsiCallLog {
   connectionId: string | null;
   /** `ok`, or the reason SSI's client gave (`unavailable`, `signed_out`, …). */
   outcome: 'ok' | SsiError['reason'] | 'error';
-  /** For a failed call: what went wrong, with SSI's own error text when it sent one (never a token or URL). */
+  /**
+   * For a failed call: what went wrong, with SSI's own error text when it sent one (never a token or URL); or why a
+   * read followed a save.
+   */
   detail?: string;
   ms: number;
 }
 
 /** An entry of the buddy list as the Provider's typed value; the row for a save back stays here. */
 const remoteBuddy = ({ id, row: _row, ...b }: SsiBuddy) => ({ remoteId: String(id), ...b });
+
+/** How many samples a record's profile (`odin_user_log_diveSamples`, a JSON list) holds; 0 when it has none. */
+function sampleCount(samples: unknown): number {
+  if (Array.isArray(samples)) return samples.length;
+  if (typeof samples !== 'string' || !samples) return 0;
+  try {
+    const list: unknown = JSON.parse(samples);
+    return Array.isArray(list) ? list.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Whether the record SSI answered a save with shows what was sent: the reference, the number, no fewer samples. */
+function showsSent(stored: SsiRecord, sent: SsiRecord, expect: { reference?: string; number?: number }): boolean {
+  return (expect.reference === undefined || stored.odin_user_log_divecomputer_dive_ref === expect.reference)
+    && (expect.number === undefined || numberOf(stored.odin_user_log_nr) === expect.number)
+    && sampleCount(stored.odin_user_log_diveSamples) >= sampleCount(sent.odin_user_log_diveSamples);
+}
 
 /** SSI's maintenance (HTTP 503) is, for the generic layer, SSI being unavailable. */
 const providerReason = (error: SsiError) => (error.reason === 'maintenance' ? 'unavailable' : error.reason);
@@ -126,13 +148,13 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
   const now = deps.now ?? Date.now;
 
   /** One call to SSI, reported to `onCall`; SSI's client errors become the generic layer's reasons. */
-  async function called<T>(call: SsiCallLog['call'], connectionId: string | null, run: () => Promise<T>): Promise<T> {
+  async function called<T>(call: SsiCallLog['call'], connectionId: string | null, run: () => Promise<T>, why?: string): Promise<T> {
     const started = performance.now();
     const report = (outcome: SsiCallLog['outcome'], detail?: string) =>
       deps.onCall?.({ call, connectionId, outcome, ms: Math.round(performance.now() - started), ...(detail && { detail }) });
     try {
       const result = await run();
-      report('ok');
+      report('ok', why);
       return result;
     } catch (error) {
       if (error instanceof SsiError) report(error.reason, error.message.slice(0, 300));
@@ -209,15 +231,44 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
     return { recent, current };
   }
 
-  /** Saves, then reads the dive back and lists what SSI stored differently (null: not found again). */
-  async function saveAndReadBack(ctx: ActionContext, sent: SsiRecord, number: number | null): Promise<Delivered> {
-    const { id } = await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, sent));
-    const after = keep(ctx.connectionId, await called('get_divelog', ctx.connectionId, () => client.logbook(ctx.access)));
-    const stored = after.dives.find((r) => idOf(r.odin_user_log_id) === id);
+  /** Puts a record SSI answered a save with into the kept read, when one is fresh (the kept time stays). */
+  function keepRecord(connectionId: string, id: string, record: SsiRecord) {
+    const kept = fresh(connectionId);
+    if (!kept) return;
+    const known = kept.dives.some((r) => idOf(r.odin_user_log_id) === id);
+    const dives = known ? kept.dives.map((r) => (idOf(r.odin_user_log_id) === id ? record : r)) : [...kept.dives, record];
+    snapshots.get(connectionId)!.logbook = { ...kept, dives };
+  }
+
+  /**
+   * The record SSI holds after a save. SSI's answer carries it (`result.dive`): when it shows what was sent (the
+   * reference, the number, no fewer samples) it is the read-back and goes into the kept read, if one is fresh. Else one
+   * logbook read decides (ADR 0057, piece 7).
+   */
+  async function confirmed(ctx: ActionContext, sent: SsiRecord, saved: { id: string; stored: SsiRecord | null },
+    expect: { reference?: string; number?: number }): Promise<SsiRecord> {
+    const { id, stored } = saved;
+    if (stored && showsSent(stored, sent, expect)) {
+      keepRecord(ctx.connectionId, id, stored);
+      return stored;
+    }
+    const why = stored ? `the answer's record has another ${expect.number === undefined ? 'reference' : 'number'} or fewer samples` : 'no record in the answer';
+    const after = keep(ctx.connectionId, await called('get_divelog', ctx.connectionId, () => client.logbook(ctx.access), `read after a save: ${why}`));
+    const found = after.dives.find((r) => idOf(r.odin_user_log_id) === id);
     // SSI can answer a save with a dive ID and store nothing (ADR 0049): a dive that isn't in the logbook right after is
     // not a sent dive. Our reference finds it should it turn up later.
-    if (!stored) throw new ProviderError('not_stored', 'save_divelog: SSI answered with a dive ID, but the dive is not in the logbook; nothing was stored');
-    return { remoteId: id, remoteNumber: number, payload: withoutDatasets(sent), differences: compareReadBack(sent, stored) };
+    if (expect.number !== undefined && (!found || numberOf(found.odin_user_log_nr) !== expect.number)) {
+      throw new ProviderError('not_stored', 'save_divelog: SSI answered, but the dive does not have the number saved');
+    }
+    if (!found) throw new ProviderError('not_stored', 'save_divelog: SSI answered with a dive ID, but the dive is not in the logbook; nothing was stored');
+    return found;
+  }
+
+  /** Saves, then lists what SSI stored differently from what was sent. */
+  async function saveAndReadBack(ctx: ActionContext, sent: SsiRecord, number: number | null, expect: { reference?: string }): Promise<Delivered> {
+    const saved = await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, sent));
+    const stored = await confirmed(ctx, sent, saved, expect);
+    return { remoteId: saved.id, remoteNumber: number, payload: withoutDatasets(sent), differences: compareReadBack(sent, stored) };
   }
 
   function open(ctx: ActionContext): DiveExportAction {
@@ -244,7 +295,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const number = wanted != null && !taken ? wanted : Math.max(0, ...dives.map((r) => numberOf(r.odin_user_log_nr) ?? 0)) + 1;
         const { ids, leftOut } = buddiesFor(dive, await buddyList.recent());
         const record = withBuddies(createRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), ids);
-        return { ...(await saveAndReadBack(ctx, record, number)), leftOut };
+        return { ...(await saveAndReadBack(ctx, record, number, { reference })), leftOut };
       },
       async current(remoteId) {
         const read = await logbook.current();
@@ -269,7 +320,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         // The number there stays unless Dive Hub's is asked for and no other dive has it.
         const number = wanted != null && !(await holderOf(wanted, remoteId)) ? wanted : numberOf(remote.odin_user_log_nr);
         const record = { ...withBuddies(updateRecord(remote, forSsi(dive), leave), [...ids, ...kept]), odin_user_log_nr: number };
-        return { ...(await saveAndReadBack(ctx, record, number)), leftOut };
+        return { ...(await saveAndReadBack(ctx, record, number, {})), leftOut };
       },
       async setNumber(remoteId, number, sharedWith) {
         const remote = await byId(remoteId);
@@ -280,10 +331,8 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         if (holder) return { result: 'taken', by: remoteDive(holder) };
         // SSI's own record back with only the number changed: nothing of Dive Hub's newer values goes along.
         const record = { ...writableRecord(remote), odin_user_log_nr: number };
-        const { id } = await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, record));
-        const after = keep(ctx.connectionId, await called('get_divelog', ctx.connectionId, () => client.logbook(ctx.access)));
-        const stored = after.dives.find((r) => idOf(r.odin_user_log_id) === id);
-        if (!stored || numberOf(stored.odin_user_log_nr) !== number) throw new ProviderError('not_stored', 'save_divelog: SSI answered, but the dive does not have the number saved');
+        const saved = await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, record));
+        await confirmed(ctx, record, saved, { number });
         return { result: 'set', remoteNumber: number };
       },
       async heldNumbers() {

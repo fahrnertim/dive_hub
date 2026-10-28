@@ -1,7 +1,7 @@
 ---
 title: "Plan: two-way with conflict handling (piece 3 of the SSI app alignment)"
 summary: Piece 3 of the SSI app alignment design - the send to a Provider becomes three-way like the import (a change made only at the Provider comes back, a removal is a change both ways, tank and lead included), a Conflict on the Dive's page is asked there before anything is sent, a Conflict in a Push run is sent around and waits in "Needs your decision" as a stored entry per Dive and Connection; the Provider's per-field directions govern every direction; two checks on the owner's account (does SSI clear a key sent empty; a change made in SSI's app survives a send).
-status: ready
+status: done
 date: 2026-10-24
 ---
 

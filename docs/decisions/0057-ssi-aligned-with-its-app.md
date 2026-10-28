@@ -59,8 +59,10 @@ nothing of several values it imports.
     action, never from a send, so a send still carries only accounts ([ADR 0029](0029-push-requirements-and-buddies.md)).
     Push runs never ask; they leave such Participants out and list the dives. The entry ID is remembered per list
     owner's account and Diver (`account_list_entry`). `search_buddy` is not used, nor any account number its answers leak.
-- **Read-back** (amends [0047](0047-push-runs.md)): a save is compared with the record SSI returns in its answer;
-  storage is confirmed by one logbook read per run, as [ADR 0049](0049-ssi-app-user-agent.md) still requires.
+- **Read-back** (amends [0047](0047-push-runs.md)): a save is compared with the record SSI returns in its answer
+  (`result.dive`), and that record also proves storage: SSI's invented answer ([ADR 0049](0049-ssi-app-user-agent.md))
+  carries none ([T], [check](../research/2026-10-28-ssi-save-answer-check.md)). No logbook read follows a save; only an
+  answer without the record is decided by one logbook read, as before (owner, 2026-10-28).
 - **Checks on the owner's account:** allowed, each announced before it runs, each a mode of the owner's check script,
   each recorded in a dated research note (keys sent, what SSI stored, result, app version). The owner signs in in their
   own terminal; the password never reaches an agent. Test data is dated 2000-01-01 or named "Dive Hub test" and deleted.

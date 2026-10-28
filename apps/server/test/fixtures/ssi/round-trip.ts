@@ -56,7 +56,11 @@
 //     and e-mail, one with a name only. update: the e-mail entry gets another last name. dive: a 2000-01-01 test dive with
 //     both. account: the e-mail entry gets the account of an existing entry; is that entry unchanged? restore: puts it
 //     back if not. finish: deletes the dive and the test entries. See buddy-checks.ts.
-// write, number, omitted, values, clear, twoway, site, buddy and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
+//   … round-trip.ts answer   (piece 7, fewer reads; the site is the test site 1083262 unless SSI_SITE_ID is set)
+//     what SSI's save answers: creates and updates a throwaway dive (2000-01-05 12:00, "Dive Hub test") as the app, then
+//     creates one (14:00) with another User-Agent (ADR 0049); prints whether each answer carries result.dive with samples,
+//     how it compares with what was sent and with the logbook, whether the foreign create was stored; deletes the test dives.
+// write, number, omitted, values, clear, twoway, site, buddy, answer and expired sign in when SSI_EMAIL and SSI_PASSWORD are set, else use the token kept by "read".
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
@@ -72,6 +76,7 @@ import {
   type BuddySaved,
 } from './buddy-checks.js';
 import { finishValuesChecks, startValuesChecks } from './values-checks.js';
+import { runAnswerChecks } from './answer-checks.js';
 import { userAgent } from '../../../src/sites/import/polite-http.js';
 import { createSsiClient, SsiError, type SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
 import { compareReadBack, createRecord, deleteRecord, updateRecord, writableRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
@@ -287,6 +292,9 @@ if (mode === 'read') {
   await runSiteVisibleFinish({ client, access: account.token, saved, log: console.log });
 } else if (mode === 'buddy') {
   await buddyMode(process.argv[3], process.argv.slice(4).join(' '));
+} else if (mode === 'answer') {
+  const account = await access();
+  await save('answer', await runAnswerChecks({ access: account.token, accountId: account.accountId, siteId: process.env.SSI_SITE_ID ?? '1083262', log: console.log }));
 } else if (mode === 'expired') {
   const { token, at } = JSON.parse(await readFile(tokenFile, 'utf8')) as { token: string; at: string };
   const hours = ((Date.now() - Date.parse(at)) / 3_600_000).toFixed(1);
