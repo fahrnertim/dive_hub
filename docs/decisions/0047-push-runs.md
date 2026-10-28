@@ -18,6 +18,10 @@ and builds on [ADR 0010](0010-graphile-worker-job-queue.md), [ADR 0029](0029-pus
 when the Connection follows numbers, a third choice sets the number of dives already there, and number changes go
 first in an order that keeps each number free. The places are marked "ADR 0048" below.
 
+**Amended by [ADR 0056](0056-two-way-exchange-and-automation.md)** (built 2026-10-24 and 2026-10-27): a run's sends are
+three-way and leave clashes in "Needs your decision"; Dive Hub may also send by itself (a Connection's settings), and an
+Import of more than 20 new Dives offers a run instead.
+
 ## Context
 - A Dive goes to a Provider from its own page, one at a time. A User with a logbook of some hundred Dives and a new
   SSI Connection opens each Dive. The logbook already counts them ("Not in SSI", ADR 0040) but offers nothing to do.

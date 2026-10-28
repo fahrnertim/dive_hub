@@ -11,7 +11,9 @@ date: 2026-10-06
 Accepted – 2026-10-06. A Dive's number is no longer taken from the Recording ([ADR 0048](0048-dive-numbers.md)): an import that creates or moves a Dive renumbers its Diver's Dives. Amended 2026-10-07 (below): a probable non-dive is never matched by itself. Amended by [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md) (planned: an import also
 fills lead and the cylinder and takes them back three-way). Amends [ADR 0027](0027-providers-as-adapters.md) (dives get an `import` direction with `list`) and
 [ADR 0016](0016-recording-decisions-and-divers.md) (a Recording that attaches to a Dive without one becomes its
-primary). Designed in [Importing dives from SSI](../research/2026-10-06-ssi-import.md).
+primary). Designed in [Importing dives from SSI](../research/2026-10-06-ssi-import.md). Amended by
+[ADR 0056](0056-two-way-exchange-and-automation.md) (built 2026-10-24 and 2026-10-27): the send takes the import's
+three-way rule, an Import can run unattended on a schedule, and its clashes wait in "Needs your decision".
 
 ## Context
 The owner's SSI logbook holds about 90 dives, typed by hand, with rounded times and depths. Another User may have synced

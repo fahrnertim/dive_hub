@@ -1,15 +1,17 @@
 ---
 title: "ADR 0056: Two-way exchange and automation for integrations"
 summary: For every Provider, the send gets the import's three-way rule (a change made only at the Provider comes back instead of being overwritten; a change on both sides is a clash), unattended clashes wait in "Needs your decision" per Dive and Connection, and a Connection can send on change (one coalesced entry per Dive, sent after 2 quiet minutes, skipped when the fingerprint is unchanged), send new Dives and delete at the Provider by setting (both off by default), and fetch on a schedule no faster than the Provider declares; unattended runs renew a sign-in only with a kept password. Amended 2026-10-24 - a manual send asks a clash on the Dive's page, a Push run leaves it in "Needs your decision"; a removal is a change both ways (tank and lead too, amending 0031 and 0045). Amended 2026-10-27 - the queue is a table of Waiting pushes (30 s quiet period for a send, 5 min for a delete), unattended sends never duplicate or remove a verification, choices in "Needs your decision" queue the Dive, `limits.fetchEveryMinutes`, a fetch on opening. Amends 0026, 0027, 0030, 0031, 0038, 0045, 0047.
-status: proposed
+status: accepted
 date: 2026-10-23
 ---
 
 # ADR 0056: Two-way exchange and automation for integrations
 
 ## Status
-Proposed – 2026-10-23. From the owner's design session of 2026-10-23
-([design](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md)); the owner accepts it (or doesn't).
+Accepted – 2026-10-28 (owner). Proposed 2026-10-23, from the owner's design session of 2026-10-23
+([design](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md)). Built: the three-way send (piece 3,
+2026-10-24) and automation for every Provider (piece 6, 2026-10-27,
+[plan](../superpowers/plans/2026-10-27-provider-automation.md)).
 
 ## Context
 - The import already compares per field with a base, three-way ([ADR 0030](0030-importing-dives-from-providers.md),

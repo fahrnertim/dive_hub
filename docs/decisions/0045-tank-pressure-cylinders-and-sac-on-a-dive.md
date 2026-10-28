@@ -11,7 +11,9 @@ date: 2026-10-08
 Accepted – 2026-10-08 (owner, in conversation). Slices 1 (showing), 2 (Cylinders) and 3 (SAC on this dive) built on 2026-10-08, SSI's tank after them on the same day.
 Amends [ADR 0037](0037-suunto-file-import-and-file-formats.md) (decision 5: the pressure is shown now),
 [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md) (the order: Cylinders before lead and suit) and
-[ADR 0033](0033-gas-plans-rules-and-groups.md) (when a Dive's SAC counts).
+[ADR 0033](0033-gas-plans-rules-and-groups.md) (when a Dive's SAC counts). Amended by
+[ADR 0056](0056-two-way-exchange-and-automation.md) (2026-10-24): a tank emptied at the Provider removes the Dive's one
+Cylinder, unless a Recording brought it.
 
 ## Context
 - A Suunto tank pod's pressure was read and stored (ADR 0037) but shown nowhere: one series per gas number
