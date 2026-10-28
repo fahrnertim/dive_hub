@@ -399,7 +399,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
   }
 
   /** A Dive's state at one Provider. */
-  async function statusAt(userId: string, provider: string, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>) {
+  async function statusAt(userId: string, provider: string, loaded: Awaited<ReturnType<typeof loadOutgoingDive>>, opts: { conflicts?: boolean } = {}) {
     const { adapter, dives, exports } = exporter(provider);
     const { row } = loaded;
     const { unmet, outgoing } = prepared(adapter, exports, loaded);
@@ -415,7 +415,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       unmet,
       current: current ? remoteState(current, dives, outgoing, numbersFor(conn, exports, row.number)) : null,
       // The open entry about the current remote dive: the Conflicts that wait (ADR 0056).
-      conflicts: current ? await conflicts.ofDive(userId, adapter, conn, row.diverId, row.id, current.remoteId!) : null,
+      conflicts: current && opts.conflicts !== false ? await conflicts.ofDive(userId, adapter, conn, row.diverId, row.id, current.remoteId!) : null,
       pushes,
     };
   }
@@ -452,7 +452,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       for (const { id } of candidates) {
         const loaded = await loadOutgoingDive(db, userId, id);
         for (const provider of providers) {
-          const { connection: conn, current } = await statusAt(userId, provider, loaded);
+          const { connection: conn, current } = await statusAt(userId, provider, loaded, { conflicts: false });
           if (conn && current && (!current.upToDate || (current.number?.differs && current.number.canSet))) {
             changed.push(id);
             break;
