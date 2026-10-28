@@ -97,15 +97,15 @@ answers), [ADR 0056](../../decisions/0056-two-way-exchange-and-automation.md), [
 - Test: `apps/server/test/ssi-dive-import.test.ts` (new test next to "a field the Provider does not import, on a new Dive")
 
 - [ ] **Step 1: Write the failing test** `"leaves the Provider's depth and temperatures out of the Recording where it doesn't import them"`:
-  as the neighbouring test, an `ssi_no_values` adapter importing every `DIVE_FIELDS` entry except `maxDepthM`, `avgDepthM`,
+  as the neighbouring test, an `ssi_no_values` adapter importing every `DIVE_FIELDS` entry except `maxDepthM`,
   `waterTemperatureC`, `maxTemperatureC` and `profile`; the computer dive with `odin_user_log_watertemp_c: 24`,
-  `odin_user_log_watertemp_max_c: 26`, `odin_user_log_avg_depth_m: 12`. Assert on the Recording row:
-  `summary` has no `minTemperatureC` nor `maxTemperatureC`, and `maxDepthM`, `avgDepthM` are null.
+  `odin_user_log_watertemp_max_c: 26`. Assert on the Recording row:
+  `summary` has no `minTemperatureC` nor `maxTemperatureC`, and `maxDepthM` is null.
 - [ ] **Step 2:** `pnpm --filter @dive-hub/server exec vitest run test/ssi-dive-import.test.ts -t "depth and temperatures"` → FAIL.
-- [ ] **Step 3:** In `asRecording`, the Provider's `maxDepthM`, `avgDepthM`, `waterTemperatureC` (summary `minTemperatureC`)
+- [ ] **Step 3:** In `asRecording`, the Provider's `maxDepthM`, `waterTemperatureC` (summary `minTemperatureC`)
   and `maxTemperatureC` count only when `importsField(run, <that field>)`; the profile-derived fallback (min/max of the
   temperature series, max of the depth series) stays, as those series are only there when `profile` imports.
-  (`avgDepthM` has the same gap as the three named in the backlog; fixed alongside.)
+  (`avgDepthM` has the same gap; left as it is, as the backlog names three values: its Done item 3.)
 - [ ] **Step 4:** Step 2's command → PASS; whole file → PASS.
 - [ ] **Step 5:** `pnpm check`, commit "Provider import: a Recording's depth and temperatures follow the import directions (backlog 0002)".
 

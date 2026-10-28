@@ -714,7 +714,8 @@ import preview.) *Web:* `GoneDives.tsx`, the Review page, the logbook's strip an
 (`GET /api/provider-conflicts`, per Connection, no call to a Provider.) A Conflict is a field changed on both sides,
 differently, found while sending a Dive. One entry per Dive and Provider waits under "Needs your decision" on the Review
 page, beside the gone dives: `entries` carry the Dive's number, time, depth, duration and site, the `remoteId`, and
-`fields`, each with `hub` and `provider` values said as in the import preview. An entry whose Dive is deleted or whose
+`fields`, each with `hub` and `provider` values said as in the import preview, both as the run found them (the Dive's
+page says `hub` as the Dive is now: [Sending a Dive](#sending-a-dive-to-a-provider-ssi)); a choice sends the Dive's value now. An entry whose Dive is deleted or whose
 remote dive is no longer the Dive's current one is not listed. Only the Connection's owner sees it. A Push run makes
 them: it sends the Dive without the field, and so does a scheduled fetch ([Sending by itself](#sending-by-itself)).
 Deciding is the choice per field sent to `POST /api/dives/{id}/providers/{provider}/decision` (`conflicts`), which queues

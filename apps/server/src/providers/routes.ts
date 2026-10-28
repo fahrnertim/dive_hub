@@ -818,7 +818,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
           + '"<Provider> already has a dive at this time" with "Link to it" and "Create a new one"',
       }),
       remoteId: Type.String({ description: 'conflict: the remote dive the Conflict is about. exists: the dive at the Provider' }),
-      fields: Type.Array(ConflictFieldView),
+      fields: Type.Array(ConflictFieldView, { description: "Both values as the run found them; hub sends the Dive's value now" }),
       existing: Nullable(Type.Object({
         remoteId: Type.String(), remoteNumber: Nullable(Type.Integer()),
         startsAt: Type.String({ description: 'Local time as the Provider keeps it, "YYYY-MM-DD HH:MM"' }),
