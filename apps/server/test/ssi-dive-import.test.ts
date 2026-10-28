@@ -635,8 +635,10 @@ async function importedWithout(id: string, left: readonly DiveField[], extra: (b
     const diveId = done.outcome[0]!.diveId!;
     const view = (await call('GET', `/api/dives/${diveId}`)).json() as { notes: string | null };
     const [rec] = await t.db.select().from(recording).where(eq(recording.diveId, diveId));
-    const channels = (await t.db.select().from(sampleSeries).where(eq(sampleSeries.recordingId, rec!.id))).map((s) => s.channel);
-    return { view, rec: rec!, channels };
+    const series = await t.db.select().from(sampleSeries).where(eq(sampleSeries.recordingId, rec!.id));
+    const channels = series.map((s) => s.channel);
+    const depths = series.find((s) => s.channel === 'depth')?.values ?? [];
+    return { view, rec: rec!, channels, depths };
   } finally {
     await ctx.app.close();
     await t.drop();
@@ -662,5 +664,12 @@ describe.skipIf(!(await databaseReachable()))('a field the Provider does not imp
     expect(rec.summary).not.toHaveProperty('minTemperatureC');
     expect(rec.summary).not.toHaveProperty('maxTemperatureC');
     expect(rec.maxDepthM).toBeNull();
+  }, 30_000);
+
+  it("takes the profile's deepest point when the Provider's max depth isn't imported but its profile is", async () => {
+    const { rec, depths } = await importedWithout('ssi_no_max_depth', ['maxDepthM'], (base) => ({ ...base, odin_user_log_depth_m: 30 }));
+    expect(depths.length).toBeGreaterThan(0);
+    expect(rec.maxDepthM).toBe(Math.max(...depths));
+    expect(rec.maxDepthM).not.toBe(30);
   }, 30_000);
 });
