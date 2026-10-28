@@ -1,7 +1,7 @@
 ---
 title: "Plan: sites (piece 4 of the SSI app alignment)"
 summary: Piece 4 of the SSI app alignment design - a Dive whose site has no SSI ID is sent anyway; the send takes the site's public ID, else the account's private one, else a nearby site of the account's logbook, else creates the site at SSI as private; private site IDs belong to the Diver's SSI account (dive_site_external_id.account_id → diver_external_id), only the sites module reads the table and no User sees another account's private ID; a picked or typed ID is asked of SSI (get_divesite); checks on the owner's account first (what save_divesite and get_divesite answer, whether a site can be deleted) and last (a private site usable on a dive and in no public list).
-status: ready
+status: done
 date: 2026-10-24
 ---
 

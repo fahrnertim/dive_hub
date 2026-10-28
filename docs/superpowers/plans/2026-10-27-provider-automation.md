@@ -1,7 +1,7 @@
 ---
 title: "Plan: automation for every Provider (piece 6)"
 summary: Implementation plan for piece 6 of the SSI alignment - the Waiting push table and its worker step (send on change, send new dives, delete at the Provider, 30 s and 5 min quiet periods, held and stopped states, retries for a day, waking on the Provider's next success), choices in "Needs your decision" through the queue (Conflicts, a dive already at the Provider), the scheduled fetch (interval per Provider, on opening, unattended rules, open Conflicts holding their fields in every import), the Connection's settings and summary, and the web client's icons, states and settings.
-status: proposed
+status: done
 date: 2026-10-27
 ---
 
