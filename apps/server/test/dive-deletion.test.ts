@@ -330,10 +330,11 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
       call('DELETE', `/api/dives/${id}`, ann, { version: (await json<{ version: number }>('GET', `/api/dives/${id}`, ann)).version, ...body });
     const deletedOf = async (id: string) => (await json<{ dives: DeletedDive[] }>('GET', '/api/dives/deleted', ann)).dives.find((d) => d.id === id)!;
     const restore = async (id: string) => call('POST', `/api/dives/${id}/restore`, ann, { version: (await deletedOf(id)).version });
+    /** Moves the clock to the entry's due time; an entry the clock has already passed (queued at the database's time) is due as it is. */
     const untilDue = async () => {
       const [row] = await rows();
-      const wait = row!.dueAt.getTime() - ctx.clock.now();
-      if (wait > 0) ctx.clock.skip(wait); // an entry the clock is already past is due
+      const due = row!.dueAt.getTime();
+      if (due > ctx.clock.now()) ctx.clock.skip(due - ctx.clock.now());
     };
     const step = () => ctx.providers.waitingPushes.step(connectionId);
 

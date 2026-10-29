@@ -606,11 +606,14 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
   describe('the worker step', () => {
     const step = (id = connectionId) => ctx.providers.waitingPushes.step(id);
     const of = async (provider = 'ledger') => (await rows()).filter((r) => r.provider === provider);
-    /** Moves the clock to the entry's due time, as if the worker's job ran then. */
+    /**
+     * Moves the clock to the entry's due time, as if the worker's job ran then. A later entry of the same test is queued
+     * at the database's time, which the clock has already passed: it is due and the clock stays (it never goes back).
+     */
     const untilDue = async (provider = 'ledger') => {
       const [row] = await of(provider);
-      const wait = row!.dueAt.getTime() - ctx.clock.now();
-      if (wait > 0) ctx.clock.skip(wait); // an entry the clock is already past is due
+      const due = row!.dueAt.getTime();
+      if (due > ctx.clock.now()) ctx.clock.skip(due - ctx.clock.now());
     };
     const remoteOf = async (id: string, provider = 'ledger') =>
       (await json<{ provider: string; current: { remoteId: string } | null }[]>('GET', `/api/dives/${id}/providers`)).find((s) => s.provider === provider)!.current;
@@ -631,8 +634,7 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       for (let i = 0; i < 20; i++) {
         const [before] = await rows();
         if (before!.state === 'stopped') break;
-        const wait = before!.dueAt.getTime() - ctx.clock.now();
-        if (wait > 0) ctx.clock.skip(wait);
+        ctx.clock.skip(before!.dueAt.getTime() - ctx.clock.now());
         const at = ctx.clock.now();
         await stepOnce();
         const [after] = await rows();
