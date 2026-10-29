@@ -1,7 +1,7 @@
 ---
 title: "Plan: tidy piece 6's automation, server and tests (backlog 0010, points 1-11)"
 summary: Cheaper queue writes on a Revision or a site change, the Clock everywhere, the queue's races and leftovers, two Conflict gaps, the scheduled fetch's log, tick and summary, batched list queries, the queue's reads moved to WaitingPushService, and the flaky, missing and untidy tests. The web points (12-14) are a second plan.
-status: draft
+status: done
 date: 2026-10-29
 ---
 
@@ -302,3 +302,24 @@ the [client contract](../../spec/clients.md).
 - [ ] **Step 2:** Final whole-branch review, then the `architecture-review` subagent; fixes per the fix loop (cap 5 rounds).
 - [ ] **Step 3:** `pnpm check`; commit `Backlog 0010: points 1-11 done, the rulings`; push and open the PR (override 5).
   The PR body lists the Rulings and anything parked at the cap.
+
+## Outcome (2026-10-29)
+
+Done on branch `automation-follow-ups` (commits 91e26c6..f3a269c). Rulings made while executing (the owner may overrule):
+
+- Task 6 drops fully sent Imports from a Connection's offer with `array_remove` on the stored column, not by writing back
+  a list read earlier, so a concurrent `afterImport` or dismiss isn't overwritten.
+- Task 8 also ran `e2e/provider-conflicts.spec.ts:76` ten times (it flaked once in a local check): 10/10, unchanged.
+  Found: the Retry test lacked Bob's `diver_management` row; `site-for-send` polled `pg_stat_activity` inside an open
+  transaction's snapshot (8/10 before, 10/10 after). The focus test in `e2e/waiting-pushes.spec.ts`: 10/10, unchanged.
+- Task 9: the row's fix link keeps the logbook's `list`, not `from`; the offer test checks the run's result strip
+  (there is no separate run page). Recorded in the backlog file.
+- Task 10: the two `untilDue` helpers move the Clock only when the entry isn't yet due. An entry queued later in a test
+  takes the database's time, which the Clock has passed; the Clock never goes back, and a negative skip now throws.
+- `WaitingPushLog` moved to `waiting-push-queue.ts`: importing it from `waiting-push-service.ts` into `push-service.ts`
+  made a cycle.
+
+Left for later (reviews, none blocking): an Import whose Dives were all deleted leaves the offer, so a Dive restored later
+isn't offered again (`waiting-push-service.ts`); `WaitingPushLog` would read better in a neutral module with one shared
+console default (now written three times); `conflicts.waiting` could filter `options ? 'conflicts'` in SQL; no test that
+`processImportTask` survives a throwing `finished`, or that a confirmed send survives a throwing settle.
