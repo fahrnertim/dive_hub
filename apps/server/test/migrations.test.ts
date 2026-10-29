@@ -41,6 +41,15 @@ describe.skipIf(!(await databaseReachable()))('applied migrations', () => {
 
     const insert = () => q(`insert into waiting_push (dive_id, provider, connection_id, action, due_at, changed_at) values ($1, 'ledger', $2, 'send', now(), now()) returning *`, [dive, conn.id]);
     expect((await insert()).rows[0]).toMatchObject({ state: 'waiting', options: {}, detail: null, attempts: 0, reason: null, first_failed_at: null, stopped_at: null });
+    // A full row: every column takes a value and gives it back.
+    const full = (await q(
+      `insert into waiting_push (dive_id, provider, connection_id, action, state, reason, options, detail, due_at, attempts, first_failed_at, stopped_at, changed_at)
+       values ($1, 'ssi', $2, 'delete', 'stopped', 'provider_refused', '{"onExisting": "link"}', '{"remoteId": "555", "remoteNumber": 12, "startsAt": "2026-03-05 08:00"}', now(), 3, now(), now(), now()) returning *`,
+      [dive, conn.id],
+    )).rows[0];
+    expect(full).toMatchObject({ action: 'delete', state: 'stopped', reason: 'provider_refused', options: { onExisting: 'link' }, detail: { remoteId: '555', remoteNumber: 12, startsAt: '2026-03-05 08:00' }, attempts: 3 });
+    expect(full.first_failed_at).toBeInstanceOf(Date);
+    expect(full.stopped_at).toBeInstanceOf(Date);
     await expect(insert()).rejects.toThrow();
 
     await q('update connection set fetch_every_minutes = 360 where id = $1', [conn.id]);

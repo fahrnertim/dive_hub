@@ -16,7 +16,6 @@ import type { SiteSourceAdapter } from '../src/sites/import/site-source.js';
 import type { ImportSource } from '../src/sites/sources.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
 import { createProviderLayer } from '../src/providers/layer.js';
-import { skippingClock } from '../src/providers/leases.js';
 import type { ProviderAdapter } from '../src/providers/provider.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
@@ -84,6 +83,23 @@ export const unreachable = (source: ImportSource): SiteSourceAdapter => ({
 /** A key for DIVEHUB_ENCRYPTION_KEY in tests (32 bytes). */
 export const TEST_ENCRYPTION_KEY = Buffer.alloc(32, 7);
 
+/** A clock that only skips forward, until a test sets it back to real time with `reset`. */
+export function resettableClock() {
+  let skipped = 0;
+  const slept: number[] = [];
+  return {
+    slept,
+    now: () => Date.now() + skipped,
+    async sleep(ms: number) { slept.push(ms); skipped += ms; },
+    skip(ms: number) {
+      if (ms < 0) throw new Error('the clock only skips forward; use reset() for real time');
+      skipped += ms;
+    },
+    /** Back to real time. */
+    reset() { skipped = 0; },
+  };
+}
+
 export async function createTestApp(t: TestDatabase, options: {
   rateLimit?: boolean; webDir?: string; siteSources?: Record<ImportSource, SiteSourceAdapter>;
   /** SSI as tests see it (default: a fresh fake); `encryptionKey: null` runs without DIVEHUB_ENCRYPTION_KEY. */
@@ -91,12 +107,12 @@ export async function createTestApp(t: TestDatabase, options: {
   /** Providers besides SSI, such as the test-only hand-over adapter (never in production). */
   extraProviders?: ProviderAdapter[];
   /** The leases' clock; two app instances on one database share one (default: a fresh skipping clock). */
-  clock?: ReturnType<typeof skippingClock>;
+  clock?: ReturnType<typeof resettableClock>;
   /** A test's change to the SSI adapter, such as which way its fields travel. */
   ssi?: (adapter: ProviderAdapter) => ProviderAdapter;
 } = {}) {
   const {
-    webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = skippingClock(), ssi = (a) => a,
+    webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = resettableClock(), ssi = (a) => a,
     ...authOptions
   } = options;
   const auth = createTestAuth(t.db, authOptions);

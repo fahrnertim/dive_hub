@@ -409,10 +409,16 @@ test('opening Dive Hub asks for a fetch once', { tag: ['@account'] }, async ({ p
   page.on('request', (r) => { if (r.method() === 'POST' && r.url().endsWith('/api/connections/fetch-due')) asked.push(r.url()); });
   await page.goto('/#/');
   await expect.poll(() => asked.length).toBe(1);
-  // Moving around the app doesn't ask again.
-  await page.goto('/#/review');
-  await page.goto('/#/account?tab=connections');
-  await page.goto('/#/');
-  await expect(page.getByRole('link', { name: 'Logbook' }).first()).toBeVisible();
+  // Moving around the app by its links doesn't ask again.
+  const nav = page.getByRole('navigation', { name: 'Main' });
+  for (const name of ['Divers', 'Dive sites', 'Tools']) {
+    await nav.getByRole('link', { name, exact: true }).click();
+    await expect(nav.getByRole('link', { name, exact: true })).toHaveAttribute('aria-current', 'page');
+  }
+  await nav.getByRole('link', { name: 'Logbook' }).click();
+  await expect(nav.getByRole('link', { name: 'Logbook' })).toHaveAttribute('aria-current', 'page');
   expect(asked).toHaveLength(1);
+  // Opening it anew, by a reload, asks once more.
+  await page.reload();
+  await expect.poll(() => asked.length).toBe(2);
 });

@@ -609,7 +609,8 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     /** Moves the clock to the entry's due time, as if the worker's job ran then. */
     const untilDue = async (provider = 'ledger') => {
       const [row] = await of(provider);
-      ctx.clock.skip(Math.max(0, row!.dueAt.getTime() - ctx.clock.now()));
+      const wait = row!.dueAt.getTime() - ctx.clock.now();
+      if (wait > 0) ctx.clock.skip(wait); // an entry the clock is already past is due
     };
     const remoteOf = async (id: string, provider = 'ledger') =>
       (await json<{ provider: string; current: { remoteId: string } | null }[]>('GET', `/api/dives/${id}/providers`)).find((s) => s.provider === provider)!.current;
@@ -630,7 +631,8 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       for (let i = 0; i < 20; i++) {
         const [before] = await rows();
         if (before!.state === 'stopped') break;
-        ctx.clock.skip(Math.max(0, before!.dueAt.getTime() - ctx.clock.now()));
+        const wait = before!.dueAt.getTime() - ctx.clock.now();
+        if (wait > 0) ctx.clock.skip(wait);
         const at = ctx.clock.now();
         await stepOnce();
         const [after] = await rows();
@@ -663,7 +665,7 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     beforeEach(() => {
       // Back to real time: the queue's notes take the database's time, the step the clock's, which earlier tests moved
       // on. Each test has a new Connection and new Dives, so no lease taken at the skipped time is in the way.
-      ctx.clock.skip(Date.now() - ctx.clock.now());
+      ctx.clock.reset();
       saves = 0;
       ledger.down = false;
       ledger.refuseDelete = false;
