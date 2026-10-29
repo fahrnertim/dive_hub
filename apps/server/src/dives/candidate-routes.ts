@@ -8,6 +8,7 @@ import { UTC_OFFSET_SOURCES } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
 import type { DuplicateReason } from '../imports/matching.js';
 import { CandidateError, type Candidates } from './candidates.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface CandidateRouteDeps {
   auth: Auth;
@@ -15,10 +16,7 @@ export interface CandidateRouteDeps {
   assessments: AssessmentService;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
 
-const DateTime = Type.String({ format: 'date-time' });
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 
 /** unknown: a local time logged without a time zone, kept as if UTC; shown as logged (ADR 0030). */
 const OffsetSource = Type.Enum([...UTC_OFFSET_SOURCES]);

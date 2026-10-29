@@ -5579,11 +5579,11 @@
                     "provider": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
                         }
                       ]
                     },
@@ -5594,16 +5594,19 @@
                     "finishedAt": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "format": "date-time"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       ]
                     },
                     "errorCode": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "enum": [
                             "unsupported_file",
@@ -5611,14 +5614,14 @@
                             "choice_expired"
                           ],
                           "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "found": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "type": "object",
                           "required": [
@@ -5641,14 +5644,14 @@
                             }
                           },
                           "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "kinds": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "type": "array",
                           "items": {
@@ -5658,9 +5661,6 @@
                             ]
                           },
                           "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
@@ -6101,11 +6101,11 @@
                       "provider": {
                         "anyOf": [
                           {
-                            "type": "string",
-                            "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string",
+                            "description": "An import of this Provider's dives (ADR 0030); null for an upload"
                           }
                         ]
                       },
@@ -6116,16 +6116,19 @@
                       "finishedAt": {
                         "anyOf": [
                           {
-                            "type": "string",
-                            "format": "date-time"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         ]
                       },
                       "errorCode": {
                         "anyOf": [
+                          {
+                            "type": "null"
+                          },
                           {
                             "enum": [
                               "unsupported_file",
@@ -6133,14 +6136,14 @@
                               "choice_expired"
                             ],
                             "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
-                          },
-                          {
-                            "type": "null"
                           }
                         ]
                       },
                       "found": {
                         "anyOf": [
+                          {
+                            "type": "null"
+                          },
                           {
                             "type": "object",
                             "required": [
@@ -6163,14 +6166,14 @@
                               }
                             },
                             "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
-                          },
-                          {
-                            "type": "null"
                           }
                         ]
                       },
                       "kinds": {
                         "anyOf": [
+                          {
+                            "type": "null"
+                          },
                           {
                             "type": "array",
                             "items": {
@@ -6180,9 +6183,6 @@
                               ]
                             },
                             "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
-                          },
-                          {
-                            "type": "null"
                           }
                         ]
                       },
@@ -6347,11 +6347,11 @@
                     "provider": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
                         }
                       ]
                     },
@@ -6362,16 +6362,19 @@
                     "finishedAt": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "format": "date-time"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       ]
                     },
                     "errorCode": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "enum": [
                             "unsupported_file",
@@ -6379,14 +6382,14 @@
                             "choice_expired"
                           ],
                           "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "found": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "type": "object",
                           "required": [
@@ -6409,14 +6412,14 @@
                             }
                           },
                           "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "kinds": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "type": "array",
                           "items": {
@@ -6426,9 +6429,6 @@
                             ]
                           },
                           "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
@@ -6763,11 +6763,11 @@
                     "provider": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
                         }
                       ]
                     },
@@ -6778,16 +6778,19 @@
                     "finishedAt": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "format": "date-time"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       ]
                     },
                     "errorCode": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "enum": [
                             "unsupported_file",
@@ -6795,14 +6798,14 @@
                             "choice_expired"
                           ],
                           "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "found": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "type": "object",
                           "required": [
@@ -6825,14 +6828,14 @@
                             }
                           },
                           "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "kinds": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "type": "array",
                           "items": {
@@ -6842,9 +6845,6 @@
                             ]
                           },
                           "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
@@ -7152,11 +7152,11 @@
                     "provider": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
                         }
                       ]
                     },
@@ -7167,16 +7167,19 @@
                     "finishedAt": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "format": "date-time"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       ]
                     },
                     "errorCode": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "enum": [
                             "unsupported_file",
@@ -7184,14 +7187,14 @@
                             "choice_expired"
                           ],
                           "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "found": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "type": "object",
                           "required": [
@@ -7214,14 +7217,14 @@
                             }
                           },
                           "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "kinds": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "type": "array",
                           "items": {
@@ -7231,9 +7234,6 @@
                             ]
                           },
                           "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
@@ -7626,10 +7626,10 @@
                           "number": {
                             "anyOf": [
                               {
-                                "type": "integer"
+                                "type": "null"
                               },
                               {
-                                "type": "null"
+                                "type": "integer"
                               }
                             ]
                           },
@@ -7640,10 +7640,10 @@
                           "utcOffsetSeconds": {
                             "anyOf": [
                               {
-                                "type": "integer"
+                                "type": "null"
                               },
                               {
-                                "type": "null"
+                                "type": "integer"
                               }
                             ]
                           },
@@ -7662,25 +7662,28 @@
                           "maxDepthM": {
                             "anyOf": [
                               {
-                                "type": "number"
+                                "type": "null"
                               },
                               {
-                                "type": "null"
+                                "type": "number"
                               }
                             ]
                           },
                           "avgDepthM": {
                             "anyOf": [
                               {
-                                "type": "number"
+                                "type": "null"
                               },
                               {
-                                "type": "null"
+                                "type": "number"
                               }
                             ]
                           },
                           "site": {
                             "anyOf": [
+                              {
+                                "type": "null"
+                              },
                               {
                                 "type": "object",
                                 "required": [
@@ -7695,9 +7698,6 @@
                                     "type": "string"
                                   }
                                 }
-                              },
-                              {
-                                "type": "null"
                               }
                             ]
                           },
@@ -7712,11 +7712,11 @@
                           "fromProvider": {
                             "anyOf": [
                               {
-                                "type": "string",
-                                "description": "The Provider whose logbook entry the Dive was made from, while it has no Recording (ADR 0030)"
+                                "type": "null"
                               },
                               {
-                                "type": "null"
+                                "type": "string",
+                                "description": "The Provider whose logbook entry the Dive was made from, while it has no Recording (ADR 0030)"
                               }
                             ]
                           },
@@ -7742,11 +7742,11 @@
                           "surfaceIntervalSeconds": {
                             "anyOf": [
                               {
-                                "type": "number",
-                                "description": "The computer’s own surface interval before the dive"
+                                "type": "null"
                               },
                               {
-                                "type": "null"
+                                "type": "number",
+                                "description": "The computer’s own surface interval before the dive"
                               }
                             ]
                           },
@@ -7829,6 +7829,9 @@
                           "profile": {
                             "anyOf": [
                               {
+                                "type": "null"
+                              },
+                              {
                                 "type": "object",
                                 "required": [
                                   "depthsM",
@@ -7871,9 +7874,6 @@
                                   }
                                 },
                                 "description": "The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording or while the Dive waits to be assessed"
-                              },
-                              {
-                                "type": "null"
                               }
                             ]
                           }
@@ -7929,21 +7929,21 @@
                         "deepestM": {
                           "anyOf": [
                             {
-                              "type": "number"
+                              "type": "null"
                             },
                             {
-                              "type": "null"
+                              "type": "number"
                             }
                           ]
                         },
                         "lastDiveAt": {
                           "anyOf": [
                             {
-                              "type": "string",
-                              "format": "date-time"
+                              "type": "null"
                             },
                             {
-                              "type": "null"
+                              "type": "string",
+                              "format": "date-time"
                             }
                           ]
                         }
@@ -8081,6 +8081,9 @@
                     "previous": {
                       "anyOf": [
                         {
+                          "type": "null"
+                        },
+                        {
                           "type": "object",
                           "required": [
                             "id"
@@ -8090,15 +8093,15 @@
                               "type": "string"
                             }
                           }
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "next": {
                       "anyOf": [
                         {
+                          "type": "null"
+                        },
+                        {
                           "type": "object",
                           "required": [
                             "id"
@@ -8108,20 +8111,17 @@
                               "type": "string"
                             }
                           }
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "position": {
                       "anyOf": [
                         {
-                          "type": "integer",
-                          "description": "Where the Dive is in the list, from 1; null when the list does not show it"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "integer",
+                          "description": "Where the Dive is in the list, from 1; null when the list does not show it"
                         }
                       ]
                     },
@@ -75506,11 +75506,11 @@
                     "provider": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "description": "An import of this Provider's dives (ADR 0030); null for an upload"
                         }
                       ]
                     },
@@ -75521,16 +75521,19 @@
                     "finishedAt": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "format": "date-time"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       ]
                     },
                     "errorCode": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "enum": [
                             "unsupported_file",
@@ -75538,14 +75541,14 @@
                             "choice_expired"
                           ],
                           "description": "Why the Import failed or ended; clients translate it. The detail stays in the server log"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "found": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "type": "object",
                           "required": [
@@ -75568,14 +75571,14 @@
                             }
                           },
                           "description": "What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },
                     "kinds": {
                       "anyOf": [
+                        {
+                          "type": "null"
+                        },
                         {
                           "type": "array",
                           "items": {
@@ -75585,9 +75588,6 @@
                             ]
                           },
                           "description": "The kinds of dive the User chose to import; null when nobody was asked (all were imported)"
-                        },
-                        {
-                          "type": "null"
                         }
                       ]
                     },

@@ -3,14 +3,11 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import { Problem, PROBLEMS, type ProblemCode } from '../http/problems.js';
-import { DIVE_ONLY } from '../dives/list-filter.js';
+import { DIVE_ONLY_PATTERN } from '../dives/list-filter.js';
 import { MAX_IDS, type PushRunService } from './push-run-service.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-const DateTime = Type.String({ format: 'date-time' });
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const Code = Type.Enum(Object.keys(PROBLEMS) as ProblemCode[]);
-const ONLY_PATTERN = `^(${DIVE_ONLY.join('|')})(,(${DIVE_ONLY.join('|')}))*$`;
 
 const LeftOut = Type.Object({
   upToDate: Type.Integer(), requirementsUnmet: Type.Integer(), updateNotChosen: Type.Integer(), removesVerification: Type.Integer(),
@@ -111,7 +108,7 @@ const StartBody = Type.Object({
     list: Type.Optional(Type.Object({
       siteId: Type.Optional(Type.String({ format: 'uuid' })),
       q: Type.Optional(Type.String({ maxLength: 200 })),
-      only: Type.Optional(Type.String({ pattern: ONLY_PATTERN })),
+      only: Type.Optional(Type.String({ pattern: DIVE_ONLY_PATTERN })),
     }, { description: 'The logbook\'s list for the Connection\'s Diver, as GET /api/dives takes siteId, q and only' })),
     ids: Type.Optional(Type.Array(Type.String({ format: 'uuid' }), { minItems: 1, maxItems: MAX_IDS, description: 'Instead of list: these Dives. Ids that are none of the Diver\'s are counted as notFound' })),
   }, { description: 'Exactly one of list and ids' }),

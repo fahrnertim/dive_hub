@@ -11,6 +11,7 @@ import { Problem, problem } from '../http/problems.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import type { LeadService } from './service.js';
 import type { EstimateBasis } from './types.js';
+import { Nullable } from '../http/schemas.js';
 
 export interface LeadRouteDeps {
   auth: Auth;
@@ -20,7 +21,6 @@ export interface LeadRouteDeps {
 /** The weight check every answer asks for: what to do, as codes clients translate (research note, "Safety"). */
 const WEIGHT_CHECK_STEPS = ['eye_level_empty_bc', 'neutral_at_5m_at_reserve'] as const;
 
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const Water = Type.Enum([...SITE_WATER_TYPES]);
 
 const PlannedCylinders = Type.Array(Type.Object({

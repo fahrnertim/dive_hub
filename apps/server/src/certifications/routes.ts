@@ -8,13 +8,13 @@ import { requireUser } from '../auth/fastify.js';
 import { CERTIFICATION_IMAGE_STATES, CERTIFICATION_VERIFICATIONS } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
 import { CertificationError, type CertificationService } from './certification-service.js';
+import { Nullable } from '../http/schemas.js';
 
 export interface CertificationRouteDeps {
   auth: Auth;
   certifications: CertificationService;
 }
 
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const DiverParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
 const CardParams = Type.Object({ id: Type.String({ format: 'uuid' }), certificationId: Type.String({ format: 'uuid' }) });
 const Day = Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'YYYY-MM-DD' });

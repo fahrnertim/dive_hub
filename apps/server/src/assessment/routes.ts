@@ -8,14 +8,13 @@ import { Problem, problem } from '../http/problems.js';
 import { COMPUTER_EVENTS } from '../vocabulary.js';
 import { AssessmentError, type AssessmentService, type AssessmentView } from './assessment-service.js';
 import { EVIDENCE, RULES, RULE_IDS, SEVERITIES, SOURCES } from './rules.js';
+import { IdParams, Nullable } from '../http/schemas.js';
 
 export interface AssessmentRouteDeps {
   auth: Auth;
   assessments: AssessmentService;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const Rule = Type.Enum([...RULE_IDS], { description: 'Which check found it; clients have a title and texts per rule (docs/spec/clients.md)' });
 
 const FindingView = Type.Object({

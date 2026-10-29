@@ -7,7 +7,8 @@ import { authHeaders, forwardCookies, requireUser } from '../auth/fastify.js';
 import { problem } from '../http/problems.js';
 import type { PasswordResets } from './password-resets.js';
 import type { SessionService } from './session-service.js';
-import { DateTime, IdParams, Password, Problem, Token, UserView, toUserView } from './views.js';
+import { Password, Problem, Token, UserView, toUserView } from './views.js';
+import { DateTime, IdParams } from '../http/schemas.js';
 
 export interface AccountRouteDeps {
   auth: Auth;

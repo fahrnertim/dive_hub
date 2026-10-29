@@ -6,6 +6,7 @@ import { AI_ACCESS_NAME_MAX, type Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import { AI_ACCESS_SCOPES, AiAccessError, LOG_DAYS, LOG_PAGE_MAX, type AiAccessService } from './access-service.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface AiAccessRouteDeps {
   auth: Auth;
@@ -13,9 +14,6 @@ export interface AiAccessRouteDeps {
   baseUrl: string;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-const DateTime = Type.String({ format: 'date-time' });
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const Scope = Type.Enum([...AI_ACCESS_SCOPES], {
   description: 'logbook:read: the User\'s Dives, sites, Divers and buddies\' names. logbook:positions: also the Dives\' own entry and exit positions',
 });

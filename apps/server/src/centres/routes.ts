@@ -7,6 +7,7 @@ import { requireUser } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import type { DiverService } from '../divers/diver-service.js';
 import { CENTRE_SOURCE_NAME, CENTRE_SOURCES, CentreError, type CentreActor, type CentreService } from './centre-service.js';
+import { IdParams, Nullable } from '../http/schemas.js';
 
 export interface CentreRouteDeps {
   auth: Auth;
@@ -14,8 +15,6 @@ export interface CentreRouteDeps {
   divers: DiverService;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const Name = Type.String({ minLength: 1, maxLength: 200, pattern: '\\S', description: 'As the centre spells it; for an SSI code, exactly as SSI does' });
 const Source = Type.Enum([...CENTRE_SOURCES]);
 const TypedId = Type.String({ minLength: 1, maxLength: 300, description: 'As the User typed or pasted it: the bare number, or the centre\'s whole code' });

@@ -9,15 +9,14 @@ import { REVISION_CAUSES } from '../dives/revisions.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { NEARBY_M, SITE_SORTS, SiteError, type ExternalIdRow, type SiteActor, type SiteService } from './site-service.js';
 import { IMPORT_SOURCES, SITE_SOURCES, SOURCE_INFO } from './sources.js';
+import { IdParams, Nullable } from '../http/schemas.js';
 
 export interface SiteRouteDeps {
   auth: Auth;
   sites: SiteService;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
 /** Null first, so Fastify's coercion keeps a null a null (ADR 0015). */
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 
 export const PositionSchema = Type.Object({
   latitude: Type.Number({ minimum: -90, maximum: 90 }),

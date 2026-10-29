@@ -9,6 +9,7 @@ import { Problem, problem } from '../http/problems.js';
 import { NO_CERTIFICATIONS, type CertificationService } from '../certifications/certification-service.js';
 import { DiverError } from './diver-error.js';
 import type { DiverActor, DiverService } from './diver-service.js';
+import { IdParams, Nullable } from '../http/schemas.js';
 
 export interface DiverRouteDeps {
   auth: Auth;
@@ -17,9 +18,7 @@ export interface DiverRouteDeps {
   certifications: CertificationService;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
 const Name = Type.String({ minLength: 1, maxLength: 100, pattern: '\\S' });
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const DiverSource = Type.Enum(['ssi', 'padi'], { description: 'A service a person has an account at' });
 
 const DateParam = Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'YYYY-MM-DD' });

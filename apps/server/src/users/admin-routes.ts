@@ -6,7 +6,8 @@ import { requireAdmin, requireUser } from '../auth/fastify.js';
 import { problem } from '../http/problems.js';
 import type { PasswordResets } from './password-resets.js';
 import { UserAdminError, type UserAdmin } from './user-admin.js';
-import { IdParams, LinkView, Problem, RoleSchema, UserView, toUserView } from './views.js';
+import { LinkView, Problem, RoleSchema, UserView, toUserView } from './views.js';
+import { IdParams } from '../http/schemas.js';
 
 export interface AdminRouteDeps {
   auth: Auth;

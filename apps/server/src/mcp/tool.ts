@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm';
 import { Type, type Static, type TSchema } from 'typebox';
 import { Value } from 'typebox/value';
 import type { Db, Tx } from '../db/client.js';
+import { Nullable } from '../http/schemas.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import type { AiAccessScope, AiAccessService, VerifiedAccess } from './access-service.js';
 
@@ -48,7 +49,7 @@ export const defineTool = <I extends TSchema>(tool: ToolDefinition<I>): ToolDefi
 
 // --- Schema fragments -------------------------------------------------------------------------------------------
 
-export const Nullable = <T extends TSchema>(t: T) => Type.Union([t, Type.Null()]);
+export { Nullable };
 export const Id = (description: string) => Type.String({ pattern: '^[0-9a-fA-F-]{36}$', description });
 export const DateOnly = (description: string) => Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: `${description} (YYYY-MM-DD)` });
 export const Detail = Type.Optional(Type.Enum(['concise', 'detailed'], {

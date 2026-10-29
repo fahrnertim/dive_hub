@@ -2,10 +2,9 @@
 import { Type, type Static } from 'typebox';
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from '../auth/password.js';
 import type { Role } from './invitations.js';
+import { DateTime } from '../http/schemas.js';
 
 export { Problem } from '../http/problems.js';
-export const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-export const DateTime = Type.String({ format: 'date-time' });
 export const RoleSchema = Type.Union([Type.Literal('user'), Type.Literal('admin')]);
 export const Password = Type.String({
   minLength: MIN_PASSWORD_LENGTH, maxLength: MAX_PASSWORD_LENGTH,

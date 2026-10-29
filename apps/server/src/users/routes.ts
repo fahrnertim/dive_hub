@@ -9,7 +9,8 @@ import { EmailTakenError, invitationStatus, type InvitationRow, type Invitations
 import type { ProfileService } from './profile-service.js';
 import type { Setup } from './setup.js';
 import { problem } from '../http/problems.js';
-import { DateTime, IdParams, LinkView, Password, PreferencesView, Problem, RoleSchema, Token, UserView, toUserView } from './views.js';
+import { LinkView, Password, PreferencesView, Problem, RoleSchema, Token, UserView, toUserView } from './views.js';
+import { DateTime, IdParams } from '../http/schemas.js';
 
 export interface UserRouteDeps {
   auth: Auth;

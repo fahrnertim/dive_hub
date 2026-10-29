@@ -28,6 +28,7 @@ import type { PushRow } from './remote-state.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { CertificationError, type CertificationService } from '../certifications/certification-service.js';
 import { replyCertificationError } from '../certifications/routes.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface ProviderRouteDeps {
   auth: Auth;
@@ -45,9 +46,6 @@ export interface ProviderRouteDeps {
   certifications: CertificationService;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-const DateTime = Type.String({ format: 'date-time' });
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const Code = Type.Enum(Object.keys(PROBLEMS) as ProblemCode[]);
 const Secret = Type.String({ minLength: 1, maxLength: 4000 });
 const KeepSignedIn = Type.Boolean({

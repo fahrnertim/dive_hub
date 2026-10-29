@@ -5,6 +5,8 @@ import { dive, diveSite } from '../db/schema.js';
 
 export const DIVE_ONLY = ['no-recording', 'no-site', 'with-findings', 'not-at-provider', 'changed-since-sent'] as const;
 export type DiveOnly = (typeof DIVE_ONLY)[number];
+/** A comma-separated list of DIVE_ONLY values, as a query parameter takes it. */
+export const DIVE_ONLY_PATTERN = `^(${DIVE_ONLY.join('|')})(,(${DIVE_ONLY.join('|')}))*$`;
 
 /** Findings that differ from guidance and that the User neither dismissed on the Dive nor muted for its Diver. */
 export const FINDINGS_SHOWN = sql<number>`(select count(*)::int from dive_finding f where f.dive_id = "dive"."id" and f.severity <> 'info'

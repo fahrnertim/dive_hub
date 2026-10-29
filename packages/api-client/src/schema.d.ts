@@ -1532,20 +1532,20 @@ export interface paths {
                             status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
                             /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
                             uploadName: string;
-                            provider: string | null;
+                            provider: null | string;
                             /** Format: date-time */
                             createdAt: string;
-                            finishedAt: string | null;
-                            errorCode: ("unsupported_file" | "processing_failed" | "choice_expired") | null;
-                            found: {
+                            finishedAt: null | string;
+                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
+                            found: null | {
                                 /** @description Dives with a gas: open circuit, rebreather, gauge */
                                 scuba: number;
                                 /** @description Apnea sessions */
                                 apnea: number;
                                 /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
                                 otherFiles: number;
-                            } | null;
-                            kinds: ("scuba" | "apnea")[] | null;
+                            };
+                            kinds: null | ("scuba" | "apnea")[];
                             /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
                             unsentTo: {
                                 connectionId: string;
@@ -1608,20 +1608,20 @@ export interface paths {
                             status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
                             /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
                             uploadName: string;
-                            provider: string | null;
+                            provider: null | string;
                             /** Format: date-time */
                             createdAt: string;
-                            finishedAt: string | null;
-                            errorCode: ("unsupported_file" | "processing_failed" | "choice_expired") | null;
-                            found: {
+                            finishedAt: null | string;
+                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
+                            found: null | {
                                 /** @description Dives with a gas: open circuit, rebreather, gauge */
                                 scuba: number;
                                 /** @description Apnea sessions */
                                 apnea: number;
                                 /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
                                 otherFiles: number;
-                            } | null;
-                            kinds: ("scuba" | "apnea")[] | null;
+                            };
+                            kinds: null | ("scuba" | "apnea")[];
                             /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
                             unsentTo: {
                                 connectionId: string;
@@ -1740,20 +1740,20 @@ export interface paths {
                             status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
                             /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
                             uploadName: string;
-                            provider: string | null;
+                            provider: null | string;
                             /** Format: date-time */
                             createdAt: string;
-                            finishedAt: string | null;
-                            errorCode: ("unsupported_file" | "processing_failed" | "choice_expired") | null;
-                            found: {
+                            finishedAt: null | string;
+                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
+                            found: null | {
                                 /** @description Dives with a gas: open circuit, rebreather, gauge */
                                 scuba: number;
                                 /** @description Apnea sessions */
                                 apnea: number;
                                 /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
                                 otherFiles: number;
-                            } | null;
-                            kinds: ("scuba" | "apnea")[] | null;
+                            };
+                            kinds: null | ("scuba" | "apnea")[];
                             /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
                             unsentTo: {
                                 connectionId: string;
@@ -1861,20 +1861,20 @@ export interface paths {
                             status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
                             /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
                             uploadName: string;
-                            provider: string | null;
+                            provider: null | string;
                             /** Format: date-time */
                             createdAt: string;
-                            finishedAt: string | null;
-                            errorCode: ("unsupported_file" | "processing_failed" | "choice_expired") | null;
-                            found: {
+                            finishedAt: null | string;
+                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
+                            found: null | {
                                 /** @description Dives with a gas: open circuit, rebreather, gauge */
                                 scuba: number;
                                 /** @description Apnea sessions */
                                 apnea: number;
                                 /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
                                 otherFiles: number;
-                            } | null;
-                            kinds: ("scuba" | "apnea")[] | null;
+                            };
+                            kinds: null | ("scuba" | "apnea")[];
                             /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
                             unsentTo: {
                                 connectionId: string;
@@ -1974,20 +1974,20 @@ export interface paths {
                             status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
                             /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
                             uploadName: string;
-                            provider: string | null;
+                            provider: null | string;
                             /** Format: date-time */
                             createdAt: string;
-                            finishedAt: string | null;
-                            errorCode: ("unsupported_file" | "processing_failed" | "choice_expired") | null;
-                            found: {
+                            finishedAt: null | string;
+                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
+                            found: null | {
                                 /** @description Dives with a gas: open circuit, rebreather, gauge */
                                 scuba: number;
                                 /** @description Apnea sessions */
                                 apnea: number;
                                 /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
                                 otherFiles: number;
-                            } | null;
-                            kinds: ("scuba" | "apnea")[] | null;
+                            };
+                            kinds: null | ("scuba" | "apnea")[];
                             /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
                             unsentTo: {
                                 connectionId: string;
@@ -2091,33 +2091,33 @@ export interface paths {
                             dives: {
                                 id: string;
                                 diverId: string;
-                                number: number | null;
+                                number: null | number;
                                 /** Format: date-time */
                                 startsAt: string;
-                                utcOffsetSeconds: number | null;
+                                utcOffsetSeconds: null | number;
                                 /**
                                  * @description unknown: startsAt is the local wall-clock time kept as if UTC; show it in UTC without an offset (ADR 0030)
                                  * @enum {unknown}
                                  */
                                 utcOffsetSource: "device" | "position" | "nearby" | "unknown";
                                 durationSeconds: number;
-                                maxDepthM: number | null;
-                                avgDepthM: number | null;
-                                site: {
+                                maxDepthM: null | number;
+                                avgDepthM: null | number;
+                                site: null | {
                                     id: string;
                                     name: string;
-                                } | null;
+                                };
                                 /** @description How many findings of the dive assessment differ from guidance (note or caution) and were not put aside (ADR 0036); 0: no mark */
                                 findings: number;
                                 /** @description How many Recordings the Dive has; 0: a logbook entry only (from a Provider or typed) */
                                 recordings: number;
-                                fromProvider: string | null;
+                                fromProvider: null | string;
                                 /** @description The mixes the Primary recording’s computer knew; O₂ and He as percent */
                                 gases: {
                                     o2: number;
                                     he: number;
                                 }[];
-                                surfaceIntervalSeconds: number | null;
+                                surfaceIntervalSeconds: null | number;
                                 /** @description The Divers on the Dive besides its own Diver: buddies first, then guides and instructors, each by name (ADR 0028) */
                                 participants: {
                                     diverId: string;
@@ -2142,7 +2142,7 @@ export interface paths {
                                      */
                                     dueAt: string;
                                 }[];
-                                profile: {
+                                profile: null | {
                                     /** @description Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch */
                                     depthsM: number[];
                                     /** @description Seconds from the first to the last depth sample of the Primary recording */
@@ -2153,7 +2153,7 @@ export interface paths {
                                         number,
                                         number
                                     ][];
-                                } | null;
+                                };
                             }[];
                             total: number;
                             /** @description How many Dives each filter would show for the Diver and the search, whatever filters are applied (ADR 0040) */
@@ -2168,8 +2168,8 @@ export interface paths {
                             totals: {
                                 dives: number;
                                 durationSeconds: number;
-                                deepestM: number | null;
-                                lastDiveAt: string | null;
+                                deepestM: null | number;
+                                lastDiveAt: null | string;
                             };
                             /** @description Only while sorted by date: the months of this page in page order, each with all the matching Dives of that month */
                             months: {
@@ -2231,13 +2231,13 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            previous: {
+                            previous: null | {
                                 id: string;
-                            } | null;
-                            next: {
+                            };
+                            next: null | {
                                 id: string;
-                            } | null;
-                            position: number | null;
+                            };
+                            position: null | number;
                             /** @description How many Dives the list shows */
                             total: number;
                         };
@@ -16733,20 +16733,20 @@ export interface paths {
                             status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
                             /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
                             uploadName: string;
-                            provider: string | null;
+                            provider: null | string;
                             /** Format: date-time */
                             createdAt: string;
-                            finishedAt: string | null;
-                            errorCode: ("unsupported_file" | "processing_failed" | "choice_expired") | null;
-                            found: {
+                            finishedAt: null | string;
+                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
+                            found: null | {
                                 /** @description Dives with a gas: open circuit, rebreather, gauge */
                                 scuba: number;
                                 /** @description Apnea sessions */
                                 apnea: number;
                                 /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
                                 otherFiles: number;
-                            } | null;
-                            kinds: ("scuba" | "apnea")[] | null;
+                            };
+                            kinds: null | ("scuba" | "apnea")[];
                             /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
                             unsentTo: {
                                 connectionId: string;

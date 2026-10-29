@@ -34,6 +34,7 @@ import type { AssessmentService } from '../assessment/assessment-service.js';
 import { ProviderServiceError } from '../providers/registry.js';
 import { WaitingPushViewSchema } from '../providers/waiting-push-view.js';
 import { replyProviderError } from '../providers/routes.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface DiveRouteDeps {
   auth: Auth;
@@ -51,13 +52,6 @@ export interface DiveRouteDeps {
   assessments: AssessmentService;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-const DateTime = Type.String({ format: 'date-time' });
-/**
- * Null first: Fastify's validator coerces types and tries union members in order, so with the
- * value type first a null in a request would become 0 or "" (caught by the dive editing tests).
- */
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 
 const Field = Type.Enum([...OVERRIDABLE_FIELDS], { description: 'A Dive value that can be overridden' });
 /** Start time with the local UTC offset at the dive (gap A8). */

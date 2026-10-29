@@ -7,7 +7,7 @@ import {
   DIVE_KINDS, IMPORT_ERROR_CODES, OUTCOME_REASONS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive, importJob,
 } from './db/schema.js';
 import { downsampleMinMax } from './dives/downsample.js';
-import { asksFor, DIVE_ONLY } from './dives/list-filter.js';
+import { asksFor, DIVE_ONLY_PATTERN } from './dives/list-filter.js';
 import { DIVE_SORTS, type LogbookService, type RowExtras } from './dives/logbook-service.js';
 import { Problem, problem } from './http/problems.js';
 import type { ImportService } from './imports/import-service.js';
@@ -15,6 +15,7 @@ import type { PushService } from './providers/push-service.js';
 import type { WaitingPushService } from './providers/waiting-push-service.js';
 import { WaitingPushViewSchema, type WaitingPushView } from './providers/waiting-push-view.js';
 import { UploadTooLargeError } from './storage/blob-store.js';
+import { DateTime, IdParams, Nullable } from './http/schemas.js';
 
 export interface RouteDeps {
   imports: ImportService;
@@ -27,9 +28,6 @@ export interface RouteDeps {
   auth: Auth;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-const DateTime = Type.String({ format: 'date-time' });
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([t, Type.Null()]);
 
 export const ImportView = Type.Object({
   id: Type.String(),
@@ -73,7 +71,6 @@ export const ImportView = Type.Object({
 });
 
 /** The logbook list (ADR 0017, 0040): a page of Dives, sorted, searched, narrowed by "show only" filters, with the total. */
-const ONLY_PATTERN = `^(${DIVE_ONLY.join('|')})(,(${DIVE_ONLY.join('|')}))*$`;
 const DiveListQuery = Type.Object({
   diverId: Type.Optional(Type.String({ format: 'uuid', description: 'Only this Diver\'s Dives' })),
   siteId: Type.Optional(Type.String({ format: 'uuid', description: 'Only Dives at this Dive site' })),
@@ -81,7 +78,7 @@ const DiveListQuery = Type.Object({
   sort: Type.Optional(Type.Enum([...DIVE_SORTS], { default: 'startsAt' })),
   order: Type.Optional(Type.Enum(['desc', 'asc'], { default: 'desc' })),
   only: Type.Optional(Type.String({
-    pattern: ONLY_PATTERN,
+    pattern: DIVE_ONLY_PATTERN,
     description: 'Comma-separated "show only" filters, all of which must fit: no-recording (a logbook entry without a Recording), '
       + 'no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), '
       + 'changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, '
