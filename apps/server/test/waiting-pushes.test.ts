@@ -1036,6 +1036,8 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       await failUntilStopped();
       ledger.down = false;
       const bobsUser = ((await t.db.execute(sql`select id from "user" where email = 'bob@example.com'`)).rows[0] as { id: string }).id;
+      // Bob co-manages the Diver (an earlier test leaves the same row), but sends through his own Connection only.
+      await t.db.execute(sql`insert into diver_management (user_id, diver_id) values (${bobsUser}, ${diverId}) on conflict do nothing`);
       await expect(ctx.providers.waitingPushes.retry(bobsUser, id, 'ledger')).rejects.toMatchObject({ code: 'connection_not_found' });
       await expect(ctx.providers.waitingPushes.retry(annId, id, 'ssi')).rejects.toMatchObject({ code: 'waiting_push_not_found' });
       await ctx.providers.waitingPushes.retry(annId, id, 'ledger');

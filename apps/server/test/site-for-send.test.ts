@@ -185,7 +185,8 @@ describe.skipIf(!(await databaseReachable()))('the send finds or creates the sit
       const sending = send(diveId);
       for (let waiting = false; !waiting;) {
         await new Promise((resolve) => setTimeout(resolve, 20));
-        waiting = (await rival.query("select 1 from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()")).rowCount === 1;
+        // Not through `rival`: inside its open transaction pg_stat_activity is one snapshot, taken at the first look.
+        waiting = (await t.pool.query("select 1 from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()")).rowCount === 1;
       }
       await rival.query('commit');
       expect((await sending).json()).toMatchObject({ outcome: 'created' });
