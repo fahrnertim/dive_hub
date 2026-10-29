@@ -60,6 +60,13 @@ export async function lockManagedDive(tx: Tx, userId: string, diveId: string): P
   return row.d;
 }
 
+/** Locks a Dive the caller already knows is there (an Import's or a merge's), whoever manages it. */
+async function lockDive(tx: Tx, diveId: string): Promise<DiveRow> {
+  const [row] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
+  if (!row) throw new DiveError('dive_not_found');
+  return row;
+}
+
 /** The Recording's values and where its offset came from (ADR 0030). */
 async function primaryOf(tx: Tx, recordingId: string | null): Promise<{ values: DiveValues; offsetSource: UtcOffsetSource } | null> {
   if (!recordingId) return null;
@@ -75,8 +82,9 @@ async function isProviderCopy(tx: Tx, recordingId: string): Promise<boolean> {
 }
 
 /**
- * Applies `next` to the Dive row: writes changed columns, bumps the version and records one Revision.
- * Returns the changes (empty when nothing differed, in which case nothing is written).
+ * Applies `next` to the Dive row: writes changed columns, bumps the version and records one Revision holding the
+ * changes and `extra` (changes the caller already made, such as Cylinders). Returns them all; when both are empty,
+ * nothing is written.
  */
 export async function applyToDive(
   tx: Tx, current: DiveRow,
@@ -167,17 +175,17 @@ export async function createDiveFromRecording(
 /**
  * Adds a Recording to a Dive. The Dive's values stay with its Primary recording, except (ADR 0030): on a Dive without
  * one, the Recording becomes primary; and a file's Recording becomes primary over a Provider's copy of the dive. Values
- * without Override then follow it.
+ * without Override then follow it. Both must exist (the caller found them): else it throws.
  */
 export async function attachRecording(tx: Tx, diveId: string, recordingId: string, actor: Actor, cause: RevisionCause) {
-  await tx.update(recording).set({ diveId, updatedAt: new Date() }).where(eq(recording.id, recordingId));
-  const [current] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
-  const [rec] = await tx.select().from(recording).where(eq(recording.id, recordingId));
+  const current = await lockDive(tx, diveId);
+  const [rec] = await tx.update(recording).set({ diveId, updatedAt: new Date() }).where(eq(recording.id, recordingId)).returning();
+  if (!rec) throw new DiveError('recording_not_found');
   // A tank pod's data makes the Dive's Cylinders where it has none (ADR 0045).
-  const changes: Changes = { recordings: { from: null, to: recordingId }, ...(current && rec && (await fillCylindersFromRecording(tx, diveId, rec))) };
-  const takesOver = !!current && (!current.primaryRecordingId
-    || ((await isProviderCopy(tx, current.primaryRecordingId)) && !(await isProviderCopy(tx, recordingId))));
-  if (current && takesOver) {
+  const changes: Changes = { recordings: { from: null, to: recordingId }, ...(await fillCylindersFromRecording(tx, diveId, rec)) };
+  const takesOver = !current.primaryRecordingId
+    || ((await isProviderCopy(tx, current.primaryRecordingId)) && !(await isProviderCopy(tx, recordingId)));
+  if (takesOver) {
     const primary = (await primaryOf(tx, recordingId))!;
     await applyToDive(tx, current, {
       values: merge(valuesOfDive(current), primary.values, current.overrides), overrides: current.overrides, notes: current.notes,
@@ -344,11 +352,10 @@ export function createDiveService(db: Db) {
 
 /**
  * After an Import changed a Dive's Primary recording, values without Override follow it.
- * Runs inside the Import's transaction.
+ * Runs inside the Import's transaction; the Dive must exist, else it throws.
  */
 export async function refreshFromPrimary(tx: Tx, diveId: string, actor: Actor, cause: RevisionCause, extra: Changes = {}): Promise<void> {
-  const [current] = await tx.select().from(dive).where(eq(dive.id, diveId)).for('update');
-  if (!current) return;
+  const current = await lockDive(tx, diveId);
   const primary = await primaryOf(tx, current.primaryRecordingId);
   const values = merge(valuesOfDive(current), primary?.values ?? null, current.overrides);
   await applyToDive(tx, current, {

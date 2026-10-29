@@ -1,7 +1,10 @@
 // Keeping a Dive through the HTTP API (ADR 0015): Overrides, resetting them, the Primary recording,
 // re-imports, concurrent edits and the history. Scenario 1 of the data model: a main computer and a backup.
 // The water type comes from the Dive site, with a hint when the computer was set to other water (ADR 0025).
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { attachRecording, refreshFromPrimary } from '../src/dives/dive-service.js';
+import type { Actor } from '../src/dives/revisions.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
@@ -210,5 +213,17 @@ describe.skipIf(!(await databaseReachable()))('keeping a Dive', () => {
       expect(ignored).toMatchObject({ version: d.version, overrides: d.overrides, waterType: d.waterType });
       expect((await edit({ version: d.version, reset: ['waterType'] })).statusCode).toBe(400);
     });
+  });
+
+  it('attaching to or refreshing a Dive that is not there throws rather than doing nothing', async () => {
+    const missing = randomUUID();
+    const actor: Actor = { type: 'system', id: 'test' };
+    await expect(t.db.transaction((tx) => attachRecording(tx, missing, mainId, actor, 'attach')))
+      .rejects.toMatchObject({ code: 'dive_not_found' });
+    await expect(t.db.transaction((tx) => refreshFromPrimary(tx, missing, actor, 'reimport')))
+      .rejects.toMatchObject({ code: 'dive_not_found' });
+    await expect(t.db.transaction((tx) => attachRecording(tx, diveId, randomUUID(), actor, 'attach')))
+      .rejects.toMatchObject({ code: 'recording_not_found' });
+    expect((await getDive()).recordings.map((r) => r.id)).toContain(mainId);
   });
 });
