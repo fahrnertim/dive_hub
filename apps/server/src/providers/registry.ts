@@ -1,6 +1,5 @@
 // The Providers of this instance (ADR 0027): built once in main.ts with the production adapters; tests add the fake SSI
 // and a test-only adapter. Everything generic asks the registry, never a Provider by name.
-import type { ProblemCode } from '../http/problems.js';
 import { ProviderError, type ProviderAdapter } from './provider.js';
 
 export interface ProviderRegistry {
@@ -23,10 +22,21 @@ export function createProviderRegistry(adapters: ProviderAdapter[]): ProviderReg
   };
 }
 
+/** What a Provider operation refuses with; the routes answer each through PROVIDER_STATUS. */
+export type ProviderRefusal =
+  | 'dive_not_found' | 'diver_not_found' | 'connection_not_found' | 'site_not_found' | 'waiting_push_not_found' | 'invalid_input'
+  | 'encryption_key_missing' | 'fetch_interval_too_short' | 'external_id_taken'
+  | 'provider_unsupported' | 'provider_wrong_credentials' | 'provider_already_connected' | 'provider_account_taken' | 'provider_account_held'
+  | 'provider_other_account' | 'provider_not_connected' | 'provider_sign_in_needed' | 'provider_requirements_unmet' | 'provider_not_sent'
+  | 'provider_dive_gone' | 'provider_busy' | 'provider_number_taken' | 'provider_numbers_off' | 'provider_number_nothing_to_set'
+  | 'provider_site_unknown' | 'provider_buddy_not_found' | 'provider_import_off'
+  | 'provider_unavailable' | 'provider_refused' | 'provider_not_stored'
+  | 'push_run_active' | 'push_run_nothing_to_send' | 'push_run_not_found' | 'push_run_not_active' | 'push_run_going' | 'push_run_not_stopped';
+
 /** A refusal about a Provider, answered with its problem code and the Provider named. */
 export class ProviderServiceError extends Error {
   constructor(
-    readonly code: ProblemCode,
+    readonly code: ProviderRefusal,
     readonly provider?: { id: string; name: string },
     /** More for the client, such as what is unmet (`provider_requirements_unmet`). */
     readonly extra?: Record<string, unknown>,
@@ -35,7 +45,7 @@ export class ProviderServiceError extends Error {
   }
 }
 
-const PROBLEM_OF: Record<ProviderError['reason'], ProblemCode> = {
+const PROBLEM_OF: Record<ProviderError['reason'], ProviderRefusal> = {
   wrong_credentials: 'provider_wrong_credentials', signed_out: 'provider_sign_in_needed', refused: 'provider_refused', not_stored: 'provider_not_stored',
   unavailable: 'provider_unavailable', bad_response: 'provider_unavailable',
   // No code of its own yet: the service that calls `setAccount` decides what a gone entry means.

@@ -1,7 +1,7 @@
 // Divers (ADR 0016, 0028): the User's Divers and their Devices; every Diver found by name; external Divers; a Diver's
 // accounts at services.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import type { FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
@@ -102,6 +102,11 @@ const STATUS: Record<DiverError['code'], number> = {
   diver_not_deletable: 403, diver_not_editable: 403, diver_external_id_taken: 409, diver_external_id_connected: 409, diver_not_external: 409,
   invalid_input: 400, body_weight_not_found: 404,
 };
+
+/** Answers a Diver refusal; with diver_external_id_taken, the Diver that has the account. */
+export const replyDiverError = (error: DiverError, reply: FastifyReply) =>
+  reply.code(STATUS[error.code]).send({ ...problem(error.code), ...(error.diver && { diver: error.diver }) });
+
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
 const actorOf = (request: FastifyRequest): DiverActor => ({ userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' });
@@ -109,9 +114,7 @@ const actorOf = (request: FastifyRequest): DiverActor => ({ userId: userOf(reque
 export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app, { auth, divers, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
   app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof DiverError) {
-      return reply.code(STATUS[error.code]).send({ ...problem(error.code), ...(error.diver && { diver: error.diver }) });
-    }
+    if (error instanceof DiverError) return replyDiverError(error, reply);
     throw error;
   });
 
