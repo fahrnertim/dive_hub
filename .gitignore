@@ -19,3 +19,7 @@ apps/web/review-output/
 
 # Superpowers working files: briefs, reports and review diffs of a run (ADR 0055)
 .superpowers/
+
+# desloppify: local scan state
+.desloppify/
+scorecard.png

@@ -66,6 +66,7 @@ that fit it, also for familiar tools (14 of them were never loaded in the first 
 | ux-navigation | uxcel-lab/product-skills | choosing the navigation pattern (top bar, tabs, bottom bar on phones), "where am I" signals, pagination | 2026-10-07 |
 | media-capture-device-contracts | voidmatcha/frontend-niche-skills | the camera's life cycle in a page: telling failures apart, honest recovery, stopping every track | 2026-10-08 |
 | karpathy-guidelines | forrestchang/andrej-karpathy-skills (2c60614) | writing, reviewing and refactoring code: assumptions said, the simplest change, surgical edits, verifiable goals | 2026-10-28 |
+| desloppify | peteromallet/desloppify v1.0 (`desloppify update-skill claude`, skill v7) | code health scan, score and cleanup queue ([baseline](research/2026-10-29-code-quality-baseline.md)) | 2026-10-29 |
 
 Install with telemetry off: `DISABLE_TELEMETRY=1 npx skills add <owner/repo> -s <skill> -a claude-code --copy -y`.
 
@@ -171,6 +172,12 @@ Where a skill and this project disagree, these rules win. They lived in AGENTS.m
   Their hand-offs to `better-accessibility`, `better-ui` and `better-writing` go to our `accessibility` skill, `emil-design-eng`
   and the writing rules in [docs/spec/design-system.md](spec/design-system.md#writing). Surfaces follow
   [ADR 0019](decisions/0019-tonal-surfaces.md): tones, not shadows, on the page. Findings go in our review documents' format.
+- **desloppify** (peteromallet): installed with `pip install "desloppify[full]"`; the command is not on PATH here, so run
+  `python -m desloppify`. Its state (`.desloppify/`) and `scorecard.png` stay local and ignored; what is worth keeping
+  (scores, exclusions, decisions) goes into the [baseline note](research/2026-10-29-code-quality-baseline.md) or a later note.
+  Its loop doesn't replace our checks: `pnpm check` before each commit, tests first for behaviour changes, no ESLint baseline
+  growth. Its "fix tool issues upstream" (cloning, PRs, issues on its repository) needs the owner's go-ahead. Suppressing
+  or wontfixing a finding needs a reason in the note.
 
 ## Pending (install when the matching library or phase is chosen)
 
