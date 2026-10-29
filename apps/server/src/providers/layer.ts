@@ -27,7 +27,7 @@ export function createProviderLayer(deps: {
 }) {
   const providers = createProviderRegistry(deps.adapters);
   const clock = deps.clock && { clock: deps.clock };
-  const leases = createLeases({ db: deps.db, ...clock });
+  const leases = createLeases({ db: deps.db, ...clock, ...(deps.log && { log: deps.log }) });
   const connections = createConnectionService({ db: deps.db, registry: providers, secrets: deps.secrets, leases, ...clock });
   const conflicts = createConflictService({ db: deps.db, connections, registry: providers, blobs: deps.blobs });
   const pushes = createPushService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, leases, conflicts, ...clock, ...(deps.log && { log: deps.log }) });

@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, isNull, lt, lte, or } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, diveLease, type ConnectionRow } from '../db/schema.js';
+import { consoleLog, type ProviderLog } from './waiting-push-queue.js';
 
 /** Where leases take their time from. Every app process on one database must agree on it (NTP is enough). */
 export interface Clock {
@@ -45,9 +46,10 @@ export class LeaseBusy extends Error {
 /** The Connection's turn didn't come within MAX_WAIT_MS. */
 export class TurnTimeout extends Error {}
 
-export function createLeases(deps: { db: Db; clock?: Clock }) {
+export function createLeases(deps: { db: Db; clock?: Clock; log?: ProviderLog }) {
   const { db } = deps;
   const clock = deps.clock ?? realClock;
+  const log = deps.log ?? consoleLog;
 
   /** Takes the lease of a Dive at a Provider unless another action holds it: one statement, so only one can win. */
   async function take(diveId: string, provider: string, holder: string): Promise<boolean> {
@@ -62,8 +64,17 @@ export function createLeases(deps: { db: Db; clock?: Clock }) {
     return won.length > 0;
   }
 
-  const release = (diveId: string, provider: string, holder: string) =>
-    db.delete(diveLease).where(and(eq(diveLease.diveId, diveId), eq(diveLease.provider, provider), eq(diveLease.holder, holder)));
+  /**
+   * Gives a lease back. A failure here never replaces the action's answer (a send that went would look failed and go
+   * again): the lease runs out by itself.
+   */
+  async function release(diveId: string, provider: string, holder: string): Promise<void> {
+    try {
+      await db.delete(diveLease).where(and(eq(diveLease.diveId, diveId), eq(diveLease.provider, provider), eq(diveLease.holder, holder)));
+    } catch (err) {
+      log.error({ err, diveId, provider }, 'a Dive lease could not be given back; it runs out by itself');
+    }
+  }
 
   return {
     /**
@@ -102,8 +113,10 @@ export function createLeases(deps: { db: Db; clock?: Clock }) {
             return await fn(row);
           } finally {
             // Only while the turn is still this action's: one that outlasted its lease leaves the next one alone.
+            // A failure leaves the turn to run out by itself (as a Dive lease), not in place of `fn`'s answer.
             await db.update(connection).set({ nextActionAt: new Date(clock.now() + pauseMs) })
-              .where(and(eq(connection.id, connectionId), eq(connection.nextActionAt, until)));
+              .where(and(eq(connection.id, connectionId), eq(connection.nextActionAt, until)))
+              .catch((err: unknown) => log.error({ err, connectionId }, "a Connection's turn could not be given back; it runs out by itself"));
           }
         }
         const [held] = await db.select({ at: connection.nextActionAt }).from(connection).where(eq(connection.id, connectionId));

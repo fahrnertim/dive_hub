@@ -43,17 +43,18 @@ export async function mergeExternalDiver(tx: Tx, fromId: string, intoId: string,
 
   const accounts = await tx.select().from(diverExternalId).where(eq(diverExternalId.diverId, fromId));
   for (const a of accounts) {
+    // An account is held by one Diver (unique), so another one there at the same service is always a different account.
     const [other] = await tx.select().from(diverExternalId).where(and(eq(diverExternalId.diverId, intoId), eq(diverExternalId.source, a.source)));
-    if (other && other.externalId !== a.externalId) throw new DiverError('diver_external_id_taken', { id: into.id, name: into.name });
-    if (other) await tx.delete(diverExternalId).where(eq(diverExternalId.id, a.id));
-    else await tx.update(diverExternalId).set({ diverId: intoId }).where(eq(diverExternalId.id, a.id));
+    if (other) throw new DiverError('diver_external_id_taken', { id: into.id, name: into.name });
+    await tx.update(diverExternalId).set({ diverId: intoId }).where(eq(diverExternalId.id, a.id));
   }
 
-  const dives = await participations(tx, fromId);
   // Not a Participant on a Dive of their own, and not twice on one Dive (the role already there stays).
   await tx.execute(sql`delete from ${participant} p using ${dive} d
     where p.dive_id = d.id and p.diver_id = ${fromId}
       and (d.diver_id = ${intoId} or exists (select 1 from ${participant} q where q.dive_id = p.dive_id and q.diver_id = ${intoId}))`);
+  // What it brings: the places that move, not those dropped above.
+  const dives = await participations(tx, fromId);
   await tx.update(participant).set({ diverId: intoId }).where(eq(participant.diverId, fromId));
 
   const at = new Date();

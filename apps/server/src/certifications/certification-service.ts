@@ -287,13 +287,16 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
     async remove(userId: string, diverId: string, id: string): Promise<void> {
       await managedOrThrow(userId, diverId);
       const current = await rowOrThrow(diverId, id);
-      await db.transaction(async (tx) => {
-        await tx.update(certification).set({
-          deletedAt: new Date(), updatedAt: new Date(), version: current.version + 1,
+      // Only the request that deletes it records the deletion and lets the picture go; one at the same time finds it gone.
+      const deleted = await db.transaction(async (tx) => {
+        const [row] = await tx.update(certification).set({
+          deletedAt: new Date(), updatedAt: new Date(), version: sql`${certification.version} + 1`,
           imageKey: null, imageSha256: null, imageBytes: null, imageState: 'none',
-        }).where(eq(certification.id, id));
-        await writeRevision(tx, 'diver', diverId, { type: 'user', id: userId }, 'delete', { certification: { from: label(current), to: null } });
+        }).where(and(eq(certification.id, id), isNull(certification.deletedAt))).returning({ id: certification.id });
+        if (row) await writeRevision(tx, 'diver', diverId, { type: 'user', id: userId }, 'delete', { certification: { from: label(current), to: null } });
+        return !!row;
       });
+      if (!deleted) throw new CertificationError('certification_not_found');
       await releaseBlob(current.imageKey, id);
     },
 
@@ -371,7 +374,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
           const needsImage = !!card.imageUrl && (changed || row.imageState === 'none' || row.imageState === 'failed' || row.imageState === 'pending');
           if (changed || needsImage) {
             await tx.update(certification).set({
-              ...values, importedAt: new Date(), updatedAt: new Date(), version: row.version + (changed ? 1 : 0),
+              ...values, importedAt: new Date(), updatedAt: new Date(), ...(changed && { version: sql`${certification.version} + 1` }),
               ...(needsImage && { imageState: 'pending' as const }),
             }).where(eq(certification.id, row.id));
             if (needsImage) await queueImage(tx, row.id);

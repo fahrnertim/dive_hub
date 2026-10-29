@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { connection, diveLease } from '../src/db/schema.js';
-import { LEASE_MS, MAX_WAIT_MS, POLL_MS } from '../src/providers/leases.js';
+import { LEASE_MS, MAX_WAIT_MS, POLL_MS, createLeases } from '../src/providers/leases.js';
 import { createFakeHandover, type FakeHandover } from './fake-handover-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -134,5 +134,15 @@ describe.skipIf(!(await databaseReachable()))('leases across app instances', () 
     expect((await send(one, dives[2]!)).json()).toMatchObject({ outcome: 'created' });
     fake.during = null;
     expect(open).toBe(0);
+  });
+
+  it("keeps the action's answer when giving a lease back fails: the lease runs out by itself", async () => {
+    const lost = new Error('connection lost');
+    const failing = new Proxy(t.db, { get: (target, key, receiver) => (key === 'delete' ? () => { throw lost; } : Reflect.get(target, key, receiver)) });
+    const logged: object[] = [];
+    const leases = createLeases({ db: failing, clock, log: { error: (detail) => logged.push(detail), warn: () => {} } });
+    expect(await leases.dive(dives[1]!, ['handover'], async () => 'sent')).toBe('sent');
+    expect(logged).toEqual([{ err: lost, diveId: dives[1], provider: 'handover' }]);
+    await t.db.delete(diveLease);
   });
 });
