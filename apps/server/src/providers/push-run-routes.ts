@@ -6,10 +6,14 @@ import { userOf } from '../auth/fastify.js';
 import { Problem, PROBLEMS, type ProblemCode } from '../http/problems.js';
 import { DIVE_ONLY_PATTERN } from '../dives/list-filter.js';
 import { MAX_IDS, type PushRunService } from './push-run-service.js';
-import { DateTime, IdParams, Nullable } from '../http/schemas.js';
+import { DateTime, IdParams, Nullable, oneOf } from '../http/schemas.js';
 import { UnmetView } from './unmet-view.js';
 
-const Code = Type.Enum(Object.keys(PROBLEMS) as ProblemCode[]);
+const CODES = Object.keys(PROBLEMS) as ProblemCode[];
+const Code = Type.Enum(CODES);
+// A run item's action and outcome are text columns; the views check them against these.
+const ACTIONS = ['create', 'update', 'number'] as const;
+const OUTCOMES = ['created', 'updated', 'linked', 'numbered'] as const;
 
 const LeftOut = Type.Object({
   upToDate: Type.Integer(), requirementsUnmet: Type.Integer(), updateNotChosen: Type.Integer(), removesVerification: Type.Integer(),
@@ -44,9 +48,9 @@ const RunView = Type.Object({
 const ItemView = Type.Object({
   diveId: Type.String(),
   position: Type.Integer({ description: 'The server\'s order; don\'t rely on it being by date' }),
-  action: Type.Enum(['create', 'update', 'number']),
+  action: Type.Enum(ACTIONS),
   state: Type.Enum(['waiting', 'sending', 'sent', 'skipped', 'failed']),
-  outcome: Nullable(Type.Enum(['created', 'updated', 'linked', 'numbered'])),
+  outcome: Nullable(Type.Enum(OUTCOMES)),
   sharesWithDiveId: Nullable(Type.String({ description: 'A number change that took the number this Dive still held, for one save (a swap or cycle, ADR 0052)' })),
   reason: Nullable(Type.String({
     description: 'skipped: exists, requirements_unmet, up_to_date, update_not_chosen, removes_verification, update_unsupported, dive_not_found, number_taken. failed: a problem code',
@@ -125,7 +129,7 @@ const StartBody = Type.Object({
 
 const time = (d: Date | null) => d?.toISOString() ?? null;
 const runView = <T extends { stopCode: string | null; createdAt: Date; startedAt: Date | null; finishedAt: Date | null; dismissedAt: Date | null }>(r: T) =>
-  ({ ...r, stopCode: r.stopCode as ProblemCode | null, createdAt: r.createdAt.toISOString(), startedAt: time(r.startedAt), finishedAt: time(r.finishedAt), dismissedAt: time(r.dismissedAt) });
+  ({ ...r, stopCode: r.stopCode === null ? null : oneOf(CODES, r.stopCode), createdAt: r.createdAt.toISOString(), startedAt: time(r.startedAt), finishedAt: time(r.finishedAt), dismissedAt: time(r.dismissedAt) });
 
 const errors = { 400: Problem, 404: Problem, 409: Problem };
 
@@ -174,7 +178,7 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
     },
   }, async (request) => {
     const run = await pushRuns.get(userOf(request).id, request.params.id);
-    return { ...runView(run), withoutSomeone: run.withoutSomeone.map((w) => ({ ...w, startsAt: w.startsAt.toISOString() })), items: run.items.map((i) => ({ ...i, action: i.action as Static<typeof ItemView>['action'], outcome: i.outcome as Static<typeof ItemView>['outcome'], dive: { ...i.dive, startsAt: i.dive.startsAt.toISOString() } })) };
+    return { ...runView(run), withoutSomeone: run.withoutSomeone.map((w) => ({ ...w, startsAt: w.startsAt.toISOString() })), items: run.items.map((i) => ({ ...i, action: oneOf(ACTIONS, i.action), outcome: i.outcome === null ? null : oneOf(OUTCOMES, i.outcome), dive: { ...i.dive, startsAt: i.dive.startsAt.toISOString() } })) };
   });
 
   app.post('/push-runs/:id/cancel', {

@@ -8,3 +8,10 @@ export const DateTime = Type.String({ format: 'date-time' });
  * value type first a null in a request would become 0 or "" (caught by the dive editing tests).
  */
 export const Nullable = <T extends TSchema>(t: T) => Type.Union([Type.Null(), t]);
+
+/** A stored text value as one of an enum's values (e.g. a text column a response schema names the values of); any other is a bug, so it throws. */
+export function oneOf<T extends string>(values: readonly T[], value: string): T {
+  const found = values.find((v) => v === value);
+  if (found === undefined) throw new Error(`unexpected value "${value}", not one of ${values.join(', ')}`);
+  return found;
+}
