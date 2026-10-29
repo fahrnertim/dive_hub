@@ -31,7 +31,7 @@ export interface Buddy {
 }
 
 /** Linking and adding refuse as the Diver routes do; the Provider routes answer these codes as well. */
-async function asProblem<T>(fn: () => Promise<T>): Promise<T> {
+async function withDiverProblems<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } catch (error) {
@@ -88,7 +88,7 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
 
   /** The Diver's names and e-mail, which every User sees (ADR 0043). */
   async function wantedBy(userId: string, diverId: string) {
-    const d = await asProblem(() => divers.details({ userId, isAdmin: false }, diverId));
+    const d = await withDiverProblems(() => divers.details({ userId, isAdmin: false }, diverId));
     return {
       names: new Set([d.name, [d.firstName, d.lastName].filter(Boolean).join(' ')].filter(Boolean).map(foldName)),
       email: d.email ? foldName(d.email) : null,
@@ -113,7 +113,7 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
 
   /** Links the entry to the Diver: an entry with an account gives the Diver that account (the rules of the PUT), and is remembered. */
   async function linkEntry(actor: DiverActor, accountId: string, source: DiverSource, diverId: string, found: RemoteBuddy) {
-    if (found.account) await asProblem(() => divers.setExternalId(actor, diverId, source, found.account));
+    if (found.account) await withDiverProblems(() => divers.setExternalId(actor, diverId, source, found.account));
     await remember(db, accountId, diverId, found.remoteId);
   }
 
@@ -149,7 +149,7 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
     async link(actor: DiverActor, connectionId: string, entryId: string, diverId: string): Promise<{ diverId: string }> {
       const { row, adapter, buddies, source } = await open(actor.userId, connectionId);
       const accountId = await listAccount(row, source, named(adapter));
-      await asProblem(() => divers.details(actor, diverId));
+      await withDiverProblems(() => divers.details(actor, diverId));
       return underLock(row, source, accountId, async (ctx) => {
         const found = (await buddies.find(ctx)).find((b) => b.remoteId === entryId);
         if (!found) throw new ProviderServiceError('provider_buddy_not_found', named(adapter));
@@ -174,9 +174,9 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
       const lastName = person.lastName.trim().replace(/\s+/g, ' ');
       if (!firstName || !lastName) throw new ProviderServiceError('invalid_input');
       const accountId = await listAccount(row, source, named(adapter));
-      const before = await asProblem(() => divers.details(actor, diverId));
+      const before = await withDiverProblems(() => divers.details(actor, diverId));
       // The account first: another Diver having it ends the add before anything is made at the Provider.
-      if (person.account) await asProblem(() => divers.setExternalId(actor, diverId, source, person.account));
+      if (person.account) await withDiverProblems(() => divers.setExternalId(actor, diverId, source, person.account));
       const found = { byAccount: false };
       const answered = await underLock(row, source, accountId, async (ctx) => {
         const existing = person.account ? (await buddies.find(ctx)).find((b) => b.account === person.account) : undefined;
