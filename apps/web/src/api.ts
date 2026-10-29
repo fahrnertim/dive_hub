@@ -81,7 +81,7 @@ export type DiveCheckView = AnyLogbookCheck & { rule: 'short_shallow_dive'; othe
 export const isPairCheck = (c: AnyLogbookCheck): c is LogbookCheckView => c.other !== null;
 export const isDiveCheck = (c: AnyLogbookCheck): c is DiveCheckView => c.other === null;
 export type MergeCandidateView = Ok<'/api/dives/{id}/merge-candidates'>[number];
-export type DeletedDiveView = Ok<'/api/dives/deleted'>['dives'][number];
+export type DeletedDiveView = Ok<'/api/dives/deleted'>[number];
 export type SiteView = Ok<'/api/dive-sites/{id}'>;
 export type Position = NonNullable<SiteView['position']>;
 export type ExternalIdView = SiteView['externalIds'][number];
@@ -104,9 +104,9 @@ export type UnmetView = ProviderStatusView['unmet'][number];
 export type LeftOutView = NonNullable<PushView['leftOut']>[number];
 export type ParticipantView = DiveView['participants'][number];
 export type ParticipantRole = ParticipantView['role'];
-export type FoundDiverView = Ok<'/api/divers/search'>['divers'][number];
+export type FoundDiverView = Ok<'/api/divers/search'>[number];
 export type ExternalDiverView = Ok<'/api/external-divers'>['divers'][number];
-export type BuddyView = Ok<'/api/connections/{id}/buddies'>['buddies'][number];
+export type BuddyView = Ok<'/api/connections/{id}/buddies'>[number];
 export type DiveImportPreview = Ok<'/api/connections/{id}/dive-import'>;
 export type DiveImportMode = NonNullable<ConnectionView['diveImport']>['mode'];
 export type UtcOffsetSource = DiveView['utcOffsetSource'];
@@ -259,7 +259,7 @@ export const diveListPages = { queryKey: keys.dives, predicate: (q: { queryKey: 
  */
 export const deletedDivesQuery = () => queryOptions({
   queryKey: keys.deletedDives, queryFn: async () => unwrap(await api.GET('/api/dives/deleted')),
-  refetchInterval: (q) => pollUntilDue(q.state.data?.dives.flatMap((d) => d.waiting), Date.now()),
+  refetchInterval: (q) => pollUntilDue(q.state.data?.flatMap((d) => d.waiting), Date.now()),
 });
 
 /** Pairs of Dives that can't both be right as they stand, or those the User said are two dives (ADR 0038). */
@@ -336,7 +336,7 @@ const running = (i: SiteImportView) => i.status === 'queued' || i.status === 'ru
 /** The latest Site imports (admins, ADR 0021); asked again every two seconds while one runs. */
 export const siteImportsQuery = () => queryOptions({
   queryKey: keys.siteImports,
-  queryFn: async () => unwrap(await api.GET('/api/admin/site-imports')).imports,
+  queryFn: async () => unwrap(await api.GET('/api/admin/site-imports')),
   refetchInterval: (query) => (query.state.data?.some(running) ? 2000 : false),
 });
 
@@ -370,7 +370,7 @@ export const providerStatusQuery = (diveId: string, provider: string) =>
   });
 /** Every Diver of the instance whose name matches, the User's own first (ADR 0028). */
 export const diverSearchQuery = (q: string) =>
-  queryOptions({ queryKey: keys.diverSearch(q), queryFn: async () => unwrap(await api.GET('/api/divers/search', { params: { query: { q, limit: 20 } } })).divers, placeholderData: keepPreviousData });
+  queryOptions({ queryKey: keys.diverSearch(q), queryFn: async () => unwrap(await api.GET('/api/divers/search', { params: { query: { q, limit: 20 } } })), placeholderData: keepPreviousData });
 
 /** People Users dived with who keep no logbook here (ADR 0028). */
 export const externalDiversQuery = (q = '') =>
@@ -398,7 +398,7 @@ export type CertificationView = Ok<'/api/divers/{id}/certifications'>[number];
 async function fetchBuddies(connectionId: string, diverId?: string) {
   return unwrap(await api.GET('/api/connections/{id}/buddies', {
     params: { path: { id: connectionId }, ...(diverId && { query: { for: diverId } }) },
-  })).buddies;
+  }));
 }
 /** The account's list of people at the Provider (SSI's buddy list); asks the Provider, so only when the User opens it. */
 export const buddiesQuery = (connectionId: string) =>
@@ -422,8 +422,8 @@ export type GoneDivesOfConnection = Ok<'/api/gone-dives'>[number];
 export type GoneDiveView = GoneDivesOfConnection['dives'][number];
 
 /** Conflicts with a Provider that wait for the User's choice, per Connection (ADR 0056); stored, no call to the Provider. */
-export const providerConflictsQuery = () => queryOptions({ queryKey: keys.providerConflicts, queryFn: async () => unwrap(await api.GET('/api/provider-conflicts')).connections });
-export type ConflictsOfConnection = Ok<'/api/provider-conflicts'>['connections'][number];
+export const providerConflictsQuery = () => queryOptions({ queryKey: keys.providerConflicts, queryFn: async () => unwrap(await api.GET('/api/provider-conflicts')) });
+export type ConflictsOfConnection = Ok<'/api/provider-conflicts'>[number];
 export type ConflictEntryView = ConflictsOfConnection['entries'][number];
 /** One field changed on both sides, with both values as the import preview says them. */
 export type ConflictFieldView = ConflictEntryView['fields'][number];
@@ -442,9 +442,9 @@ export const diveTimesQuery = (connectionId: string) =>
 
 /** Admins: per Provider whose dives Users import, whether new Dive sites may be made from its site data (ADR 0030). */
 export const siteDataQuery = () => queryOptions({
-  queryKey: keys.siteData, queryFn: async () => unwrap(await api.GET('/api/admin/provider-site-data')).providers,
+  queryKey: keys.siteData, queryFn: async () => unwrap(await api.GET('/api/admin/provider-site-data')),
 });
-export type SiteDataView = Ok<'/api/admin/provider-site-data'>['providers'][number];
+export type SiteDataView = Ok<'/api/admin/provider-site-data'>[number];
 
 /** The User's AI accesses and whether this instance offers the MCP endpoint (ADR 0035). */
 export const aiAccessQuery = () => queryOptions({ queryKey: keys.aiAccess, queryFn: async () => unwrap(await api.GET('/api/me/ai-access')) });

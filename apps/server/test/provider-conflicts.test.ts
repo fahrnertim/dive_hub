@@ -10,11 +10,9 @@ import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
 } from './support.js';
 
-type Listed = {
-  connections: { connectionId: string; provider: string; providerName: string; entries: {
-    diveId: string; number: number | null; remoteId: string; fields: ConflictField[]; site: { name: string } | null; durationSeconds: number;
-  }[] }[];
-};
+type Listed = { connectionId: string; provider: string; providerName: string; entries: {
+  diveId: string; number: number | null; remoteId: string; fields: ConflictField[]; site: { name: string } | null; durationSeconds: number;
+}[] }[];
 
 let year = 3100;
 
@@ -74,7 +72,7 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
   it('a recorded conflict is listed for its User with both values', async () => {
     const { diveId, remoteId } = await sentDive();
     await record(t.db, entry(diveId, remoteId));
-    const { connections } = await listed();
+    const connections = await listed();
     expect(connections).toMatchObject([{ connectionId, provider: 'ledger', providerName: 'Ledger' }]);
     expect(connections[0]!.entries).toMatchObject([{ diveId, remoteId, fields: [
       { field: 'notes', hub: null, provider: 'Manta' }, { field: 'maxDepthM', hub: await maxDepthOf(diveId), provider: 19.5 },
@@ -82,20 +80,20 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     expect(await openFields(t.db, diveId, 'ledger')).toEqual(['notes', 'maxDepthM']);
     await close(t.db, diveId, 'ledger');
     expect(await openFields(t.db, diveId, 'ledger')).toEqual([]);
-    expect((await listed()).connections).toEqual([]);
+    expect((await listed())).toEqual([]);
   });
 
   it('a choice marks the entry queued, from the server; a Conflict found again is open again', async () => {
     const { diveId, remoteId } = await sentDive();
     await record(t.db, entry(diveId, remoteId));
-    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: false }]);
+    expect((await listed())[0]!.entries).toMatchObject([{ diveId, queued: false }]);
     const decided = await call('POST', '/api/dives/' + diveId + '/providers/ledger/decision', { conflicts: { notes: 'hub', maxDepthM: 'hub' } });
     expect(decided.statusCode).toBe(204);
-    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: true }]);
+    expect((await listed())[0]!.entries).toMatchObject([{ diveId, queued: true }]);
     // The send ends in a new Conflict for the Dive: the question is open again. The choice was queued a moment before.
     ctx.clock.skip(1_000);
     await record(t.db, entry(diveId, remoteId, fields('Ray')));
-    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: false }]);
+    expect((await listed())[0]!.entries).toMatchObject([{ diveId, queued: false }]);
     await t.db.delete(waitingPush).where(eq(waitingPush.diveId, diveId));
   });
 
@@ -104,7 +102,7 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     await record(t.db, entry(diveId, remoteId));
     expect((await call('POST', '/api/dives/' + diveId + '/providers/ledger/decision', { conflicts: { notes: 'hub', maxDepthM: 'hub' } })).statusCode).toBe(204);
     await t.db.update(waitingPush).set({ state: 'held', reason: 'requirements' }).where(eq(waitingPush.diveId, diveId));
-    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: true }]);
+    expect((await listed())[0]!.entries).toMatchObject([{ diveId, queued: true }]);
     await t.db.delete(waitingPush).where(eq(waitingPush.diveId, diveId));
   });
 
@@ -113,7 +111,7 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     await record(t.db, entry(diveId, remoteId));
     await record(t.db, entry(diveId, remoteId, [{ field: 'notes', hub: 'Turtle', provider: 'Ray' }]));
     expect(await t.db.select().from(providerConflict)).toHaveLength(1);
-    expect((await listed()).connections[0]!.entries).toMatchObject([{ fields: [{ field: 'notes', hub: null, provider: 'Ray' }] }]);
+    expect((await listed())[0]!.entries).toMatchObject([{ fields: [{ field: 'notes', hub: null, provider: 'Ray' }] }]);
     expect(await openFields(t.db, diveId, 'ledger')).toEqual(['notes']);
   });
 
@@ -122,14 +120,14 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     const moved = await sentDive();
     await record(t.db, entry(gone.diveId, gone.remoteId));
     await record(t.db, entry(moved.diveId, moved.remoteId));
-    expect((await listed()).connections[0]!.entries).toHaveLength(2);
+    expect((await listed())[0]!.entries).toHaveLength(2);
     const version = (await json<{ version: number }>('GET', `/api/dives/${gone.diveId}`)).version;
     await call('DELETE', `/api/dives/${gone.diveId}`, { version });
     // Deleted at the Provider and sent anew: the Dive has another remote dive now.
     await call('DELETE', `/api/dives/${moved.diveId}/providers/ledger`, {});
     await call('POST', `/api/dives/${moved.diveId}/providers/ledger`, {});
     expect((await json<{ current: { remoteId: string } }>('GET', `/api/dives/${moved.diveId}/providers/ledger`)).current.remoteId).not.toBe(moved.remoteId);
-    expect((await listed()).connections).toEqual([]);
+    expect((await listed())).toEqual([]);
   });
 
   it('another User with a Connection of his own at the same Provider sees none of it', async () => {
@@ -138,8 +136,8 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     ledger.tokens.set('ledger-token-2', { accountId: 'l-6', label: 'Ledger of Bob' });
     const bobDiver = (await json<{ id: string }[]>('GET', '/api/divers', undefined, bob))[0]!.id;
     const own = await json<{ id: string }>('POST', '/api/connections/ledger', { diverId: bobDiver, token: 'ledger-token-2', keepSignedIn: false }, bob);
-    expect((await listed(bob)).connections).toEqual([]);
-    expect((await listed()).connections[0]!.entries).toHaveLength(1);
+    expect((await listed(bob))).toEqual([]);
+    expect((await listed())[0]!.entries).toHaveLength(1);
     await call('DELETE', `/api/connections/${own.id}`, undefined, bob);
     expect((await ctx.app.inject({ method: 'GET', url: '/api/provider-conflicts' })).statusCode).toBe(401);
   });
@@ -194,7 +192,7 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     await manualImport([{ remoteId, field: 'notes', choice: 'provider' }]);
     expect(await notesOf(diveId)).toBe('Manta');
     expect(await openFields(t.db, diveId, 'ledger')).toEqual([]);
-    expect((await listed()).connections).toEqual([]);
+    expect((await listed())).toEqual([]);
   });
 
   it('keeping Dive Hub\'s value in a manual preview closes the field and queues the Dive', async () => {
@@ -256,10 +254,10 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     const counted = async () => (await json<{ id: string; lastFetch: { conflicts: number } }[]>('GET', '/api/connections'))
       .find((c) => c.id === connectionId)!.lastFetch.conflicts;
     await setNotes(diveId, 'Reef');
-    expect((await listed()).connections[0]!.entries[0]!.fields).toEqual([{ field: 'notes', hub: 'Reef', provider: 'Manta' }]);
+    expect((await listed())[0]!.entries[0]!.fields).toEqual([{ field: 'notes', hub: 'Reef', provider: 'Manta' }]);
     expect(await counted()).toBe(1);
     await setNotes(diveId, 'Manta');
-    expect((await listed()).connections).toEqual([]);
+    expect((await listed())).toEqual([]);
     expect(await counted()).toBe(0);
   });
 
@@ -268,19 +266,19 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     await record(t.db, entry(diveId, remoteId, fields('Manta')));
     await setNotes(diveId, 'Manta');
     // The max depth isn't compared (the FIT Dive has a Recording): it stays, with the Dive's value now.
-    expect((await listed()).connections[0]!.entries[0]!.fields).toEqual([{ field: 'maxDepthM', hub: await maxDepthOf(diveId), provider: 19.5 }]);
+    expect((await listed())[0]!.entries[0]!.fields).toEqual([{ field: 'maxDepthM', hub: await maxDepthOf(diveId), provider: 19.5 }]);
   });
 
   it('leaves out the Connection of a Provider this instance does not offer', async () => {
     const { diveId, remoteId } = await sentDive();
     await record(t.db, entry(diveId, remoteId));
-    expect((await listed()).connections).toHaveLength(1);
+    expect((await listed())).toHaveLength(1);
     // The Connection and the Dive's Push now belong to a Provider that is not registered: only that can leave it out.
     await t.db.update(connection).set({ provider: 'retired' }).where(eq(connection.id, connectionId));
     await t.db.update(push).set({ provider: 'retired' }).where(eq(push.diveId, diveId));
     await t.db.update(providerConflict).set({ provider: 'retired' }).where(eq(providerConflict.diveId, diveId));
     try {
-      expect((await listed()).connections).toEqual([]);
+      expect((await listed())).toEqual([]);
     } finally {
       await t.db.update(connection).set({ provider: 'ledger' }).where(eq(connection.id, connectionId));
     }

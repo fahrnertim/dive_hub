@@ -100,8 +100,8 @@ export const siteImportRoutes: FastifyPluginAsyncTypebox<SiteImportRouteDeps> = 
   });
 
   app.get('/admin/site-imports', {
-    schema: { summary: 'The latest Site imports, newest first (admins)', response: { 200: Type.Object({ imports: Type.Array(SiteImportView) }), 403: Problem } },
-  }, async () => ({ imports: (await siteImports.list()).map(toView) }));
+    schema: { summary: 'The latest Site imports, newest first (admins)', response: { 200: Type.Array(SiteImportView), 403: Problem } },
+  }, async () => (await siteImports.list()).map(toView));
 
   app.get('/admin/site-imports/:id', {
     schema: {

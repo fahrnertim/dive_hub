@@ -38,7 +38,7 @@ export function useWaiting() {
 /** Counts that go into the tabs and the links under the logbook: what was decided and what was deleted. */
 export function useReviewCounts() {
   const decided = (useQuery(candidatesQuery('discarded')).data?.length ?? 0) + (useQuery(logbookChecksQuery('answered')).data?.length ?? 0);
-  const deleted = useQuery(deletedDivesQuery()).data?.dives.length ?? 0;
+  const deleted = useQuery(deletedDivesQuery()).data?.length ?? 0;
   return { decided, deleted };
 }
 

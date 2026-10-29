@@ -254,8 +254,8 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect(done).toMatchObject({ status: 'done', conflicts: 1, counts: { sent: 1 } });
     expect(done.items[0]).toMatchObject({ state: 'sent', outcome: 'updated' });
     expect(remote.odin_user_log_comment).toBe('Reef in SSI');
-    const waiting = await json<{ connections: { connectionId: string; entries: { diveId: string; fields: object[] }[] }[] }>('GET', '/api/provider-conflicts');
-    expect(waiting.connections.find((c) => c.connectionId === ssiConnectionId)!.entries).toMatchObject([
+    const waiting = await json<{ connectionId: string; entries: { diveId: string; fields: object[] }[] }[]>('GET', '/api/provider-conflicts');
+    expect(waiting.find((c) => c.connectionId === ssiConnectionId)!.entries).toMatchObject([
       { diveId: id, fields: [{ field: 'notes', hub: 'Reef here', provider: 'Reef in SSI' }] },
     ]);
     expect((await json<Run[]>('GET', '/api/push-runs')).find((r) => r.id === second.id)!.conflicts).toBe(1);
@@ -272,8 +272,8 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     await edit(id, 'Reef in SSI');
     expect((await run(second.id)).conflicts).toBe(0);
     expect((await json<Run[]>('GET', '/api/push-runs')).find((r) => r.id === second.id)!.conflicts).toBe(0);
-    const waiting = await json<{ connections: { entries: { diveId: string }[] }[] }>('GET', '/api/provider-conflicts');
-    expect(waiting.connections.flatMap((c) => c.entries).filter((e) => e.diveId === id)).toEqual([]);
+    const waiting = await json<{ entries: { diveId: string }[] }[]>('GET', '/api/provider-conflicts');
+    expect(waiting.flatMap((c) => c.entries).filter((e) => e.diveId === id)).toEqual([]);
   });
 
   it('an entry a later send closed counts 0 in its run', async () => {

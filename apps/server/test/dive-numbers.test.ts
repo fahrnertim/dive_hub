@@ -92,7 +92,7 @@ describe.skipIf(!(await databaseReachable()))('Dive numbers', () => {
     expect(await byTime()).toEqual([[a, 1], [b, 2], [c, 3]]);
     await call('DELETE', `/api/dives/${a}`, { version: (await detail(a)).version });
     expect(await byTime()).toEqual([[b, 1], [c, 2]]);
-    const deleted = (await json<{ dives: { id: string; number: number | null; version: number }[] }>('GET', '/api/dives/deleted')).dives;
+    const deleted = await json<{ id: string; number: number | null; version: number }[]>('GET', '/api/dives/deleted');
     expect(deleted.find((d) => d.id === a)!.number).toBeNull();
     const gone = deleted.find((d) => d.id === a)!;
     await call('POST', `/api/dives/${gone.id}/restore`, { version: gone.version });

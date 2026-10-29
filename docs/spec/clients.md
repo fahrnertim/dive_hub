@@ -141,6 +141,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Lists page** with `limit`/`offset` and `total` (`/api/dives` [ADR 0017](../decisions/0017-logbook-list-paging.md),
   `/api/dive-sites` ADR 0022). Keep search, filters, sort and page in the client's navigation state (the web
   client uses the address), so back and reload keep them. *Web:* `lib/logbook.ts`, `lib/sites-list.ts`.
+- **A list's shape says whether it pages** ([ADR 0060](../decisions/0060-list-response-shapes.md)): a paged list
+  (`limit` and `offset`) is an object, the page under the resource's name and `total` beside it
+  (`{ dives, total }`, `{ sites, total }`, `{ centres, total }`, `{ divers, total }`, `{ entries, total }`); every
+  other list, also one with only a `limit` cap, is a bare array.
 - **The logbook's rows and "Show only" filters** ([ADR 0040](../decisions/0040-logbook-rows-and-filters.md)): a page is 25
   Dives. Offer `only` (`no-recording`, `no-site`, `with-findings`, `not-at-provider`, `changed-since-sent`; combined with "and") as toggles that
   show their `counts` (the numbers don't change when a filter is applied) and **hide a filter whose count is 0** unless it

@@ -296,10 +296,10 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       const admin = await signIn(ctx.app, 'admin@example.com');
       const asAdmin = (method: 'GET' | 'PUT', url: string, payload?: object) =>
         ctx.app.inject({ method, url, headers: { cookie: admin, origin: BASE_URL }, ...(payload && { payload }) });
-      expect((await asAdmin('GET', '/api/admin/provider-site-data')).json()).toEqual({ providers: [{ provider: 'ssi', name: 'SSI', allowedAt: null, allowedBy: null }] });
+      expect((await asAdmin('GET', '/api/admin/provider-site-data')).json()).toEqual([{ provider: 'ssi', name: 'SSI', allowedAt: null, allowedBy: null }]);
       expect((await asAdmin('PUT', '/api/admin/provider-site-data/ssi', { allowed: true })).json()).toMatchObject({ code: 'provider_site_data_not_confirmed' });
       expect((await asAdmin('PUT', '/api/admin/provider-site-data/ssi', { allowed: true, confirm: true })).json())
-        .toMatchObject({ providers: [{ provider: 'ssi', allowedAt: expect.any(String), allowedBy: 'admin' }] });
+        .toMatchObject([{ provider: 'ssi', allowedAt: expect.any(String), allowedBy: 'admin' }]);
 
       expect((await preview()) as unknown).toMatchObject({ sitesAllowed: true, sites: { create: 1, missing: 0 } });
       outcome = await runImport();

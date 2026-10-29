@@ -20350,213 +20350,205 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "dives"
-                  ],
-                  "properties": {
-                    "dives": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "id",
-                          "diverId",
-                          "version",
-                          "number",
-                          "startsAt",
-                          "utcOffsetSeconds",
-                          "utcOffsetSource",
-                          "durationSeconds",
-                          "maxDepthM",
-                          "site",
-                          "deletedAt",
-                          "mergedInto",
-                          "movedTo",
-                          "stillAt",
-                          "waiting"
-                        ],
-                        "properties": {
-                          "id": {
-                            "type": "string"
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "diverId",
+                      "version",
+                      "number",
+                      "startsAt",
+                      "utcOffsetSeconds",
+                      "utcOffsetSource",
+                      "durationSeconds",
+                      "maxDepthM",
+                      "site",
+                      "deletedAt",
+                      "mergedInto",
+                      "movedTo",
+                      "stillAt",
+                      "waiting"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "diverId": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "description": "Send it back to restore the Dive"
+                      },
+                      "number": {
+                        "anyOf": [
+                          {
+                            "type": "null"
                           },
-                          "diverId": {
-                            "type": "string"
-                          },
-                          "version": {
-                            "type": "integer",
-                            "description": "Send it back to restore the Dive"
-                          },
-                          "number": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "integer"
-                              }
-                            ]
-                          },
-                          "startsAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "utcOffsetSeconds": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "integer"
-                              }
-                            ]
-                          },
-                          "utcOffsetSource": {
-                            "enum": [
-                              "device",
-                              "position",
-                              "nearby",
-                              "unknown"
-                            ]
-                          },
-                          "durationSeconds": {
-                            "type": "number"
-                          },
-                          "maxDepthM": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "number"
-                              }
-                            ]
-                          },
-                          "site": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "object",
-                                "required": [
-                                  "id",
-                                  "name"
-                                ],
-                                "properties": {
-                                  "id": {
-                                    "type": "string"
-                                  },
-                                  "name": {
-                                    "type": "string"
-                                  }
-                                }
-                              }
-                            ]
-                          },
-                          "deletedAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "mergedInto": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "string",
-                                "description": "The Dive it was merged into (ADR 0038): clients say so and link there"
-                              }
-                            ]
-                          },
-                          "movedTo": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "string",
-                                "description": "The Dive it became in another Diver's logbook when it was moved while linked to a Provider (ADR 0038)"
-                              }
-                            ]
-                          },
-                          "stillAt": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "required": [
-                                "provider",
-                                "remoteNumber"
-                              ],
-                              "properties": {
-                                "provider": {
-                                  "type": "string"
-                                },
-                                "remoteNumber": {
-                                  "anyOf": [
-                                    {
-                                      "type": "null"
-                                    },
-                                    {
-                                      "type": "integer",
-                                      "description": "The Provider's own dive number"
-                                    }
-                                  ]
-                                }
-                              }
-                            },
-                            "description": "Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md)"
-                          },
-                          "waiting": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "required": [
-                                "provider",
-                                "action",
-                                "state",
-                                "reason",
-                                "dueAt"
-                              ],
-                              "properties": {
-                                "provider": {
-                                  "type": "string"
-                                },
-                                "action": {
-                                  "enum": [
-                                    "send",
-                                    "delete"
-                                  ]
-                                },
-                                "state": {
-                                  "enum": [
-                                    "waiting",
-                                    "held",
-                                    "stopped"
-                                  ],
-                                  "description": "waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)"
-                                },
-                                "reason": {
-                                  "anyOf": [
-                                    {
-                                      "type": "null"
-                                    },
-                                    {
-                                      "type": "string",
-                                      "description": "Why it is held (sign_in, requirements, exists, removes_verification) or the problem code of why it stopped"
-                                    }
-                                  ]
-                                },
-                                "dueAt": {
-                                  "type": "string",
-                                  "format": "date-time",
-                                  "description": "When it goes out, for a waiting entry"
-                                }
-                              }
-                            },
-                            "description": "The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason"
+                          {
+                            "type": "integer"
                           }
-                        }
+                        ]
+                      },
+                      "startsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "utcOffsetSeconds": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ]
+                      },
+                      "utcOffsetSource": {
+                        "enum": [
+                          "device",
+                          "position",
+                          "nearby",
+                          "unknown"
+                        ]
+                      },
+                      "durationSeconds": {
+                        "type": "number"
+                      },
+                      "maxDepthM": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      },
+                      "site": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "deletedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "mergedInto": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string",
+                            "description": "The Dive it was merged into (ADR 0038): clients say so and link there"
+                          }
+                        ]
+                      },
+                      "movedTo": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string",
+                            "description": "The Dive it became in another Diver's logbook when it was moved while linked to a Provider (ADR 0038)"
+                          }
+                        ]
+                      },
+                      "stillAt": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "provider",
+                            "remoteNumber"
+                          ],
+                          "properties": {
+                            "provider": {
+                              "type": "string"
+                            },
+                            "remoteNumber": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "integer",
+                                  "description": "The Provider's own dive number"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "description": "Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md)"
+                      },
+                      "waiting": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "provider",
+                            "action",
+                            "state",
+                            "reason",
+                            "dueAt"
+                          ],
+                          "properties": {
+                            "provider": {
+                              "type": "string"
+                            },
+                            "action": {
+                              "enum": [
+                                "send",
+                                "delete"
+                              ]
+                            },
+                            "state": {
+                              "enum": [
+                                "waiting",
+                                "held",
+                                "stopped"
+                              ],
+                              "description": "waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)"
+                            },
+                            "reason": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "string",
+                                  "description": "Why it is held (sign_in, requirements, exists, removes_verification) or the problem code of why it stopped"
+                                }
+                              ]
+                            },
+                            "dueAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "When it goes out, for a waiting entry"
+                            }
+                          }
+                        },
+                        "description": "The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason"
                       }
                     }
                   }
@@ -26345,40 +26337,32 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "divers"
-                  ],
-                  "properties": {
-                    "divers": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "id",
-                          "name",
-                          "managed",
-                          "external"
-                        ],
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "managed": {
-                            "type": "boolean",
-                            "description": "The signed-in User keeps this Diver's logbook"
-                          },
-                          "external": {
-                            "type": "boolean",
-                            "description": "No User keeps its logbook: someone Users dived with (ADR 0028)"
-                          }
-                        },
-                        "description": "A Diver of the instance as every User sees it: by name, nothing else"
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "managed",
+                      "external"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "managed": {
+                        "type": "boolean",
+                        "description": "The signed-in User keeps this Diver's logbook"
+                      },
+                      "external": {
+                        "type": "boolean",
+                        "description": "No User keeps its logbook: someone Users dived with (ADR 0028)"
                       }
-                    }
+                    },
+                    "description": "A Diver of the instance as every User sees it: by name, nothing else"
                   }
                 }
               }
@@ -56740,480 +56724,472 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "imports"
-                  ],
-                  "properties": {
-                    "imports": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "id",
-                          "status",
-                          "sources",
-                          "area",
-                          "language",
-                          "createSites",
-                          "progress",
-                          "counts",
-                          "findings",
-                          "failureCode",
-                          "createdAt",
-                          "finishedAt"
-                        ],
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "status": {
-                            "anyOf": [
-                              {
-                                "type": "string",
-                                "enum": [
-                                  "queued"
-                                ]
-                              },
-                              {
-                                "type": "string",
-                                "enum": [
-                                  "running"
-                                ]
-                              },
-                              {
-                                "type": "string",
-                                "enum": [
-                                  "done"
-                                ]
-                              },
-                              {
-                                "type": "string",
-                                "enum": [
-                                  "failed"
-                                ]
-                              }
-                            ]
-                          },
-                          "sources": {
-                            "type": "array",
-                            "items": {
-                              "enum": [
-                                "osm",
-                                "wikidata",
-                                "ssi"
-                              ]
-                            }
-                          },
-                          "area": {
-                            "anyOf": [
-                              {
-                                "type": "object",
-                                "required": [
-                                  "kind",
-                                  "country"
-                                ],
-                                "properties": {
-                                  "kind": {
-                                    "type": "string",
-                                    "enum": [
-                                      "country"
-                                    ]
-                                  },
-                                  "country": {
-                                    "type": "string",
-                                    "pattern": "^[A-Z]{2}$",
-                                    "description": "ISO 3166-1 alpha-2"
-                                  }
-                                },
-                                "additionalProperties": false
-                              },
-                              {
-                                "type": "object",
-                                "required": [
-                                  "kind",
-                                  "south",
-                                  "west",
-                                  "north",
-                                  "east"
-                                ],
-                                "properties": {
-                                  "kind": {
-                                    "type": "string",
-                                    "enum": [
-                                      "box"
-                                    ]
-                                  },
-                                  "south": {
-                                    "type": "number",
-                                    "minimum": -90,
-                                    "maximum": 90
-                                  },
-                                  "west": {
-                                    "type": "number",
-                                    "minimum": -180,
-                                    "maximum": 180
-                                  },
-                                  "north": {
-                                    "type": "number",
-                                    "minimum": -90,
-                                    "maximum": 90
-                                  },
-                                  "east": {
-                                    "type": "number",
-                                    "minimum": -180,
-                                    "maximum": 180
-                                  }
-                                },
-                                "additionalProperties": false,
-                                "description": "Degrees; west may be greater than east across the date line"
-                              },
-                              {
-                                "type": "object",
-                                "required": [
-                                  "kind"
-                                ],
-                                "properties": {
-                                  "kind": {
-                                    "type": "string",
-                                    "enum": [
-                                      "world"
-                                    ]
-                                  }
-                                },
-                                "additionalProperties": false
-                              }
-                            ],
-                            "description": "Where to import: a country, a box, or everywhere"
-                          },
-                          "language": {
-                            "type": "string"
-                          },
-                          "createSites": {
-                            "type": "boolean",
-                            "description": "false: the run only matched and filled sites already in the hub"
-                          },
-                          "progress": {
-                            "type": "object",
-                            "required": [
-                              "step",
-                              "done",
-                              "total"
-                            ],
-                            "properties": {
-                              "step": {
-                                "anyOf": [
-                                  {
-                                    "type": "string",
-                                    "enum": [
-                                      "waiting"
-                                    ]
-                                  },
-                                  {
-                                    "type": "string",
-                                    "enum": [
-                                      "osm"
-                                    ]
-                                  },
-                                  {
-                                    "type": "string",
-                                    "enum": [
-                                      "wikidata"
-                                    ]
-                                  },
-                                  {
-                                    "type": "string",
-                                    "enum": [
-                                      "ssi"
-                                    ]
-                                  },
-                                  {
-                                    "type": "string",
-                                    "enum": [
-                                      "saving"
-                                    ]
-                                  }
-                                ]
-                              },
-                              "done": {
-                                "type": "integer"
-                              },
-                              "total": {
-                                "type": "integer"
-                              }
-                            }
-                          },
-                          "counts": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "object",
-                                "required": [
-                                  "created",
-                                  "updated",
-                                  "unchanged",
-                                  "kept",
-                                  "linked",
-                                  "skippedNoName",
-                                  "skippedDeleted",
-                                  "skippedMerged",
-                                  "skippedNew",
-                                  "offered",
-                                  "gone"
-                                ],
-                                "properties": {
-                                  "created": {
-                                    "type": "integer"
-                                  },
-                                  "updated": {
-                                    "type": "integer"
-                                  },
-                                  "unchanged": {
-                                    "type": "integer"
-                                  },
-                                  "kept": {
-                                    "type": "integer"
-                                  },
-                                  "linked": {
-                                    "type": "integer"
-                                  },
-                                  "skippedNoName": {
-                                    "type": "integer"
-                                  },
-                                  "skippedDeleted": {
-                                    "type": "integer"
-                                  },
-                                  "skippedMerged": {
-                                    "type": "integer"
-                                  },
-                                  "skippedNew": {
-                                    "type": "integer"
-                                  },
-                                  "offered": {
-                                    "type": "integer"
-                                  },
-                                  "gone": {
-                                    "type": "integer"
-                                  }
-                                },
-                                "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, because it was merged into another, or because the run created no sites; hand-made sites whose page now offers the data; objects gone from the Source"
-                              }
-                            ]
-                          },
-                          "findings": {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "required": [
-                                    "kind",
-                                    "siteId",
-                                    "name",
-                                    "nearSiteId",
-                                    "nearName",
-                                    "distanceM"
-                                  ],
-                                  "properties": {
-                                    "kind": {
-                                      "type": "string",
-                                      "enum": [
-                                        "near"
-                                      ]
-                                    },
-                                    "siteId": {
-                                      "type": "string"
-                                    },
-                                    "name": {
-                                      "type": "string"
-                                    },
-                                    "nearSiteId": {
-                                      "type": "string"
-                                    },
-                                    "nearName": {
-                                      "type": "string"
-                                    },
-                                    "distanceM": {
-                                      "type": "integer"
-                                    }
-                                  },
-                                  "description": "A new site within 200 m of one that was there before"
-                                },
-                                {
-                                  "type": "object",
-                                  "required": [
-                                    "kind",
-                                    "siteId",
-                                    "name",
-                                    "source"
-                                  ],
-                                  "properties": {
-                                    "kind": {
-                                      "type": "string",
-                                      "enum": [
-                                        "offer"
-                                      ]
-                                    },
-                                    "siteId": {
-                                      "type": "string"
-                                    },
-                                    "name": {
-                                      "type": "string"
-                                    },
-                                    "source": {
-                                      "enum": [
-                                        "osm",
-                                        "wikidata",
-                                        "ssi"
-                                      ]
-                                    }
-                                  },
-                                  "description": "A hand-made site the Source describes: its page offers the Source's data"
-                                }
-                              ]
-                            }
-                          },
-                          "failureCode": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "enum": [
-                                  "sign_in_required",
-                                  "admins_only",
-                                  "not_found",
-                                  "invalid_input",
-                                  "internal_error",
-                                  "upload_missing",
-                                  "upload_too_large",
-                                  "setup_done",
-                                  "setup_token_invalid",
-                                  "invitation_invalid",
-                                  "invitation_not_found",
-                                  "email_taken",
-                                  "reset_link_invalid",
-                                  "user_not_found",
-                                  "user_disabled",
-                                  "last_admin",
-                                  "not_yourself",
-                                  "confirmation_mismatch",
-                                  "session_not_found",
-                                  "import_not_found",
-                                  "import_not_waiting",
-                                  "dive_not_found",
-                                  "cylinder_invalid",
-                                  "cylinder_series_not_found",
-                                  "weighting_feedback_invalid",
-                                  "suit_invalid",
-                                  "dive_changed",
-                                  "dive_values_inconsistent",
-                                  "recording_not_on_dive",
-                                  "last_recording",
-                                  "diver_not_found",
-                                  "gas_not_breathable",
-                                  "body_weight_not_found",
-                                  "certification_not_found",
-                                  "certification_changed",
-                                  "certification_read_only",
-                                  "certification_image_not_found",
-                                  "own_diver",
-                                  "diver_not_empty",
-                                  "diver_in_use",
-                                  "diver_not_deletable",
-                                  "diver_not_editable",
-                                  "diver_external_id_taken",
-                                  "diver_external_id_connected",
-                                  "participant_invalid",
-                                  "merge_not_possible",
-                                  "check_not_found",
-                                  "device_not_found",
-                                  "candidate_not_found",
-                                  "candidate_resolved",
-                                  "not_a_candidate",
-                                  "recording_not_found",
-                                  "site_not_found",
-                                  "site_changed",
-                                  "site_in_use",
-                                  "site_not_deletable",
-                                  "external_id_taken",
-                                  "site_source_not_typed",
-                                  "site_merge_self",
-                                  "site_offer_not_found",
-                                  "centre_not_found",
-                                  "centre_changed",
-                                  "centre_not_deletable",
-                                  "centre_external_id_taken",
-                                  "code_not_recognised",
-                                  "code_not_a_person",
-                                  "diver_choice_needed",
-                                  "diver_has_other_account",
-                                  "odbl_not_confirmed",
-                                  "ssi_not_confirmed",
-                                  "site_import_running",
-                                  "site_import_not_found",
-                                  "source_unavailable",
-                                  "source_rate_limited",
-                                  "site_import_interrupted",
-                                  "connection_not_found",
-                                  "encryption_key_missing",
-                                  "provider_already_connected",
-                                  "provider_account_taken",
-                                  "provider_other_account",
-                                  "provider_wrong_credentials",
-                                  "provider_not_connected",
-                                  "provider_sign_in_needed",
-                                  "provider_unavailable",
-                                  "provider_refused",
-                                  "provider_not_stored",
-                                  "provider_requirements_unmet",
-                                  "provider_not_sent",
-                                  "provider_dive_gone",
-                                  "provider_busy",
-                                  "provider_number_taken",
-                                  "provider_numbers_off",
-                                  "provider_number_nothing_to_set",
-                                  "provider_unsupported",
-                                  "fetch_interval_too_short",
-                                  "push_run_active",
-                                  "push_run_nothing_to_send",
-                                  "push_run_not_found",
-                                  "push_run_not_active",
-                                  "push_run_going",
-                                  "push_run_not_stopped",
-                                  "waiting_push_not_found",
-                                  "provider_account_held",
-                                  "diver_not_external",
-                                  "provider_import_off",
-                                  "finding_not_found",
-                                  "ai_access_not_found",
-                                  "ai_access_off",
-                                  "provider_site_unknown",
-                                  "provider_buddy_not_found",
-                                  "provider_site_data_not_confirmed"
-                                ]
-                              }
-                            ],
-                            "description": "Why it failed (a problem code)"
-                          },
-                          "createdAt": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "status",
+                      "sources",
+                      "area",
+                      "language",
+                      "createSites",
+                      "progress",
+                      "counts",
+                      "findings",
+                      "failureCode",
+                      "createdAt",
+                      "finishedAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "anyOf": [
+                          {
                             "type": "string",
-                            "format": "date-time"
+                            "enum": [
+                              "queued"
+                            ]
                           },
-                          "finishedAt": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "string",
-                                "format": "date-time"
-                              }
+                          {
+                            "type": "string",
+                            "enum": [
+                              "running"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "done"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "failed"
                             ]
                           }
+                        ]
+                      },
+                      "sources": {
+                        "type": "array",
+                        "items": {
+                          "enum": [
+                            "osm",
+                            "wikidata",
+                            "ssi"
+                          ]
                         }
+                      },
+                      "area": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "country"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "country"
+                                ]
+                              },
+                              "country": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{2}$",
+                                "description": "ISO 3166-1 alpha-2"
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "south",
+                              "west",
+                              "north",
+                              "east"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "box"
+                                ]
+                              },
+                              "south": {
+                                "type": "number",
+                                "minimum": -90,
+                                "maximum": 90
+                              },
+                              "west": {
+                                "type": "number",
+                                "minimum": -180,
+                                "maximum": 180
+                              },
+                              "north": {
+                                "type": "number",
+                                "minimum": -90,
+                                "maximum": 90
+                              },
+                              "east": {
+                                "type": "number",
+                                "minimum": -180,
+                                "maximum": 180
+                              }
+                            },
+                            "additionalProperties": false,
+                            "description": "Degrees; west may be greater than east across the date line"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "world"
+                                ]
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        ],
+                        "description": "Where to import: a country, a box, or everywhere"
+                      },
+                      "language": {
+                        "type": "string"
+                      },
+                      "createSites": {
+                        "type": "boolean",
+                        "description": "false: the run only matched and filled sites already in the hub"
+                      },
+                      "progress": {
+                        "type": "object",
+                        "required": [
+                          "step",
+                          "done",
+                          "total"
+                        ],
+                        "properties": {
+                          "step": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "waiting"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "osm"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "wikidata"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "ssi"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "saving"
+                                ]
+                              }
+                            ]
+                          },
+                          "done": {
+                            "type": "integer"
+                          },
+                          "total": {
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      "counts": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "created",
+                              "updated",
+                              "unchanged",
+                              "kept",
+                              "linked",
+                              "skippedNoName",
+                              "skippedDeleted",
+                              "skippedMerged",
+                              "skippedNew",
+                              "offered",
+                              "gone"
+                            ],
+                            "properties": {
+                              "created": {
+                                "type": "integer"
+                              },
+                              "updated": {
+                                "type": "integer"
+                              },
+                              "unchanged": {
+                                "type": "integer"
+                              },
+                              "kept": {
+                                "type": "integer"
+                              },
+                              "linked": {
+                                "type": "integer"
+                              },
+                              "skippedNoName": {
+                                "type": "integer"
+                              },
+                              "skippedDeleted": {
+                                "type": "integer"
+                              },
+                              "skippedMerged": {
+                                "type": "integer"
+                              },
+                              "skippedNew": {
+                                "type": "integer"
+                              },
+                              "offered": {
+                                "type": "integer"
+                              },
+                              "gone": {
+                                "type": "integer"
+                              }
+                            },
+                            "description": "Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, because it was merged into another, or because the run created no sites; hand-made sites whose page now offers the data; objects gone from the Source"
+                          }
+                        ]
+                      },
+                      "findings": {
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "kind",
+                                "siteId",
+                                "name",
+                                "nearSiteId",
+                                "nearName",
+                                "distanceM"
+                              ],
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "near"
+                                  ]
+                                },
+                                "siteId": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "nearSiteId": {
+                                  "type": "string"
+                                },
+                                "nearName": {
+                                  "type": "string"
+                                },
+                                "distanceM": {
+                                  "type": "integer"
+                                }
+                              },
+                              "description": "A new site within 200 m of one that was there before"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "kind",
+                                "siteId",
+                                "name",
+                                "source"
+                              ],
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "offer"
+                                  ]
+                                },
+                                "siteId": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "source": {
+                                  "enum": [
+                                    "osm",
+                                    "wikidata",
+                                    "ssi"
+                                  ]
+                                }
+                              },
+                              "description": "A hand-made site the Source describes: its page offers the Source's data"
+                            }
+                          ]
+                        }
+                      },
+                      "failureCode": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "enum": [
+                              "sign_in_required",
+                              "admins_only",
+                              "not_found",
+                              "invalid_input",
+                              "internal_error",
+                              "upload_missing",
+                              "upload_too_large",
+                              "setup_done",
+                              "setup_token_invalid",
+                              "invitation_invalid",
+                              "invitation_not_found",
+                              "email_taken",
+                              "reset_link_invalid",
+                              "user_not_found",
+                              "user_disabled",
+                              "last_admin",
+                              "not_yourself",
+                              "confirmation_mismatch",
+                              "session_not_found",
+                              "import_not_found",
+                              "import_not_waiting",
+                              "dive_not_found",
+                              "cylinder_invalid",
+                              "cylinder_series_not_found",
+                              "weighting_feedback_invalid",
+                              "suit_invalid",
+                              "dive_changed",
+                              "dive_values_inconsistent",
+                              "recording_not_on_dive",
+                              "last_recording",
+                              "diver_not_found",
+                              "gas_not_breathable",
+                              "body_weight_not_found",
+                              "certification_not_found",
+                              "certification_changed",
+                              "certification_read_only",
+                              "certification_image_not_found",
+                              "own_diver",
+                              "diver_not_empty",
+                              "diver_in_use",
+                              "diver_not_deletable",
+                              "diver_not_editable",
+                              "diver_external_id_taken",
+                              "diver_external_id_connected",
+                              "participant_invalid",
+                              "merge_not_possible",
+                              "check_not_found",
+                              "device_not_found",
+                              "candidate_not_found",
+                              "candidate_resolved",
+                              "not_a_candidate",
+                              "recording_not_found",
+                              "site_not_found",
+                              "site_changed",
+                              "site_in_use",
+                              "site_not_deletable",
+                              "external_id_taken",
+                              "site_source_not_typed",
+                              "site_merge_self",
+                              "site_offer_not_found",
+                              "centre_not_found",
+                              "centre_changed",
+                              "centre_not_deletable",
+                              "centre_external_id_taken",
+                              "code_not_recognised",
+                              "code_not_a_person",
+                              "diver_choice_needed",
+                              "diver_has_other_account",
+                              "odbl_not_confirmed",
+                              "ssi_not_confirmed",
+                              "site_import_running",
+                              "site_import_not_found",
+                              "source_unavailable",
+                              "source_rate_limited",
+                              "site_import_interrupted",
+                              "connection_not_found",
+                              "encryption_key_missing",
+                              "provider_already_connected",
+                              "provider_account_taken",
+                              "provider_other_account",
+                              "provider_wrong_credentials",
+                              "provider_not_connected",
+                              "provider_sign_in_needed",
+                              "provider_unavailable",
+                              "provider_refused",
+                              "provider_not_stored",
+                              "provider_requirements_unmet",
+                              "provider_not_sent",
+                              "provider_dive_gone",
+                              "provider_busy",
+                              "provider_number_taken",
+                              "provider_numbers_off",
+                              "provider_number_nothing_to_set",
+                              "provider_unsupported",
+                              "fetch_interval_too_short",
+                              "push_run_active",
+                              "push_run_nothing_to_send",
+                              "push_run_not_found",
+                              "push_run_not_active",
+                              "push_run_going",
+                              "push_run_not_stopped",
+                              "waiting_push_not_found",
+                              "provider_account_held",
+                              "diver_not_external",
+                              "provider_import_off",
+                              "finding_not_found",
+                              "ai_access_not_found",
+                              "ai_access_off",
+                              "provider_site_unknown",
+                              "provider_buddy_not_found",
+                              "provider_site_data_not_confirmed"
+                            ]
+                          }
+                        ],
+                        "description": "Why it failed (a problem code)"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "finishedAt": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        ]
                       }
                     }
                   }
@@ -66941,70 +66917,62 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "buddies"
-                  ],
-                  "properties": {
-                    "buddies": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "entryId",
-                          "name",
-                          "account",
-                          "diver",
-                          "matches"
-                        ],
-                        "properties": {
-                          "entryId": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "entryId",
+                      "name",
+                      "account",
+                      "diver",
+                      "matches"
+                    ],
+                    "properties": {
+                      "entryId": {
+                        "type": "string",
+                        "description": "The entry's ID at the Provider: what link and import name it by"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "As the Provider has it"
+                      },
+                      "account": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
                             "type": "string",
-                            "description": "The entry's ID at the Provider: what link and import name it by"
-                          },
-                          "name": {
-                            "type": "string",
-                            "description": "As the Provider has it"
-                          },
-                          "account": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "string",
-                                "description": "The person's own account at the Provider; null: none (link or import it by entryId)"
-                              }
-                            ]
-                          },
-                          "diver": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "object",
-                                "required": [
-                                  "id",
-                                  "name"
-                                ],
-                                "properties": {
-                                  "id": {
-                                    "type": "string"
-                                  },
-                                  "name": {
-                                    "type": "string"
-                                  }
-                                },
-                                "description": "The Diver here with that account; for an entry without one, the Diver it was linked, added or imported for"
-                              }
-                            ]
-                          },
-                          "matches": {
-                            "type": "boolean",
-                            "description": "With ?for: the entry's name or e-mail is that Diver's (folded, trimmed). Only a sort; the e-mail is never answered"
+                            "description": "The person's own account at the Provider; null: none (link or import it by entryId)"
                           }
-                        }
+                        ]
+                      },
+                      "diver": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "description": "The Diver here with that account; for an entry without one, the Diver it was linked, added or imported for"
+                          }
+                        ]
+                      },
+                      "matches": {
+                        "type": "boolean",
+                        "description": "With ?for: the entry's name or e-mail is that Diver's (folded, trimmed). Only a sort; the e-mail is never answered"
                       }
                     }
                   }
@@ -78344,412 +78312,404 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "connections"
-                  ],
-                  "properties": {
-                    "connections": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "connectionId",
-                          "provider",
-                          "providerName",
-                          "entries"
-                        ],
-                        "properties": {
-                          "connectionId": {
-                            "type": "string"
-                          },
-                          "provider": {
-                            "type": "string"
-                          },
-                          "providerName": {
-                            "type": "string"
-                          },
-                          "entries": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "required": [
-                                "diveId",
-                                "number",
-                                "startsAt",
-                                "utcOffsetSeconds",
-                                "utcOffsetSource",
-                                "durationSeconds",
-                                "maxDepthM",
-                                "site",
-                                "kind",
-                                "remoteId",
-                                "fields",
-                                "existing",
-                                "foundAt",
-                                "queued"
-                              ],
-                              "properties": {
-                                "diveId": {
-                                  "type": "string"
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "connectionId",
+                      "provider",
+                      "providerName",
+                      "entries"
+                    ],
+                    "properties": {
+                      "connectionId": {
+                        "type": "string"
+                      },
+                      "provider": {
+                        "type": "string"
+                      },
+                      "providerName": {
+                        "type": "string"
+                      },
+                      "entries": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "diveId",
+                            "number",
+                            "startsAt",
+                            "utcOffsetSeconds",
+                            "utcOffsetSource",
+                            "durationSeconds",
+                            "maxDepthM",
+                            "site",
+                            "kind",
+                            "remoteId",
+                            "fields",
+                            "existing",
+                            "foundAt",
+                            "queued"
+                          ],
+                          "properties": {
+                            "diveId": {
+                              "type": "string"
+                            },
+                            "number": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
                                 },
-                                "number": {
-                                  "anyOf": [
-                                    {
-                                      "type": "null"
-                                    },
-                                    {
-                                      "type": "integer"
-                                    }
-                                  ]
+                                {
+                                  "type": "integer"
+                                }
+                              ]
+                            },
+                            "startsAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "utcOffsetSeconds": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
                                 },
-                                "startsAt": {
-                                  "type": "string",
-                                  "format": "date-time"
+                                {
+                                  "type": "integer"
+                                }
+                              ]
+                            },
+                            "utcOffsetSource": {
+                              "enum": [
+                                "device",
+                                "position",
+                                "nearby",
+                                "unknown"
+                              ]
+                            },
+                            "durationSeconds": {
+                              "type": "number"
+                            },
+                            "maxDepthM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
                                 },
-                                "utcOffsetSeconds": {
-                                  "anyOf": [
-                                    {
-                                      "type": "null"
-                                    },
-                                    {
-                                      "type": "integer"
-                                    }
-                                  ]
-                                },
-                                "utcOffsetSource": {
-                                  "enum": [
-                                    "device",
-                                    "position",
-                                    "nearby",
-                                    "unknown"
-                                  ]
-                                },
-                                "durationSeconds": {
+                                {
                                   "type": "number"
+                                }
+                              ]
+                            },
+                            "site": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
                                 },
-                                "maxDepthM": {
-                                  "anyOf": [
-                                    {
-                                      "type": "null"
-                                    },
-                                    {
-                                      "type": "number"
-                                    }
-                                  ]
-                                },
-                                "site": {
-                                  "anyOf": [
-                                    {
-                                      "type": "null"
-                                    },
-                                    {
-                                      "type": "object",
-                                      "required": [
-                                        "id",
-                                        "name"
-                                      ],
-                                      "properties": {
-                                        "id": {
-                                          "type": "string"
-                                        },
-                                        "name": {
-                                          "type": "string"
-                                        }
-                                      }
-                                    }
-                                  ]
-                                },
-                                "kind": {
-                                  "enum": [
-                                    "conflict",
-                                    "exists"
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "id",
+                                    "name"
                                   ],
-                                  "description": "conflict: fields changed on both sides, the User chooses per field. exists: the Provider already has a dive at the Dive's time and the send waits (fields is empty): \"<Provider> already has a dive at this time\" with \"Link to it\" and \"Create a new one\""
-                                },
-                                "remoteId": {
-                                  "type": "string",
-                                  "description": "conflict: the remote dive the Conflict is about. exists: the dive at the Provider"
-                                },
-                                "fields": {
-                                  "type": "array",
-                                  "items": {
-                                    "type": "object",
-                                    "required": [
-                                      "field",
-                                      "hub",
-                                      "provider"
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            "kind": {
+                              "enum": [
+                                "conflict",
+                                "exists"
+                              ],
+                              "description": "conflict: fields changed on both sides, the User chooses per field. exists: the Provider already has a dive at the Dive's time and the send waits (fields is empty): \"<Provider> already has a dive at this time\" with \"Link to it\" and \"Create a new one\""
+                            },
+                            "remoteId": {
+                              "type": "string",
+                              "description": "conflict: the remote dive the Conflict is about. exists: the dive at the Provider"
+                            },
+                            "fields": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "field",
+                                  "hub",
+                                  "provider"
+                                ],
+                                "properties": {
+                                  "field": {
+                                    "enum": [
+                                      "site",
+                                      "notes",
+                                      "buddies",
+                                      "cylinder",
+                                      "lead",
+                                      "startsAt",
+                                      "durationSeconds",
+                                      "maxDepthM",
+                                      "avgDepthM",
+                                      "waterTemperatureC"
                                     ],
-                                    "properties": {
-                                      "field": {
-                                        "enum": [
-                                          "site",
-                                          "notes",
-                                          "buddies",
-                                          "cylinder",
-                                          "lead",
-                                          "startsAt",
-                                          "durationSeconds",
-                                          "maxDepthM",
-                                          "avgDepthM",
-                                          "waterTemperatureC"
+                                    "description": "The field the two sides differ on"
+                                  },
+                                  "hub": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          {
+                                            "type": "object",
+                                            "required": [
+                                              "volumeL",
+                                              "material",
+                                              "startPressureBar",
+                                              "endPressureBar",
+                                              "gas"
+                                            ],
+                                            "properties": {
+                                              "volumeL": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "material": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "enum": [
+                                                      "aluminium",
+                                                      "steel",
+                                                      "carbon"
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              "startPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "endPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "gas": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "required": [
+                                                      "o2",
+                                                      "he"
+                                                    ],
+                                                    "properties": {
+                                                      "o2": {
+                                                        "type": "number"
+                                                      },
+                                                      "he": {
+                                                        "type": "number"
+                                                      }
+                                                    },
+                                                    "description": "O₂ and He as percent"
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          }
                                         ],
-                                        "description": "The field the two sides differ on"
-                                      },
-                                      "hub": {
-                                        "anyOf": [
-                                          {
-                                            "type": "null"
-                                          },
-                                          {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "number"
-                                              },
-                                              {
-                                                "type": "array",
-                                                "items": {
-                                                  "type": "string"
-                                                }
-                                              },
-                                              {
-                                                "type": "object",
-                                                "required": [
-                                                  "volumeL",
-                                                  "material",
-                                                  "startPressureBar",
-                                                  "endPressureBar",
-                                                  "gas"
-                                                ],
-                                                "properties": {
-                                                  "volumeL": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "null"
-                                                      },
-                                                      {
-                                                        "type": "number"
-                                                      }
-                                                    ]
-                                                  },
-                                                  "material": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "null"
-                                                      },
-                                                      {
-                                                        "enum": [
-                                                          "aluminium",
-                                                          "steel",
-                                                          "carbon"
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  "startPressureBar": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "null"
-                                                      },
-                                                      {
-                                                        "type": "number"
-                                                      }
-                                                    ]
-                                                  },
-                                                  "endPressureBar": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "null"
-                                                      },
-                                                      {
-                                                        "type": "number"
-                                                      }
-                                                    ]
-                                                  },
-                                                  "gas": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "null"
-                                                      },
-                                                      {
-                                                        "type": "object",
-                                                        "required": [
-                                                          "o2",
-                                                          "he"
-                                                        ],
-                                                        "properties": {
-                                                          "o2": {
-                                                            "type": "number"
-                                                          },
-                                                          "he": {
-                                                            "type": "number"
-                                                          }
-                                                        },
-                                                        "description": "O₂ and He as percent"
-                                                      }
-                                                    ]
-                                                  }
-                                                }
-                                              }
-                                            ],
-                                            "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
-                                          }
-                                        ]
-                                      },
-                                      "provider": {
-                                        "anyOf": [
-                                          {
-                                            "type": "null"
-                                          },
-                                          {
-                                            "anyOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "number"
-                                              },
-                                              {
-                                                "type": "array",
-                                                "items": {
-                                                  "type": "string"
-                                                }
-                                              },
-                                              {
-                                                "type": "object",
-                                                "required": [
-                                                  "volumeL",
-                                                  "material",
-                                                  "startPressureBar",
-                                                  "endPressureBar",
-                                                  "gas"
-                                                ],
-                                                "properties": {
-                                                  "volumeL": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "null"
-                                                      },
-                                                      {
-                                                        "type": "number"
-                                                      }
-                                                    ]
-                                                  },
-                                                  "material": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "null"
-                                                      },
-                                                      {
-                                                        "enum": [
-                                                          "aluminium",
-                                                          "steel",
-                                                          "carbon"
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  "startPressureBar": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "null"
-                                                      },
-                                                      {
-                                                        "type": "number"
-                                                      }
-                                                    ]
-                                                  },
-                                                  "endPressureBar": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "null"
-                                                      },
-                                                      {
-                                                        "type": "number"
-                                                      }
-                                                    ]
-                                                  },
-                                                  "gas": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "null"
-                                                      },
-                                                      {
-                                                        "type": "object",
-                                                        "required": [
-                                                          "o2",
-                                                          "he"
-                                                        ],
-                                                        "properties": {
-                                                          "o2": {
-                                                            "type": "number"
-                                                          },
-                                                          "he": {
-                                                            "type": "number"
-                                                          }
-                                                        },
-                                                        "description": "O₂ and He as percent"
-                                                      }
-                                                    ]
-                                                  }
-                                                }
-                                              }
-                                            ],
-                                            "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
-                                          }
-                                        ]
+                                        "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
                                       }
+                                    ]
+                                  },
+                                  "provider": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          {
+                                            "type": "object",
+                                            "required": [
+                                              "volumeL",
+                                              "material",
+                                              "startPressureBar",
+                                              "endPressureBar",
+                                              "gas"
+                                            ],
+                                            "properties": {
+                                              "volumeL": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "material": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "enum": [
+                                                      "aluminium",
+                                                      "steel",
+                                                      "carbon"
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              "startPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "endPressureBar": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "number"
+                                                  }
+                                                ]
+                                              },
+                                              "gas": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "null"
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "required": [
+                                                      "o2",
+                                                      "he"
+                                                    ],
+                                                    "properties": {
+                                                      "o2": {
+                                                        "type": "number"
+                                                      },
+                                                      "he": {
+                                                        "type": "number"
+                                                      }
+                                                    },
+                                                    "description": "O₂ and He as percent"
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "description": "site: its name; buddies: the names of Divers here (people Dive Hub doesn't know are left out); startsAt: local \"YYYY-MM-DD HH:MM\"; cylinder: the tank typed at the Provider, or the Dive's only Cylinder in the same values (null: none); lead: the weight typed at the Provider, or the total of the Dive's Lead, in kg (null: none)"
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "description": "`hub` is the Dive's value now, `provider` the Provider's as the run found it; a field whose two values became equal is left out. An entry with no field left is not listed (nor counted in the Connection's or a run's conflicts)"
+                            },
+                            "existing": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "remoteId",
+                                    "remoteNumber",
+                                    "startsAt"
+                                  ],
+                                  "properties": {
+                                    "remoteId": {
+                                      "type": "string"
+                                    },
+                                    "remoteNumber": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "integer"
+                                        }
+                                      ]
+                                    },
+                                    "startsAt": {
+                                      "type": "string",
+                                      "description": "Local time as the Provider keeps it, \"YYYY-MM-DD HH:MM\""
                                     }
                                   },
-                                  "description": "`hub` is the Dive's value now, `provider` the Provider's as the run found it; a field whose two values became equal is left out. An entry with no field left is not listed (nor counted in the Connection's or a run's conflicts)"
-                                },
-                                "existing": {
-                                  "anyOf": [
-                                    {
-                                      "type": "null"
-                                    },
-                                    {
-                                      "type": "object",
-                                      "required": [
-                                        "remoteId",
-                                        "remoteNumber",
-                                        "startsAt"
-                                      ],
-                                      "properties": {
-                                        "remoteId": {
-                                          "type": "string"
-                                        },
-                                        "remoteNumber": {
-                                          "anyOf": [
-                                            {
-                                              "type": "null"
-                                            },
-                                            {
-                                              "type": "integer"
-                                            }
-                                          ]
-                                        },
-                                        "startsAt": {
-                                          "type": "string",
-                                          "description": "Local time as the Provider keeps it, \"YYYY-MM-DD HH:MM\""
-                                        }
-                                      },
-                                      "description": "With kind exists: that dive at the Provider"
-                                    }
-                                  ]
-                                },
-                                "foundAt": {
-                                  "type": "string",
-                                  "format": "date-time"
-                                },
-                                "queued": {
-                                  "type": "boolean",
-                                  "description": "conflict: the User chose and the Dive waits to be sent with the choices; the entry stays listed until the send settles. A Conflict found again after the choice is not queued"
+                                  "description": "With kind exists: that dive at the Provider"
                                 }
-                              }
+                              ]
+                            },
+                            "foundAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "queued": {
+                              "type": "boolean",
+                              "description": "conflict: the User chose and the Dive waits to be sent with the choices; the entry stays listed until the send settles. A Conflict found again after the choice is not queued"
                             }
                           }
                         }
@@ -81540,51 +81500,43 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "providers"
-                  ],
-                  "properties": {
-                    "providers": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "provider",
-                          "name",
-                          "allowedAt",
-                          "allowedBy"
-                        ],
-                        "properties": {
-                          "provider": {
-                            "type": "string"
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "provider",
+                      "name",
+                      "allowedAt",
+                      "allowedBy"
+                    ],
+                    "properties": {
+                      "provider": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "allowedAt": {
+                        "anyOf": [
+                          {
+                            "type": "null"
                           },
-                          "name": {
-                            "type": "string"
-                          },
-                          "allowedAt": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            ]
-                          },
-                          "allowedBy": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "string",
-                                "description": "The admin who allowed it, by name"
-                              }
-                            ]
+                          {
+                            "type": "string",
+                            "format": "date-time"
                           }
-                        }
+                        ]
+                      },
+                      "allowedBy": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string",
+                            "description": "The admin who allowed it, by name"
+                          }
+                        ]
                       }
                     }
                   }
@@ -81783,51 +81735,43 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "providers"
-                  ],
-                  "properties": {
-                    "providers": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "provider",
-                          "name",
-                          "allowedAt",
-                          "allowedBy"
-                        ],
-                        "properties": {
-                          "provider": {
-                            "type": "string"
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "provider",
+                      "name",
+                      "allowedAt",
+                      "allowedBy"
+                    ],
+                    "properties": {
+                      "provider": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "allowedAt": {
+                        "anyOf": [
+                          {
+                            "type": "null"
                           },
-                          "name": {
-                            "type": "string"
-                          },
-                          "allowedAt": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            ]
-                          },
-                          "allowedBy": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "string",
-                                "description": "The admin who allowed it, by name"
-                              }
-                            ]
+                          {
+                            "type": "string",
+                            "format": "date-time"
                           }
-                        }
+                        ]
+                      },
+                      "allowedBy": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string",
+                            "description": "The admin who allowed it, by name"
+                          }
+                        ]
                       }
                     }
                   }

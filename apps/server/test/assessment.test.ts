@@ -107,8 +107,8 @@ describe.skipIf(!(await databaseReachable()))('the dive assessment', () => {
     // The deleted Dive keeps its findings and counts nowhere.
     expect((await t.db.select().from(diveFinding).where(eq(diveFinding.diveId, deep))).length).toBe(5);
     expect((await call('GET', `/api/dives/${deep}/assessment`, tim)).statusCode).toBe(404);
-    const deleted = await json<{ dives: { id: string; version: number }[] }>('GET', '/api/dives/deleted', tim);
-    await call('POST', `/api/dives/${deep}/restore`, tim, { version: deleted.dives[0]!.version });
+    const deleted = await json<{ id: string; version: number }[]>('GET', '/api/dives/deleted', tim);
+    await call('POST', `/api/dives/${deep}/restore`, tim, { version: deleted[0]!.version });
     expect((await assessment(morning)).noFly).toBeNull();
     expect(rules(await assessment(deep))).toContain('reverse_profile');
   });

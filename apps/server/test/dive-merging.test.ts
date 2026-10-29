@@ -68,7 +68,7 @@ describe.skipIf(!(await databaseReachable()))('merging two Dives, and moving a l
   });
   const at = async (id: string, provider: string) =>
     (await json<{ current: { remoteId: string } | null }>('GET', `/api/dives/${id}/providers/${provider}`)).current?.remoteId ?? null;
-  const deleted = async (id: string) => (await json<{ dives: Deleted[] }>('GET', '/api/dives/deleted')).dives.find((d) => d.id === id);
+  const deleted = async (id: string) => (await json<Deleted[]>('GET', '/api/dives/deleted')).find((d) => d.id === id);
   const openCandidates = () => json<unknown[]>('GET', '/api/duplicate-candidates');
 
   beforeAll(async () => {

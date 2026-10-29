@@ -61,7 +61,7 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     }).returning({ id: importJob.id }))[0]!.id;
   const unsent = () => ctx.providers.waitingPushes.unsentDives(connectionId);
   const deletedVersion = async (id: string) =>
-    (await json<{ dives: { id: string; version: number }[] }>('GET', '/api/dives/deleted')).dives.find((d) => d.id === id)!.version;
+    (await json<{ id: string; version: number }[]>('GET', '/api/dives/deleted')).find((d) => d.id === id)!.version;
   const version = async (id: string) => (await json<{ version: number }>('GET', `/api/dives/${id}`)).version;
   const edit = async (id: string, notes: string, cookie = ann) =>
     call('PATCH', `/api/dives/${id}`, { version: await version(id), notes }, cookie);

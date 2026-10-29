@@ -458,8 +458,8 @@ describe.skipIf(!(await databaseReachable()))('SSI as a Provider', () => {
       expect(await ctx.providers.pushes.send(userId, id, 'ssi', { onConflict: 'defer', runId: run!.id })).toMatchObject({ result: 'updated', deferred: ['site'] });
       const [stored] = await t.db.select().from(providerConflict).where(eq(providerConflict.diveId, id));
       expect(stored!.fields).toMatchObject([{ field: 'site', hub: 'Shaab Samadai', compared: { provider: '4420', siteSource: 'ssi' } }]);
-      type Waiting = { connections: { entries: { diveId: string; fields: unknown[] }[] }[] };
-      const listed = async () => ((await call('GET', '/api/provider-conflicts', tim)).json() as Waiting).connections.flatMap((c) => c.entries).filter((e) => e.diveId === id);
+      type Waiting = { entries: { diveId: string; fields: unknown[] }[] }[];
+      const listed = async () => ((await call('GET', '/api/provider-conflicts', tim)).json() as Waiting).flatMap((c) => c.entries).filter((e) => e.diveId === id);
 
       await patch(id, { siteId: abuDabab });
       expect((await status(id) as unknown as { conflicts: unknown }).conflicts).toBeNull();

@@ -53,9 +53,9 @@ export function DeletedNotices() {
   const names = useNames();
   const providerOf = useProviderOf();
   // Offered only while that Dive is still deleted (it may have been restored from the list).
-  const entry = justDeleted && deleted.data?.dives.find((d) => d.id === justDeleted.id);
+  const entry = justDeleted && deleted.data?.find((d) => d.id === justDeleted.id);
   if (justDeleted && entry) return <JustDeletedNotice key={entry.id} just={justDeleted} dive={entry} />;
-  const still = deleted.data?.dives.filter((d) => d.stillAt.length > 0) ?? [];
+  const still = deleted.data?.filter((d) => d.stillAt.length > 0) ?? [];
   if (still.length === 0 || reminderDismissed) return null;
   const where = [...new Set(still.flatMap((d) => d.stillAt.map((s) => providerOf(s.provider).name)))];
   return (
@@ -100,7 +100,7 @@ export function DeletedDives() {
   const providers = useProviders();
   const names = useNames();
   const list = useRef<HTMLUListElement>(null);
-  const dives = deleted.data?.dives ?? [];
+  const dives = deleted.data ?? [];
   const count = dives.length;
   if (count === 0) return null;
   return (

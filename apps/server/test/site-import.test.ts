@@ -129,7 +129,7 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
       expect(second.json().code).toBe('site_import_running');
       await ctx.siteImports.run(first.json().id);
       expect((await call('POST', '/api/admin/site-imports', admin, { sources: ['wikidata'], area: { kind: 'world' }, language: 'en' })).statusCode).toBe(202);
-      await ctx.siteImports.run((await json<{ imports: SiteImport[] }>('GET', '/api/admin/site-imports', admin)).imports[0]!.id);
+      await ctx.siteImports.run((await json<SiteImport[]>('GET', '/api/admin/site-imports', admin))[0]!.id);
     });
 
     it('refuses an area that is no area', async () => {

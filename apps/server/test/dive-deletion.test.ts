@@ -34,7 +34,7 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
     (await call(method, url, cookie, payload)).json() as T;
   const version = async (id: string) => (await json<{ version: number }>('GET', `/api/dives/${id}`)).version;
   const remove = async (id: string, body: object = {}, cookie = tim) => call('DELETE', `/api/dives/${id}`, cookie, { version: await version(id), ...body });
-  const deleted = () => json<{ dives: DeletedDive[] }>('GET', '/api/dives/deleted');
+  const deleted = () => json<DeletedDive[]>('GET', '/api/dives/deleted');
 
   async function upload(fileName: string, data: Uint8Array, cookie = tim): Promise<Outcome> {
     const { payload, headers } = multipartFile(fileName, data);
@@ -103,8 +103,8 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
     });
 
     it('lists deleted Dives to their Users only', async () => {
-      expect((await deleted()).dives).toEqual([expect.objectContaining({ id: gone, site: { id: siteId, name: 'Hausreef' }, stillAt: [] })]);
-      expect((await json<{ dives: unknown[] }>('GET', '/api/dives/deleted', other)).dives).toEqual([]);
+      expect((await deleted())).toEqual([expect.objectContaining({ id: gone, site: { id: siteId, name: 'Hausreef' }, stillAt: [] })]);
+      expect((await json<unknown[]>('GET', '/api/dives/deleted', other))).toEqual([]);
     });
 
     it('skips the same file, a re-export of it, and doesn\'t create the Dive again', async () => {
@@ -118,14 +118,14 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
     });
 
     it('can be restored, with its Recordings, and the history shows both', async () => {
-      const [entry] = (await deleted()).dives;
+      const [entry] = (await deleted());
       expect((await call('POST', `/api/dives/${gone}/restore`, other, { version: entry!.version })).statusCode).toBe(404);
       expect((await call('POST', `/api/dives/${gone}/restore`, tim, { version: entry!.version - 1 })).json()).toMatchObject({ code: 'dive_changed' });
       const restored = await call('POST', `/api/dives/${gone}/restore`, tim, { version: entry!.version });
       expect(restored.statusCode).toBe(200);
       expect(restored.json()).toMatchObject({ id: gone, site: { id: siteId }, recordings: [expect.anything()] });
       expect(await json('GET', '/api/dives')).toMatchObject({ total: 2 });
-      expect((await deleted()).dives).toEqual([]);
+      expect((await deleted())).toEqual([]);
       const history = await json<{ cause: string }[]>('GET', `/api/dives/${gone}/revisions`);
       expect(history.slice(0, 2).map((r) => r.cause)).toEqual(['restore', 'delete']);
       // Live again: a re-import updates it in place.
@@ -139,14 +139,14 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
       await remove(kept);
       const into = await json<{ version: number }>('GET', `/api/dive-sites/${siteId}`);
       expect((await call('POST', `/api/dive-sites/${merged.id}/merge`, tim, { intoId: siteId, version: merged.version, intoVersion: into.version })).statusCode).toBe(200);
-      const v1 = (await deleted()).dives.find((d) => d.id === kept)!.version;
+      const v1 = (await deleted()).find((d) => d.id === kept)!.version;
       expect((await json('POST', `/api/dives/${kept}/restore`, tim, { version: v1 }))).toMatchObject({ site: { id: siteId } });
 
       const lonely = (await json<{ id: string }>('POST', '/api/dive-sites', tim, { name: 'Lonely', position: { latitude: 10, longitude: 10 } })).id;
       await call('PATCH', `/api/dives/${kept}`, tim, { version: await version(kept), siteId: lonely });
       await remove(kept);
       expect((await call('DELETE', `/api/dive-sites/${lonely}`)).statusCode).toBe(204);
-      const v2 = (await deleted()).dives.find((d) => d.id === kept)!.version;
+      const v2 = (await deleted()).find((d) => d.id === kept)!.version;
       expect((await json('POST', `/api/dives/${kept}/restore`, tim, { version: v2 }))).toMatchObject({ site: null });
     });
   });
@@ -199,7 +199,7 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
       const response = await remove(diveId, { alsoAt: ['ssi'] });
       expect(response.json()).toEqual({ providers: [{ provider: 'ssi', copy: 'deleted' }] });
       expect(ssiDive(remoteId).odin_user_log_deleted).toBe(1);
-      expect((await deleted()).dives.find((d) => d.id === diveId)).toMatchObject({ stillAt: [] });
+      expect((await deleted()).find((d) => d.id === diveId)).toMatchObject({ stillAt: [] });
     });
 
     it('keeps the SSI dive when the User declines, reminds, and deletes it there later', async () => {
@@ -207,14 +207,14 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
       const remoteId = await remoteOf(id);
       expect((await remove(id, { alsoAt: [] })).json()).toEqual({ providers: [{ provider: 'ssi', copy: 'kept' }] });
       expect(ssiDive(remoteId).odin_user_log_deleted).not.toBe(1);
-      const entry = (await deleted()).dives.find((d) => d.id === id)!;
+      const entry = (await deleted()).find((d) => d.id === id)!;
       expect(entry.stillAt).toEqual([{ provider: 'ssi', remoteNumber: expect.any(Number) }]);
       // Still not sendable while deleted, but deletable there.
       expect((await call('POST', `/api/dives/${id}/providers/ssi`, tim, {})).statusCode).toBe(404);
       expect((await call('DELETE', `/api/dives/${id}/providers/ssi`, other)).statusCode).toBe(404);
       expect((await call('DELETE', `/api/dives/${id}/providers/ssi`)).statusCode).toBe(200);
       expect(ssiDive(remoteId).odin_user_log_deleted).toBe(1);
-      expect((await deleted()).dives.find((d) => d.id === id)!.stillAt).toEqual([]);
+      expect((await deleted()).find((d) => d.id === id)!.stillAt).toEqual([]);
     });
 
     it('refuses to delete in SSI without a Connection, and deletes nothing', async () => {
@@ -328,7 +328,7 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
     };
     const removeIt = async (id: string, body: object = { alsoAt: ['ledger'] }) =>
       call('DELETE', `/api/dives/${id}`, ann, { version: (await json<{ version: number }>('GET', `/api/dives/${id}`, ann)).version, ...body });
-    const deletedOf = async (id: string) => (await json<{ dives: DeletedDive[] }>('GET', '/api/dives/deleted', ann)).dives.find((d) => d.id === id)!;
+    const deletedOf = async (id: string) => (await json<DeletedDive[]>('GET', '/api/dives/deleted', ann)).find((d) => d.id === id)!;
     const restore = async (id: string) => call('POST', `/api/dives/${id}/restore`, ann, { version: (await deletedOf(id)).version });
     /** Moves the clock to the entry's due time; an entry the clock has already passed (queued at the database's time) is due as it is. */
     const untilDue = async () => {

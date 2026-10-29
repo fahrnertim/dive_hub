@@ -4947,51 +4947,49 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            dives: {
+                            id: string;
+                            diverId: string;
+                            /** @description Send it back to restore the Dive */
+                            version: number;
+                            number: null | number;
+                            /** Format: date-time */
+                            startsAt: string;
+                            utcOffsetSeconds: null | number;
+                            /** @enum {unknown} */
+                            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
+                            durationSeconds: number;
+                            maxDepthM: null | number;
+                            site: null | {
                                 id: string;
-                                diverId: string;
-                                /** @description Send it back to restore the Dive */
-                                version: number;
-                                number: null | number;
-                                /** Format: date-time */
-                                startsAt: string;
-                                utcOffsetSeconds: null | number;
-                                /** @enum {unknown} */
-                                utcOffsetSource: "device" | "position" | "nearby" | "unknown";
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                site: null | {
-                                    id: string;
-                                    name: string;
-                                };
-                                /** Format: date-time */
-                                deletedAt: string;
-                                mergedInto: null | string;
-                                movedTo: null | string;
-                                /** @description Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md) */
-                                stillAt: {
-                                    provider: string;
-                                    remoteNumber: null | number;
-                                }[];
-                                /** @description The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason */
-                                waiting: {
-                                    provider: string;
-                                    /** @enum {unknown} */
-                                    action: "send" | "delete";
-                                    /**
-                                     * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
-                                     * @enum {unknown}
-                                     */
-                                    state: "waiting" | "held" | "stopped";
-                                    reason: null | string;
-                                    /**
-                                     * Format: date-time
-                                     * @description When it goes out, for a waiting entry
-                                     */
-                                    dueAt: string;
-                                }[];
+                                name: string;
+                            };
+                            /** Format: date-time */
+                            deletedAt: string;
+                            mergedInto: null | string;
+                            movedTo: null | string;
+                            /** @description Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md) */
+                            stillAt: {
+                                provider: string;
+                                remoteNumber: null | number;
                             }[];
-                        };
+                            /** @description The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason */
+                            waiting: {
+                                provider: string;
+                                /** @enum {unknown} */
+                                action: "send" | "delete";
+                                /**
+                                 * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
+                                 * @enum {unknown}
+                                 */
+                                state: "waiting" | "held" | "stopped";
+                                reason: null | string;
+                                /**
+                                 * Format: date-time
+                                 * @description When it goes out, for a waiting entry
+                                 */
+                                dueAt: string;
+                            }[];
+                        }[];
                     };
                 };
             };
@@ -6421,15 +6419,13 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            divers: {
-                                id: string;
-                                name: string;
-                                /** @description The signed-in User keeps this Diver's logbook */
-                                managed: boolean;
-                                /** @description No User keeps its logbook: someone Users dived with (ADR 0028) */
-                                external: boolean;
-                            }[];
-                        };
+                            id: string;
+                            name: string;
+                            /** @description The signed-in User keeps this Diver's logbook */
+                            managed: boolean;
+                            /** @description No User keeps its logbook: someone Users dived with (ADR 0028) */
+                            external: boolean;
+                        }[];
                     };
                 };
             };
@@ -12653,71 +12649,69 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            imports: {
-                                id: string;
-                                status: "queued" | "running" | "done" | "failed";
-                                sources: ("osm" | "wikidata" | "ssi")[];
-                                /** @description Where to import: a country, a box, or everywhere */
-                                area: {
-                                    /** @enum {string} */
-                                    kind: "country";
-                                    /** @description ISO 3166-1 alpha-2 */
-                                    country: string;
-                                } | {
-                                    /** @enum {string} */
-                                    kind: "box";
-                                    south: number;
-                                    west: number;
-                                    north: number;
-                                    east: number;
-                                } | {
-                                    /** @enum {string} */
-                                    kind: "world";
-                                };
-                                language: string;
-                                /** @description false: the run only matched and filled sites already in the hub */
-                                createSites: boolean;
-                                progress: {
-                                    step: "waiting" | "osm" | "wikidata" | "ssi" | "saving";
-                                    done: number;
-                                    total: number;
-                                };
-                                counts: null | {
-                                    created: number;
-                                    updated: number;
-                                    unchanged: number;
-                                    kept: number;
-                                    linked: number;
-                                    skippedNoName: number;
-                                    skippedDeleted: number;
-                                    skippedMerged: number;
-                                    skippedNew: number;
-                                    offered: number;
-                                    gone: number;
-                                };
-                                findings: ({
-                                    /** @enum {string} */
-                                    kind: "near";
-                                    siteId: string;
-                                    name: string;
-                                    nearSiteId: string;
-                                    nearName: string;
-                                    distanceM: number;
-                                } | {
-                                    /** @enum {string} */
-                                    kind: "offer";
-                                    siteId: string;
-                                    name: string;
-                                    /** @enum {unknown} */
-                                    source: "osm" | "wikidata" | "ssi";
-                                })[];
-                                /** @description Why it failed (a problem code) */
-                                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                                /** Format: date-time */
-                                createdAt: string;
-                                finishedAt: null | string;
-                            }[];
-                        };
+                            id: string;
+                            status: "queued" | "running" | "done" | "failed";
+                            sources: ("osm" | "wikidata" | "ssi")[];
+                            /** @description Where to import: a country, a box, or everywhere */
+                            area: {
+                                /** @enum {string} */
+                                kind: "country";
+                                /** @description ISO 3166-1 alpha-2 */
+                                country: string;
+                            } | {
+                                /** @enum {string} */
+                                kind: "box";
+                                south: number;
+                                west: number;
+                                north: number;
+                                east: number;
+                            } | {
+                                /** @enum {string} */
+                                kind: "world";
+                            };
+                            language: string;
+                            /** @description false: the run only matched and filled sites already in the hub */
+                            createSites: boolean;
+                            progress: {
+                                step: "waiting" | "osm" | "wikidata" | "ssi" | "saving";
+                                done: number;
+                                total: number;
+                            };
+                            counts: null | {
+                                created: number;
+                                updated: number;
+                                unchanged: number;
+                                kept: number;
+                                linked: number;
+                                skippedNoName: number;
+                                skippedDeleted: number;
+                                skippedMerged: number;
+                                skippedNew: number;
+                                offered: number;
+                                gone: number;
+                            };
+                            findings: ({
+                                /** @enum {string} */
+                                kind: "near";
+                                siteId: string;
+                                name: string;
+                                nearSiteId: string;
+                                nearName: string;
+                                distanceM: number;
+                            } | {
+                                /** @enum {string} */
+                                kind: "offer";
+                                siteId: string;
+                                name: string;
+                                /** @enum {unknown} */
+                                source: "osm" | "wikidata" | "ssi";
+                            })[];
+                            /** @description Why it failed (a problem code) */
+                            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+                            /** Format: date-time */
+                            createdAt: string;
+                            finishedAt: null | string;
+                        }[];
                     };
                 };
                 /** @description Default Response */
@@ -15057,20 +15051,18 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            buddies: {
-                                /** @description The entry's ID at the Provider: what link and import name it by */
-                                entryId: string;
-                                /** @description As the Provider has it */
+                            /** @description The entry's ID at the Provider: what link and import name it by */
+                            entryId: string;
+                            /** @description As the Provider has it */
+                            name: string;
+                            account: null | string;
+                            diver: null | {
+                                id: string;
                                 name: string;
-                                account: null | string;
-                                diver: null | {
-                                    id: string;
-                                    name: string;
-                                };
-                                /** @description With ?for: the entry's name or e-mail is that Diver's (folded, trimmed). Only a sort; the e-mail is never answered */
-                                matches: boolean;
-                            }[];
-                        };
+                            };
+                            /** @description With ?for: the entry's name or e-mail is that Diver's (folded, trimmed). Only a sort; the e-mail is never answered */
+                            matches: boolean;
+                        }[];
                     };
                 };
                 /** @description Default Response */
@@ -17378,72 +17370,70 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            connections: {
-                                connectionId: string;
-                                provider: string;
-                                providerName: string;
-                                entries: {
-                                    diveId: string;
-                                    number: null | number;
-                                    /** Format: date-time */
-                                    startsAt: string;
-                                    utcOffsetSeconds: null | number;
-                                    /** @enum {unknown} */
-                                    utcOffsetSource: "device" | "position" | "nearby" | "unknown";
-                                    durationSeconds: number;
-                                    maxDepthM: null | number;
-                                    site: null | {
-                                        id: string;
-                                        name: string;
-                                    };
+                            connectionId: string;
+                            provider: string;
+                            providerName: string;
+                            entries: {
+                                diveId: string;
+                                number: null | number;
+                                /** Format: date-time */
+                                startsAt: string;
+                                utcOffsetSeconds: null | number;
+                                /** @enum {unknown} */
+                                utcOffsetSource: "device" | "position" | "nearby" | "unknown";
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                site: null | {
+                                    id: string;
+                                    name: string;
+                                };
+                                /**
+                                 * @description conflict: fields changed on both sides, the User chooses per field. exists: the Provider already has a dive at the Dive's time and the send waits (fields is empty): "<Provider> already has a dive at this time" with "Link to it" and "Create a new one"
+                                 * @enum {unknown}
+                                 */
+                                kind: "conflict" | "exists";
+                                /** @description conflict: the remote dive the Conflict is about. exists: the dive at the Provider */
+                                remoteId: string;
+                                /** @description `hub` is the Dive's value now, `provider` the Provider's as the run found it; a field whose two values became equal is left out. An entry with no field left is not listed (nor counted in the Connection's or a run's conflicts) */
+                                fields: {
                                     /**
-                                     * @description conflict: fields changed on both sides, the User chooses per field. exists: the Provider already has a dive at the Dive's time and the send waits (fields is empty): "<Provider> already has a dive at this time" with "Link to it" and "Create a new one"
+                                     * @description The field the two sides differ on
                                      * @enum {unknown}
                                      */
-                                    kind: "conflict" | "exists";
-                                    /** @description conflict: the remote dive the Conflict is about. exists: the dive at the Provider */
-                                    remoteId: string;
-                                    /** @description `hub` is the Dive's value now, `provider` the Provider's as the run found it; a field whose two values became equal is left out. An entry with no field left is not listed (nor counted in the Connection's or a run's conflicts) */
-                                    fields: {
-                                        /**
-                                         * @description The field the two sides differ on
-                                         * @enum {unknown}
-                                         */
-                                        field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
-                                        hub: null | (string | number | string[] | {
-                                            volumeL: null | number;
-                                            material: null | ("aluminium" | "steel" | "carbon");
-                                            startPressureBar: null | number;
-                                            endPressureBar: null | number;
-                                            gas: null | {
-                                                o2: number;
-                                                he: number;
-                                            };
-                                        });
-                                        provider: null | (string | number | string[] | {
-                                            volumeL: null | number;
-                                            material: null | ("aluminium" | "steel" | "carbon");
-                                            startPressureBar: null | number;
-                                            endPressureBar: null | number;
-                                            gas: null | {
-                                                o2: number;
-                                                he: number;
-                                            };
-                                        });
-                                    }[];
-                                    existing: null | {
-                                        remoteId: string;
-                                        remoteNumber: null | number;
-                                        /** @description Local time as the Provider keeps it, "YYYY-MM-DD HH:MM" */
-                                        startsAt: string;
-                                    };
-                                    /** Format: date-time */
-                                    foundAt: string;
-                                    /** @description conflict: the User chose and the Dive waits to be sent with the choices; the entry stays listed until the send settles. A Conflict found again after the choice is not queued */
-                                    queued: boolean;
+                                    field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                    hub: null | (string | number | string[] | {
+                                        volumeL: null | number;
+                                        material: null | ("aluminium" | "steel" | "carbon");
+                                        startPressureBar: null | number;
+                                        endPressureBar: null | number;
+                                        gas: null | {
+                                            o2: number;
+                                            he: number;
+                                        };
+                                    });
+                                    provider: null | (string | number | string[] | {
+                                        volumeL: null | number;
+                                        material: null | ("aluminium" | "steel" | "carbon");
+                                        startPressureBar: null | number;
+                                        endPressureBar: null | number;
+                                        gas: null | {
+                                            o2: number;
+                                            he: number;
+                                        };
+                                    });
                                 }[];
+                                existing: null | {
+                                    remoteId: string;
+                                    remoteNumber: null | number;
+                                    /** @description Local time as the Provider keeps it, "YYYY-MM-DD HH:MM" */
+                                    startsAt: string;
+                                };
+                                /** Format: date-time */
+                                foundAt: string;
+                                /** @description conflict: the User chose and the Dive waits to be sent with the choices; the entry stays listed until the send settles. A Conflict found again after the choice is not queued */
+                                queued: boolean;
                             }[];
-                        };
+                        }[];
                     };
                 };
                 /** @description Default Response */
@@ -18007,13 +17997,11 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            providers: {
-                                provider: string;
-                                name: string;
-                                allowedAt: null | string;
-                                allowedBy: null | string;
-                            }[];
-                        };
+                            provider: string;
+                            name: string;
+                            allowedAt: null | string;
+                            allowedBy: null | string;
+                        }[];
                     };
                 };
                 /** @description Default Response */
@@ -18085,13 +18073,11 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            providers: {
-                                provider: string;
-                                name: string;
-                                allowedAt: null | string;
-                                allowedBy: null | string;
-                            }[];
-                        };
+                            provider: string;
+                            name: string;
+                            allowedAt: null | string;
+                            allowedBy: null | string;
+                        }[];
                     };
                 };
                 /** @description Default Response */

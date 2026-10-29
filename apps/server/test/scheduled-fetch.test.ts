@@ -169,7 +169,7 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
     ledger.dives.get(remoteId)!.notes = 'Manta';
     await runFetch();
     expect((await diveOf(id)).notes).toBe('Turtle');
-    const { connections } = await json<{ connections: { connectionId: string; entries: { diveId: string; fields: unknown[] }[] }[] }>('GET', '/api/provider-conflicts');
+    const connections = await json<{ connectionId: string; entries: { diveId: string; fields: unknown[] }[] }[]>('GET', '/api/provider-conflicts');
     expect(connections).toMatchObject([{ connectionId, entries: [{ diveId: id, fields: [{ field: 'notes', hub: 'Turtle', provider: 'Manta' }] }] }]);
     expect((await t.db.select().from(providerConflict))[0]!.runId).toBeNull();
   });

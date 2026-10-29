@@ -730,22 +730,20 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   app.get('/dives/deleted', {
     schema: {
       summary: 'The User\'s deleted Dives, most recently deleted first (at most 100), to restore them; which Providers they are still at',
-      response: { 200: Type.Object({ dives: Type.Array(DeletedDiveView) }) },
+      response: { 200: Type.Array(DeletedDiveView) },
     },
   }, async (request) => {
     const rows = await logbook.deletedDives(userOf(request).id, DELETED_SHOWN);
     const remote = await pushes.currentOf(rows.map((r) => r.d.id));
     const waiting = await waitingPushes.waitingOf(rows.map((r) => r.d.id));
-    return {
-      dives: rows.map(({ d, siteName, mergedInto, movedTo }) => ({
-        id: d.id, diverId: d.diverId, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(),
-        utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
-        site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
-        deletedAt: d.deletedAt!.toISOString(), mergedInto, movedTo,
-        stillAt: [...(remote.get(d.id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber })),
-        waiting: waiting.get(d.id) ?? [],
-      })),
-    };
+    return rows.map(({ d, siteName, mergedInto, movedTo }) => ({
+      id: d.id, diverId: d.diverId, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(),
+      utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
+      site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
+      deletedAt: d.deletedAt!.toISOString(), mergedInto, movedTo,
+      stillAt: [...(remote.get(d.id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber })),
+      waiting: waiting.get(d.id) ?? [],
+    }));
   });
 
   app.post('/dives/:id/restore', {

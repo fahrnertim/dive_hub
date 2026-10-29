@@ -133,9 +133,9 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
         q: Type.Optional(Type.String({ maxLength: 100, description: 'Part of the name' })),
         limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 50, default: 20 })),
       }),
-      response: { 200: Type.Object({ divers: Type.Array(FoundDiver) }) },
+      response: { 200: Type.Array(FoundDiver) },
     },
-  }, async (request) => ({ divers: await divers.search(userOf(request).id, request.query.q, request.query.limit ?? 20) }));
+  }, async (request) => divers.search(userOf(request).id, request.query.q, request.query.limit ?? 20));
 
   app.post('/divers', {
     schema: { summary: 'Start keeping another Diver\'s logbook (e.g. a child\'s)', body: Type.Object({ name: Name }), response: { 201: DiverView, ...errors } },

@@ -224,14 +224,14 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
     const id = await waitingDive();
     await t.db.update(waitingPush).set({ state: 'held', reason: 'exists', detail: { remoteId: 'L7', remoteNumber: 4, startsAt: '2025-05-01 09:00' } })
       .where(eq(waitingPush.diveId, id));
-    type Listed = { connections: { connectionId: string; entries: { kind: string; diveId: string; remoteId: string; fields: unknown[]; existing: unknown }[] }[] };
+    type Listed = { connectionId: string; entries: { kind: string; diveId: string; remoteId: string; fields: unknown[]; existing: unknown }[] }[];
     const listed = await json<Listed>('GET', '/api/provider-conflicts');
-    expect(listed.connections).toMatchObject([{
+    expect(listed).toMatchObject([{
       connectionId,
       entries: [{ kind: 'exists', diveId: id, remoteId: 'L7', fields: [], existing: { remoteId: 'L7', remoteNumber: 4, startsAt: '2025-05-01 09:00' } }],
     }]);
     expect((await call('POST', `/api/dives/${id}/providers/ledger/decision`, { onExisting: 'link' })).statusCode).toBe(204);
-    expect((await json<Listed>('GET', '/api/provider-conflicts')).connections).toEqual([]);
+    expect((await json<Listed>('GET', '/api/provider-conflicts'))).toEqual([]);
   });
 
   it('fetch-due answers how many it queued', async () => {

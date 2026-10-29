@@ -230,7 +230,7 @@ test('a delete that stopped shows the error in the deleted dives and Retry puts 
     // Due at once, so the worker may have deleted it by the time the list refreshes: either way the error is gone.
     await expect(panel.getByText(/^Couldn’t delete it in SSI/)).toBeHidden();
     await expect.poll(async () => {
-      const { dives } = await (await request.get('/api/dives/deleted')).json() as { dives: { id: string; waiting: { state: string }[] }[] };
+      const dives = await (await request.get('/api/dives/deleted')).json() as { id: string; waiting: { state: string }[] }[];
       return dives.find((d) => d.id === id)?.waiting.find((w) => w.state === 'stopped');
     }).toBeUndefined();
   } finally {

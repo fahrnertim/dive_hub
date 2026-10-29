@@ -56,7 +56,7 @@ function SiteDataPanel({ provider: p, state: s }: { provider: { id: string; name
   const set = useMutation({
     mutationFn: async (allowed: boolean) => unwrap(await api.PUT('/api/admin/provider-site-data/{provider}', {
       params: { path: { provider: p.id } }, body: allowed ? { allowed, confirm: true } : { allowed },
-    })).providers,
+    })),
     onSuccess: (providers, allowed) => {
       queryClient.setQueryData(keys.siteData, providers);
       setConfirmed(false);

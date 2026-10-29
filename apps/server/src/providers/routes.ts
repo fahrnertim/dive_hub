@@ -474,11 +474,9 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         + 'With ?for=<diverId>, the entries whose name or e-mail is that Diver\'s come first (matches), then the rest by name.',
       params: IdParams,
       querystring: Type.Object({ for: Type.Optional(Type.String({ format: 'uuid', description: 'The Diver to be linked or added: sorts its likely entries first' })) }),
-      response: { 200: Type.Object({ buddies: Type.Array(BuddyView) }), ...errors },
+      response: { 200: Type.Array(BuddyView), ...errors },
     },
-  }, async (request) => ({
-    buddies: await buddies.list(userOf(request).id, request.params.id, request.query.for ? { forDiverId: request.query.for } : {}),
-  }));
+  }, async (request) => buddies.list(userOf(request).id, request.params.id, request.query.for ? { forDiverId: request.query.for } : {}));
 
   app.post('/connections/:id/buddies/link', {
     schema: {
@@ -820,14 +818,12 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         + 'with `conflicts` (or sends the Dive from its page with `conflicts`). A Dive the Provider already has a dive for (kind exists) waits for "Link to it" or '
         + '"Create a new one": the same route with `onExisting`. A choice queues the Dive, due now: an exists entry leaves the list, a conflict entry stays with queued true until the send settles. '
         + 'An entry whose Dive is deleted, or whose remote dive is no longer the current one of the Dive, is not listed.',
-      response: { 200: Type.Object({ connections: Type.Array(ConflictsView) }), ...errors },
+      response: { 200: Type.Array(ConflictsView), ...errors },
     },
-  }, async (request) => ({
-    connections: (await conflicts.waiting(userOf(request).id)).map((c) => ({
-      ...c, providerName: providers.get(c.provider).capabilities.name,
-      entries: c.entries.map((e) => ({ ...e, startsAt: e.startsAt.toISOString(), foundAt: e.foundAt.toISOString() })),
-    })),
-  }));
+  }, async (request) => (await conflicts.waiting(userOf(request).id)).map((c) => ({
+    ...c, providerName: providers.get(c.provider).capabilities.name,
+    entries: c.entries.map((e) => ({ ...e, startsAt: e.startsAt.toISOString(), foundAt: e.foundAt.toISOString() })),
+  })));
 
   app.post('/connections/:id/gone-dives/check', {
     schema: {
@@ -871,9 +867,9 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     onRequest: requireAdmin,
     schema: {
       summary: 'Admins: per Provider whose dives Users import, whether new Dive sites may be made from its site data (ADR 0030)',
-      response: { 200: Type.Object({ providers: Type.Array(SiteDataView) }), 403: Problem },
+      response: { 200: Type.Array(SiteDataView), 403: Problem },
     },
-  }, async () => ({ providers: (await diveImports.siteData()).map(siteDataView) }));
+  }, async () => (await diveImports.siteData()).map(siteDataView));
 
   app.put('/admin/provider-site-data/:provider', {
     onRequest: requireAdmin,
@@ -883,12 +879,12 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         + 'explanation as the SSI site import (provider_site_data_not_confirmed). Without it, imports only link sites already here.',
       params: Type.Object({ provider: ProviderParam }),
       body: Type.Object({ allowed: Type.Boolean(), confirm: Type.Optional(Type.Boolean()) }, { additionalProperties: false }),
-      response: { 200: Type.Object({ providers: Type.Array(SiteDataView) }), 400: Problem, 403: Problem },
+      response: { 200: Type.Array(SiteDataView), 400: Problem, 403: Problem },
     },
   }, async (request, reply) => {
     if (request.body.allowed && request.body.confirm !== true) return reply.code(400).send(problem('provider_site_data_not_confirmed'));
     await diveImports.allowSiteData(userOf(request).id, request.params.provider, request.body.allowed);
-    return { providers: (await diveImports.siteData()).map(siteDataView) };
+    return (await diveImports.siteData()).map(siteDataView);
   });
 
   app.post('/connections/fetch-due', {
