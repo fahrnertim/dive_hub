@@ -9,7 +9,7 @@ import { connection, importJob, type ConnectionRow } from '../db/schema.js';
 import type { DiveImportService } from './dive-import.js';
 import { realClock, type Clock } from './leases.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
-import type { WaitingPushLog } from './waiting-push-queue.js';
+import { consoleLog, type ProviderLog } from './waiting-push-queue.js';
 
 /** One fetch of a Connection (job key `fetch:<connection>`). */
 export const FETCH_TASK = 'scheduled_fetch';
@@ -18,10 +18,9 @@ export const OPENING_AFTER_MINUTES = 60;
 
 const MINUTE_MS = 60_000;
 
-export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry; diveImports: DiveImportService; clock?: Clock; log?: WaitingPushLog }) {
+export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry; diveImports: DiveImportService; clock?: Clock; log?: ProviderLog }) {
   const { db, registry, diveImports } = deps;
-  // Without a logger (a script or a test that doesn't look), the fault still goes somewhere an operator sees it.
-  const log: WaitingPushLog = deps.log ?? { error: (detail, message) => console.error(message, detail), warn: (detail, message) => console.warn(message, detail) };
+  const log = deps.log ?? consoleLog;
   const clock = deps.clock ?? realClock;
 
   /** The shortest interval the Provider allows, when this instance has it and it imports dives; else null (no fetch). */

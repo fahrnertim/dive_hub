@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { diveLease, push, pushRun, pushRunItem } from '../src/db/schema.js';
 import { referenceOf } from '../src/providers/provider.js';
+import { createPushRunService } from '../src/providers/push-run-service.js';
 import { createFakeHandover } from './fake-handover-provider.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { createFakeSsi, handTypedDive } from './fake-ssi.js';
@@ -414,6 +415,26 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect(done).toMatchObject({ status: 'done', counts: { sent: 3, failed: 0 } });
     expect(ledger.dives.size).toBe(3);
     expect((await call('POST', `/api/push-runs/${created.id}/continue`)).json()).toMatchObject({ code: 'push_run_not_stopped' });
+  });
+
+  it('logs a fault of its own for the operator; the run shows only internal_error', async () => {
+    const id = await upload(day(1));
+    const created = await started();
+    const bug = new Error('a bug in Dive Hub');
+    ledger.beforeSave = async () => { throw bug; };
+    // The worker as main.ts builds it, with a logger.
+    const logged: { detail: object; message: string }[] = [];
+    const logging = createPushRunService({
+      db: t.db, registry: ctx.providers.providers, pushes: ctx.providers.pushes, conflicts: ctx.providers.conflicts,
+      log: { error: (detail, message) => logged.push({ detail, message }), warn: () => {} },
+    });
+    try {
+      await logging.step(created.id);
+    } finally {
+      ledger.beforeSave = null;
+    }
+    expect((await run(created.id)).items).toMatchObject([{ diveId: id, state: 'failed', reason: 'internal_error' }]);
+    expect(logged).toEqual([{ detail: { err: bug, runId: created.id, diveId: id, provider: 'ledger' }, message: 'a Push run step failed with an internal error' }]);
   });
 
   it('stops at once when the Provider wants a sign-in, keeps the Dive waiting, and continues after signing in', async () => {

@@ -668,7 +668,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request, reply) => {
     const { version, otherId, otherVersion, alsoAt = [] } = request.body;
     const userId = request.user!.id;
-    const candidate = (await merging.candidates(userId, request.params.id).catch(() => [])).find((c) => c.dive.id === otherId);
+    const candidate = (await merging.candidates(userId, request.params.id)).find((c) => c.dive.id === otherId);
     // Deleted at the Provider before anything changes here, as when deleting a Dive: only the copy of the Dive not kept,
     // and only where the kept one has its own.
     // Where the Dive's Connection deletes by itself, the queue does it after 5 minutes, not asked.

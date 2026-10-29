@@ -18,12 +18,12 @@ import { createPushService } from './push-service.js';
 import { createProviderRegistry } from './registry.js';
 import { createScheduledFetch } from './scheduled-fetch.js';
 import { createSitePickService } from './site-pick.js';
-import { createWaitingPushService, type WaitingPushLog } from './waiting-push-service.js';
+import { createWaitingPushService, type ProviderLog } from './waiting-push-service.js';
 
 export function createProviderLayer(deps: {
   db: Db; secrets: SecretBox; blobs: BlobStore; adapters: ProviderAdapter[]; clock?: Clock;
   /** Where the worker's own faults go (the app's logger). */
-  log?: WaitingPushLog;
+  log?: ProviderLog;
 }) {
   const providers = createProviderRegistry(deps.adapters);
   const clock = deps.clock && { clock: deps.clock };
@@ -31,7 +31,7 @@ export function createProviderLayer(deps: {
   const connections = createConnectionService({ db: deps.db, registry: providers, secrets: deps.secrets, leases, ...clock });
   const conflicts = createConflictService({ db: deps.db, connections, registry: providers, blobs: deps.blobs });
   const pushes = createPushService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, leases, conflicts, ...clock, ...(deps.log && { log: deps.log }) });
-  const pushRuns = createPushRunService({ db: deps.db, registry: providers, pushes, conflicts });
+  const pushRuns = createPushRunService({ db: deps.db, registry: providers, pushes, conflicts, ...(deps.log && { log: deps.log }) });
   const waitingPushes = createWaitingPushService({ db: deps.db, registry: providers, pushes, ...clock, ...(deps.log && { log: deps.log }) });
   const buddies = createBuddyService({ db: deps.db, registry: providers, connections, divers: createDiverService(deps.db) });
   const sitePicks = createSitePickService({ db: deps.db, registry: providers, connections });

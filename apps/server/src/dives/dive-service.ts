@@ -276,7 +276,10 @@ export function createDiveService(db: Db) {
       return db.transaction(async (tx) => {
         const [rec] = await tx.select().from(recording).where(and(eq(recording.id, recordingId), isNull(recording.deletedAt)));
         if (!rec?.diveId) throw new DiveError('recording_not_found');
-        const current = await lockManagedDive(tx, userId, rec.diveId).catch(() => { throw new DiveError('recording_not_found'); });
+        // A Recording on a Dive the User doesn't manage is one they can't see.
+        const current = await lockManagedDive(tx, userId, rec.diveId).catch((error: unknown) => {
+          throw error instanceof DiveError && error.code === 'dive_not_found' ? new DiveError('recording_not_found') : error;
+        });
         if (current.version !== version) throw new DiveError('dive_changed');
         const remaining = (await tx.select().from(recording)
           .where(and(eq(recording.diveId, current.id), isNull(recording.deletedAt)))

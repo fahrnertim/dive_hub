@@ -2,6 +2,7 @@
 // owner's logbook (2026-10-07): a logbook entry whose time is corrected at the Provider after its computer's file came
 // in stands beside the file's Dive, and two logbook entries of one dive become two Dives. Merging resolves both; links
 // are followed at two Providers (SSI's fake and the test-only ledger). Finding such pairs unasked is slice 18c.
+import { randomUUID } from 'node:crypto';
 import { and, eq, gte, isNull, lt } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, waitingPush } from '../src/db/schema.js';
@@ -228,6 +229,9 @@ describe.skipIf(!(await databaseReachable()))('merging two Dives, and moving a l
       expect((await merge(mine, hers)).json()).toMatchObject({ code: 'merge_not_possible' });
       const stale = await call('POST', `/api/dives/${mine}/merge`, { version: (await diveOf(mine)).version - 1, otherId: hers, otherVersion: 1 });
       expect(stale.statusCode).toBe(409);
+      const missing = await call('POST', `/api/dives/${randomUUID()}/merge`, { version: 1, otherId: mine, otherVersion: 1 });
+      expect(missing.statusCode).toBe(404);
+      expect(missing.json()).toMatchObject({ code: 'dive_not_found' });
     });
   });
 

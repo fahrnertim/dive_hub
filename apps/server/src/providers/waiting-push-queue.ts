@@ -9,10 +9,13 @@ import { currentRemote, type PushRow } from './current-remote.js';
 import { connection, dive, importJob, push, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../db/schema.js';
 
 /** Where Dive Hub's own faults go for the operator (the app's logger in production; Users see only the code). */
-export interface WaitingPushLog {
+export interface ProviderLog {
   error(detail: object, message: string): void;
   warn(detail: object, message: string): void;
 }
+
+/** Without a logger (a script or a test that doesn't look), the fault still goes somewhere an operator sees it. */
+export const consoleLog: ProviderLog = { error: (detail, message) => console.error(message, detail), warn: (detail, message) => console.warn(message, detail) };
 
 type Q = Db | Tx;
 

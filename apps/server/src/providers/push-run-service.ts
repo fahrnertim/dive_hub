@@ -14,6 +14,7 @@ import type { RemoteDive } from './provider.js';
 import type { PushService } from './push-service.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { blocking } from './requirements.js';
+import { consoleLog, type ProviderLog } from './waiting-push-queue.js';
 
 export const PUSH_RUN_STEP_TASK = 'push_run_step';
 /** Runs kept per Connection; an older one is deleted when a new one starts. */
@@ -46,8 +47,9 @@ type RunRow = typeof pushRun.$inferSelect;
 type ItemRow = typeof pushRunItem.$inferSelect;
 type Status = Awaited<ReturnType<PushService['status']>>;
 
-export function createPushRunService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; conflicts: ConflictService }) {
+export function createPushRunService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; conflicts: ConflictService; log?: ProviderLog }) {
   const { db, registry, pushes, conflicts } = deps;
+  const log = deps.log ?? consoleLog;
 
   const error = (code: ConstructorParameters<typeof ProviderServiceError>[0], extra?: Record<string, unknown>) =>
     new ProviderServiceError(code, undefined, extra);
@@ -179,7 +181,10 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       }
       if (options.numbers) {
         // A Provider that can't be read now (signed out, down) leaves the preview as before: the send finds a holder as it did.
-        const read = await pushes.heldNumbers(userId, conn.diverId, conn.provider).catch(() => null);
+        const read = await pushes.heldNumbers(userId, conn.diverId, conn.provider).catch((err: unknown) => {
+          log.warn({ err, connectionId: conn.id, provider: conn.provider }, 'a Push run preview could not read the numbers held at the Provider');
+          return null;
+        });
         for (const r of read ?? []) {
           if (r.number === null || knownRemote.has(r.remoteId)) continue;
           fixed.add(r.number);
@@ -436,6 +441,8 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
         }
       } catch (e) {
         const code = e instanceof ProviderServiceError ? e.code : 'internal_error';
+        // Dive Hub's own fault: the run shows the code; the error is for the operator.
+        if (code === 'internal_error') log.error({ err: e, runId, diveId, provider: run.provider }, 'a Push run step failed with an internal error');
         if (code === 'provider_busy' && item.attempts < BUSY_TRIES) {
           // Later: behind the Dives still waiting.
           const [last] = await db.select({ p: sql<number>`max(${pushRunItem.position})`.mapWith(Number) }).from(pushRunItem).where(eq(pushRunItem.runId, runId));

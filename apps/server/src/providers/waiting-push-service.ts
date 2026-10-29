@@ -12,9 +12,9 @@ import { realClock, type Clock } from './leases.js';
 import type { PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { blocking } from './requirements.js';
-import { deletingItself, mark, newDivesConnection, queueNow, scheduleConnection, settle, upsertSend, type QueueMark, type WaitingPushLog } from './waiting-push-queue.js';
+import { deletingItself, mark, newDivesConnection, queueNow, scheduleConnection, settle, upsertSend, type QueueMark, consoleLog, type ProviderLog } from './waiting-push-queue.js';
 import { waitingOf } from './waiting-push-view.js';
-export type { WaitingPushLog };
+export type { ProviderLog };
 
 /** After a failure the Provider may be back: tried again after 5 min, 30 min, 2 h, then every 6 h (the last repeats). */
 export const RETRY_AFTER_MS = [300_000, 1_800_000, 7_200_000, 21_600_000];
@@ -34,10 +34,9 @@ export const OFFER_ABOVE = 20;
 
 type Entry = typeof waitingPush.$inferSelect;
 
-export function createWaitingPushService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; clock?: Clock; log?: WaitingPushLog }) {
+export function createWaitingPushService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; clock?: Clock; log?: ProviderLog }) {
   const { db, registry, pushes } = deps;
-  // Without a logger (a script or a test that doesn't look), the fault still goes somewhere an operator sees it.
-  const log: WaitingPushLog = deps.log ?? { error: (detail, message) => console.error(message, detail), warn: (detail, message) => console.warn(message, detail) };
+  const log = deps.log ?? consoleLog;
   const clock = deps.clock ?? realClock;
   const now = () => new Date(clock.now());
   const the = (entry: Entry) => and(eq(waitingPush.diveId, entry.diveId), eq(waitingPush.provider, entry.provider));
