@@ -254,7 +254,7 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
 
   it('a fetch the Provider refuses is logged for the operator', async () => {
     const warn = vi.fn();
-    const fetching = createScheduledFetch({ db: t.db, registry: ctx.providers.providers, diveImports: ctx.providers.diveImports, clock: ctx.clock, log: { error: vi.fn(), warn } });
+    const fetching = createScheduledFetch({ db: t.db, registry: ctx.providers.providers, diveImports: ctx.providers.diveImports, clock: ctx.clock, log: { error: () => {}, warn } });
     ledger.down = true;
     try {
       await fetching.fetch(connectionId);
