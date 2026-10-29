@@ -32,6 +32,7 @@ and give the reason. Done means: `pnpm check:full` is green.
 4. **Leftovers in the queue.**
    - A hold doesn't clear a stale `exists` detail.
    - `unsent_import_ids` keeps Imports whose Dives were all sent. They are harmless (count 0); drop them when read.
+     Done differently (2026-10-30): the minute tick drops them (`pruneOffers`), so GET `/connections` writes nothing.
    - A conflict entry's `queued` needs state `waiting`, so it shows as open for the moment a send runs.
 5. **Conflicts.**
    - An Import doesn't close an open entry whose two sides became equal again.

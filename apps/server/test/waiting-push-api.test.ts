@@ -323,8 +323,10 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
     };
     expect(await ofConn(connectionId)).toEqual({ unsentDives: [a2, a3], created: 3, conflicts: 1 });
     expect(await ofConn(other)).toEqual({ unsentDives: [l2], created: 2, conflicts: 1 });
-    // The Import sent in full left the offer; the others stay.
+    // Reading changes nothing; the tick drops the Import sent in full from the offer, and the others stay.
     const stored = async (id: string) => (await t.db.select().from(connection).where(eq(connection.id, id)))[0]!.unsentImportIds;
+    expect(await stored(connectionId)).toEqual([sent, ofAnn]);
+    await ctx.providers.waitingPushes.tick();
     expect(await stored(connectionId)).toEqual([ofAnn]);
     expect(await stored(other)).toEqual([ofLena]);
   });

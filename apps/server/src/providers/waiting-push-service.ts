@@ -139,8 +139,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
 
   /**
    * Per Connection, the Dives of its offer (its Imports' new ones of its Diver, oldest Import first) that still have no
-   * remote dive at its Provider. An Import none of whose Dives is still unsent has been sent in full: it leaves the offer,
-   * removed from the stored list as it is then (an Import added or dismissed meanwhile stays so). One query each for the
+   * remote dive at its Provider. A read: the tick drops the Imports sent in full (`pruneOffers`). One query each for the
    * Imports' outcomes, their live Dives and the pushes, whatever the number of Connections (`created` when the caller has them).
    */
   async function unsentOf(conns: ConnectionRow[], created?: Map<string, { id: string; diverId: string }[]>): Promise<Map<string, string[]>> {
@@ -156,16 +155,25 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
       .orderBy(desc(push.createdAt), desc(push.id));
     const byDive = new Map<string, (typeof pushes)[number][]>();
     for (const p of pushes) byDive.set(`${p.diveId} ${p.provider}`, [...(byDive.get(`${p.diveId} ${p.provider}`) ?? []), p]);
-    for (const c of offering) {
-      const unsent = offered(c).filter((id) => !currentRemote(byDive.get(`${id} ${c.provider}`) ?? []));
-      found.set(c.id, unsent);
-      const sent = c.unsentImportIds.filter((importId) => !(made.get(importId) ?? []).some((d) => unsent.includes(d.id)));
-      if (sent.length > 0) {
-        const left = sent.reduce((list, importId) => sql`array_remove(${list}, ${importId}::uuid)`, sql`${connection.unsentImportIds}`);
-        await db.update(connection).set({ unsentImportIds: left }).where(eq(connection.id, c.id));
-      }
-    }
+    for (const c of offering) found.set(c.id, offered(c).filter((id) => !currentRemote(byDive.get(`${id} ${c.provider}`) ?? [])));
     return found;
+  }
+
+  /**
+   * An Import none of whose Dives is still unsent has been sent in full: it leaves its Connection's offer, removed from
+   * the stored list as it is then (an Import added or dismissed meanwhile stays so). The tick's, so reads stay reads.
+   */
+  async function pruneOffers(): Promise<void> {
+    const conns = await db.select().from(connection).where(sql`cardinality(${connection.unsentImportIds}) > 0`);
+    const made = await createdByMany([...new Set(conns.flatMap((c) => c.unsentImportIds))]);
+    const unsent = await unsentOf(conns, made);
+    for (const c of conns) {
+      const left = new Set(unsent.get(c.id));
+      const sent = c.unsentImportIds.filter((importId) => !(made.get(importId) ?? []).some((d) => left.has(d.id)));
+      if (sent.length === 0) continue;
+      const kept = sent.reduce((list, importId) => sql`array_remove(${list}, ${importId}::uuid)`, sql`${connection.unsentImportIds}`);
+      await db.update(connection).set({ unsentImportIds: kept }).where(eq(connection.id, c.id));
+    }
   }
 
   /** The Dives of the Connection's offer that still have no remote dive at the Provider (`unsentOf` for one). */
@@ -297,10 +305,12 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     /**
      * The minute tick (its fetching part is scheduled-fetch.ts): entries held for a sign-in of a Connection signed in
      * again, and entries stopped as unavailable at a Provider that answered any Connection since, wait again, due now.
-     * Every Connection with a due entry has its job (a safety net for a job that got lost).
+     * Every Connection with a due entry has its job (a safety net for a job that got lost). Offers drop the Imports
+     * sent in full.
      */
     async tick(): Promise<void> {
       const at = now();
+      await pruneOffers();
       const signedIn = db.select({ id: connection.id }).from(connection).where(eq(connection.state, 'active'));
       await db.update(waitingPush).set({ state: 'waiting', reason: null, dueAt: at })
         .where(and(eq(waitingPush.state, 'held'), eq(waitingPush.reason, 'sign_in'), inArray(waitingPush.connectionId, signedIn)));

@@ -572,21 +572,24 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       expect(await unsentTo()).toEqual([]);
     }, 60_000);
 
-    it('an offer drops the Imports whose Dives were all sent', async () => {
+    it('the tick drops from an offer the Imports whose Dives were all sent; reading it changes nothing', async () => {
       const first = await upload(day(1), 101);
       const second = await upload(day(2), 102);
       const third = await upload(day(3), 103);
       const [one, other] = [await importOf([first, second]), await importOf([third])];
       await settings({ unsentImportIds: [one, other] });
+      const stored = async () => (await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.unsentImportIds;
       const offered = async () => {
-        await json('GET', '/api/connections');
-        return (await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.unsentImportIds;
+        await ctx.providers.waitingPushes.tick();
+        return stored();
       };
       expect(await offered()).toEqual([one, other]);
       // Some of the first Import's Dives are sent: it stays. All of them: it leaves, and the other Import stays.
       expect((await call('POST', `/api/dives/${first}/providers/ledger`, {})).statusCode).toBeLessThan(300);
       expect(await offered()).toEqual([one, other]);
       expect((await call('POST', `/api/dives/${second}/providers/ledger`, {})).statusCode).toBeLessThan(300);
+      await json('GET', '/api/connections');
+      expect(await stored()).toEqual([one, other]);
       expect(await offered()).toEqual([other]);
     });
 
