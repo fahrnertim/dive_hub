@@ -1,7 +1,7 @@
 // What every MCP tool shares (ADR 0035): its definition, input checks with messages that say what to do, a read-only
 // transaction with a time limit, the size cap, and the AI access log.
 import { sql } from 'drizzle-orm';
-import { Type, type Static, type TSchema } from 'typebox';
+import { Type, type Static, type TObject, type TSchema } from 'typebox';
 import { Value } from 'typebox/value';
 import type { Db, Tx } from '../db/client.js';
 import { Nullable } from '../http/schemas.js';
@@ -31,7 +31,7 @@ export interface ToolContext {
   positions: boolean;
 }
 
-export interface ToolDefinition<I extends TSchema = TSchema> {
+export interface ToolDefinition<I extends TObject = TObject> {
   name: string;
   title: string;
   /** Static text, reviewed in code; never built from data (ADR 0035). */
@@ -42,10 +42,11 @@ export interface ToolDefinition<I extends TSchema = TSchema> {
   output: (positions: boolean) => TSchema;
   /** Arguments that hold free text: logged as "[text]", never as typed. */
   freeText?: readonly string[];
-  run: (ctx: ToolContext, args: Static<I>) => Promise<{ output: Record<string, unknown>; rows: number }>;
+  // A method, so every tool fits ToolDefinition[]: runTool checks the arguments against `input` before it calls `run`.
+  run(ctx: ToolContext, args: Static<I>): Promise<{ output: Record<string, unknown>; rows: number }>;
 }
 
-export const defineTool = <I extends TSchema>(tool: ToolDefinition<I>): ToolDefinition<I> => tool;
+export const defineTool = <I extends TObject>(tool: ToolDefinition<I>): ToolDefinition<I> => tool;
 
 // --- Schema fragments -------------------------------------------------------------------------------------------
 
@@ -141,7 +142,7 @@ function loggable(tool: ToolDefinition, args: unknown): Record<string, unknown> 
   if (typeof args !== 'object' || args === null) return {};
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(args)) {
-    if (!(key in (tool.input as unknown as { properties: Record<string, unknown> }).properties)) continue;
+    if (!(key in tool.input.properties)) continue;
     if (tool.freeText?.includes(key)) out[key] = '[text]';
     else if (key === 'cursor') out[key] = '[cursor]';
     else if (typeof value === 'number' || typeof value === 'boolean') out[key] = value;
@@ -162,7 +163,7 @@ function inputProblem(tool: ToolDefinition, args: unknown): string | null {
       if (extra) return `unknown argument${extra.length > 1 ? 's' : ''} ${extra.join(', ')}`;
       return `${e.instancePath.replace(/^\//, '').replace(/\//g, '.') || 'arguments'} ${e.message}`;
     });
-  const known = Object.keys((tool.input as unknown as { properties: Record<string, unknown> }).properties).join(', ');
+  const known = Object.keys(tool.input.properties).join(', ');
   return `Invalid arguments for ${tool.name}: ${problems.join('; ')}. Its arguments are: ${known || 'none'}.`;
 }
 

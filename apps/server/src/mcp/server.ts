@@ -14,7 +14,7 @@ import { getSite, searchSites } from './tools-sites.js';
 export const MCP_SERVER_INFO = { name: 'dive-hub', title: 'Dive Hub', version: '0.1.0' };
 
 /** Every tool of the endpoint. Each later slice adds its own here (ADR 0035). */
-export const TOOLS = [searchDives, getDive, getDiveAssessment, stats, searchSites, getSite, buddies, listDivers, planGasAndBottomTime, planGasPlanTool] as unknown as ToolDefinition[];
+export const TOOLS: ToolDefinition[] = [searchDives, getDive, getDiveAssessment, stats, searchSites, getSite, buddies, listDivers, planGasAndBottomTime, planGasPlanTool];
 
 /** What a client's model is told about the server before it uses a tool. */
 export const INSTRUCTIONS = `Dive Hub is the user's dive logbook. These tools read it; none of them changes anything.
@@ -51,8 +51,8 @@ export function createMcpServer(deps: McpServerDeps, access: VerifiedAccess): Mc
     server.registerTool(tool.name, {
       title: tool.title,
       description: tool.description,
-      inputSchema: fromJsonSchema(tool.input as never, checkedByRunTool),
-      outputSchema: fromJsonSchema(tool.output(positions) as never),
+      inputSchema: fromJsonSchema(tool.input, checkedByRunTool),
+      outputSchema: fromJsonSchema(tool.output(positions)),
       // Reads only, inside this Dive Hub; calling twice changes nothing.
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, (args: unknown) => runTool({ ...deps, access }, tool, args));
