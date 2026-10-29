@@ -12,7 +12,8 @@ import { realClock, type Clock } from './leases.js';
 import type { PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { blocking } from './requirements.js';
-import { mark, newDivesConnection, queueNow, scheduleConnection, settle, upsertSend, type QueueMark, type WaitingPushLog } from './waiting-push-queue.js';
+import { deletingItself, mark, newDivesConnection, queueNow, scheduleConnection, settle, upsertSend, type QueueMark, type WaitingPushLog } from './waiting-push-queue.js';
+import { waitingOf } from './waiting-push-view.js';
 export type { WaitingPushLog };
 
 /** After a failure the Provider may be back: tried again after 5 min, 30 min, 2 h, then every 6 h (the last repeats). */
@@ -233,6 +234,12 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
 
     /** The Dives of the Connection's offer (its Import's new ones) that still have no remote dive at the Provider. */
     unsentDives,
+
+    /** The Providers where each of these Dives is deleted through the queue (5 minutes after deleting it here), not asked. */
+    deletingItself: (diveIds: string[]) => deletingItself(db, diveIds),
+
+    /** The entries of the Waiting pushes of these Dives, by Dive. */
+    waitingOf: (diveIds: string[]) => waitingOf(db, diveIds, registry.list().map((a) => a.id)),
 
     /**
      * Where these Imports' new Dives weren't sent by themselves: per Import, the User's Connections whose offer holds it,

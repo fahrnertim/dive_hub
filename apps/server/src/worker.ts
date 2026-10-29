@@ -54,10 +54,20 @@ export function processImportTask(
   };
 }
 
-export async function startWorker(
-  pool: pg.Pool, imports: ImportService, siteImports: SiteImportService, aiAccesses: AiAccessService, assessments: AssessmentService, pushRuns: PushRunService,
-  waitingPushes: WaitingPushService, scheduledFetch: ScheduledFetch, certifications: CertificationService, log: FastifyBaseLogger,
-): Promise<Runner> {
+export interface WorkerDeps {
+  imports: ImportService;
+  siteImports: SiteImportService;
+  aiAccesses: AiAccessService;
+  assessments: AssessmentService;
+  pushRuns: PushRunService;
+  waitingPushes: WaitingPushService;
+  scheduledFetch: ScheduledFetch;
+  certifications: CertificationService;
+  log: FastifyBaseLogger;
+}
+
+export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runner> {
+  const { imports, siteImports, aiAccesses, assessments, pushRuns, waitingPushes, scheduledFetch, certifications, log } = deps;
   // An import still "running" now was cut off when the worker last stopped.
   await siteImports.failInterrupted();
   // A run that was going when the worker stopped goes on: its next step is queued again (ADR 0047).

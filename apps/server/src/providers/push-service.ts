@@ -642,12 +642,6 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       return current;
     },
 
-    /** The Providers where each of these Dives is deleted through the queue (5 minutes after deleting it here), not asked. */
-    deletingItself: (diveIds: string[]) => deletingItself(db, diveIds),
-
-    /** The entries of the Waiting pushes of these Dives, by Dive. */
-    waitingOf: (diveIds: string[]) => waitingOf(db, diveIds, registry.list().map((a) => a.id)),
-
     /**
      * Deletes the Dive's remote copy at the Provider. The Dive stays in the hub; a Dive deleted in the hub can still be
      * deleted there (the reminder, ADR 0026).

@@ -69,7 +69,10 @@ if (setupToken) {
   // Deliberately logged: whoever can read the server log may create the first admin (ADR 0012).
   app.log.warn(`No admin yet. Open ${config.baseUrl}/#/setup and enter this setup token (valid 24 h, until the first admin exists): ${setupToken}`);
 }
-const worker = config.inProcessWorker ? await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, providers.waitingPushes, providers.scheduledFetch, providers.certifications, app.log) : undefined;
+const worker = config.inProcessWorker ? await startWorker(pool, {
+  imports, siteImports, aiAccesses, assessments, pushRuns: providers.pushRuns, waitingPushes: providers.waitingPushes,
+  scheduledFetch: providers.scheduledFetch, certifications: providers.certifications, log: app.log,
+}) : undefined;
 await app.listen({ host: config.host, port: config.port });
 
 const shutdown = async () => {

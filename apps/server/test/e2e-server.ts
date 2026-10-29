@@ -165,7 +165,10 @@ for (const record of [
 ]) fakeSsi.addDive(6_100_200, record);
 
 // Uploads made by the tests are processed in the background, as in the real app.
-const worker = await startWorker(pool, imports, siteImports, aiAccesses, assessments, providers.pushRuns, providers.waitingPushes, providers.scheduledFetch, providers.certifications, app.log);
+const worker = await startWorker(pool, {
+  imports, siteImports, aiAccesses, assessments, pushRuns: providers.pushRuns, waitingPushes: providers.waitingPushes,
+  scheduledFetch: providers.scheduledFetch, certifications: providers.certifications, log: app.log,
+});
 // Test-only (never in the production app): a browser test changes a dive in an SSI account's logbook, as the User would
 // in SSI's app (ADR 0030: changes taken back). By the account's e-mail and SSI's dive number or ID; only the fields given.
 // `site`: a site SSI then lists too (one Dive Hub doesn't know), when it isn't listed yet.
