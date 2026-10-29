@@ -5,7 +5,7 @@ import type { Queryable } from '../db/client.js';
 import { ASCENT_RATE_M_PER_MIN, planGas, type GasRule } from './gas-plan.js';
 import { DESCENT_RATE_M_PER_MIN } from './ndl.js';
 import { DEFAULT_PLANNING_SAC_LPM, planningSac } from './planning-sac.js';
-import { DEFAULT_PPO2, diveSacs, recentDiveEnd, siteWaterOf, type PlanningError, type PlanningWaterName } from './service.js';
+import { DEFAULT_PPO2, PlanningError, diveSacs, recentDiveEnd, siteWaterOf, type PlanningWaterName } from './service.js';
 
 export const PLAN_RULES = ['rock_bottom', 'reserve', 'ascent_pressure', 'halves', 'thirds', 'sixths'] as const;
 export type PlanRuleName = (typeof PLAN_RULES)[number];
@@ -30,18 +30,16 @@ const round = (n: number, places: number) => Math.round(n * 10 ** places) / 10 *
 
 export async function planGasPlan(reader: Queryable, managedDiverIds: readonly string[], q: GasPlanQuery) {
   const gas = { o2: q.o2, he: q.he ?? 0 };
-  const invalid = { ok: false, code: 'invalid_input' } as const satisfies { ok: false; code: PlanningError };
-  if (gas.o2 + gas.he > 100) return invalid;
-  if ((q.rule === 'reserve' || q.rule === 'ascent_pressure') && q.bar === undefined) return invalid;
+  if (gas.o2 + gas.he > 100) throw new PlanningError('invalid_input');
+  if ((q.rule === 'reserve' || q.rule === 'ascent_pressure') && q.bar === undefined) throw new PlanningError('invalid_input');
 
-  const site = await siteWaterOf(reader, q.siteId);
-  if (!site.ok) return site;
+  const siteWater = await siteWaterOf(reader, q.siteId);
 
   const rule: GasRule = q.rule === undefined || q.rule === 'rock_bottom' ? { kind: 'rock_bottom' }
     : q.rule === 'reserve' || q.rule === 'ascent_pressure' ? { kind: q.rule, bar: q.bar! }
     : { kind: q.rule };
   const water: { value: PlanningWaterName; source: 'request' | 'site' | 'default' } =
-    q.water !== undefined ? { value: q.water, source: 'request' } : site.water ? { value: site.water, source: 'site' } : { value: 'salt', source: 'default' };
+    q.water !== undefined ? { value: q.water, source: 'request' } : siteWater ? { value: siteWater, source: 'site' } : { value: 'salt', source: 'default' };
   const given = (value: number | undefined, fallback: number) =>
     value !== undefined ? { value, source: 'request' as const } : { value: fallback, source: 'default' as const };
   const used = {
@@ -76,25 +74,22 @@ export async function planGasPlan(reader: Queryable, managedDiverIds: readonly s
     descentRateMPerMin: used.descentRateMPerMin.value, ascentRateMPerMin: used.ascentRateMPerMin.value,
   });
   const common = { gas, used, rule: used.gasRule.value };
-  if (result.status === 'outside_limits') return { ok: true as const, value: { status: result.status, reason: result.reason, levelIndex: result.levelIndex, ...common } };
+  if (result.status === 'outside_limits') return { status: result.status, reason: result.reason, levelIndex: result.levelIndex, ...common };
   return {
-    ok: true as const,
-    value: {
-      status: result.status, ...common,
-      runtimeMinutes: round(result.runtimeMinutes, 1),
-      segments: result.segments.map((s) => ({ kind: s.kind, fromDepthM: s.fromDepthM, depthM: s.depthM, minutes: round(s.minutes, 1), ambientBar: round(s.ambientBar, 3) })),
-      divers: result.divers.map((p, i) => ({
-        name: p.name, diverId: divers[i]!.input.diverId ?? null, sacLpm: divers[i]!.sac,
-        volumeL: divers[i]!.input.volume, startPressureBar: divers[i]!.input.pressure,
-        litres: round(p.litres, 1), endPressureBar: round(p.endPressureBar, 1),
-        rockBottom: p.rockBottom.map((r) => ({ depthM: r.depthM, pressureBar: round(r.pressureBar, 1) })),
-        ascentPressureBar: round(p.ascentPressureBar, 1),
-        turnPressureBar: p.turnPressureBar === null ? null : round(p.turnPressureBar, 1),
-        belowRockBottom: p.belowRockBottom, atAscentStartBar: round(p.atAscentStartBar, 1), marginBar: round(p.marginBar, 1),
-        marginMinutes: round(p.marginMinutes, 1), controlling: p.controlling, recentDiveEndedAt: divers[i]!.recentDiveEndedAt,
-        pressuresBar: p.pressuresBar.map((bar) => round(bar, 1)),
-      })),
-      controllingIndex: result.controllingIndex, fits: result.fits, leaveLastLevelAtMinute: round(result.leaveLastLevelAtMinute, 1),
-    },
+    status: result.status, ...common,
+    runtimeMinutes: round(result.runtimeMinutes, 1),
+    segments: result.segments.map((s) => ({ kind: s.kind, fromDepthM: s.fromDepthM, depthM: s.depthM, minutes: round(s.minutes, 1), ambientBar: round(s.ambientBar, 3) })),
+    divers: result.divers.map((p, i) => ({
+      name: p.name, diverId: divers[i]!.input.diverId ?? null, sacLpm: divers[i]!.sac,
+      volumeL: divers[i]!.input.volume, startPressureBar: divers[i]!.input.pressure,
+      litres: round(p.litres, 1), endPressureBar: round(p.endPressureBar, 1),
+      rockBottom: p.rockBottom.map((r) => ({ depthM: r.depthM, pressureBar: round(r.pressureBar, 1) })),
+      ascentPressureBar: round(p.ascentPressureBar, 1),
+      turnPressureBar: p.turnPressureBar === null ? null : round(p.turnPressureBar, 1),
+      belowRockBottom: p.belowRockBottom, atAscentStartBar: round(p.atAscentStartBar, 1), marginBar: round(p.marginBar, 1),
+      marginMinutes: round(p.marginMinutes, 1), controlling: p.controlling, recentDiveEndedAt: divers[i]!.recentDiveEndedAt,
+      pressuresBar: p.pressuresBar.map((bar) => round(bar, 1)),
+    })),
+    controllingIndex: result.controllingIndex, fits: result.fits, leaveLastLevelAtMinute: round(result.leaveLastLevelAtMinute, 1),
   };
 }

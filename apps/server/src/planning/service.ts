@@ -22,8 +22,11 @@ export const BOTTOM_TIME_RULES = ['rock_bottom', 'reserve', 'ascent_pressure'] a
 export const PLANNING_WATERS = ['fresh', 'salt', 'en13319'] as const;
 export type PlanningWaterName = (typeof PLANNING_WATERS)[number];
 
-export type PlanningError = 'invalid_input' | 'gas_not_breathable' | 'diver_not_found' | 'site_not_found';
-export type Answer<T> = { ok: true; value: T } | { ok: false; code: PlanningError };
+export class PlanningError extends Error {
+  constructor(readonly code: 'invalid_input' | 'gas_not_breathable' | 'diver_not_found' | 'site_not_found') {
+    super(code);
+  }
+}
 
 const round = (n: number, places: number) => Math.round(n * 10 ** places) / 10 ** places;
 /** Depth limits are rounded down: a figure may be shallower than the exact one, never deeper. */
@@ -42,28 +45,25 @@ export interface GasQuery {
 
 export function gasNumbers(q: GasQuery) {
   const gas = { o2: q.o2, he: q.he ?? 0 };
-  if (gas.o2 + gas.he > 100) return { ok: false, code: 'invalid_input' } as const;
+  if (gas.o2 + gas.he > 100) throw new PlanningError('invalid_input');
   // Below 0.16 bar of oxygen at the surface a mix is not breathable.
-  if (gas.o2 < 16) return { ok: false, code: 'gas_not_breathable' } as const;
+  if (gas.o2 < 16) throw new PlanningError('gas_not_breathable');
   const conditions: Conditions = { water: q.water ?? 'salt', altitudeM: q.altitude ?? 0 };
   const ppO2Limits = { working: q.ppo2Working ?? DEFAULT_PPO2.working, contingency: q.ppo2Contingency ?? DEFAULT_PPO2.contingency };
   const oxygenNarcotic = q.oxygenNarcotic ?? true;
   return {
-    ok: true,
-    value: {
-      gas, hypoxic: isHypoxic(gas), ppO2Limits,
-      modWorkingM: floorTenth(modMetres(gas, ppO2Limits.working, conditions)),
-      modContingencyM: floorTenth(modMetres(gas, ppO2Limits.contingency, conditions)),
-      atDepth: q.depth === undefined ? null : {
-        depthM: q.depth,
-        ppO2: round((gas.o2 / 100) * ambientPressureBar(q.depth, conditions), 2),
-        bestMixPercent: bestMixPercent(q.depth, ppO2Limits.working, conditions),
-        eadM: round(eadMetres(gas, q.depth, conditions), 1),
-        endM: round(endMetres(gas, q.depth, conditions, { oxygenNarcotic }), 1),
-      },
-      conditions, oxygenNarcotic,
+    gas, hypoxic: isHypoxic(gas), ppO2Limits,
+    modWorkingM: floorTenth(modMetres(gas, ppO2Limits.working, conditions)),
+    modContingencyM: floorTenth(modMetres(gas, ppO2Limits.contingency, conditions)),
+    atDepth: q.depth === undefined ? null : {
+      depthM: q.depth,
+      ppO2: round((gas.o2 / 100) * ambientPressureBar(q.depth, conditions), 2),
+      bestMixPercent: bestMixPercent(q.depth, ppO2Limits.working, conditions),
+      eadM: round(eadMetres(gas, q.depth, conditions), 1),
+      endM: round(endMetres(gas, q.depth, conditions, { oxygenNarcotic }), 1),
     },
-  } as const;
+    conditions, oxygenNarcotic,
+  };
 }
 
 export interface BottomTimeQuery {
@@ -120,27 +120,28 @@ export async function recentDiveEnd(reader: Queryable, diverId: string): Promise
 }
 
 /** The planned site's water; brackish counts as salt for the limit. */
-export async function siteWaterOf(reader: Queryable, siteId: string | undefined) {
-  if (!siteId) return { ok: true, water: undefined } as const;
+export async function siteWaterOf(reader: Queryable, siteId: string | undefined): Promise<'fresh' | 'salt' | undefined> {
+  if (!siteId) return undefined;
   const [site] = await reader.select({ waterType: diveSite.waterType }).from(diveSite).where(eq(diveSite.id, siteId));
-  if (!site) return { ok: false, code: 'site_not_found' } as const;
-  return { ok: true, water: site.waterType ? (site.waterType === 'fresh' ? 'fresh' : 'salt') : undefined } as const;
+  if (!site) throw new PlanningError('site_not_found');
+  if (!site.waterType) return undefined;
+  return site.waterType === 'fresh' ? 'fresh' : 'salt';
 }
 
 /** `managedDiverIds` are the Divers the signed-in User manages: a Diver outside them is "not found". */
 export async function planBottomTime(reader: Queryable, managedDiverIds: readonly string[], q: BottomTimeQuery) {
   const gas = { o2: q.o2, he: q.he ?? 0 };
-  if (gas.o2 + gas.he > 100) return { ok: false, code: 'invalid_input' } as const;
-  if ((q.volume === undefined) !== (q.pressure === undefined)) return { ok: false, code: 'invalid_input' } as const;
+  if (gas.o2 + gas.he > 100) throw new PlanningError('invalid_input');
+  if ((q.volume === undefined) !== (q.pressure === undefined)) throw new PlanningError('invalid_input');
   // Reserve and ascent pressure need their bar.
-  if ((q.rule === 'reserve' || q.rule === 'ascent_pressure') && q.bar === undefined) return { ok: false, code: 'invalid_input' } as const;
+  if ((q.rule === 'reserve' || q.rule === 'ascent_pressure') && q.bar === undefined) throw new PlanningError('invalid_input');
 
   // What the Diver's own computer and logbook say, where the User manages the Diver.
   let gfFromRecording: number | undefined;
   let logbookSac: ReturnType<typeof planningSac> | undefined;
   let recentDiveEndedAt: Date | null = null;
   if (q.diverId) {
-    if (!managedDiverIds.includes(q.diverId)) return { ok: false, code: 'diver_not_found' } as const;
+    if (!managedDiverIds.includes(q.diverId)) throw new PlanningError('diver_not_found');
     const recent = await reader.select({ summary: recording.summary }).from(recording)
       .innerJoin(dive, eq(dive.id, recording.diveId))
       .where(and(eq(dive.diverId, q.diverId), isNull(recording.deletedAt), isNull(dive.deletedAt)))
@@ -150,9 +151,7 @@ export async function planBottomTime(reader: Queryable, managedDiverIds: readonl
     recentDiveEndedAt = await recentDiveEnd(reader, q.diverId);
   }
 
-  const site = await siteWaterOf(reader, q.siteId);
-  if (!site.ok) return site;
-  const siteWater = site.water;
+  const siteWater = await siteWaterOf(reader, q.siteId);
 
   const pick = <T>(requested: T | undefined, found: [T | undefined, Source] | undefined, fallback: T): { value: T; source: Source } =>
     requested !== undefined ? { value: requested, source: 'request' }
@@ -182,17 +181,14 @@ export async function planBottomTime(reader: Queryable, managedDiverIds: readonl
   });
   const common = { used, gas, depthM: q.depth, recentDiveEndedAt: recentDiveEndedAt?.toISOString() ?? null };
   if (result.status === 'outside_limits') {
-    return { ok: true, value: { status: result.status, reason: result.reason, modM: result.modM === null ? null : floorTenth(result.modM), ...common } } as const;
+    return { status: result.status, reason: result.reason, modM: result.modM === null ? null : floorTenth(result.modM), ...common };
   }
   const finite = (n: number) => (Number.isFinite(n) ? round(n, 1) : null);
   return {
-    ok: true,
-    value: {
-      status: result.status, minutes: result.minutes, binding: result.binding,
-      limits: { ndl: finite(result.limits.ndl), oxygen: finite(result.limits.oxygen), gas: result.limits.gas === null ? null : finite(result.limits.gas) },
-      ascentPressureBar: result.ascentPressureBar === null ? null : round(result.ascentPressureBar, 1),
-      otu: round(result.otu, 1), ppO2AtDepth: round(result.ppO2AtDepth, 2), ppO2AboveWorking: result.ppO2AboveWorking,
-      ...common,
-    },
-  } as const;
+    status: result.status, minutes: result.minutes, binding: result.binding,
+    limits: { ndl: finite(result.limits.ndl), oxygen: finite(result.limits.oxygen), gas: result.limits.gas === null ? null : finite(result.limits.gas) },
+    ascentPressureBar: result.ascentPressureBar === null ? null : round(result.ascentPressureBar, 1),
+    otu: round(result.otu, 1), ppO2AtDepth: round(result.ppO2AtDepth, 2), ppO2AboveWorking: result.ppO2AboveWorking,
+    ...common,
+  };
 }

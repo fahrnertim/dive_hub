@@ -3,8 +3,8 @@
 import { Type } from 'typebox';
 import { PLAN_RULES, planGasPlan } from '../planning/plan-service.js';
 import { PLANNING_WATERS } from '../planning/service.js';
-import { NOTICE } from './tools-planning.js';
-import { Id, Nullable, ToolError, defineTool } from './tool.js';
+import { NOTICE, planning } from './tools-planning.js';
+import { Id, Nullable, defineTool } from './tool.js';
 
 const Input = Type.Object({
   o2: Type.Number({ minimum: 1, maximum: 100, description: 'Oxygen in the mix, percent (air is 21). Air and nitrox 21-40 % only' }),
@@ -86,16 +86,12 @@ Always pass on the notice and the assumptions (where each SAC came from) with th
     notice: Type.String(),
   }),
   async run(ctx, args) {
-    const answer = await planGasPlan(ctx.tx, ctx.diverIds, {
+    const v = await planning(() => planGasPlan(ctx.tx, ctx.diverIds, {
       o2: args.o2, he: args.he, levels: args.levels.map((l) => ({ depth: l.depth_m, minutes: l.minutes })),
       divers: args.divers.map((d) => ({ name: d.name, volume: d.cylinder_volume_l, pressure: d.cylinder_pressure_bar, sac: d.sac_l_per_min, diverId: d.diver_id })),
       rule: args.gas_rule, bar: args.rule_bar, water: args.water, altitude: args.altitude_m, ppo2Contingency: args.ppo2_contingency,
       descentRate: args.descent_rate_m_per_min, ascentRate: args.ascent_rate_m_per_min,
-    });
-    if (!answer.ok) {
-      throw new ToolError(answer.code, 'Check the inputs: oxygen and helium over 100 %, or gas_rule reserve or ascent_pressure without rule_bar.');
-    }
-    const v = answer.value;
+    }));
     const assumptions = {
       water: v.used.water, altitude_m: v.used.altitudeM, gas_rule: v.used.gasRule,
       descent_rate_m_per_min: v.used.descentRateMPerMin, ascent_rate_m_per_min: v.used.ascentRateMPerMin,

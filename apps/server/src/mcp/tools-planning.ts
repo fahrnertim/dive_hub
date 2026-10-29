@@ -1,12 +1,31 @@
 // MCP tool for the Tools page's gas numbers and bottom time (ADR 0032, ADR 0035). The same answer as the routes
 // (planning/service.ts), with the assumptions and the notice in every result: never a bare number.
 import { Type } from 'typebox';
-import { BOTTOM_TIME_RULES, PLANNING_WATERS, gasNumbers, planBottomTime } from '../planning/service.js';
+import { BOTTOM_TIME_RULES, PLANNING_WATERS, PlanningError, gasNumbers, planBottomTime } from '../planning/service.js';
 import { Id, Nullable, ToolError, defineTool } from './tool.js';
 
 /** Fixed text in every answer (ADR 0032: always visible; the limits are the Diver's own input, not advice). */
 export const NOTICE = 'An estimate from the inputs and settings shown, not advice: limits computed from the Diver\'s own input and settings. '
   + 'The dive computer and the Diver\'s training govern, and no model guarantees safety. Say so when passing these numbers on.';
+
+/** What the LLM is told to do about each refused plan. */
+const HINT: Record<PlanningError['code'], string> = {
+  invalid_input: 'Check the inputs: oxygen and helium together over 100 %, cylinder_volume_l without cylinder_pressure_bar or the other way round, '
+    + 'or gas_rule reserve or ascent_pressure without rule_bar.',
+  gas_not_breathable: 'A mix with under 16 % oxygen can\'t be breathed at the surface. Give o2 of 16 or more.',
+  diver_not_found: 'No Diver of the user has this diver_id. Call divers_list for the Divers whose Dives this access can read.',
+  site_not_found: 'No dive site has this id.',
+};
+
+/** Runs a planning calculation, turning its PlanningError into a refusal the LLM can act on. */
+export async function planning<T>(run: () => T | Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (error instanceof PlanningError) throw new ToolError(error.code, HINT[error.code]);
+    throw error;
+  }
+}
 
 const Input = Type.Object({
   o2: Type.Number({ minimum: 1, maximum: 100, description: 'Oxygen in the mix, percent (air is 21)' }),
@@ -76,28 +95,18 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
     notice: Type.String(),
   }),
   async run(ctx, args) {
-    const gas = gasNumbers({
+    const g = await planning(() => gasNumbers({
       o2: args.o2, he: args.he, depth: args.depth, water: args.water, altitude: args.altitude_m,
       ppo2Working: args.ppo2_working, ppo2Contingency: args.ppo2_contingency, oxygenNarcotic: args.oxygen_narcotic,
-    });
-    if (!gas.ok) {
-      throw new ToolError(gas.code, gas.code === 'gas_not_breathable'
-        ? 'A mix with under 16 % oxygen can\'t be breathed at the surface. Give o2 of 16 or more.'
-        : 'Oxygen and helium together are over 100 %.');
-    }
+    }));
     let bottomTime = null;
-    if (args.depth !== undefined) {
-      const answer = await planBottomTime(ctx.tx, ctx.diverIds, {
-        depth: args.depth, o2: args.o2, he: args.he, volume: args.cylinder_volume_l, pressure: args.cylinder_pressure_bar, sac: args.sac_l_per_min,
+    const { depth } = args;
+    if (depth !== undefined) {
+      const v = await planning(() => planBottomTime(ctx.tx, ctx.diverIds, {
+        depth, o2: args.o2, he: args.he, volume: args.cylinder_volume_l, pressure: args.cylinder_pressure_bar, sac: args.sac_l_per_min,
         rule: args.gas_rule, bar: args.rule_bar, gfHigh: args.gf_high, water: args.water, altitude: args.altitude_m,
         ppo2Working: args.ppo2_working, ppo2Contingency: args.ppo2_contingency, diverId: args.diver_id,
-      });
-      if (!answer.ok) {
-        throw new ToolError(answer.code, answer.code === 'diver_not_found'
-          ? 'No Diver of the user has this diver_id. Call divers_list for the Divers whose Dives this access can read.'
-          : 'Give cylinder_volume_l and cylinder_pressure_bar together, or neither.');
-      }
-      const v = answer.value;
+      }));
       const assumptions = {
         gf_high: v.used.gfHigh,
         sac_l_per_min: { value: v.used.sacLpm.value, source: v.used.sacLpm.source, ...(v.used.sacLpm.basedOn !== undefined && { based_on_dives: v.used.sacLpm.basedOn }) },
@@ -110,7 +119,6 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
           ppo2_above_working: v.ppO2AboveWorking, ascent_pressure_bar: v.ascentPressureBar, assumptions, recent_dive_ended_at: v.recentDiveEndedAt,
         };
     }
-    const g = gas.value;
     const output = {
       gas: g.gas, hypoxic: g.hypoxic, ppo2_limits: g.ppO2Limits, mod_working_m: g.modWorkingM, mod_contingency_m: g.modContingencyM,
       at_depth: g.atDepth && {

@@ -8,7 +8,7 @@ import { Problem, problem } from '../http/problems.js';
 import { Nullable } from '../http/schemas.js';
 import type { PlanningService } from './planning-service.js';
 import { PLAN_RULES } from './plan-service.js';
-import { BOTTOM_TIME_RULES, PLANNING_WATERS, gasNumbers } from './service.js';
+import { BOTTOM_TIME_RULES, PLANNING_WATERS, PlanningError, gasNumbers } from './service.js';
 
 export interface PlanningRouteDeps {
   auth: Auth;
@@ -162,18 +162,24 @@ const BottomTimeView = Type.Object({
   recentDiveEndedAt: Type.Union([Type.Null(), Type.String()], { description: 'When the Diver\'s Dive within the last 48 hours ended; the real limit is then shorter than shown' }),
 });
 
+const STATUS: Record<PlanningError['code'], number> = {
+  invalid_input: 400, gas_not_breathable: 400, diver_not_found: 404, site_not_found: 404,
+};
+
 export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = async (app, deps) => {
   app.addHook('onRequest', requireUser(deps.auth));
+
+  app.setErrorHandler((error, _request, reply) => {
+    if (error instanceof PlanningError) return reply.code(STATUS[error.code]).send(problem(error.code));
+    throw error;
+  });
 
   app.get('/tools/gas', {
     schema: {
       summary: 'MOD and gas numbers for a mix (ADR 0032): a limit from the inputs, not advice',
       querystring: GasQuery, response: { 200: GasView, 400: Problem },
     },
-  }, async (request, reply) => {
-    const answer = gasNumbers(request.query);
-    return answer.ok ? answer.value : reply.code(400).send(problem(answer.code));
-  });
+  }, async (request) => gasNumbers(request.query));
 
   app.get('/tools/bottom-time', {
     schema: {
@@ -182,11 +188,7 @@ export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = asyn
         + 'Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`.',
       querystring: BottomTimeQuery, response: { 200: BottomTimeView, 400: Problem, 404: Problem },
     },
-  }, async (request, reply) => {
-    const answer = await deps.planning.bottomTime(userOf(request).id, request.query);
-    if (answer.ok) return answer.value;
-    return reply.code(answer.code === 'diver_not_found' || answer.code === 'site_not_found' ? 404 : 400).send(problem(answer.code));
-  });
+  }, async (request) => deps.planning.bottomTime(userOf(request).id, request.query));
 
   app.post('/tools/gas-plan', {
     schema: {
@@ -196,9 +198,5 @@ export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = asyn
         + 'Rock bottom is always in the answer. Any Diver can be named by `diverId`; only of one the User manages the planning SAC and the last Dive are read.',
       body: GasPlanBody, response: { 200: GasPlanView, 400: Problem, 404: Problem },
     },
-  }, async (request, reply) => {
-    const answer = await deps.planning.gasPlan(userOf(request).id, request.body);
-    if (answer.ok) return answer.value;
-    return reply.code(answer.code === 'site_not_found' ? 404 : 400).send(problem(answer.code));
-  });
+  }, async (request) => deps.planning.gasPlan(userOf(request).id, request.body));
 };
