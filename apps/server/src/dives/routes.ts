@@ -402,6 +402,12 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
 
   /** The Dive if the signed-in User manages its Diver. */
   const findDive = (request: FastifyRequest, id: string) => logbook.findManagedDive(userOf(request).id, id);
+  /** The view of a Dive a change just kept: it must exist, so its absence is a bug, not a 404. */
+  const viewOfKept = async (request: FastifyRequest, id: string) => {
+    const row = await findDive(request, id);
+    if (!row) throw new Error(`Dive ${id} is gone right after its change`);
+    return view(row);
+  };
 
   const view = async (row: typeof dive.$inferSelect): Promise<Static<typeof DiveView>> => {
     const { recordings: recs, site } = await logbook.recordingsAndSite(row);
@@ -470,7 +476,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       ...(siteId !== undefined && { siteId }), ...(cylinders && { cylinders }), ...(lead && { lead }),
       ...(weightingFeedback !== undefined && { weightingFeedback }), ...(suit !== undefined && { suit }),
     });
-    return view((await findDive(request, request.params.id))!);
+    return viewOfKept(request, request.params.id);
   });
 
   app.get('/cylinder-catalogue', {
@@ -533,7 +539,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request) => {
     await dives.setParticipants(userOf(request).id, request.params.id, request.body.version, request.body.participants);
-    return view((await findDive(request, request.params.id))!);
+    return viewOfKept(request, request.params.id);
   });
 
   app.put('/dives/:id/primary-recording', {
@@ -544,7 +550,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request) => {
     await dives.setPrimary(userOf(request).id, request.params.id, request.body.recordingId, request.body.version);
-    return view((await findDive(request, request.params.id))!);
+    return viewOfKept(request, request.params.id);
   });
 
   app.post('/dives/:id/move', {
@@ -558,7 +564,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request) => {
     const id = await merging.move(userOf(request).id, request.params.id, request.body.diverId, request.body.version);
-    return view((await findDive(request, id))!);
+    return viewOfKept(request, id);
   });
 
   app.get('/dives/:id/merge-candidates', {
@@ -681,7 +687,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     }
     // Deleting there recorded a Push, not a change of the Dive: its version is the one sent.
     const { kept } = await merging.merge(userId, { id: request.params.id, version }, { id: otherId, version: otherVersion });
-    return view((await findDive(request, kept))!);
+    return viewOfKept(request, kept);
   });
 
   app.post('/recordings/:id/detach', {
@@ -755,7 +761,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request) => {
     await dives.restore(userOf(request).id, request.params.id, request.body.version);
-    return view((await findDive(request, request.params.id))!);
+    return viewOfKept(request, request.params.id);
   });
 
   app.get('/dives/:id/revisions', {

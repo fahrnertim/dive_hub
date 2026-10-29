@@ -1,7 +1,8 @@
 // The logbook's reads for the API (ADR 0017, 0040, 0042, 0053): the list of Dives with its counts, totals and months, the
 // neighbours of one Dive in that list, a Recording's sample series, and the reads behind a Dive's own routes (the Dive
 // a User manages, its Recordings and site, the Dive before it, its Cylinders, Lead and Participants, its version, the deleted Dives, its Revisions). Who may see what is decided by the caller, which
-// passes the Divers the User manages.
+// passes the Divers the User manages. A lookup that may find nothing answers null; one whose thing must exist throws (as
+// lockManagedDive in dive-service.ts does).
 import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { PARTICIPANT_ROLES, device, dive, diveAssessment, diveSite, diver, diverManagement, importJob, participant, recording, revision, sampleSeries, user } from '../db/schema.js';
@@ -130,12 +131,12 @@ export function createLogbookService(db: Db) {
     };
   }
 
-  /** The id of this Dive when one of these Divers owns it and it is not deleted; undefined otherwise. */
+  /** The id of this Dive when one of these Divers owns it and it is not deleted; null otherwise. */
   async function ownDiveId(diveId: string, diverIds: string[]) {
-    if (diverIds.length === 0) return undefined;
+    if (diverIds.length === 0) return null;
     const [own] = await db.select({ id: dive.id }).from(dive)
       .where(and(eq(dive.id, diveId), inArray(dive.diverId, diverIds), isNull(dive.deletedAt)));
-    return own?.id;
+    return own?.id ?? null;
   }
 
   /** The Dives before and after one in the list's order; the position and neighbours are null when the list does not show it. */
@@ -155,13 +156,13 @@ export function createLogbookService(db: Db) {
     return { previous: row?.previous ?? null, next: row?.next ?? null, position: row?.position ?? null, total: counted?.n ?? 0 };
   }
 
-  /** The id of this Recording when it is on a Dive of one of these Divers and not deleted; undefined otherwise. */
+  /** The id of this Recording when it is on a Dive of one of these Divers and not deleted; null otherwise. */
   async function ownRecordingId(recordingId: string, diverIds: string[]) {
-    if (diverIds.length === 0) return undefined;
+    if (diverIds.length === 0) return null;
     const [rec] = await db.select({ id: recording.id }).from(recording)
       .innerJoin(dive, eq(dive.id, recording.diveId))
       .where(and(eq(recording.id, recordingId), inArray(dive.diverId, diverIds), isNull(recording.deletedAt)));
-    return rec?.id;
+    return rec?.id ?? null;
   }
 
   /** The Recording's stored sample series, all or only these channels. */
@@ -171,12 +172,12 @@ export function createLogbookService(db: Db) {
       ...(channels?.length ? [inArray(sampleSeries.channel, channels)] : []),
     ));
 
-  /** The Dive if the User manages its Diver and it isn't deleted. */
+  /** The Dive if the User manages its Diver and it isn't deleted; null otherwise. */
   async function findManagedDive(userId: string, id: string) {
     const [row] = await db.select({ d: dive }).from(dive)
       .innerJoin(diverManagement, managesDiveDiver(userId))
       .where(and(eq(dive.id, id), isNull(dive.deletedAt)));
-    return row?.d;
+    return row?.d ?? null;
   }
 
   /** A Dive's live Recordings with their Device and sample channels, earliest first, and its Dive site. */
@@ -193,12 +194,12 @@ export function createLogbookService(db: Db) {
     return { recordings, site };
   }
 
-  /** The Dive of the same Diver just before this one, not counting deleted ones. */
+  /** The Dive of the same Diver just before this one, not counting deleted ones; null for the Diver's first. */
   async function previousDive(row: typeof dive.$inferSelect) {
     const [previous] = await db.select().from(dive)
       .where(and(eq(dive.diverId, row.diverId), isNull(dive.deletedAt), lt(dive.startsAt, row.startsAt)))
       .orderBy(desc(dive.startsAt), desc(dive.id)).limit(1);
-    return previous;
+    return previous ?? null;
   }
 
   /** A Dive's Cylinders and Lead, each in its order. */
@@ -209,10 +210,10 @@ export function createLogbookService(db: Db) {
   /** A Dive's Participants with their names (ADR 0028). */
   const participantsOfDive = (diveId: string) => participantsOf(db, diveId);
 
-  /** The stored version of a Dive, whether it is deleted or not. */
+  /** The stored version of a Dive, whether it is deleted or not; null when there is no such Dive. */
   async function versionOf(id: string) {
     const [row] = await db.select({ version: dive.version }).from(dive).where(eq(dive.id, id));
-    return row?.version;
+    return row?.version ?? null;
   }
 
   /** The deleted Dives of the Divers the User manages, most recently deleted first; where a merge or move sent each. */

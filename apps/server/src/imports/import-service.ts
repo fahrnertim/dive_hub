@@ -47,6 +47,7 @@ export interface ImportServiceDeps {
   afterImport?: (userId: string) => Promise<void>;
 }
 
+/** Imports: making, running, starting and ending them. A lookup that may find nothing answers null; a failure throws. */
 export function createImportService({ db, blobs, formats = createFileFormats(), providerImports, afterImport }: ImportServiceDeps) {
   /** Stores the upload and creates the Import; its job is enqueued in the same transaction (ADR 0010). */
   async function createImport(userId: string, fileName: string, stream: Readable, maxBytes: number) {
@@ -188,10 +189,10 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
   const recentImports = (userId: string) =>
     db.select().from(importJob).where(eq(importJob.userId, userId)).orderBy(desc(importJob.createdAt)).limit(50);
 
-  /** One of the User's Imports; undefined when there is none, or it is another User's. */
+  /** One of the User's Imports; null when there is none, or it is another User's. */
   async function findImport(userId: string, importId: string) {
     const [row] = await db.select().from(importJob).where(and(eq(importJob.id, importId), eq(importJob.userId, userId)));
-    return row;
+    return row ?? null;
   }
 
   /**

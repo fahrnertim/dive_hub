@@ -47,19 +47,19 @@ describe.skipIf(!(await databaseReachable()))('reads of one Dive', () => {
 
   it('finds a Dive only for a User who manages its Diver, and not once it is deleted', async () => {
     expect((await logbook.findManagedDive(annId, id.first))?.id).toBe(id.first);
-    expect(await logbook.findManagedDive(otherId, id.first)).toBeUndefined();
-    expect(await logbook.findManagedDive(annId, id.gone)).toBeUndefined();
+    expect(await logbook.findManagedDive(otherId, id.first)).toBeNull();
+    expect(await logbook.findManagedDive(annId, id.gone)).toBeNull();
   });
 
   it('finds the Dive before one of the same Diver, none before the first', async () => {
     const second = (await logbook.findManagedDive(annId, id.second))!;
     expect((await logbook.previousDive(second))?.id).toBe(id.first);
-    expect(await logbook.previousDive((await logbook.findManagedDive(annId, id.first))!)).toBeUndefined();
+    expect(await logbook.previousDive((await logbook.findManagedDive(annId, id.first))!)).toBeNull();
   });
 
   it('gives the version of a Dive, deleted or not', async () => {
     expect(await logbook.versionOf(id.gone)).toBe(1);
-    expect(await logbook.versionOf('00000000-0000-4000-8000-000000000000')).toBeUndefined();
+    expect(await logbook.versionOf('00000000-0000-4000-8000-000000000000')).toBeNull();
   });
 
   it('lists the deleted Dives of the User with where each went', async () => {
