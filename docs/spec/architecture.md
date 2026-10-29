@@ -197,7 +197,7 @@ Implemented:
 
 Deliberate simplifications, to revisit:
 - **Deleting** keeps Divers someone else also manages; this needs revisiting with Diver sharing.
-- **No audit log** of admin actions beyond the server log ("user deleted").
+- **No audit log** of admin actions beyond one server log line per done action ("admin action", with the acting admin).
 
 **Slice 4 (2026-10-03): UI foundation** ([ADR 0014](../decisions/0014-design-system-and-localization.md), [design system](design-system.md)).
 
