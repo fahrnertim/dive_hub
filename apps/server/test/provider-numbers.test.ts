@@ -122,9 +122,12 @@ describe.skipIf(!(await databaseReachable()))('a Provider\'s numbers following D
     const remote = (await statusOf(id)).current!.remoteId;
     await upload(day(1));
     expect((await statusOf(id)).current).toMatchObject({ upToDate: true, remoteNumber: 1, number: { wanted: 2, differs: true } });
-    expect((await setNumber(id)).statusCode).toBe(200);
+    const set = await setNumber(id);
+    expect(set.statusCode).toBe(200);
     expect(ledger.dives.get(remote)!.number).toBe(2);
-    const status = await statusOf(id);
+    // It answers the status as GET and DELETE do.
+    const status = set.json<Status>();
+    expect(status).toEqual(await statusOf(id));
     expect(status.current).toMatchObject({ upToDate: true, remoteNumber: 2, number: { differs: false } });
     expect(status.pushes[0]).toMatchObject({ action: 'number', state: 'confirmed' });
     // Changed since sent stays changed, and the change is not sent with the number.

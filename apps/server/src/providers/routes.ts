@@ -1064,12 +1064,12 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         + '409 provider_numbers_off (the Connection doesn\'t follow), provider_number_nothing_to_set (no number, or the Provider has it already: fetch the status again), '
         + 'provider_number_taken (another dive there has the number; existing names it, diveId the Dive here if known: set that one first), and the codes a send has.',
       params: DiveProviderParams,
-      response: { 200: Type.Object({ status: StatusView }), ...errors },
+      response: { 200: StatusView, ...errors },
     },
   }, async (request) => {
     const { id, provider } = request.params;
     await pushes.setNumber(userOf(request).id, id, provider);
-    return { status: statusView(await pushes.status(userOf(request).id, id, provider)) };
+    return statusView(await pushes.status(userOf(request).id, id, provider));
   });
 
   app.delete('/dives/:id/providers/:provider', {

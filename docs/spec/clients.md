@@ -470,6 +470,8 @@ returns findings from fixed rules; the client words them.
 
 ### Sending a Dive to a Provider (SSI)
 From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities (ADR 0024, 0027). *Web:* `ProviderPanel.tsx`.
+Each change there answers the new status, so the panel needs no second fetch: "Set number" and the delete answer it as
+`GET` does; the send answers its own result with the status in `status`.
 - **A Provider's numbers** ([ADR 0048](../decisions/0048-dive-numbers.md)): a Provider whose `data.dives.export.numbers` isn't null can be
   made to number dives as Dive Hub does. Per Connection, `diveNumbers.follow` (off until the User turns it on; `PATCH
   /api/connections/{id}` with `{ diveNumbers: { follow } }`; turning it on sends nothing; `provider_unsupported` at a Provider that

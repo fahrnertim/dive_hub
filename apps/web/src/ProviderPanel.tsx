@@ -118,7 +118,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
   });
   const setNumber = useMutation({
     mutationFn: async () => unwrap(await api.POST('/api/dives/{id}/providers/{provider}/number', { params: { path: { id: d.id, provider: p.id } } })),
-    onSuccess: async (done) => { await refresh(done.status); announce(pt('numberSet', { number: done.status.current?.remoteNumber ?? '' })); },
+    onSuccess: async (next) => { await refresh(next); announce(pt('numberSet', { number: next.current?.remoteNumber ?? '' })); },
     onError: () => refresh(),
   });
   const remove = useMutation({

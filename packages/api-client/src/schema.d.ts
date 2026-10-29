@@ -19929,136 +19929,134 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            status: {
+                            provider: string;
+                            /** @description The Dive's Connection deletes at the Provider by itself (5 minutes after the Dive is deleted here; Undo cancels it): don't ask about deleting the copy there, and don't send `alsoAt` for it (docs/spec/clients.md) */
+                            deletesItself: boolean;
+                            /** @description The Dive's entry in the queue of Waiting pushes for this Provider (ADR 0056); null when none */
+                            waiting: null | {
                                 provider: string;
-                                /** @description The Dive's Connection deletes at the Provider by itself (5 minutes after the Dive is deleted here; Undo cancels it): don't ask about deleting the copy there, and don't send `alsoAt` for it (docs/spec/clients.md) */
-                                deletesItself: boolean;
-                                /** @description The Dive's entry in the queue of Waiting pushes for this Provider (ADR 0056); null when none */
-                                waiting: null | {
-                                    provider: string;
-                                    /** @enum {unknown} */
-                                    action: "send" | "delete";
-                                    /**
-                                     * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
-                                     * @enum {unknown}
-                                     */
-                                    state: "waiting" | "held" | "stopped";
-                                    reason: null | string;
-                                    /**
-                                     * Format: date-time
-                                     * @description When it goes out, for a waiting entry
-                                     */
-                                    dueAt: string;
-                                };
-                                connection: null | {
-                                    id: string;
-                                    /** @enum {unknown} */
-                                    state: "active" | "needs_sign_in";
-                                    accountLabel: string;
-                                };
-                                siteId: null | string;
-                                /** @description What the Provider's requirements need and the Dive lacks; never asks the Provider */
-                                unmet: {
-                                    /** @description As in the Provider's requirements */
-                                    type: string;
-                                    /** @enum {unknown} */
-                                    severity: "blocking" | "advisory";
-                                    source: string;
-                                    siteId?: null | string;
-                                    /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                    bySend?: boolean;
-                                    /** @description diver_mapping: the Participant */
-                                    diverId?: string;
-                                    diverName?: string;
-                                    /** @enum {unknown} */
-                                    role?: "buddy" | "guide" | "instructor";
-                                    /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                    fixes?: string[];
-                                }[];
-                                current: null | {
-                                    remoteId: string;
-                                    remoteNumber: null | number;
-                                    /** Format: date-time */
-                                    sentAt: string;
-                                    /** @description false: the Dive changed since it was sent (outdated), or it was linked and never sent */
-                                    upToDate: boolean;
-                                    /** @description An update now would remove the dive centre's verification of the dive at the Provider (SSI: it changes the start time there, or the dive was linked and never sent, so the start time there isn't known). Say so before sending (docs/spec/clients.md, ADR 0043) */
-                                    updateRemovesVerification: boolean;
-                                    number: null | {
-                                        /** @description The Dive's number here */
-                                        wanted: number;
-                                        /** @description The Provider's number (remoteNumber) is another. Not "changed since sent": don't offer an update for it */
-                                        differs: boolean;
-                                        /** @description The Provider sets numbers on an update: offer "Set number" (POST /api/dives/{id}/providers/{provider}/number) */
-                                        canSet: boolean;
-                                        /** @description Setting it can remove a verification the dive has there: warn before */
-                                        removesVerification: boolean;
-                                    };
-                                };
-                                conflicts: null | {
-                                    /**
-                                     * @description The field the two sides differ on
-                                     * @enum {unknown}
-                                     */
-                                    field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
-                                    hub: null | (string | number | string[] | {
-                                        volumeL: null | number;
-                                        material: null | ("aluminium" | "steel" | "carbon");
-                                        startPressureBar: null | number;
-                                        endPressureBar: null | number;
-                                        gas: null | {
-                                            o2: number;
-                                            he: number;
-                                        };
-                                    });
-                                    provider: null | (string | number | string[] | {
-                                        volumeL: null | number;
-                                        material: null | ("aluminium" | "steel" | "carbon");
-                                        startPressureBar: null | number;
-                                        endPressureBar: null | number;
-                                        gas: null | {
-                                            o2: number;
-                                            he: number;
-                                        };
-                                    });
-                                }[];
-                                /** @description Newest first */
-                                pushes: {
-                                    id: string;
-                                    /**
-                                     * @description link: tied to a dive already there, nothing sent. number: only its number there was changed (ADR 0048)
-                                     * @enum {unknown}
-                                     */
-                                    action: "create" | "update" | "link" | "delete" | "number";
-                                    /**
-                                     * @description confirmed: the Provider accepted it and gave its ID (not SSI's dive-center confirmation); handed_over: delivered without an ID
-                                     * @enum {unknown}
-                                     */
-                                    state: "pending" | "handed_over" | "confirmed" | "failed";
-                                    remoteId: null | string;
-                                    remoteNumber: null | number;
-                                    /** @description The remote dive was found deleted at the Provider */
-                                    remoteGone: boolean;
-                                    failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                                    leftOut: null | {
-                                        diverId: string;
-                                        name: string;
-                                        /**
-                                         * @description no_reference: nothing tells the Provider who they are (give the Diver an account there). not_at_provider: the Provider doesn't have them (SSI: add them to your buddy list in SSI's app, then update)
-                                         * @enum {unknown}
-                                         */
-                                        reason: "no_reference" | "not_at_provider";
-                                    }[];
-                                    differences: null | {
-                                        /** @description One of the Provider's readBackFields */
-                                        field: string;
-                                        sent: null | (string | number);
-                                        stored: null | (string | number);
-                                    }[];
-                                    /** Format: date-time */
-                                    createdAt: string;
-                                }[];
+                                /** @enum {unknown} */
+                                action: "send" | "delete";
+                                /**
+                                 * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
+                                 * @enum {unknown}
+                                 */
+                                state: "waiting" | "held" | "stopped";
+                                reason: null | string;
+                                /**
+                                 * Format: date-time
+                                 * @description When it goes out, for a waiting entry
+                                 */
+                                dueAt: string;
                             };
+                            connection: null | {
+                                id: string;
+                                /** @enum {unknown} */
+                                state: "active" | "needs_sign_in";
+                                accountLabel: string;
+                            };
+                            siteId: null | string;
+                            /** @description What the Provider's requirements need and the Dive lacks; never asks the Provider */
+                            unmet: {
+                                /** @description As in the Provider's requirements */
+                                type: string;
+                                /** @enum {unknown} */
+                                severity: "blocking" | "advisory";
+                                source: string;
+                                siteId?: null | string;
+                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                bySend?: boolean;
+                                /** @description diver_mapping: the Participant */
+                                diverId?: string;
+                                diverName?: string;
+                                /** @enum {unknown} */
+                                role?: "buddy" | "guide" | "instructor";
+                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
+                                fixes?: string[];
+                            }[];
+                            current: null | {
+                                remoteId: string;
+                                remoteNumber: null | number;
+                                /** Format: date-time */
+                                sentAt: string;
+                                /** @description false: the Dive changed since it was sent (outdated), or it was linked and never sent */
+                                upToDate: boolean;
+                                /** @description An update now would remove the dive centre's verification of the dive at the Provider (SSI: it changes the start time there, or the dive was linked and never sent, so the start time there isn't known). Say so before sending (docs/spec/clients.md, ADR 0043) */
+                                updateRemovesVerification: boolean;
+                                number: null | {
+                                    /** @description The Dive's number here */
+                                    wanted: number;
+                                    /** @description The Provider's number (remoteNumber) is another. Not "changed since sent": don't offer an update for it */
+                                    differs: boolean;
+                                    /** @description The Provider sets numbers on an update: offer "Set number" (POST /api/dives/{id}/providers/{provider}/number) */
+                                    canSet: boolean;
+                                    /** @description Setting it can remove a verification the dive has there: warn before */
+                                    removesVerification: boolean;
+                                };
+                            };
+                            conflicts: null | {
+                                /**
+                                 * @description The field the two sides differ on
+                                 * @enum {unknown}
+                                 */
+                                field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+                                hub: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
+                                provider: null | (string | number | string[] | {
+                                    volumeL: null | number;
+                                    material: null | ("aluminium" | "steel" | "carbon");
+                                    startPressureBar: null | number;
+                                    endPressureBar: null | number;
+                                    gas: null | {
+                                        o2: number;
+                                        he: number;
+                                    };
+                                });
+                            }[];
+                            /** @description Newest first */
+                            pushes: {
+                                id: string;
+                                /**
+                                 * @description link: tied to a dive already there, nothing sent. number: only its number there was changed (ADR 0048)
+                                 * @enum {unknown}
+                                 */
+                                action: "create" | "update" | "link" | "delete" | "number";
+                                /**
+                                 * @description confirmed: the Provider accepted it and gave its ID (not SSI's dive-center confirmation); handed_over: delivered without an ID
+                                 * @enum {unknown}
+                                 */
+                                state: "pending" | "handed_over" | "confirmed" | "failed";
+                                remoteId: null | string;
+                                remoteNumber: null | number;
+                                /** @description The remote dive was found deleted at the Provider */
+                                remoteGone: boolean;
+                                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+                                leftOut: null | {
+                                    diverId: string;
+                                    name: string;
+                                    /**
+                                     * @description no_reference: nothing tells the Provider who they are (give the Diver an account there). not_at_provider: the Provider doesn't have them (SSI: add them to your buddy list in SSI's app, then update)
+                                     * @enum {unknown}
+                                     */
+                                    reason: "no_reference" | "not_at_provider";
+                                }[];
+                                differences: null | {
+                                    /** @description One of the Provider's readBackFields */
+                                    field: string;
+                                    sent: null | (string | number);
+                                    stored: null | (string | number);
+                                }[];
+                                /** Format: date-time */
+                                createdAt: string;
+                            }[];
                         };
                     };
                 };
