@@ -14,6 +14,7 @@ import { PushRunStrip, RunMark } from './PushRun.tsx';
 import { ReviewLinks, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
+import { navSection, type NavSection } from './lib/nav.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
 import { accountHref, accountTab } from './lib/account-tabs.ts';
 import { reviewTab, useWaiting } from './lib/review.ts';
@@ -111,21 +112,22 @@ export function App() {
 function Navigation({ route, me }: { route: string; me: Me }) {
   const { t } = useTranslation();
   const signOut = useSignOut();
-  const current = (active: boolean) => (active ? { 'aria-current': 'page' as const } : {});
+  const section = navSection(route);
+  const current = (tab: NavSection) => (tab === section ? { 'aria-current': 'page' as const } : {});
   // What waits for a decision is counted beside the logbook, visible from every page (UI redesign 4.3).
   const { total: waiting } = useWaiting();
   return (
     <>
       <nav className="app-nav" aria-label={t('nav.main')}>
-        <a href="#/" {...current(route === '/' || route.startsWith('/?') || route.startsWith('/dives/') || route.startsWith('/review'))}>
+        <a href="#/" {...current('logbook')}>
           <Icon name="logbook" />{t('nav.logbook')}
           <RunMark />
           {waiting > 0 && <span className="count"><span aria-hidden="true">{waiting}</span><span className="visually-hidden">{t('nav.toDecide', { count: waiting })}</span></span>}
         </a>
-        <a href="#/divers" {...current(route === '/divers')}><Icon name="divers" />{t('nav.divers')}</a>
-        <a href="#/sites" {...current(route === '/sites' || route.startsWith('/sites/') || route.startsWith('/sites?'))}><Icon name="site" />{t('nav.sites')}</a>
-        <a href="#/centres" {...current(route === '/centres' || route.startsWith('/centres/'))}><Icon name="centre" />{t('nav.centres')}</a>
-        <a href="#/tools" {...current(route === '/tools' || route.startsWith('/tools?') || route.startsWith('/tools/'))}><Icon name="tools" />{t('nav.tools')}</a>
+        <a href="#/divers" {...current('divers')}><Icon name="divers" />{t('nav.divers')}</a>
+        <a href="#/sites" {...current('sites')}><Icon name="site" />{t('nav.sites')}</a>
+        <a href="#/centres" {...current('centres')}><Icon name="centre" />{t('nav.centres')}</a>
+        <a href="#/tools" {...current('tools')}><Icon name="tools" />{t('nav.tools')}</a>
       </nav>
       {/* The account is a labelled menu, not a bare name link (UI review C6). */}
       <div className="user-menu">

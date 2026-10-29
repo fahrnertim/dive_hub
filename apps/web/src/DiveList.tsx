@@ -155,7 +155,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
         <div className="logbook-nothing">
           <Muted>{nothing}</Muted>
           {/* No dead end: with filters applied, all dives are one press away, and focus goes to the search. */}
-          {params.only?.length && (
+          {(params.only?.length ?? 0) > 0 && (
             <Button
               size="small"
               onPress={() => {

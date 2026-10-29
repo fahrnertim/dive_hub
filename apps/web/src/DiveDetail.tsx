@@ -70,7 +70,8 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
       </>
     );
   }
-  if (dive.error) {
+  // Only a first load that failed replaces the page; a failed refetch keeps the Dive already shown (below).
+  if (dive.isLoadingError) {
     return (
       <>
         <BackLink href={logbook} label={t('dive.back')} />
@@ -88,6 +89,7 @@ export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordi
         <BackLink href={logbook} label={t('dive.back')} />
         <Neighbours n={neighbours.data} list={list} />
       </div>
+      {dive.isRefetchError && <Notice tone="danger">{errorText(dive.error)}</Notice>}
       <div className="dive-head">
         <PageHeader
           title={title}
