@@ -9,9 +9,38 @@ export interface ProviderRegistry {
   get(id: string): ProviderAdapter;
 }
 
+/**
+ * What the adapter declares but has no method for (ADR 0027): the generic layer reads the Capabilities and then calls
+ * the method, so the two must agree. `dives.open` makes no call, so it is opened once to see its methods.
+ */
+function unbacked(adapter: ProviderAdapter): string[] {
+  const { data, limits } = adapter.capabilities;
+  const exports = data.dives?.export;
+  const action = exports && adapter.dives?.open({ connectionId: '', accountId: '', access: '' });
+  const has = (declared: boolean | undefined, method: unknown, name: string) => (declared && !method ? [name] : []);
+  return [
+    ...has(!!exports, adapter.dives, 'dives'),
+    ...has(exports?.operations.includes('update'), action?.update, 'update'),
+    ...has(exports?.operations.includes('delete'), action?.remove, 'remove'),
+    ...has(exports?.operations.includes('delete'), action?.exists, 'exists'),
+    ...has(exports?.operations.some((o) => o === 'find' || o === 'link'), action?.find, 'find'),
+    ...has(exports?.numbers?.set.includes('update'), action?.setNumber, 'setNumber'),
+    ...has(exports?.delivery === 'handed_over', limits.run === null, 'run'),
+    ...has(data.dives?.import?.operations.includes('list'), adapter.dives?.list, 'list'),
+    ...has(data.dives?.import?.operations.includes('list'), adapter.dives?.parse, 'parse'),
+    ...has(exports?.requirements.some((r) => r.type === 'site_external_id' && r.createdBySend), adapter.diveSites?.create, 'create'),
+    ...has(data.buddies?.export?.operations.includes('add'), adapter.buddies?.add, 'add'),
+    ...has(data.buddies?.export?.operations.includes('setAccount'), adapter.buddies?.setAccount, 'setAccount'),
+  ];
+}
+
 export function createProviderRegistry(adapters: ProviderAdapter[]): ProviderRegistry {
   const byId = new Map(adapters.map((a) => [a.id, a]));
   if (byId.size !== adapters.length) throw new Error('Two Providers share an id');
+  for (const adapter of adapters) {
+    const missing = unbacked(adapter);
+    if (missing.length > 0) throw new Error(`Provider ${adapter.id}: ${missing.join(', ')} declared but not offered`);
+  }
   return {
     list: () => adapters,
     get(id) {
