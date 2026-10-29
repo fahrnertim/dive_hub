@@ -223,6 +223,8 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
         expect(JSON.stringify(listed)).not.toMatch(/Blue Hole|Bob Miller|Napoleon/);
       }
       expect(client.getInstructions()).toContain('shared_*');
+      // The instructions tell the model what each tool is for: none may be missing.
+      for (const defined of TOOLS) expect(client.getInstructions()).toContain(defined.name);
     });
 
     it('offers position fields only to an access with logbook:positions', async () => {
