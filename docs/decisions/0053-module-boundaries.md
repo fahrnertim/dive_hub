@@ -1,6 +1,6 @@
 ---
 title: "ADR 0053: Module boundaries"
-summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; no import cycles. Checked by dependency-cruiser against an empty baseline (0 violations). Fixes done - the web cycle api.ts ↔ lib/logbook.ts (the LogbookParams type moved to lib/), the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of all six route files.
+summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; lib/ may import api.ts (types, and queries inside hooks) and api.ts takes from lib/ only what describes a query's inputs (amendment 2026-10-29); no import cycles. Checked by dependency-cruiser against an empty baseline (0 violations). Fixes done - the web cycle api.ts ↔ lib/logbook.ts (the LogbookParams type moved to lib/), the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of all six route files.
 status: accepted
 date: 2026-10-22
 ---
@@ -65,7 +65,7 @@ touch them.
 ### Web client
 - `ui/` (shared components) imports no page (a component file at the top of `apps/web/src`).
 - Pages import `ui/`, `lib/`, `design/`, `i18n/` and `api.ts`; `lib/` imports no page.
-- `api.ts` imports `lib/` only for types and constants, never the other way: `lib/` imports no `api.ts` (the `LogbookParams` type now lives in `lib/logbook.ts`; done 2026-10-23, no cycle is left).
+- `api.ts` imports `lib/` only for types and constants, never the other way: `lib/` imports no `api.ts` (the `LogbookParams` type now lives in `lib/logbook.ts`; done 2026-10-23, no cycle is left). **Changed by the amendment of 2026-10-29** below: `lib/` may import `api.ts`.
 
 ### No cycles
 No import cycle, not even through a type import, in either app.
@@ -118,3 +118,15 @@ No import cycle, not even through a type import, in either app.
 - Considered: eslint-plugin-boundaries (its element types fit the web client better than the server's folders, and
   ESLint would then carry two jobs); writing the rules only in this ADR (prose that nothing enforces is what the
   research found missing).
+
+## Amendment (2026-10-29): `lib/` may import `api.ts`
+Owner's decision. The rule "`lib/` imports no `api.ts`" no longer matched the code: the data hooks in `lib/`
+(`assessment.ts`, `deletion.ts`, `display.ts`, `dive-values.ts`, `providers.ts`, `review.ts`, `site-origin.ts`) take
+the API's view types and call its queries. Moving those hooks out of `lib/` would only split each feature in two.
+- **`lib/` may import `api.ts`**: its types, and its queries inside hooks.
+- **`api.ts` takes from `lib/` only what describes a query's inputs**: types and constants such as `LogbookParams`,
+  `SitesParams`, `ToolsParams`, `SITES_PAGE`, `BOTTOM_TIME_RULES` and the refetch timing `pollUntilDue`. No
+  component, hook or other logic.
+- **No import cycles**, as before: dependency-cruiser's `no-cycles` rule checks it, so a `lib/` file that
+  `api.ts` imports can't import `api.ts`.
+The rest of this decision stands.
