@@ -24,6 +24,13 @@ export interface TaskLog {
   error(detail: object, message: string): void;
 }
 
+/** The id a task's job carries; the payload comes from the job table, so a malformed one fails here, clearly. */
+function idOf(payload: unknown, key: string): string {
+  const id = (payload as Record<string, unknown> | null | undefined)?.[key];
+  if (typeof id !== 'string' || id === '') throw new Error(`the job payload has no ${key}`);
+  return id;
+}
+
 /**
  * The Import's task: processes it, logs its files that failed, then hands its new Dives to the queue of Waiting pushes
  * (imports/ can't reach it). A failure there is logged, not thrown: the Import is done, and running it again changes
@@ -34,7 +41,7 @@ export function processImportTask(
   scheduledFetch: Pick<ScheduledFetch, 'finished'>, log: TaskLog,
 ) {
   return async (payload: unknown) => {
-    const { importId } = payload as { importId: string };
+    const importId = idOf(payload, 'importId');
     log.info({ importId }, 'processing import');
     const outcome = await imports.processImport(importId);
     // The detail Users don't see (they get the reason code): here for the operator.
@@ -81,21 +88,21 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
     taskList: {
       [PROCESS_IMPORT_TASK]: processImportTask(imports, waitingPushes, scheduledFetch, log),
       [IMPORT_SITES_TASK]: async (payload) => {
-        const { siteImportId } = payload as { siteImportId: string };
+        const siteImportId = idOf(payload, 'siteImportId');
         log.info({ siteImportId }, 'importing dive sites');
         await siteImports.run(siteImportId);
         log.info({ siteImportId }, 'dive site import finished');
       },
       // One Dive of a Push run; the next step is queued after the Provider's pause, so no job sleeps (ADR 0047).
       [PUSH_RUN_STEP_TASK]: async (payload, helpers) => {
-        const { runId } = payload as { runId: string };
+        const runId = idOf(payload, 'runId');
         const next = await pushRuns.step(runId);
         if (next) await helpers.addJob(PUSH_RUN_STEP_TASK, { runId }, { runAt: new Date(Date.now() + next.afterMs), jobKey: `push-run:${runId}`, maxAttempts: 1 });
       },
       // One due Waiting push of a Connection (ADR 0056): again after the Provider's pause while more are due; else the
       // step has scheduled the job for the next due entry itself.
       [WAITING_PUSHES_TASK]: async (payload, helpers) => {
-        const { connectionId } = payload as { connectionId: string };
+        const connectionId = idOf(payload, 'connectionId');
         const next = await waitingPushes.step(connectionId);
         if (next) {
           await helpers.addJob(WAITING_PUSHES_TASK, { connectionId }, {
@@ -110,12 +117,12 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
       },
       // One Connection's scheduled fetch: an unattended Import, which PROCESS_IMPORT_TASK then runs.
       [FETCH_TASK]: async (payload) => {
-        const { connectionId } = payload as { connectionId: string };
+        const connectionId = idOf(payload, 'connectionId');
         await scheduledFetch.fetch(connectionId);
       },
       // One card's picture (ADR 0050); three attempts, the last one ends as `failed`.
       [CERTIFICATION_IMAGE_TASK]: async (payload, helpers) => {
-        const { certificationId } = payload as { certificationId: string };
+        const certificationId = idOf(payload, 'certificationId');
         const final = helpers.job.attempts >= helpers.job.max_attempts;
         const outcome = await certifications.fetchImage(certificationId, { final });
         if (outcome === 'failed') log.warn({ certificationId }, 'a certification card picture could not be fetched');
