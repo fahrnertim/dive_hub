@@ -660,6 +660,28 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       expect(Math.abs(row!.changedAt.getTime() - ctx.clock.now())).toBeLessThan(1000);
     });
 
+    it('two decisions at once both end in the entry', async () => {
+      for (let i = 0; i < 10; i++) {
+        await t.db.delete(waitingPush);
+        const id = await upload(day(1 + i), 100 + i);
+        await send(id);
+        const decide = (conflicts: Record<string, 'hub' | 'provider'>) => ctx.providers.waitingPushes.decide(annId, id, 'ledger', { conflicts });
+        await Promise.all([decide({ notes: 'hub' }), decide({ site: 'provider' })]);
+        const [row] = await rows();
+        expect(row!.options.conflicts).toEqual({ notes: 'hub', site: 'provider' });
+      }
+    });
+
+    it('a decision leaves a waiting delete as it is', async () => {
+      const id = await upload(day(1));
+      await send(id);
+      await settings({ deleteAtProvider: true });
+      await ctx.providers.waitingPushes.decide(annId, id, 'ledger', {});
+      await t.db.update(waitingPush).set({ action: 'delete' });
+      await ctx.providers.waitingPushes.decide(annId, id, 'ledger', { conflicts: { notes: 'hub' } });
+      expect(await rows()).toMatchObject([{ diveId: id, action: 'delete', options: {} }]);
+    });
+
     it('sends a due entry and removes it', async () => {
       const id = await waiting('Turtle');
       saves = 0;

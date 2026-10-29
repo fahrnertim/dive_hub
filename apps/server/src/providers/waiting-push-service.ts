@@ -4,7 +4,7 @@
 // at the Provider, a lost verification), retries a Provider that is down for a day, and stops what would fail again.
 // The minute tick wakes what a sign-in or the Provider's return cleared, and Retry is the User's.
 import { and, arrayOverlaps, asc, count, desc, eq, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
+import type { Db, Tx } from '../db/client.js';
 import { connection, dive, importJob, providerConflict, push, pushRun, waitingPush, type WaitingPushOptions } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { currentRemote } from './current-remote.js';
@@ -12,7 +12,8 @@ import { realClock, type Clock } from './leases.js';
 import type { PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { blocking } from './requirements.js';
-import { mark, newDivesConnection, queueNow, scheduleConnection, settle, upsertSend, type QueueMark } from './waiting-push-queue.js';
+import { mark, newDivesConnection, queueNow, scheduleConnection, settle, upsertSend, type QueueMark, type WaitingPushLog } from './waiting-push-queue.js';
+export type { WaitingPushLog };
 
 /** After a failure the Provider may be back: tried again after 5 min, 30 min, 2 h, then every 6 h (the last repeats). */
 export const RETRY_AFTER_MS = [300_000, 1_800_000, 7_200_000, 21_600_000];
@@ -29,10 +30,6 @@ const RETRIED = new Set(['provider_unavailable', 'internal_error']);
 /** More new Dives than this from one Import are not queued: the Connection offers a Push run instead (ADR 0056). */
 export const OFFER_ABOVE = 20;
 
-/** Where Dive Hub's own faults go for the operator (the app's logger in production; Users see only the code). */
-export interface WaitingPushLog {
-  error(detail: object, message: string): void;
-}
 
 type Entry = typeof waitingPush.$inferSelect;
 type Connection = typeof connection.$inferSelect;
@@ -170,14 +167,14 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
   }
 
   /** A Connection's share of an Import's new Dives: queued, or above `OFFER_ABOVE` only offered. */
-  async function queueOrOffer(conn: Connection, diveIds: string[], importId: string, at: Date): Promise<void> {
+  async function queueOrOffer(q: Tx, conn: Connection, diveIds: string[], importId: string, at: Date): Promise<void> {
     if (diveIds.length > OFFER_ABOVE) {
       // Added to what the Connection already offers, once: an earlier Import's offer stays until it is sent or dismissed.
-      await db.update(connection).set({ unsentImportIds: sql`array_append(${connection.unsentImportIds}, ${importId}::uuid)` })
+      await q.update(connection).set({ unsentImportIds: sql`array_append(${connection.unsentImportIds}, ${importId}::uuid)` })
         .where(and(eq(connection.id, conn.id), sql`not (${importId}::uuid = any(${connection.unsentImportIds}))`));
       return;
     }
-    for (const id of diveIds) await upsertSend(db, conn, id, at);
+    for (const id of diveIds) await upsertSend(q, conn, id, at);
   }
 
   return {
@@ -191,14 +188,17 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
       if (!job) return;
       const created = await createdBy(importId);
       const at = now();
-      for (const diverId of new Set(created.map((d) => d.diverId))) {
-        const conns = await db.select().from(connection).where(eq(connection.diverId, diverId)).orderBy(asc(connection.createdAt), asc(connection.id));
-        const diveIds = created.filter((d) => d.diverId === diverId).map((d) => d.id);
-        for (const provider of new Set(conns.map((c) => c.provider))) {
-          const conn = provider === job.provider ? undefined : newDivesConnection(conns, provider);
-          if (conn) await queueOrOffer(conn, diveIds, importId, at);
+      // One transaction: a failure in the middle leaves none of the Import's queueing half done.
+      await db.transaction(async (tx) => {
+        for (const diverId of new Set(created.map((d) => d.diverId))) {
+          const conns = await tx.select().from(connection).where(eq(connection.diverId, diverId)).orderBy(asc(connection.createdAt), asc(connection.id));
+          const diveIds = created.filter((d) => d.diverId === diverId).map((d) => d.id);
+          for (const provider of new Set(conns.map((c) => c.provider))) {
+            const conn = provider === job.provider ? undefined : newDivesConnection(conns, provider);
+            if (conn) await queueOrOffer(tx, conn, diveIds, importId, at);
+          }
         }
-      }
+      });
     },
 
     /** The Dives of the Connection's offer (its Import's new ones) that still have no remote dive at the Provider. */

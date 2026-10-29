@@ -8,6 +8,11 @@ import type { Db, Tx } from '../db/client.js';
 import { currentRemote, type PushRow } from './current-remote.js';
 import { connection, dive, importJob, push, waitingPush, type WaitingPushOptions } from '../db/schema.js';
 
+/** Where Dive Hub's own faults go for the operator (the app's logger in production; Users see only the code). */
+export interface WaitingPushLog {
+  error(detail: object, message: string): void;
+}
+
 type Q = Db | Tx;
 export type Connection = typeof connection.$inferSelect;
 
@@ -193,17 +198,16 @@ export async function noteSiteChange(tx: Tx, siteId: string, at: Date): Promise<
  * entry's. A waiting delete stays. Schedules the Connection's job.
  */
 export async function queueNow(q: Q, diveId: string, provider: string, connectionId: string, options: WaitingPushOptions, at: Date): Promise<void> {
-  const [existing] = await q.select({ options: waitingPush.options }).from(waitingPush)
-    .where(and(eq(waitingPush.diveId, diveId), eq(waitingPush.provider, provider)));
-  const merged: WaitingPushOptions = {
-    ...existing?.options, ...options,
-    ...((existing?.options.conflicts || options.conflicts) && { conflicts: { ...existing?.options.conflicts, ...options.conflicts } }),
-  };
+  // Merged in the upsert itself, not read first: two decisions at once both end in the entry.
   const fresh = {
-    connectionId, state: 'waiting' as const, reason: null, options: merged, dueAt: at, attempts: 0, firstFailedAt: null, stoppedAt: null, changedAt: at,
+    connectionId, state: 'waiting' as const, reason: null, dueAt: at, attempts: 0, firstFailedAt: null, stoppedAt: null, changedAt: at,
   };
-  await q.insert(waitingPush).values({ diveId, provider, action: 'send', ...fresh })
-    .onConflictDoUpdate({ target: [waitingPush.diveId, waitingPush.provider], set: fresh, setWhere: ne(waitingPush.action, 'delete') });
+  const given = JSON.stringify(options);
+  const merged = sql`case when ${waitingPush.options} ? 'conflicts' or ${given}::jsonb ? 'conflicts'
+    then (${waitingPush.options} || ${given}::jsonb) || jsonb_build_object('conflicts', coalesce(${waitingPush.options} -> 'conflicts', '{}'::jsonb) || coalesce(${given}::jsonb -> 'conflicts', '{}'::jsonb))
+    else ${waitingPush.options} || ${given}::jsonb end`;
+  await q.insert(waitingPush).values({ diveId, provider, action: 'send', options, ...fresh })
+    .onConflictDoUpdate({ target: [waitingPush.diveId, waitingPush.provider], set: { ...fresh, options: merged }, setWhere: ne(waitingPush.action, 'delete') });
   await scheduleConnection(q, connectionId);
 }
 

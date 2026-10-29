@@ -24,7 +24,7 @@ import { currentRemote, type PushRow } from './remote-state.js';
 import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements } from './requirements.js';
 import { siteForSend } from './site-for-send.js';
 import { buddiesForSend, keepBuddies, type BuddiesForSend } from './buddies-for-send.js';
-import { deletingItself, mark as markWaitingPush, settle as settleWaitingPush, type QueueMark } from './waiting-push-queue.js';
+import { deletingItself, mark as markWaitingPush, settle as settleWaitingPush, type QueueMark, type WaitingPushLog } from './waiting-push-queue.js';
 import { waitingOf } from './waiting-push-view.js';
 import { comparableOf, planSend, same, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
 
@@ -113,8 +113,9 @@ export function numbersFor(conn: { followNumbers: boolean } | null, exports: Div
 }
 type NumbersFor = NonNullable<ReturnType<typeof numbersFor>>;
 
-export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases; conflicts: ConflictService; clock?: Clock }) {
+export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases; conflicts: ConflictService; clock?: Clock; log?: WaitingPushLog }) {
   const { db, registry, connections, leases, conflicts } = deps;
+  const log: WaitingPushLog = deps.log ?? { error: (detail, message) => console.error(message, detail) };
   const clock = deps.clock ?? realClock;
   const changes = createDiveChanges({ db, blobs: deps.blobs });
 
@@ -547,7 +548,12 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
         return withBuddies({ result: 'created', push: await steps.delivered('create', created, sending, row.version) });
       }));
       // A confirmed send (manual, a Push run's or the worker's) finishes the Dive's waiting send, unless it changed meanwhile.
-      if ('push' in result && result.push.state === 'confirmed') await settleWaitingPush(db, diveId, adapter.id, seen, 'send');
+      // The send is confirmed whatever the queue does after it: a throw here would answer as failed, and the next step
+      // finds the Dive up to date and settles its entry.
+      if ('push' in result && result.push.state === 'confirmed') {
+        await settleWaitingPush(db, diveId, adapter.id, seen, 'send').catch((err: unknown) =>
+          log.error({ err, diveId, provider: adapter.id }, 'a confirmed send could not settle its Waiting push'));
+      }
       return result;
     },
 
