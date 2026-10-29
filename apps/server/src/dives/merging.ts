@@ -5,7 +5,7 @@
 import { and, desc, eq, gte, inArray, isNull, lte, ne, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
-import { OVERLAP_TOLERANCE_SECONDS, localStartMs } from '../imports/matching.js';
+import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localStartMs } from '../imports/matching.js';
 import { currentRemote, type PushRow } from '../providers/remote-state.js';
 import { deletingItself, noteDiveChange } from '../providers/waiting-push-queue.js';
 import { liveSite } from '../sites/dive-site-link.js';
@@ -22,8 +22,6 @@ import { renumber } from './dive-numbers.js';
 type DiveRow = typeof dive.$inferSelect;
 
 /** The widest UTC offset: a Dive whose offset is unknown keeps a wall-clock time at most this far from its instant. */
-const MAX_OFFSET_MS = 14 * 3600_000;
-const DAY_MS = 86_400_000;
 /** Values a Dive may lack; the start and the duration it always has. */
 const FILLABLE = ['maxDepthM', 'avgDepthM', 'waterTemperatureC'] as const satisfies readonly OverridableField[];
 
@@ -61,12 +59,12 @@ export function createMerging(db: Db) {
       if (!row || !(await managedDiverIds(db, userId)).has(row.diverId)) throw new DiveError('dive_not_found');
       // The same local day is a check too (entry_apart_from_recording), and nearby is the day before to the day after: up
       // to two days and both offsets away either way.
-      const reach = Math.max((row.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + MAX_OFFSET_MS, 48 * 3600_000 + 2 * MAX_OFFSET_MS);
+      const reach = Math.max((row.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + MAX_OFFSET_MS, 2 * DAY_MS + 2 * MAX_OFFSET_MS);
       const near = await db.select({ d: dive, siteName: diveSite.name }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
         .where(and(
           eq(dive.diverId, row.diverId), isNull(dive.deletedAt), ne(dive.id, row.id),
           lte(dive.startsAt, new Date(row.startsAt.getTime() + reach)),
-          gte(dive.startsAt, new Date(row.startsAt.getTime() - 48 * 3600_000 - 2 * MAX_OFFSET_MS)),
+          gte(dive.startsAt, new Date(row.startsAt.getTime() - 2 * DAY_MS - 2 * MAX_OFFSET_MS)),
         )).orderBy(dive.startsAt, dive.id);
       if (near.length === 0) return [];
       const all = [row.id, ...near.map(({ d }) => d.id)];

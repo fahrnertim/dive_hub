@@ -73,6 +73,10 @@ export function decideMatch(
   return { kind: 'attach', diveId: dive.id };
 }
 
+export const DAY_MS = 24 * 3600_000;
+/** The widest offsets there are: a wall-clock time is at most this far from its instant. */
+export const MAX_OFFSET_MS = 14 * 3600_000;
+
 /** A Dive's start as its local wall-clock time, in ms as if UTC (ADR 0030). Without an offset, its stored time. */
 export const localStartMs = (d: { startsAt: Date; utcOffsetSeconds: number | null }) =>
   d.startsAt.getTime() + (d.utcOffsetSeconds ?? 0) * 1000;

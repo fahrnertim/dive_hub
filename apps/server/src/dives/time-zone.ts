@@ -6,6 +6,7 @@ import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { find } from 'geo-tz';
 import type { Db, Tx } from '../db/client.js';
 import { dive, type UtcOffsetSource } from '../db/schema.js';
+import { DAY_MS, MAX_OFFSET_MS } from '../imports/matching.js';
 
 export interface Position {
   latitude: number;
@@ -21,9 +22,6 @@ export interface PlacedTime {
 
 /** How far the nearest Dive may be for its offset to count (ADR 0030). */
 export const NEARBY_DAYS = 7;
-const DAY_MS = 24 * 3600_000;
-/** The widest offsets there are: a wall-clock time is at most this far from its instant. */
-const MAX_OFFSET_MS = 14 * 3600_000;
 
 /** "YYYY-MM-DD HH:MM[:SS]" (or with a T) as milliseconds since 1970, read as if it were UTC; null when it isn't one. */
 export function wallClockMs(local: string): number | null {

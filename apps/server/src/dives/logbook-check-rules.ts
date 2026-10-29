@@ -1,7 +1,7 @@
 // The rules of the logbook checks (ADR 0038), pure: which pairs of Dives can't both be right as they stand, and which
 // Dive is probably no dive. The pair rules use the import's own matching, so a check never disagrees with what a fresh
 // import would have done.
-import { OVERLAP_TOLERANCE_SECONDS, alignedForMatching, depthsDisagree, localStartMs, overlaps } from '../imports/matching.js';
+import { DAY_MS, OVERLAP_TOLERANCE_SECONDS, alignedForMatching, depthsDisagree, localStartMs, overlaps } from '../imports/matching.js';
 
 /** Changes when a rule changes what it finds. */
 export const LOGBOOK_CHECKS_VERSION = 4;
@@ -35,7 +35,6 @@ export interface CheckedDive {
 const APART_DEPTH_M = 0.2;
 const APART_DEPTH_RATIO = 0.03;
 const APART_DURATION_SECONDS = 3 * 60;
-const DAY_MS = 86_400_000;
 /** Fixed and conservative (ADR 0038, amendment): ninety seconds to 12 m is an aborted descent, a real dive. */
 const NO_DIVE_BELOW_SECONDS = 2 * 60;
 const NO_DIVE_ABOVE_M = 3;

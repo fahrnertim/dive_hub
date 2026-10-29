@@ -13,10 +13,9 @@ import { probablyNoDive } from '../dives/logbook-check-rules.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
 import type { ParsedRecording } from './parsed-recording.js';
 import { linkNearbySite, positionColumns } from '../sites/dive-site-link.js';
-import { alignedForMatching, decideMatch, overlapWindow } from './matching.js';
+import { DAY_MS, MAX_OFFSET_MS, alignedForMatching, decideMatch, overlapWindow } from './matching.js';
 
 /** The widest UTC offset: a Dive whose offset is unknown keeps a wall-clock time at most this far from its instant. */
-const MAX_OFFSET_MS = 14 * 3600_000;
 
 export interface Placement {
   userId: string;
@@ -121,7 +120,7 @@ export async function placeRecording(tx: Tx, c: Placement, rec: ParsedRecording)
     .where(and(
       eq(dive.diverId, diverId), isNull(dive.deletedAt),
       lte(dive.startsAt, new Date(window.to.getTime() + MAX_OFFSET_MS)),
-      gte(dive.startsAt, new Date(window.from.getTime() - 24 * 3600_000 - MAX_OFFSET_MS)),
+      gte(dive.startsAt, new Date(window.from.getTime() - DAY_MS - MAX_OFFSET_MS)),
     ));
   const candidates = alignedForMatching({ utcOffsetSeconds: values.utcOffsetSeconds, utcOffsetSource: values.utcOffsetSource }, found);
   // A probable non-dive, as the logbook check sees it (ADR 0038), is matched by the User, not by itself (ADR 0030, amended).

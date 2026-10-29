@@ -14,7 +14,7 @@ import { wallClockMs, type PlacedTime } from '../dives/time-zone.js';
 import type { ParsedRecording } from '../imports/parsed-recording.js';
 import { PROCESS_IMPORT_TASK } from '../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../imports/placement.js';
-import { entryMatches } from '../imports/matching.js';
+import { DAY_MS, MAX_OFFSET_MS, entryMatches } from '../imports/matching.js';
 import { recordFindings } from './gone-dives.js';
 import { probablyNoDive } from '../dives/logbook-check-rules.js';
 import { siteOutlook } from '../sites/provider-sites.js';
@@ -94,8 +94,6 @@ type Assessment =
 /** What changed at the Provider since Dive Hub last saw a linked dive, compared with the Dive here. */
 type FoundChanges = NonNullable<Awaited<ReturnType<ReturnType<typeof createDiveChanges>['changesOf']>>>;
 
-const DAY_MS = 86_400_000;
-const MAX_OFFSET_MS = 14 * 3600_000;
 const keyOf = (d: { manufacturer: string; serialNumber: string }) => `${d.manufacturer}:${d.serialNumber}`;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
