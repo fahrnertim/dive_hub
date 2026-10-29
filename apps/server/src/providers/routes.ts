@@ -291,16 +291,7 @@ export const PROVIDER_STATUS: Record<ProviderRefusal, number> = {
 /** A refusal about a Provider; with provider_requirements_unmet, what is unmet. */
 const ProviderProblem = Type.Object({
   ...Problem.properties,
-  diver: Type.Optional(Type.Object({
-    id: Type.String(), name: Type.String(), dives: Type.Integer({ description: 'The Dives it is a Participant on' }),
-  }, { description: 'With provider_account_held: the external Diver here with this account; connect again with claim to make it yours' })),
   unmet: Type.Optional(Type.Array(UnmetView, { description: 'With provider_requirements_unmet: every requirement unmet, blocking ones among them' })),
-  existing: Type.Optional(Type.Object({
-    remoteId: Type.String(), number: Nullable(Type.Integer()), startsAt: Nullable(Type.String()),
-    maxDepthM: Nullable(Type.Number()), durationMinutes: Nullable(Type.Number()),
-  }, { description: 'With provider_number_taken: the dive at the Provider that has the number' })),
-  runId: Type.Optional(Type.String({ description: 'With push_run_active: the run that is going' })),
-  diveId: Type.Optional(Nullable(Type.String({ description: 'With provider_number_taken: the Dive here that dive is, if Dive Hub knows it' }))),
 });
 const errors = { 400: Problem, 404: Problem, 409: ProviderProblem, 422: Problem, 502: Problem };
 
@@ -462,12 +453,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     })),
     matches: Type.Boolean({ description: 'With ?for: the entry\'s name or e-mail is that Diver\'s (folded, trimmed). Only a sort; the e-mail is never answered' }),
   });
-  /** A refusal of a link or add; with diver_external_id_taken, the Diver that has the account. */
-  const LinkProblem = Type.Object({
-    ...ProviderProblem.properties,
-    diver: Type.Optional(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'With diver_external_id_taken: the Diver that has the account' })),
-  });
-  const linkErrors = { ...errors, 403: Problem, 409: LinkProblem };
+  const linkErrors = { ...errors, 403: Problem };
 
   app.get('/connections/:id/buddies', {
     schema: {

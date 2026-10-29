@@ -10,7 +10,7 @@ import { authHandler } from './auth/fastify.js';
 import { withAuthEndpoints } from './auth/openapi.js';
 import type { Db } from './db/client.js';
 import type { ImportService } from './imports/import-service.js';
-import { problem, useProblemErrors } from './http/problems.js';
+import { Problem, problem, useProblemErrors } from './http/problems.js';
 import { createDiveService } from './dives/dive-service.js';
 import { createLogbookService } from './dives/logbook-service.js';
 import { createMerging } from './dives/merging.js';
@@ -89,6 +89,8 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
         version: '0.6.0',
         description: 'Sign in with POST /api/auth/sign-in/email (Better Auth); the session cookie authenticates every other call.',
       },
+      // Every refusal's shape, named once for clients (ADR 0014); the routes inline it.
+      components: { schemas: { Problem } },
     },
   });
   await app.register(multipart, { limits: { files: 1, fileSize: deps.maxUploadBytes } });

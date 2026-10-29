@@ -2,6 +2,7 @@
 // and an English `error` text for logs, scripts and anything without a translation.
 import type { FastifyError, FastifyInstance } from 'fastify';
 import { Type } from 'typebox';
+import { Nullable } from './schemas.js';
 
 export const PROBLEMS = {
   sign_in_required: 'Sign in required',
@@ -126,7 +127,23 @@ export const Problem = Type.Object({
   error: Type.String({ description: 'English description, for logs and scripts' }),
   provider: Type.Optional(Type.String({ description: 'The Provider a provider_* code is about (ADR 0027)' })),
   providerName: Type.Optional(Type.String({ description: 'Its name, to put into the translated text' })),
-});
+  diver: Type.Optional(Type.Object({
+    id: Type.String(), name: Type.String(),
+    dives: Type.Optional(Type.Integer({ description: 'With provider_account_held: the Dives it is a Participant on' })),
+  }, {
+    description: 'The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); '
+      + 'with provider_account_held, the external Diver here; connect again with claim to make it yours',
+  })),
+  centre: Type.Optional(Type.Object({ id: Type.String(), name: Type.String() }, {
+    description: 'With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043)',
+  })),
+  existing: Type.Optional(Type.Object({
+    remoteId: Type.String(), number: Nullable(Type.Integer()), startsAt: Nullable(Type.String()),
+    maxDepthM: Nullable(Type.Number()), durationMinutes: Nullable(Type.Number()),
+  }, { description: 'With provider_number_taken: the dive at the Provider that has the number (ADR 0048)' })),
+  diveId: Type.Optional(Nullable(Type.String({ description: 'With provider_number_taken: the Dive here that dive is, if Dive Hub knows it' }))),
+  runId: Type.Optional(Type.String({ description: 'With push_run_active: the run that is going (ADR 0047)' })),
+}, { description: 'A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types' });
 
 /** A response body for `code`; `detail` replaces the default English text where it says more. */
 export const problem = (code: ProblemCode, detail?: string) => ({ code, error: detail ?? PROBLEMS[code] });

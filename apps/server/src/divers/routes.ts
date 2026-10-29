@@ -65,12 +65,6 @@ const DeviceView = Type.Object({
   recordingCount: Type.Integer(), lastUsedAt: Nullable(Type.String({ format: 'date-time' })),
 });
 
-/** A refusal; with `diver_external_id_taken`, the Diver that has the account, to offer it instead. */
-const DiverProblem = Type.Object({
-  ...Problem.properties,
-  diver: Type.Optional(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'The Diver that already has the account' })),
-});
-
 const CodePart = (description: string, maxLength: number) => Nullable(Type.String({ maxLength, description }));
 const DetailsBody = Type.Object({
   firstName: Type.Optional(CodePart('As SSI spells it; one line without a semicolon', 100)),
@@ -181,7 +175,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
         + '409 diver_external_id_taken names the Diver that has it; 409 diver_external_id_connected while a Connection uses it.',
       params: Type.Object({ id: Type.String({ format: 'uuid' }), source: DiverSource }),
       body: Type.Object({ externalId: Nullable(Type.String({ minLength: 1, maxLength: 40 })) }, { additionalProperties: false }),
-      response: { 204: Type.Null(), 400: DiverProblem, 403: DiverProblem, 404: DiverProblem, 409: DiverProblem },
+      response: { 204: Type.Null(), ...errors },
     },
   }, async (request, reply) => {
     await divers.setExternalId(callerOf(request), request.params.id, request.params.source, request.body.externalId?.trim() ?? null);
@@ -248,7 +242,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
         diverId: Type.Optional(Type.String({ format: 'uuid', description: 'The Diver the User chose for a code whose account no Diver has' })),
         create: Type.Optional(Type.Boolean({ description: 'Make a new external Diver when no Diver has the account' })),
       }, { additionalProperties: false }),
-      response: { 200: DiverDetailsView, 201: DiverDetailsView, 400: DiverProblem, 403: DiverProblem, 404: DiverProblem, 409: DiverProblem },
+      response: { 200: DiverDetailsView, 201: DiverDetailsView, ...errors },
     },
   }, async (request, reply) => {
     const { text, diverId, create } = request.body;

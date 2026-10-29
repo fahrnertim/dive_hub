@@ -127,11 +127,7 @@ const time = (d: Date | null) => d?.toISOString() ?? null;
 const runView = <T extends { stopCode: string | null; createdAt: Date; startedAt: Date | null; finishedAt: Date | null; dismissedAt: Date | null }>(r: T) =>
   ({ ...r, stopCode: r.stopCode as ProblemCode | null, createdAt: r.createdAt.toISOString(), startedAt: time(r.startedAt), finishedAt: time(r.finishedAt), dismissedAt: time(r.dismissedAt) });
 
-const PushRunProblem = Type.Object({
-  ...Problem.properties,
-  runId: Type.Optional(Type.String({ description: 'With push_run_active: the run that is going' })),
-});
-const errors = { 400: PushRunProblem, 404: PushRunProblem, 409: PushRunProblem };
+const errors = { 400: Problem, 404: Problem, 409: Problem };
 
 export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService }> = async (app, { pushRuns }) => {
   const requestOf = (body: Static<typeof StartBody>) => {

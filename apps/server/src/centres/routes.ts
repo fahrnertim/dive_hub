@@ -52,12 +52,6 @@ const CreateBody = Type.Object({
   siteIds: Type.Optional(Type.Array(Type.String({ format: 'uuid' }), { maxItems: 200, description: 'Dive sites the centre is responsible for' })),
 }, { additionalProperties: false });
 
-/** A refusal; with `centre_external_id_taken`, the centre that has the number, to open it instead. */
-const CentreProblem = Type.Object({
-  ...Problem.properties,
-  centre: Type.Optional(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'The Dive centre that already has the number' })),
-});
-
 const Person = {
   accountId: Type.String({ description: 'The person\'s SSI account' }), firstName: Type.String(), lastName: Type.String(), email: Type.String(),
   existing: Nullable(Type.Object({
@@ -91,7 +85,7 @@ const toView = ({ centre: c, externalIds, sites, canDelete, displayName, verific
 const STATUS: Record<CentreError['code'], number> = {
   centre_not_found: 404, centre_changed: 409, centre_not_deletable: 403, centre_external_id_taken: 409, site_not_found: 404, invalid_input: 400,
 };
-const errors = { 400: CentreProblem, 403: CentreProblem, 404: CentreProblem, 409: CentreProblem };
+const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
 
 export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (app, { auth, centres, divers }) => {

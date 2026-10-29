@@ -1,4 +1,4 @@
-import { createApiClient, type paths } from '@dive-hub/api-client';
+import { createApiClient, type components, type paths } from '@dive-hub/api-client';
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { createAuthClient } from 'better-auth/client';
 import { SITES_PAGE, type SitesParams } from './lib/sites-list.ts';
@@ -10,28 +10,21 @@ export const api = createApiClient();
 /** Better Auth's own endpoints (sign-in, sign-out) at /api/auth on this origin; the session is a cookie. */
 export const authClient = createAuthClient();
 
-/** The server's error codes (one list for every route; any problem response shows it). */
-export type ProblemCode = paths['/api/dives/{id}']['get']['responses'][404]['content']['application/json']['code'];
+/** A refusal's body (the server's Problem schema, ADR 0014). */
+type Problem = components['schemas']['Problem'];
+/** The server's error codes (one list for every route). */
+export type ProblemCode = Problem['code'];
 /** As openapi-fetch reads an answer (its `Readable`): a tuple is an array of its members. */
 type Read<T> = T extends readonly (infer E)[] ? Read<E>[] : T extends object ? { [K in keyof T]: Read<T[K]> } : T;
 /** The body of a route's 200 answer, as `api` returns it: every view type below is one of these, or part of one. */
 type Ok<P extends keyof paths, M extends 'get' | 'post' = 'get'> =
   paths[P][M] extends { responses: { 200: { content: { 'application/json': infer B } } } } ? Read<B> : never;
 
-/** What else a refusal says besides its code (the routes' problem schemas extend the common one with these). */
-export interface ProblemDetails {
-  /** With provider_requirements_unmet: what is unmet (ADR 0029). */
-  unmet?: UnmetView[];
-  /** The Diver that has an account already (ADR 0028); with provider_account_held, the Dives it is on. */
-  diver?: { id: string; name: string; dives?: number };
-  /** The Dive centre that already has the number (ADR 0043). */
-  centre?: { id: string; name: string };
-  /** With provider_number_taken: the dive at the Provider that has the number, and the Dive here it is (ADR 0048). */
-  existing?: { remoteId: string; number: number | null; startsAt: string | null };
-  diveId?: string | null;
-  /** With push_run_active: the run that is going (ADR 0047). */
-  runId?: string;
-}
+/**
+ * What else a refusal says besides its code: the Problem schema's extras, and the Provider routes'
+ * own `unmet` with provider_requirements_unmet (ADR 0029).
+ */
+export type ProblemDetails = Pick<Problem, 'diver' | 'centre' | 'existing' | 'diveId' | 'runId'> & { unmet?: UnmetView[] };
 const DETAILS = ['unmet', 'diver', 'centre', 'existing', 'diveId', 'runId'] as const satisfies readonly (keyof ProblemDetails)[];
 
 /**
@@ -186,7 +179,7 @@ export const keys = {
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
   if (!result.response.ok) {
     // Our routes answer { error }; Fastify's validation errors carry the useful text in `message`.
-    const body = (result.error ?? {}) as { code?: ProblemCode; error?: string; message?: string; provider?: string; providerName?: string } & ProblemDetails;
+    const body = (result.error ?? {}) as Partial<Problem> & ProblemDetails & { message?: string };
     const message = body.error ?? body.message ?? `Request failed (${result.response.status})`;
     const provider = body.provider ? { id: body.provider, name: body.providerName ?? body.provider } : undefined;
     const details = Object.fromEntries(DETAILS.filter((k) => body[k]).map((k) => [k, body[k]])) as ProblemDetails;
