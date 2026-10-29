@@ -56,7 +56,7 @@ export interface AppDeps {
   siteImports: SiteImportService;
   /** Providers such as SSI, their Connections and Pushes (ADR 0024, 0027). */
   providers: ProviderLayer;
-  /** TEMPORARY: with it, the owner's checks of SSI's dive numbers run from the Connections page (ADR 0048). */
+  /** Stored files: deleting a User lets theirs go. */
   blobs: BlobStore;
   auth: Auth;
   /** The dive assessment (ADR 0036): kept up to date after whatever changes a logbook. */

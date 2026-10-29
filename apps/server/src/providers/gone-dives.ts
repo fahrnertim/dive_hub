@@ -1,7 +1,8 @@
 // Dives gone at a Provider (ADR 0051): which Dives' remote dives are no longer in the Provider's logbook. A finding is
 // stored and changes nothing; the User's choice first confirms it with one more fresh read, under each Dive's lease,
-// and only a second read that agrees records the delete Push (`remoteGone`) that ADR 0027 knows. Manual only: the
-// import preview and the check below read the logbook; nothing here is scheduled.
+// and only a second read that agrees records the delete Push (`remoteGone`) that ADR 0027 knows. Findings come from
+// every complete read of the logbook: the import preview, the scheduled fetch and the check below. Only the User's
+// choice deletes anything.
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { dive, diveSite, providerGoneDive, push, type ConnectionRow } from '../db/schema.js';

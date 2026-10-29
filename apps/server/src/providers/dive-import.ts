@@ -542,8 +542,9 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     },
 
     /**
-     * What the import would do now (ADR 0030): reads the account's dives (one paced action) and stores nothing. The
-     * computers found with their choice, how many dives go which way, and the logbook entries the User decides.
+     * What the import would do now (ADR 0030): reads the account's dives (one paced action) and imports nothing. The
+     * computers found with their choice, how many dives go which way, and the logbook entries the User decides. It does
+     * store what the fresh listing shows gone (ADR 0051), as findings.
      */
     async preview(userId: string, connectionId: string) {
       const { row, adapter, context, parsed } = await read(userId, connectionId);
