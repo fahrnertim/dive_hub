@@ -2,7 +2,7 @@
 // stateless handler. Tool names, descriptions and schemas are fixed in code; nothing here is built from data.
 import { McpServer, fromJsonSchema, type jsonSchemaValidator } from '@modelcontextprotocol/server';
 import type { Db } from '../db/client.js';
-import type { AiAccessService, VerifiedAccess } from './access-service.js';
+import { seesPositions, type AiAccessService, type VerifiedAccess } from './access-service.js';
 import { runTool, type ToolDefinition } from './tool.js';
 import { getDiveAssessment } from './tools-assessment.js';
 import { buddies, listDivers } from './tools-divers.js';
@@ -46,7 +46,7 @@ export const toolsFor = (access: VerifiedAccess) => TOOLS.filter((tool) => acces
 
 export function createMcpServer(deps: McpServerDeps, access: VerifiedAccess): McpServer {
   const server = new McpServer(MCP_SERVER_INFO, { instructions: INSTRUCTIONS });
-  const positions = access.scopes.includes('logbook:positions');
+  const positions = seesPositions(access);
   for (const tool of toolsFor(access)) {
     server.registerTool(tool.name, {
       title: tool.title,

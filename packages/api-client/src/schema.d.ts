@@ -66,6 +66,7 @@ export interface paths {
                             id: string;
                             email: string;
                             name: string;
+                            /** @enum {unknown} */
                             role: "user" | "admin";
                             /** @description Disabled Users can't sign in; their data stays */
                             disabled: boolean;
@@ -298,6 +299,7 @@ export interface paths {
                             id: string;
                             email: string;
                             name: string;
+                            /** @enum {unknown} */
                             role: "user" | "admin";
                             /** @description Disabled Users can't sign in; their data stays */
                             disabled: boolean;
@@ -430,6 +432,7 @@ export interface paths {
                                 id: string;
                                 email: string;
                                 name: string;
+                                /** @enum {unknown} */
                                 role: "user" | "admin";
                                 /** @description Disabled Users can't sign in; their data stays */
                                 disabled: boolean;
@@ -634,6 +637,7 @@ export interface paths {
                             id: string;
                             email: string;
                             name: string;
+                            /** @enum {unknown} */
                             role: "user" | "admin";
                             /** @description Disabled Users can't sign in; their data stays */
                             disabled: boolean;
@@ -866,6 +870,7 @@ export interface paths {
                         "application/json": {
                             id: string;
                             email: string;
+                            /** @enum {unknown} */
                             role: "user" | "admin";
                             /** Format: date-time */
                             createdAt: string;
@@ -891,6 +896,7 @@ export interface paths {
                     "application/json": {
                         /** Format: email */
                         email: string;
+                        /** @enum {unknown} */
                         role?: "user" | "admin";
                     };
                 };
@@ -905,6 +911,7 @@ export interface paths {
                         "application/json": {
                             id: string;
                             email: string;
+                            /** @enum {unknown} */
                             role: "user" | "admin";
                             /** Format: date-time */
                             createdAt: string;
@@ -1078,6 +1085,7 @@ export interface paths {
                             id: string;
                             email: string;
                             name: string;
+                            /** @enum {unknown} */
                             role: "user" | "admin";
                             /** @description Disabled Users can't sign in; their data stays */
                             disabled: boolean;
@@ -1284,6 +1292,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
+                        /** @enum {unknown} */
                         role: "user" | "admin";
                     };
                 };
@@ -1299,6 +1308,7 @@ export interface paths {
                             id: string;
                             email: string;
                             name: string;
+                            /** @enum {unknown} */
                             role: "user" | "admin";
                             /** @description Disabled Users can't sign in; their data stays */
                             disabled: boolean;
@@ -1474,6 +1484,7 @@ export interface paths {
                             id: string;
                             email: string;
                             name: string;
+                            /** @enum {unknown} */
                             role: "user" | "admin";
                             /** @description Disabled Users can't sign in; their data stays */
                             disabled: boolean;
@@ -1653,6 +1664,7 @@ export interface paths {
                             id: string;
                             email: string;
                             name: string;
+                            /** @enum {unknown} */
                             role: "user" | "admin";
                             /** @description Disabled Users can't sign in; their data stays */
                             disabled: boolean;

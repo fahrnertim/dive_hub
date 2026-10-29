@@ -6,7 +6,7 @@ import { Value } from 'typebox/value';
 import type { Db, Tx } from '../db/client.js';
 import { Nullable } from '../http/schemas.js';
 import { managedDiverIds } from '../divers/management.js';
-import type { AiAccessScope, AiAccessService, VerifiedAccess } from './access-service.js';
+import { seesPositions, type AiAccessScope, type AiAccessService, type VerifiedAccess } from './access-service.js';
 
 /** A tool result's JSON is kept under this many characters: about 10,000 tokens, well under clients' 25,000 (ADR 0035). */
 export const MAX_RESULT_CHARS = 40_000;
@@ -203,7 +203,7 @@ export async function runTool(runner: ToolRunner, tool: ToolDefinition, rawArgs:
       // The access mode makes PostgreSQL refuse any write; the timeout ends a query that takes too long.
       await tx.execute(sql.raw(`set local statement_timeout = ${Math.round(runner.timeoutMs ?? TOOL_TIMEOUT_MS)}`));
       const diverIds = [...(await managedDiverIds(tx, access.userId))];
-      return tool.run({ tx, userId: access.userId, diverIds, positions: access.scopes.includes('logbook:positions') }, args);
+      return tool.run({ tx, userId: access.userId, diverIds, positions: seesPositions(access) }, args);
     }, { accessMode: 'read only' });
     await log(result.rows);
     return { content: [{ type: 'text', text: JSON.stringify(result.output) }], structuredContent: result.output };

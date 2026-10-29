@@ -3,9 +3,10 @@ import { Type, type Static } from 'typebox';
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from '../auth/password.js';
 import type { Role } from './invitations.js';
 import { DateTime } from '../http/schemas.js';
+import { userRole } from '../db/schema.js';
 
 export { Problem } from '../http/problems.js';
-export const RoleSchema = Type.Union([Type.Literal('user'), Type.Literal('admin')]);
+export const RoleSchema = Type.Enum([...userRole.enumValues]);
 export const Password = Type.String({
   minLength: MIN_PASSWORD_LENGTH, maxLength: MAX_PASSWORD_LENGTH,
   description: `At least ${MIN_PASSWORD_LENGTH} characters`,

@@ -448,19 +448,9 @@
                       "type": "string"
                     },
                     "role": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "user"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "admin"
-                          ]
-                        }
+                      "enum": [
+                        "user",
+                        "admin"
                       ]
                     },
                     "disabled": {
@@ -1347,19 +1337,9 @@
                       "type": "string"
                     },
                     "role": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "user"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "admin"
-                          ]
-                        }
+                      "enum": [
+                        "user",
+                        "admin"
                       ]
                     },
                     "disabled": {
@@ -1919,19 +1899,9 @@
                           "type": "string"
                         },
                         "role": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "enum": [
-                                "user"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "admin"
-                              ]
-                            }
+                          "enum": [
+                            "user",
+                            "admin"
                           ]
                         },
                         "disabled": {
@@ -2463,19 +2433,9 @@
                       "type": "string"
                     },
                     "role": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "user"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "admin"
-                          ]
-                        }
+                      "enum": [
+                        "user",
+                        "admin"
                       ]
                     },
                     "disabled": {
@@ -3133,19 +3093,9 @@
                         "type": "string"
                       },
                       "role": {
-                        "anyOf": [
-                          {
-                            "type": "string",
-                            "enum": [
-                              "user"
-                            ]
-                          },
-                          {
-                            "type": "string",
-                            "enum": [
-                              "admin"
-                            ]
-                          }
+                        "enum": [
+                          "user",
+                          "admin"
                         ]
                       },
                       "createdAt": {
@@ -3210,19 +3160,9 @@
                     "maxLength": 254
                   },
                   "role": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          "user"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "admin"
-                        ]
-                      }
+                    "enum": [
+                      "user",
+                      "admin"
                     ]
                   }
                 }
@@ -3255,19 +3195,9 @@
                           "type": "string"
                         },
                         "role": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "enum": [
-                                "user"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "admin"
-                              ]
-                            }
+                          "enum": [
+                            "user",
+                            "admin"
                           ]
                         },
                         "createdAt": {
@@ -3889,19 +3819,9 @@
                         "type": "string"
                       },
                       "role": {
-                        "anyOf": [
-                          {
-                            "type": "string",
-                            "enum": [
-                              "user"
-                            ]
-                          },
-                          {
-                            "type": "string",
-                            "enum": [
-                              "admin"
-                            ]
-                          }
+                        "enum": [
+                          "user",
+                          "admin"
                         ]
                       },
                       "disabled": {
@@ -3935,19 +3855,9 @@
                 ],
                 "properties": {
                   "role": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          "user"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "admin"
-                        ]
-                      }
+                    "enum": [
+                      "user",
+                      "admin"
                     ]
                   }
                 }
@@ -3992,19 +3902,9 @@
                       "type": "string"
                     },
                     "role": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "user"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "admin"
-                          ]
-                        }
+                      "enum": [
+                        "user",
+                        "admin"
                       ]
                     },
                     "disabled": {
@@ -5614,19 +5514,9 @@
                       "type": "string"
                     },
                     "role": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "user"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "admin"
-                          ]
-                        }
+                      "enum": [
+                        "user",
+                        "admin"
                       ]
                     },
                     "disabled": {
@@ -6441,19 +6331,9 @@
                       "type": "string"
                     },
                     "role": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "user"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "admin"
-                          ]
-                        }
+                      "enum": [
+                        "user",
+                        "admin"
                       ]
                     },
                     "disabled": {

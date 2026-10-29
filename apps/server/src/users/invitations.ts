@@ -1,11 +1,11 @@
 import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { invitation, user } from '../db/schema.js';
+import { invitation, user, userRole } from '../db/schema.js';
 import { newToken, sha256 } from './tokens.js';
 
 const INVITATION_TTL_MS = 7 * 24 * 3600_000;
 
-export type Role = 'user' | 'admin';
+export type Role = (typeof userRole.enumValues)[number];
 export type InvitationRow = typeof invitation.$inferSelect;
 export type InvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
 
