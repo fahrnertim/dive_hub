@@ -139,7 +139,7 @@ const DiveListView = Type.Object({
     dives: Type.Integer(), durationSeconds: Type.Number(), deepestM: Nullable(Type.Number()), lastDiveAt: Nullable(DateTime),
   }, { description: 'The Diver’s whole logbook, not narrowed by search, site or filters' }),
   months: Type.Array(Type.Object({
-    month: Type.String({ pattern: '^\d{4}-\d{2}$', description: 'The local month, YYYY-MM' }), dives: Type.Integer(), durationSeconds: Type.Number(),
+    month: Type.String({ pattern: '^\\d{4}-\\d{2}$', description: 'The local month, YYYY-MM' }), dives: Type.Integer(), durationSeconds: Type.Number(),
   }), { description: 'Only while sorted by date: the months of this page in page order, each with all the matching Dives of that month' }),
 });
 

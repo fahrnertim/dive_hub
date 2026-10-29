@@ -35,9 +35,6 @@
     }
   },
   "apps/server/src/imports/archive.ts": {
-    "no-useless-escape": {
-      "count": 1
-    },
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
@@ -125,11 +122,6 @@
       "count": 1
     }
   },
-  "apps/server/src/routes.ts": {
-    "no-useless-escape": {
-      "count": 2
-    }
-  },
   "apps/server/src/sites/import/import-plan.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
@@ -193,16 +185,6 @@
   "apps/server/test/suunto-formats.test.ts": {
     "@typescript-eslint/no-unused-expressions": {
       "count": 2
-    }
-  },
-  "apps/web/e2e/assessment.spec.ts": {
-    "no-useless-escape": {
-      "count": 1
-    }
-  },
-  "apps/web/e2e/dive-deletion.spec.ts": {
-    "no-useless-escape": {
-      "count": 1
     }
   },
   "apps/web/e2e/diver-codes.spec.ts": {

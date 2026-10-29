@@ -18,7 +18,7 @@ async function openDeleteDialog(page: Page, diveId: string, n: number) {
 }
 const logbookHeading = (page: Page) => page.getByRole('heading', { name: 'Logbook', level: 1 });
 // A Dive's number is its place in the logbook (ADR 0048), so it is asked for; a deleted Dive has none and is named by its time.
-const diveRow = (page: Page, n: number) => diveRows(page).filter({ hasText: new RegExp(`Number ${n}(?!\d)`) });
+const diveRow = (page: Page, n: number) => diveRows(page).filter({ hasText: new RegExp(`Number ${n}(?!\\d)`) });
 
 test('deletes a dive after asking, offers Undo, and restores it from the deleted dives', { tag: ['@dives'] }, async ({ page, request }) => {
   const id = await deletableDive(request);
