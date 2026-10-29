@@ -6,7 +6,7 @@ import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db, Queryable } from '../db/client.js';
 import { connection, dive, diveSite, push, pushRun, pushRunItem, type PushRunLeftOut, type ConnectionRow } from '../db/schema.js';
 import { asksFor, diveListFilter } from '../dives/list-filter.js';
-import { managedDiverIds } from '../dives/dive-service.js';
+import { managedDiverIds } from '../divers/management.js';
 import { isUniqueViolation } from '../sites/site-service.js';
 import type { ConflictService } from './conflicts.js';
 import { planItem, orderItems, type PlanOptions, type Planned } from './push-run-plan.js';

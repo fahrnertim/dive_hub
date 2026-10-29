@@ -4,8 +4,9 @@
 // fetched by a worker job into the blob store and served only through the API.
 import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import type { Db, Queryable } from '../db/client.js';
-import { certification, diver, diverManagement, original } from '../db/schema.js';
+import { certification, original } from '../db/schema.js';
 import type { CertificationImageState, CertificationVerification } from '../db/schema.js';
+import { managementOf } from '../divers/management.js';
 import { writeRevision } from '../dives/revisions.js';
 import type { ConnectionService } from '../providers/connection-service.js';
 import { ProviderError, type RemoteCertification } from '../providers/provider.js';
@@ -129,10 +130,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
   const { db, blobs, registry, connections } = deps;
 
   async function managedOrThrow(userId: string, diverId: string) {
-    const [row] = await db.select({ id: diverManagement.diverId }).from(diverManagement)
-      .innerJoin(diver, eq(diver.id, diverManagement.diverId))
-      .where(and(eq(diverManagement.userId, userId), eq(diverManagement.diverId, diverId), isNull(diver.deletedAt)));
-    if (!row) throw new CertificationError('diver_not_found');
+    if (!(await managementOf(db, userId, diverId))) throw new CertificationError('diver_not_found');
   }
 
   async function rowOrThrow(diverId: string, id: string): Promise<Row> {

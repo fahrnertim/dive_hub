@@ -8,16 +8,16 @@ const SERVER = '^apps/server/src/';
 // imports only; `routes` is the root routes.ts. A new import between modules adds its entry here, in the same
 // commit, with the reason in the commit message; no new ADR needed. Removing an entry is always welcome.
 const MODULE_IMPORTS = {
-  assessment: ['imports'],
+  assessment: ['divers', 'imports'],
   centres: ['divers:type', 'dives', 'providers', 'sites'],
-  certifications: ['dives', 'providers'],
+  certifications: ['divers', 'dives', 'providers'],
   divers: ['centres', 'certifications', 'dives', 'providers'],
   dives: ['assessment:type', 'centres', 'divers', 'imports', 'providers', 'sites'],
   fit: ['imports', 'suunto'],
-  imports: ['dives', 'fit', 'sites', 'suunto'],
-  lead: ['dives'],
-  mcp: ['assessment', 'dives', 'planning', 'sites'],
-  planning: ['dives'],
+  imports: ['divers', 'dives', 'fit', 'sites', 'suunto'],
+  lead: ['divers', 'dives'],
+  mcp: ['assessment', 'divers', 'dives', 'planning', 'sites'],
+  planning: ['divers', 'dives'],
   providers: ['certifications', 'divers', 'dives', 'imports', 'sites', 'routes'],
   sites: ['dives', 'providers'],
   suunto: ['imports'],

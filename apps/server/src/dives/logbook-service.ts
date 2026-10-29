@@ -6,7 +6,8 @@ import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'd
 import type { Db } from '../db/client.js';
 import { PARTICIPANT_ROLES, device, dive, diveAssessment, diveSite, diver, diverManagement, importJob, participant, recording, revision, sampleSeries, user } from '../db/schema.js';
 import { cylindersOf } from './cylinders.js';
-import { managedDiverIds, participantsOf } from './dive-service.js';
+import { participantsOf } from './dive-service.js';
+import { managedDiverIds, managesDiveDiver } from '../divers/management.js';
 import { diveListFilter, FINDINGS_SHOWN } from './list-filter.js';
 import { leadOf } from './weighting.js';
 
@@ -173,7 +174,7 @@ export function createLogbookService(db: Db) {
   /** The Dive if the User manages its Diver and it isn't deleted. */
   async function findManagedDive(userId: string, id: string) {
     const [row] = await db.select({ d: dive }).from(dive)
-      .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
+      .innerJoin(diverManagement, managesDiveDiver(userId))
       .where(and(eq(dive.id, id), isNull(dive.deletedAt)));
     return row?.d;
   }
@@ -217,7 +218,7 @@ export function createLogbookService(db: Db) {
   /** The deleted Dives of the Divers the User manages, most recently deleted first; where a merge or move sent each. */
   async function deletedDives(userId: string, limit: number) {
     const rows = await db.select({ d: dive, siteName: diveSite.name }).from(dive)
-      .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
+      .innerJoin(diverManagement, managesDiveDiver(userId))
       .leftJoin(diveSite, eq(diveSite.id, dive.siteId))
       .where(isNotNull(dive.deletedAt))
       .orderBy(desc(dive.deletedAt), desc(dive.id)).limit(limit);

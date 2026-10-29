@@ -3,7 +3,7 @@
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { cylinder, dive, diveSite, diverBodyWeight, lead } from '../db/schema.js';
-import { managedDiverIds } from '../dives/dive-service.js';
+import { managedDiverIds } from '../divers/management.js';
 import { leadTotalKg, suitOf, weightingFeedbackOf } from '../dives/weighting.js';
 import { estimateLead } from './estimate.js';
 import type { EstimateDive, LeadEstimate, LeadUnit, PlannedConditions } from './types.js';

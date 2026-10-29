@@ -3,7 +3,8 @@
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { device, dive, diverManagement, duplicateCandidate, original, recording } from '../db/schema.js';
-import { attachRecording, createDiveFromRecording, managedDiverIds } from './dive-service.js';
+import { attachRecording, createDiveFromRecording } from './dive-service.js';
+import { managedDiverIds, managesDiveDiver } from '../divers/management.js';
 import { keepApart } from './logbook-check-answers.js';
 import type { Actor } from './revisions.js';
 
@@ -68,7 +69,7 @@ export function createCandidates(db: Db) {
         const { c, r } = await open(tx, userId, id);
         if (!c.candidateDiveIds.includes(diveId)) throw new CandidateError('not_a_candidate');
         const [target] = await tx.select({ id: dive.id }).from(dive)
-          .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
+          .innerJoin(diverManagement, managesDiveDiver(userId))
           .where(and(eq(dive.id, diveId), isNull(dive.deletedAt))).for('update', { of: dive });
         if (!target) throw new CandidateError('dive_not_found');
         await attachRecording(tx, diveId, r.id, { type: 'user', id: userId }, 'attach');

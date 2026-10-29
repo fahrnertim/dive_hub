@@ -8,6 +8,7 @@ import {
   device, dive, diverManagement, duplicateCandidate, original, recording, recordingEvent, sampleSeries, type ImportOutcome,
 } from '../db/schema.js';
 import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '../dives/dive-service.js';
+import { managedDiverIds } from '../divers/management.js';
 import { reviseDive, untieLostSeries } from '../dives/cylinders.js';
 import { probablyNoDive } from '../dives/logbook-check-rules.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
@@ -29,11 +30,6 @@ export interface Placement {
   diverId?: string;
 }
 
-export async function managedDivers(tx: Tx, userId: string): Promise<Set<string>> {
-  const rows = await tx.select({ id: diverManagement.diverId }).from(diverManagement).where(eq(diverManagement.userId, userId));
-  return new Set(rows.map((r) => r.id));
-}
-
 /** The Diver a live Device by this manufacturer and serial number belongs to, or null when there is none. */
 export async function deviceDiver(tx: Queryable, d: { manufacturer: string; serialNumber: string }): Promise<string | null> {
   const [known] = await tx.select({ diverId: device.diverId }).from(device).where(and(
@@ -46,7 +42,7 @@ export async function deviceDiver(tx: Queryable, d: { manufacturer: string; seri
 export async function placeRecording(tx: Tx, c: Placement, rec: ParsedRecording): Promise<ImportOutcome[number]> {
   const { fileName, actor } = c;
   // A User only ever writes to the logbooks of Divers they manage.
-  const managed = await managedDivers(tx, c.userId);
+  const managed = await managedDiverIds(tx, c.userId);
   // The same Recording seen before (e.g. a re-export with a different file hash), or this dive from a poorer file of
   // the same Source, which this one replaces (ADR 0037).
   const keys = [rec.recordingKey, ...(rec.replacesKey ? [rec.replacesKey] : [])];

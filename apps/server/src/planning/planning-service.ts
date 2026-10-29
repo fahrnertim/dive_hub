@@ -1,7 +1,7 @@
 // The planning calculations for a signed-in User (ADR 0053): the route passes the User's id, the service finds the Divers
 // they manage, so a route holds no query.
 import type { Db } from '../db/client.js';
-import { managedDiverIds } from '../dives/dive-service.js';
+import { managedDiverIds } from '../divers/management.js';
 import { planGasPlan, type GasPlanQuery } from './plan-service.js';
 import { planBottomTime, type BottomTimeQuery } from './service.js';
 

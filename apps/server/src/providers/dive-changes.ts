@@ -7,7 +7,8 @@ import {
   dive, diveSite, diver, diverExternalId, importJob, importOriginal, original, participant, push,
   type ComputerChoice, type DiveImportMode,
 } from '../db/schema.js';
-import { managedDiverIds, participantsOf } from '../dives/dive-service.js';
+import { participantsOf } from '../dives/dive-service.js';
+import { managedDiverIds } from '../divers/management.js';
 import { columnsOf } from '../dives/dive-values.js';
 import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
 import { placeLocalTime, wallClockMs, type PlacedTime } from '../dives/time-zone.js';

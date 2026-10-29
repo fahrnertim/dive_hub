@@ -5,7 +5,8 @@
 import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { dive, diveSite, logbookCheckAnswer, logbookCheckDiveAnswer, recording } from '../db/schema.js';
-import { DiveError, managedDiverIds } from './dive-service.js';
+import { DiveError } from './dive-service.js';
+import { managedDiverIds } from '../divers/management.js';
 import { keepDive } from './logbook-check-answers.js';
 import { findChecks, ordered, ruleFor, suggestsDeleting, type CheckedDive, type LogbookCheck } from './logbook-check-rules.js';
 

@@ -4,10 +4,11 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
 import {
-  dive, diveAssessment, diveFinding, diver, diverManagement, findingDismissal, mutedRule, recording, recordingEvent, sampleSeries,
+  dive, diveAssessment, diveFinding, diverManagement, findingDismissal, mutedRule, recording, recordingEvent, sampleSeries,
   type RecordingSummary,
 } from '../db/schema.js';
 import { computerEventOf } from '../imports/computer-events.js';
+import { managedDiverIds, managementOf, managesDiveDiver } from '../divers/management.js';
 import type { ComputerEvent } from '../vocabulary.js';
 import { sketchOf } from './sketch.js';
 import { ENGINE_VERSION, RULES, RULE_IDS, assessProfile, assessSeries, noFlyAfter, type Finding, type RuleId, type SeriesDive } from './rules.js';
@@ -124,7 +125,7 @@ export function createAssessmentService(db: Db) {
   /** The Dive if the User manages its Diver and it isn't deleted; not managed and not found look the same. */
   async function managedDive(userId: string, diveId: string) {
     const [row] = await db.select({ id: dive.id, diverId: dive.diverId, primaryRecordingId: dive.primaryRecordingId }).from(dive)
-      .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
+      .innerJoin(diverManagement, managesDiveDiver(userId))
       .where(and(eq(dive.id, diveId), isNull(dive.deletedAt)));
     if (!row) throw new AssessmentError('dive_not_found');
     return row;
@@ -135,8 +136,7 @@ export function createAssessmentService(db: Db) {
 
     /** After something of a User's logbook changed: every Diver they manage (each cheap when nothing changed). */
     async refreshUser(userId: string): Promise<void> {
-      const divers = await db.select({ id: diverManagement.diverId }).from(diverManagement).where(eq(diverManagement.userId, userId));
-      for (const d of divers) await refreshDiver(d.id);
+      for (const id of await managedDiverIds(db, userId)) await refreshDiver(id);
     },
 
     /** Every Diver with Dives: after a start, which may have brought a new engine version. Returns how many Divers. */
@@ -165,9 +165,7 @@ export function createAssessmentService(db: Db) {
 
     /** Hides a rule's findings on every Dive of a Diver the User manages, or shows them again. */
     async mute(userId: string, diverId: string, rule: string, muted: boolean): Promise<void> {
-      const [managed] = await db.select({ id: diver.id }).from(diverManagement).innerJoin(diver, eq(diver.id, diverManagement.diverId))
-        .where(and(eq(diverManagement.userId, userId), eq(diverManagement.diverId, diverId), isNull(diver.deletedAt)));
-      if (!managed) throw new AssessmentError('diver_not_found');
+      if (!(await managementOf(db, userId, diverId))) throw new AssessmentError('diver_not_found');
       if (!isRule(rule)) throw new AssessmentError('finding_not_found');
       if (muted) await db.insert(mutedRule).values({ diverId, rule, mutedBy: userId }).onConflictDoNothing();
       else await db.delete(mutedRule).where(and(eq(mutedRule.diverId, diverId), eq(mutedRule.rule, rule)));

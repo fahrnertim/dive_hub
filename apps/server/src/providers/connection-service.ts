@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, diver, diverExternalId, type ConnectionRow } from '../db/schema.js';
-import { managedDiverIds } from '../dives/dive-service.js';
+import { managedDiverIds } from '../divers/management.js';
 import { DiverError } from '../divers/diver-error.js';
 import { externalDiver, mergeExternalDiver, participations } from '../divers/merge.js';
 import type { SecretBox } from '../secrets/secret-box.js';

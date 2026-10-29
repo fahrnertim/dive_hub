@@ -5,7 +5,7 @@ import { Type, type Static, type TObject, type TSchema } from 'typebox';
 import { Value } from 'typebox/value';
 import type { Db, Tx } from '../db/client.js';
 import { Nullable } from '../http/schemas.js';
-import { managedDiverIds } from '../dives/dive-service.js';
+import { managedDiverIds } from '../divers/management.js';
 import type { AiAccessScope, AiAccessService, VerifiedAccess } from './access-service.js';
 
 /** A tool result's JSON is kept under this many characters: about 10,000 tokens, well under clients' 25,000 (ADR 0035). */

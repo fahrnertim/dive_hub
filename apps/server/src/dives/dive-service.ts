@@ -14,6 +14,7 @@ import { writeRevision, type Actor, type Changes, type RevisionCause } from './r
 import { liveSite, siteRef } from '../sites/dive-site-link.js';
 import { keepApart, keepRestored } from './logbook-check-answers.js';
 import { renumber } from './dive-numbers.js';
+import { managesDiveDiver } from '../divers/management.js';
 
 export class DiveError extends Error {
   constructor(readonly code:
@@ -52,7 +53,7 @@ type DiveRow = typeof dive.$inferSelect;
  */
 export async function lockManagedDive(tx: Tx, userId: string, diveId: string): Promise<DiveRow> {
   const [row] = await tx.select({ d: dive }).from(dive)
-    .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
+    .innerJoin(diverManagement, managesDiveDiver(userId))
     .where(and(eq(dive.id, diveId), isNull(dive.deletedAt)))
     .for('update', { of: dive });
   if (!row) throw new DiveError('dive_not_found');
@@ -143,15 +144,6 @@ export async function participantsOf(tx: Queryable, diveId: string) {
     .innerJoin(diver, eq(diver.id, participant.diverId)).where(eq(participant.diveId, diveId));
   return rows.sort((a, b) => PARTICIPANT_ROLES.indexOf(a.role) - PARTICIPANT_ROLES.indexOf(b.role)
     || a.name.localeCompare(b.name) || a.diverId.localeCompare(b.diverId));
-}
-
-/** Divers the User manages: the one lookup behind "does this User manage this Diver". Deleted Divers keep their rows, so `live` leaves them out. */
-export async function managedDiverIds(tx: Queryable, userId: string, options: { live?: boolean } = {}): Promise<Set<string>> {
-  const rows = options.live
-    ? await tx.select({ id: diverManagement.diverId }).from(diverManagement)
-      .innerJoin(diver, eq(diver.id, diverManagement.diverId)).where(and(eq(diverManagement.userId, userId), isNull(diver.deletedAt)))
-    : await tx.select({ id: diverManagement.diverId }).from(diverManagement).where(eq(diverManagement.userId, userId));
-  return new Set(rows.map((r) => r.id));
 }
 
 /** A new Dive for one Diver from a Recording, which becomes its Primary recording. */
@@ -325,7 +317,7 @@ export function createDiveService(db: Db) {
     async restore(userId: string, diveId: string, version: number): Promise<void> {
       await db.transaction(async (tx) => {
         const [row] = await tx.select({ d: dive }).from(dive)
-          .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
+          .innerJoin(diverManagement, managesDiveDiver(userId))
           .where(and(eq(dive.id, diveId), isNotNull(dive.deletedAt)))
           .for('update', { of: dive });
         if (!row) throw new DiveError('dive_not_found');

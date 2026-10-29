@@ -8,7 +8,7 @@ import type { Caller } from '../http/caller.js';
 import {
   connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, participant, recording,
 } from '../db/schema.js';
-import { managedDiverIds } from '../dives/dive-service.js';
+import { managedDiverIds, managementOf } from './management.js';
 import { renumber } from '../dives/dive-numbers.js';
 import { writeRevision } from '../dives/revisions.js';
 import { DiverError } from './diver-error.js';
@@ -73,9 +73,7 @@ const unmanaged = sql`not exists (select 1 from ${diverManagement} m where m.div
 
 export function createDiverService(db: Db) {
   async function managedOrThrow(userId: string, diverId: string) {
-    const [row] = await db.select({ isOwn: diverManagement.isOwn }).from(diverManagement)
-      .innerJoin(diver, eq(diver.id, diverManagement.diverId))
-      .where(and(eq(diverManagement.userId, userId), eq(diverManagement.diverId, diverId), live));
+    const row = await managementOf(db, userId, diverId);
     if (!row) throw new DiverError('diver_not_found');
     return row;
   }

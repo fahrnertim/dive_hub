@@ -10,8 +10,9 @@ import { currentRemote, type PushRow } from '../providers/remote-state.js';
 import { deletingItself, noteDiveChange } from '../providers/waiting-push-queue.js';
 import { liveSite } from '../sites/dive-site-link.js';
 import {
-  DiveError, applyToDive, attachRecording, lockManagedDive, managedDiverIds, participantsOf,
+  DiveError, applyToDive, attachRecording, lockManagedDive, participantsOf,
 } from './dive-service.js';
+import { managedDiverIds } from '../divers/management.js';
 import { valuesOfDive, type DiveValues } from './dive-values.js';
 import { createLogbookChecks } from './logbook-checks.js';
 import { takeCylinders } from './cylinders.js';

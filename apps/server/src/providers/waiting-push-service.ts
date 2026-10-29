@@ -6,7 +6,7 @@
 import { and, arrayOverlaps, asc, count, desc, eq, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { connection, dive, importJob, providerConflict, push, pushRun, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../db/schema.js';
-import { managedDiverIds } from '../dives/dive-service.js';
+import { managedDiverIds } from '../divers/management.js';
 import { currentRemote } from './current-remote.js';
 import { realClock, type Clock } from './leases.js';
 import type { PushService } from './push-service.js';
