@@ -346,7 +346,7 @@ describe.skipIf(!(await databaseReachable()))('merging two Dives, and moving a l
     /** Moves the clock to the entry's due time, as if the worker's job ran then, and runs the Connection's job. */
     const untilDue = async () => {
       const [row] = await rows();
-      ctx.clock.skip(Math.max(0, row!.dueAt.getTime() - ctx.clock.now()));
+      ctx.clock.skip(row!.dueAt.getTime() - ctx.clock.now());
       await ctx.providers.waitingPushes.step(connectionId);
     };
 

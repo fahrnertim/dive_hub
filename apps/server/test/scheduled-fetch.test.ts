@@ -3,9 +3,9 @@
 // without a choice, a Conflict) waits and is counted. Against the test ledger with dive import and the real database;
 // the job is run as the worker runs it, without Graphile's runner.
 import { and, eq, sql } from 'drizzle-orm';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { connection, importJob, providerConflict, push, waitingPush, type ImportOutcome } from '../src/db/schema.js';
-import { FETCH_TASK } from '../src/providers/scheduled-fetch.js';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { connection, diver, importJob, providerConflict, push, waitingPush, type ImportOutcome } from '../src/db/schema.js';
+import { createScheduledFetch, FETCH_TASK } from '../src/providers/scheduled-fetch.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -60,12 +60,14 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
   };
   /** The fetch job as the worker runs it, then its Import; the outcome, or null when it fetched nothing. */
   const runFetch = async (id = connectionId): Promise<ImportOutcome | null> => {
-    const before = (await connOf(id)).lastFetchImportId;
+    const before = (await importsOf(id)).length;
     await ctx.providers.scheduledFetch.fetch(id);
-    const after = (await connOf(id)).lastFetchImportId;
-    if (!after || after === before) return null;
-    return ctx.imports.processImport(after);
+    const started = await importsOf(id);
+    if (started.length === before) return null;
+    return ctx.imports.processImport(started.at(-1)!.id);
   };
+  /** The Connection's Imports, oldest first. */
+  const importsOf = (id: string) => t.db.select().from(importJob).where(eq(importJob.connectionId, id)).orderBy(importJob.createdAt);
 
   beforeAll(async () => {
     t = await createTestDatabase();
@@ -112,7 +114,7 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
     expect(ledger.listReads).toBe(reads + 1);
     const after = await connOf(connectionId);
     expect(now() - after.lastFetchedAt!.getTime()).toBeLessThan(MINUTE);
-    const [made] = await t.db.select().from(importJob).where(eq(importJob.id, after.lastFetchImportId!));
+    const made = (await importsOf(connectionId)).at(-1)!;
     expect(made).toMatchObject({ provider: 'ledger', connectionId, userId: annId, status: 'done' });
     expect(made!.plan).toMatchObject({ unattended: true, mode: 'create' });
   });
@@ -248,5 +250,57 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
     await runFetch();
     const gone = await json<{ connectionId: string; dives: { diveId: string }[] }[]>('GET', '/api/gone-dives');
     expect(gone).toMatchObject([{ connectionId, dives: [{ diveId: id }] }]);
+  });
+
+  it('a fetch the Provider refuses is logged for the operator', async () => {
+    const warn = vi.fn();
+    const fetching = createScheduledFetch({ db: t.db, registry: ctx.providers.providers, diveImports: ctx.providers.diveImports, clock: ctx.clock, log: { error: () => {}, warn } });
+    ledger.down = true;
+    try {
+      await fetching.fetch(connectionId);
+    } finally {
+      ledger.down = false;
+    }
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.objectContaining({ connectionId, code: 'provider_unavailable' }), expect.any(String));
+  });
+
+  it('the tick asks about running Imports once, not per Connection', async () => {
+    const extra = [];
+    for (let i = 0; i < 2; i++) {
+      const [other] = await t.db.insert(diver).values({ name: `Diver ${i}` }).returning();
+      const made = (await t.db.insert(connection).values({
+        userId: annId, diverId: other!.id, provider: 'ledger', accountId: `extra-${i}`, accountLabel: `Ledger ${i}`, keepSignedIn: false, importMode: 'create', fetchEveryMinutes: 60,
+      }).returning())[0]!;
+      extra.push(made.id);
+    }
+    const [running] = await t.db.insert(importJob).values({ userId: annId, uploadName: 'Ledger', provider: 'ledger', connectionId: extra[1]!, status: 'processing' }).returning();
+    await ctx.providers.scheduledFetch.tick();
+    expect(await queued()).toEqual([`fetch:${connectionId}`, `fetch:${extra[0]}`].sort());
+    await t.db.delete(importJob).where(eq(importJob.id, running!.id));
+  });
+
+  it('a running or failed fetch leaves the last finished one as the summary', async () => {
+    const fetched = async () => {
+      await set(connectionId, { lastFetchedAt: null });
+      await ctx.providers.scheduledFetch.fetch(connectionId);
+      return (await importsOf(connectionId)).at(-1)!;
+    };
+    const first = await fetched();
+    expect((await connOf(connectionId)).lastFetchImportId).toBeNull();
+    await ctx.imports.processImport(first.id);
+    await ctx.providers.scheduledFetch.finished(first.id);
+    expect((await connOf(connectionId)).lastFetchImportId).toBe(first.id);
+    // The second fetch's Import fails: the first stays.
+    const second = await fetched();
+    await t.db.update(importJob).set({ status: 'failed' }).where(eq(importJob.id, second.id));
+    await ctx.providers.scheduledFetch.finished(second.id);
+    expect((await connOf(connectionId)).lastFetchImportId).toBe(first.id);
+    // A finished Import older than the stored one changes nothing.
+    await t.db.update(importJob).set({ status: 'done' }).where(eq(importJob.id, second.id));
+    await ctx.providers.scheduledFetch.finished(second.id);
+    expect((await connOf(connectionId)).lastFetchImportId).toBe(second.id);
+    await ctx.providers.scheduledFetch.finished(first.id);
+    expect((await connOf(connectionId)).lastFetchImportId).toBe(second.id);
   });
 });

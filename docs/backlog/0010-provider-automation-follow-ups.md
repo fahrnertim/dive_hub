@@ -24,8 +24,10 @@ and give the reason. Done means: `pnpm check:full` is green.
 3. **Races and errors.**
    - `queueNow` reads, then upserts `options`; two requests can race.
    - `settle` after the lease can throw, which turns a confirmed manual send into an API error.
-   - PATCH `/connections/:id` checks every part, then writes. A concurrent change between the two can still slip
-     through. Use one transaction if the services allow it.
+   - ~~PATCH `/connections/:id` checks every part, then writes. A concurrent change between the two can still slip
+     through. Use one transaction if the services allow it.~~ Struck (2026-10-29): the only concurrent change that
+     matters is the Connection being deleted, and then the next part's own lookup answers `connection_not_found`; a
+     transaction would need a `Tx` through three service functions for no change a User could see.
    - `afterImport`'s upserts are not in one transaction (bounded at 20).
 4. **Leftovers in the queue.**
    - A hold doesn't clear a stale `exists` detail.
@@ -90,9 +92,20 @@ and give the reason. Done means: `pnpm check:full` is green.
   what is sent.
 - Point 14 (owner, 2026-10-28): the deleted dives list **hides "Delete in SSI" while an automatic delete waits**; the
   button shows only when automatic deleting is off.
+- Point 4 (2026-10-29): a conflict entry is `queued` when the Dive's send entry carries a choice made after the Conflict
+  was found, in any state (waiting, held, stopped). The logbook row shows a held or stopped one.
+- Point 5 (2026-10-29): a "keep Dive Hub's" choice with no Connection to send through leaves the field open, so the
+  choice isn't lost silently.
+- Point 6 (2026-10-29): `lastFetchImportId` means "the last fetch whose Import finished". The worker sets it when an
+  unattended Import finishes `done`, unless the one there is newer. A running or failed fetch leaves the previous summary.
+- Point 10 (2026-10-29): the row's fix link keeps the logbook's `list` (`?list=`), which is what the test checks; the
+  name `from` was wrong. The automation offer test checks the run's result ("Sent 1 of 1 dives to SSI.") on the
+  logbook, as there is no separate run page.
 
 ## State
 `main`, after PR #8 (`ssi-automation`) is merged.
+
+Points 1-11 are done on branch `automation-follow-ups` (2026-10-29). Points 12-14 (Web) are left for a second plan.
 
 ## Open
 Nothing for the owner; the rest is left to the agent.

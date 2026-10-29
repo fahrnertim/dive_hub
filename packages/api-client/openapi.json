@@ -63773,7 +63773,7 @@
                                 "description": "Conflicts of the Connection that wait, whenever they were found: decided under \"Needs your decision\" (GET /api/provider-conflicts), not by an import"
                               }
                             },
-                            "description": "The last scheduled fetch that started an Import, as that Import came out; null before the first"
+                            "description": "The last scheduled fetch whose Import finished, as that Import came out: a fetch under way or failed doesn't replace it; null before the first"
                           }
                         ]
                       },
@@ -64106,7 +64106,7 @@
                               "description": "Conflicts of the Connection that wait, whenever they were found: decided under \"Needs your decision\" (GET /api/provider-conflicts), not by an import"
                             }
                           },
-                          "description": "The last scheduled fetch that started an Import, as that Import came out; null before the first"
+                          "description": "The last scheduled fetch whose Import finished, as that Import came out: a fetch under way or failed doesn't replace it; null before the first"
                         }
                       ]
                     },
@@ -65297,7 +65297,7 @@
                               "description": "Conflicts of the Connection that wait, whenever they were found: decided under \"Needs your decision\" (GET /api/provider-conflicts), not by an import"
                             }
                           },
-                          "description": "The last scheduled fetch that started an Import, as that Import came out; null before the first"
+                          "description": "The last scheduled fetch whose Import finished, as that Import came out: a fetch under way or failed doesn't replace it; null before the first"
                         }
                       ]
                     },
@@ -71754,7 +71754,7 @@
                               "description": "Conflicts of the Connection that wait, whenever they were found: decided under \"Needs your decision\" (GET /api/provider-conflicts), not by an import"
                             }
                           },
-                          "description": "The last scheduled fetch that started an Import, as that Import came out; null before the first"
+                          "description": "The last scheduled fetch whose Import finished, as that Import came out: a fetch under way or failed doesn't replace it; null before the first"
                         }
                       ]
                     },

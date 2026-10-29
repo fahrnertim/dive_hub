@@ -29,6 +29,7 @@ import type { CentreService } from '../centres/centre-service.js';
 import type { DiverService } from '../divers/diver-service.js';
 import { VerificationCodeView } from '../centres/routes.js';
 import type { PushService } from '../providers/push-service.js';
+import type { WaitingPushService } from '../providers/waiting-push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
 import { ProviderServiceError } from '../providers/registry.js';
 import { WaitingPushViewSchema } from '../providers/waiting-push-view.js';
@@ -46,6 +47,7 @@ export interface DiveRouteDeps {
   checks: LogbookChecks;
   /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
   pushes: PushService;
+  waitingPushes: Pick<WaitingPushService, 'deletingItself' | 'waitingOf'>;
   assessments: AssessmentService;
 }
 
@@ -391,7 +393,7 @@ const DeleteProblem = Type.Object({
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, assessments }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
   // Whatever changed a Dive may change its findings and those of the dives around it (ADR 0036): brought up to date
   // before the answer goes out, so the client's next read sees them. A failure here never fails the change itself.
@@ -611,7 +613,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     const short = await checks.shortDives(request.user!.id, atProvider, status);
     const remote = await pushes.currentOf([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
     const at = (id: string) => [...(remote.get(id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber }));
-    const itself = await pushes.deletingItself([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
+    const itself = await waitingPushes.deletingItself([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
     const paired = (d: (typeof list)[number]['dives'][number]) => ({
       id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
       utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
@@ -726,7 +728,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     if (row.version !== version) return reply.code(409).send(problem('dive_changed'));
     const at = [...((await pushes.currentOf([row.id])).get(row.id)?.keys() ?? [])];
     // Where the Dive's Connection deletes by itself, the queue does it after 5 minutes, even when `alsoAt` names it (Undo cancels it).
-    const itself = (await pushes.deletingItself([row.id])).get(row.id);
+    const itself = (await waitingPushes.deletingItself([row.id])).get(row.id);
     const asked = at.filter((provider) => alsoAt.includes(provider) && !itself?.has(provider));
     const { copies, failure } = asked.length > 0 ? await pushes.removeAt(request.user!.id, row.id, asked) : { copies: [], failure: null };
     const providers = at.map((provider) => ({ provider, copy: copies.find((c) => c.provider === provider)?.copy ?? 'kept' as const }));
@@ -743,7 +745,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request) => {
     const rows = await logbook.deletedDives(request.user!.id, DELETED_SHOWN);
     const remote = await pushes.currentOf(rows.map((r) => r.d.id));
-    const waiting = await pushes.waitingOf(rows.map((r) => r.d.id));
+    const waiting = await waitingPushes.waitingOf(rows.map((r) => r.d.id));
     return {
       dives: rows.map(({ d, siteName, mergedInto, movedTo }) => ({
         id: d.id, diverId: d.diverId, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(),

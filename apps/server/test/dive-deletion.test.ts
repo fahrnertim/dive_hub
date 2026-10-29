@@ -4,7 +4,7 @@
 // Providers (SSI and the test-only ledger), each is checked first; one that still fails keeps the Dive and says which
 // copies are gone.
 import { eq } from 'drizzle-orm';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, recording, waitingPush } from '../src/db/schema.js';
 import { DELETE_QUIET_MS, QUIET_MS } from '../src/providers/waiting-push-queue.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
@@ -314,6 +314,7 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
   describe('delete at the Provider', () => {
     let ann: string;
     let connectionId: string;
+    let ownDiver: string;
     let year = 3200;
     const rows = () => t.db.select().from(waitingPush);
     const settings = (set: Partial<typeof connection.$inferInsert>) => t.db.update(connection).set(set).where(eq(connection.id, connectionId));
@@ -329,9 +330,11 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
       call('DELETE', `/api/dives/${id}`, ann, { version: (await json<{ version: number }>('GET', `/api/dives/${id}`, ann)).version, ...body });
     const deletedOf = async (id: string) => (await json<{ dives: DeletedDive[] }>('GET', '/api/dives/deleted', ann)).dives.find((d) => d.id === id)!;
     const restore = async (id: string) => call('POST', `/api/dives/${id}/restore`, ann, { version: (await deletedOf(id)).version });
+    /** Moves the clock to the entry's due time; an entry the clock has already passed (queued at the database's time) is due as it is. */
     const untilDue = async () => {
       const [row] = await rows();
-      ctx.clock.skip(Math.max(0, row!.dueAt.getTime() - ctx.clock.now()));
+      const due = row!.dueAt.getTime();
+      if (due > ctx.clock.now()) ctx.clock.skip(due - ctx.clock.now());
     };
     const step = () => ctx.providers.waitingPushes.step(connectionId);
 
@@ -339,13 +342,16 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
       await createUser(ctx.auth, 'ann@example.com');
       ann = await signIn(ctx.app, 'ann@example.com');
       ledger.tokens.set('ledger-token-ann', { accountId: 'l-ann', label: 'Ledger of Ann' });
-      const diverId = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', ann)).find((d) => d.isOwn)!.id;
-      connectionId = (await json<{ id: string }>('POST', '/api/connections/ledger', ann, { diverId, token: 'ledger-token-ann', keepSignedIn: false })).id;
+      ownDiver = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', ann)).find((d) => d.isOwn)!.id;
+      connectionId = (await json<{ id: string }>('POST', '/api/connections/ledger', ann, { diverId: ownDiver, token: 'ledger-token-ann', keepSignedIn: false })).id;
     });
     beforeEach(async () => {
       ledger.refuseDelete = false;
       await t.db.delete(waitingPush);
       await settings({ deleteAtProvider: true, sendNewDives: false });
+    });
+    afterEach(async () => {
+      await settings({ diverId: ownDiver });
     });
 
     it('with delete at the Provider on, the Dive is deleted here first and at the Provider after 5 min', async () => {
@@ -419,14 +425,9 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
 
     it("a Connection that is no longer the Diver's doesn't delete by itself, so the delete asks", async () => {
       const { id } = await sent();
-      const [own] = await t.db.select({ diverId: connection.diverId }).from(connection).where(eq(connection.id, connectionId));
       const timsDiver = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', tim)).find((d) => d.isOwn)!.id;
       await settings({ diverId: timsDiver });
-      try {
-        expect(await json('GET', `/api/dives/${id}/providers/ledger`, ann)).toMatchObject({ deletesItself: false });
-      } finally {
-        await settings({ diverId: own!.diverId });
-      }
+      expect(await json('GET', `/api/dives/${id}/providers/ledger`, ann)).toMatchObject({ deletesItself: false });
     });
 
     it('with the setting off the delete still asks (alsoAt) as today', async () => {

@@ -1,8 +1,8 @@
 // Conflicts with a Provider, stored per Dive and Provider and listed for "Needs your decision": the service the send
 // will call (record, openFields, close) and the listing route, against a fake ledger Provider and the real database.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { eq, sql } from 'drizzle-orm';
-import { connection, providerConflict, push, waitingPush } from '../src/db/schema.js';
+import { eq } from 'drizzle-orm';
+import { connection, importJob, providerConflict, push, waitingPush } from '../src/db/schema.js';
 import { close, openFields, record, type ConflictField, type StoredConflictField } from '../src/providers/conflicts.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -47,7 +47,7 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     { field: 'notes', hub: 'Turtle', provider: notes },
     { field: 'maxDepthM', hub: 18, provider: 19.5 },
   ];
-  const entry = (diveId: string, remoteId: string, f: StoredConflictField[] = fields('Manta')) => ({ diveId, provider: 'ledger', connectionId, remoteId, fields: f, runId: null });
+  const entry = (diveId: string, remoteId: string, f: StoredConflictField[] = fields('Manta')) => ({ diveId, provider: 'ledger', connectionId, remoteId, fields: f, runId: null, foundAt: new Date(ctx.clock.now()) });
   /** The Dive's max depth now (the FIT Dive's, from its Recording). */
   const maxDepthOf = async (diveId: string) => (await json<{ values: { maxDepthM: number } }>('GET', `/api/dives/${diveId}`)).values.maxDepthM;
 
@@ -92,11 +92,19 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     const decided = await call('POST', '/api/dives/' + diveId + '/providers/ledger/decision', { conflicts: { notes: 'hub', maxDepthM: 'hub' } });
     expect(decided.statusCode).toBe(204);
     expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: true }]);
-    // The send ends in a new Conflict for the Dive: the question is open again. The choice was queued a moment before
-    // (moved back here rather than waiting: the queue and the Conflict both take the time from `new Date()`, no Clock).
-    await t.db.update(waitingPush).set({ changedAt: sql`${waitingPush.changedAt} - interval '1 second'` }).where(eq(waitingPush.diveId, diveId));
+    // The send ends in a new Conflict for the Dive: the question is open again. The choice was queued a moment before.
+    ctx.clock.skip(1_000);
     await record(t.db, entry(diveId, remoteId, fields('Ray')));
     expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: false }]);
+    await t.db.delete(waitingPush).where(eq(waitingPush.diveId, diveId));
+  });
+
+  it('a choice stays queued while its entry is held', async () => {
+    const { diveId, remoteId } = await sentDive();
+    await record(t.db, entry(diveId, remoteId));
+    expect((await call('POST', '/api/dives/' + diveId + '/providers/ledger/decision', { conflicts: { notes: 'hub', maxDepthM: 'hub' } })).statusCode).toBe(204);
+    await t.db.update(waitingPush).set({ state: 'held', reason: 'requirements' }).where(eq(waitingPush.diveId, diveId));
+    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: true }]);
     await t.db.delete(waitingPush).where(eq(waitingPush.diveId, diveId));
   });
 
@@ -160,7 +168,7 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     const [before] = await t.db.select().from(providerConflict);
     // Changed only at the ledger since the send, but held by the open entry: neither a fetch nor a manual import takes it.
     await ctx.providers.scheduledFetch.fetch(connectionId);
-    const fetched = (await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.lastFetchImportId!;
+    const fetched = (await t.db.select().from(importJob).where(eq(importJob.connectionId, connectionId)))[0]!.id;
     await ctx.imports.processImport(fetched);
     await manualImport();
     expect(await notesOf(diveId)).toBe('Turtle');
@@ -214,6 +222,23 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     expect(diveId).toBeTruthy();
   });
 
+  it('keeping Dive Hub\'s value without a Connection to send through leaves the field open', async () => {
+    const { diveId, remoteId } = await openOnNotes();
+    await t.db.delete(waitingPush);
+    await t.db.update(push).set({ connectionId: null }).where(eq(push.diveId, diveId));
+    await manualImport([{ remoteId, field: 'notes', choice: 'hub' }]);
+    expect(await t.db.select().from(waitingPush)).toEqual([]);
+    expect(await t.db.select().from(providerConflict)).toMatchObject([{ diveId, fields: [{ field: 'notes' }] }]);
+  });
+
+  it('an import closes an open field whose two sides became equal', async () => {
+    const { diveId, remoteId } = await openOnNotes();
+    ledger.dives.get(remoteId)!.notes = 'Turtle';
+    await manualImport();
+    expect(await t.db.select().from(providerConflict)).toEqual([]);
+    expect(await notesOf(diveId)).toBe('Turtle');
+  });
+
   const setNotes = async (diveId: string, notes: string) => {
     const version = (await json<{ version: number }>('GET', `/api/dives/${diveId}`)).version;
     expect((await call('PATCH', `/api/dives/${diveId}`, { version, notes })).statusCode).toBe(200);
@@ -225,6 +250,9 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     // The Connection's count comes with its last fetch: make one.
     await t.db.update(connection).set({ importMode: 'add', fetchEveryMinutes: 60, lastFetchedAt: null }).where(eq(connection.id, connectionId));
     await ctx.providers.scheduledFetch.fetch(connectionId);
+    const fetched = (await t.db.select().from(importJob).where(eq(importJob.connectionId, connectionId)))[0]!.id;
+    await ctx.imports.processImport(fetched);
+    await ctx.providers.scheduledFetch.finished(fetched);
     const counted = async () => (await json<{ id: string; lastFetch: { conflicts: number } }[]>('GET', '/api/connections'))
       .find((c) => c.id === connectionId)!.lastFetch.conflicts;
     await setNotes(diveId, 'Reef');

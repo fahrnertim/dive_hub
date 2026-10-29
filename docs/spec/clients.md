@@ -762,10 +762,11 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   - Saving a Dive while its Connection needs a sign-in says at once, on its page, that it won't be sent until the User signs in.
   - The manual Send on the Dive's page sends at once and removes the entry. No toasts; none of these texts time out.
 - **The Connection shows** `waiting` (how many are waiting, held and stopped), and `lastFetch` ("Last fetched {{when}}: {{new}}
-  new, {{updated}} updated, {{waiting}} wait for you"; `at` is the time of the fetch's Import; `waitingForYou` counts ambiguous
+  new, {{updated}} updated, {{waiting}} wait for you"; the last fetch whose Import finished: a fetch under way or failed
+  doesn't replace it; `at` is the time of the fetch's Import; `waitingForYou` counts ambiguous
   entries and dives of a computer with no choice yet, with a link to a manual import that asks; `conflicts` counts the
   Connection's open Conflicts apart, with a link to Needs your decision, where they are decided, never to the import; null
-  before the first fetch). A reason `no_computer_choice` in an import outcome is translated.
+  before the first finished fetch). A reason `no_computer_choice` in an import outcome is translated.
 - **Must offer the unsent dives** (`unsentDives` not empty): an Import created more than 20 Dives and none was queued. Each
   such Import adds its Dives to the offer (an earlier one stays); the list holds those still without a remote dive at the
   Provider, so it shrinks by what a Push run sends. Say "{{count}} new dives weren't sent automatically" with "Send them to

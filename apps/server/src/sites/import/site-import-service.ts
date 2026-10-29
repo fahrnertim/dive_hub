@@ -114,8 +114,8 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
     await tx.update(diveSite)
       .set({ ...columnsOf(set as Partial<ImportedValues>), version: sql`${diveSite.version} + 1`, updatedAt: new Date() })
       .where(eq(diveSite.id, u.siteId));
-    await writeRevision(tx, 'dive_site', u.siteId, actor, u.outcome === 'linked' ? 'link' : 'update', changes);
-    if (changes.name || changes.position) await noteSiteChange(tx, u.siteId, new Date());
+    const { at } = await writeRevision(tx, 'dive_site', u.siteId, actor, u.outcome === 'linked' ? 'link' : 'update', changes);
+    if (changes.name || changes.position) await noteSiteChange(tx, u.siteId, at);
   }
 
   return {

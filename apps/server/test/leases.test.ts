@@ -6,11 +6,11 @@ import { randomUUID } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { connection, diveLease } from '../src/db/schema.js';
-import { LEASE_MS, MAX_WAIT_MS, POLL_MS, skippingClock } from '../src/providers/leases.js';
+import { LEASE_MS, MAX_WAIT_MS, POLL_MS } from '../src/providers/leases.js';
 import { createFakeHandover, type FakeHandover } from './fake-handover-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
-  BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
+  BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, resettableClock, signIn, type TestDatabase,
 } from './support.js';
 
 describe.skipIf(!(await databaseReachable()))('leases across app instances', () => {
@@ -18,7 +18,7 @@ describe.skipIf(!(await databaseReachable()))('leases across app instances', () 
   /** Two app instances on one database, sharing a clock and the outside service, as two processes would. */
   let one: Awaited<ReturnType<typeof createTestApp>>;
   let two: Awaited<ReturnType<typeof createTestApp>>;
-  const clock = skippingClock();
+  const clock = resettableClock();
   let fake: FakeHandover;
   let tim: string;
   let dives: string[];

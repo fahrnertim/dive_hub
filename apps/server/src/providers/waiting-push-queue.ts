@@ -3,10 +3,16 @@
 // Graphile Worker job of the Connection that runs at the earliest due time. Written where a Dive changes (a Revision,
 // a site's name or position) and by the User's decisions; the worker step that sends is elsewhere.
 // It imports only the database layer: `dives/revisions.ts` calls it, so a `dives/` import here would be a cycle.
-import { and, asc, desc, eq, inArray, min, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, min, ne, or, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { currentRemote, type PushRow } from './current-remote.js';
 import { connection, dive, importJob, push, waitingPush, type WaitingPushOptions } from '../db/schema.js';
+
+/** Where Dive Hub's own faults go for the operator (the app's logger in production; Users see only the code). */
+export interface WaitingPushLog {
+  error(detail: object, message: string): void;
+  warn(detail: object, message: string): void;
+}
 
 type Q = Db | Tx;
 export type Connection = typeof connection.$inferSelect;
@@ -86,18 +92,40 @@ async function importedFrom(q: Q, cause: string, actor?: { type: string; id: str
  * nothing that changed before.
  */
 export async function noteDiveChange(tx: Tx, diveId: string, cause: string, at: Date, actor?: { type: string; id: string }): Promise<void> {
-  const [row] = await tx.select({ diverId: dive.diverId, deletedAt: dive.deletedAt, startsAt: dive.startsAt }).from(dive).where(eq(dive.id, diveId));
-  if (!row) return;
   if (cause === 'restore') await tx.delete(waitingPush).where(and(eq(waitingPush.diveId, diveId), eq(waitingPush.action, 'delete')));
-  const conns = await tx.select().from(connection).where(eq(connection.diverId, row.diverId)).orderBy(asc(connection.createdAt), asc(connection.id));
-  if (conns.length === 0) return;
-  const providers = [...new Set(conns.map((c) => c.provider))];
-  const pushes = await tx.select().from(push).where(and(eq(push.diveId, diveId), inArray(push.provider, providers)))
+  // One query: the Dive with the Diver's Connections that have a sending setting on; none, and nothing more is read.
+  const found = await tx.select({ dive: { id: dive.id, diverId: dive.diverId, deletedAt: dive.deletedAt, startsAt: dive.startsAt }, conn: connection })
+    .from(dive).innerJoin(connection, and(eq(connection.diverId, dive.diverId), sendingOn)).where(eq(dive.id, diveId))
+    .orderBy(asc(connection.createdAt), asc(connection.id));
+  if (found.length === 0) return;
+  await decide(tx, [found[0]!.dive], found.map((f) => f.conn), cause, at, await importedFrom(tx, cause, actor));
+}
+
+/** The Connections with a setting that sends something by itself on; the others never queue. */
+const sendingOn = or(eq(connection.sendChanges, true), eq(connection.sendNewDives, true), eq(connection.deleteAtProvider, true));
+
+type NotedDive = { id: string; diverId: string; deletedAt: Date | null; startsAt: Date };
+
+/** Several Dives changed alike: the Connections with a sending setting on and the Dives' pushes are read once each. */
+async function noteDives(tx: Tx, dives: NotedDive[], cause: string, at: Date, from: string | null): Promise<void> {
+  if (dives.length === 0) return;
+  const conns = await tx.select().from(connection)
+    .where(and(inArray(connection.diverId, [...new Set(dives.map((d) => d.diverId))]), sendingOn)).orderBy(asc(connection.createdAt), asc(connection.id));
+  if (conns.length > 0) await decide(tx, dives, conns, cause, at, from);
+}
+
+/** `conns` are the Divers' Connections with a sending setting on, oldest first. */
+async function decide(tx: Tx, dives: NotedDive[], conns: Connection[], cause: string, at: Date, from: string | null): Promise<void> {
+  const pushes = await tx.select().from(push)
+    .where(and(inArray(push.diveId, dives.map((d) => d.id)), inArray(push.provider, [...new Set(conns.map((c) => c.provider))])))
     .orderBy(desc(push.createdAt), desc(push.id));
-  const note: Note = { tx, diveId, cause, at, row, conns, from: await importedFrom(tx, cause, actor) };
-  for (const provider of providers) {
-    const current = currentRemote(pushes.filter((p) => p.provider === provider));
-    await (current ? noteSent(note, provider, current) : noteNew(note, provider));
+  for (const row of dives) {
+    const own = conns.filter((c) => c.diverId === row.diverId);
+    const note: Note = { tx, diveId: row.id, cause, at, row, conns: own, from };
+    for (const provider of new Set(own.map((c) => c.provider))) {
+      const current = currentRemote(pushes.filter((p) => p.diveId === row.id && p.provider === provider));
+      await (current ? noteSent(note, provider, current) : noteNew(note, provider));
+    }
   }
 }
 
@@ -161,27 +189,26 @@ export async function deletingItself(q: Q, diveIds: string[]): Promise<Map<strin
 
 /** A change to a site's name or position reaches the sent Dives there, as an edit of each. */
 export async function noteSiteChange(tx: Tx, siteId: string, at: Date): Promise<void> {
-  const dives = await tx.select({ id: dive.id }).from(dive).where(and(eq(dive.siteId, siteId), sql`${dive.deletedAt} is null`));
-  for (const d of dives) await noteDiveChange(tx, d.id, 'edit', at);
+  const dives = await tx.select({ id: dive.id, diverId: dive.diverId, deletedAt: dive.deletedAt, startsAt: dive.startsAt }).from(dive)
+    .where(and(eq(dive.siteId, siteId), sql`${dive.deletedAt} is null`));
+  await noteDives(tx, dives, 'edit', at, null);
 }
 
 /**
- * Queues the Dive as a send due now (the User's decision, Retry, a Push run's offer), merging `options` into the
+ * Queues the Dive as a send due at `at`, the caller's now (the User's decision, Retry, a Push run's offer), merging `options` into the
  * entry's. A waiting delete stays. Schedules the Connection's job.
  */
-export async function queueNow(q: Q, diveId: string, provider: string, connectionId: string, options: WaitingPushOptions): Promise<void> {
-  const now = new Date();
-  const [existing] = await q.select({ options: waitingPush.options }).from(waitingPush)
-    .where(and(eq(waitingPush.diveId, diveId), eq(waitingPush.provider, provider)));
-  const merged: WaitingPushOptions = {
-    ...existing?.options, ...options,
-    ...((existing?.options.conflicts || options.conflicts) && { conflicts: { ...existing?.options.conflicts, ...options.conflicts } }),
-  };
+export async function queueNow(q: Q, diveId: string, provider: string, connectionId: string, options: WaitingPushOptions, at: Date): Promise<void> {
+  // Merged in the upsert itself, not read first: two decisions at once both end in the entry.
   const fresh = {
-    connectionId, state: 'waiting' as const, reason: null, options: merged, dueAt: now, attempts: 0, firstFailedAt: null, stoppedAt: null, changedAt: now,
+    connectionId, state: 'waiting' as const, reason: null, dueAt: at, attempts: 0, firstFailedAt: null, stoppedAt: null, changedAt: at,
   };
-  await q.insert(waitingPush).values({ diveId, provider, action: 'send', ...fresh })
-    .onConflictDoUpdate({ target: [waitingPush.diveId, waitingPush.provider], set: fresh, setWhere: ne(waitingPush.action, 'delete') });
+  const given = JSON.stringify(options);
+  const merged = sql`case when ${waitingPush.options} ? 'conflicts' or ${given}::jsonb ? 'conflicts'
+    then (${waitingPush.options} || ${given}::jsonb) || jsonb_build_object('conflicts', coalesce(${waitingPush.options} -> 'conflicts', '{}'::jsonb) || coalesce(${given}::jsonb -> 'conflicts', '{}'::jsonb))
+    else ${waitingPush.options} || ${given}::jsonb end`;
+  await q.insert(waitingPush).values({ diveId, provider, action: 'send', options, ...fresh })
+    .onConflictDoUpdate({ target: [waitingPush.diveId, waitingPush.provider], set: { ...fresh, options: merged }, setWhere: ne(waitingPush.action, 'delete') });
   await scheduleConnection(q, connectionId);
 }
 

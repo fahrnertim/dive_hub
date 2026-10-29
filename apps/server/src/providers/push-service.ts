@@ -12,7 +12,7 @@ import type { BlobStore } from '../storage/blob-store.js';
 import { close, openFields, record as recordConflict, type ConflictField, type ConflictService } from './conflicts.js';
 import type { ConnectionRow, ConnectionService } from './connection-service.js';
 import { createDiveChanges, type ProviderRun } from './dive-changes.js';
-import { LeaseBusy, type Leases } from './leases.js';
+import { LeaseBusy, realClock, type Clock, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import {
   DIVE_FIELDS, ProviderError, referenceOf, type ActionContext, type Delivered, type DiveExport, type DiveExportAction, type DiveField, type ImportContext,
@@ -24,7 +24,7 @@ import { currentRemote, type PushRow } from './remote-state.js';
 import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements } from './requirements.js';
 import { siteForSend } from './site-for-send.js';
 import { buddiesForSend, keepBuddies, type BuddiesForSend } from './buddies-for-send.js';
-import { deletingItself, mark as markWaitingPush, settle as settleWaitingPush, type QueueMark } from './waiting-push-queue.js';
+import { deletingItself, mark as markWaitingPush, settle as settleWaitingPush, type QueueMark, type WaitingPushLog } from './waiting-push-queue.js';
 import { waitingOf } from './waiting-push-view.js';
 import { comparableOf, planSend, same, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
 
@@ -113,8 +113,10 @@ export function numbersFor(conn: { followNumbers: boolean } | null, exports: Div
 }
 type NumbersFor = NonNullable<ReturnType<typeof numbersFor>>;
 
-export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases; conflicts: ConflictService }) {
+export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases; conflicts: ConflictService; clock?: Clock; log?: WaitingPushLog }) {
   const { db, registry, connections, leases, conflicts } = deps;
+  const log: WaitingPushLog = deps.log ?? { error: (detail, message) => console.error(message, detail), warn: (detail, message) => console.warn(message, detail) };
+  const clock = deps.clock ?? realClock;
   const changes = createDiveChanges({ db, blobs: deps.blobs });
 
   /** The Provider's dive export, or `provider_unsupported`. */
@@ -321,7 +323,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
   async function settle(x: Exchange, conn: ConnectionRow, diveId: string, remoteId: string, options: SendOptions) {
     if (options.onConflict === 'defer' && x.plan.keep.length > 0) {
       await recordConflict(db, {
-        diveId, provider: conn.provider, connectionId: conn.id, remoteId, fields: await shownOf(x, x.plan.keep), runId: options.runId ?? null,
+        diveId, provider: conn.provider, connectionId: conn.id, remoteId, fields: await shownOf(x, x.plan.keep), runId: options.runId ?? null, foundAt: new Date(clock.now()),
       });
     } else await close(db, diveId, conn.provider);
   }
@@ -546,7 +548,12 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
         return withBuddies({ result: 'created', push: await steps.delivered('create', created, sending, row.version) });
       }));
       // A confirmed send (manual, a Push run's or the worker's) finishes the Dive's waiting send, unless it changed meanwhile.
-      if ('push' in result && result.push.state === 'confirmed') await settleWaitingPush(db, diveId, adapter.id, seen, 'send');
+      // The send is confirmed whatever the queue does after it: a throw here would answer as failed, and the next step
+      // finds the Dive up to date and settles its entry.
+      if ('push' in result && result.push.state === 'confirmed') {
+        await settleWaitingPush(db, diveId, adapter.id, seen, 'send').catch((err: unknown) =>
+          log.error({ err, diveId, provider: adapter.id }, 'a confirmed send could not settle its Waiting push'));
+      }
       return result;
     },
 
@@ -634,12 +641,6 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       }
       return current;
     },
-
-    /** The Providers where each of these Dives is deleted through the queue (5 minutes after deleting it here), not asked. */
-    deletingItself: (diveIds: string[]) => deletingItself(db, diveIds),
-
-    /** The entries of the Waiting pushes of these Dives, by Dive. */
-    waitingOf: (diveIds: string[]) => waitingOf(db, diveIds, registry.list().map((a) => a.id)),
 
     /**
      * Deletes the Dive's remote copy at the Provider. The Dive stays in the hub; a Dive deleted in the hub can still be

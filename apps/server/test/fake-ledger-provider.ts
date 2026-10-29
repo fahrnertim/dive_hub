@@ -130,7 +130,7 @@ export function createFakeLedger(options: { imports?: boolean } = {}): FakeLedge
           },
         },
         notices: [],
-        limits: { pauseMs: 300, run: { pauseMs: 1000, maxDives: 3 }, fetchEveryMinutes: 60 },
+        limits: { pauseMs: 300, run: { pauseMs: 1000, maxDives: 3 }, fetchEveryMinutes: options.imports ? 60 : null },
       },
       async signIn(input) {
         if (fake.down) throw new ProviderError('unavailable', 'down');

@@ -9,6 +9,7 @@ import { connection, importJob } from '../db/schema.js';
 import type { DiveImportService } from './dive-import.js';
 import { realClock, type Clock } from './leases.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
+import type { WaitingPushLog } from './waiting-push-queue.js';
 
 /** One fetch of a Connection (job key `fetch:<connection>`). */
 export const FETCH_TASK = 'scheduled_fetch';
@@ -18,8 +19,10 @@ export const OPENING_AFTER_MINUTES = 60;
 const MINUTE_MS = 60_000;
 type Connection = typeof connection.$inferSelect;
 
-export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry; diveImports: DiveImportService; clock?: Clock }) {
+export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry; diveImports: DiveImportService; clock?: Clock; log?: WaitingPushLog }) {
   const { db, registry, diveImports } = deps;
+  // Without a logger (a script or a test that doesn't look), the fault still goes somewhere an operator sees it.
+  const log: WaitingPushLog = deps.log ?? { error: (detail, message) => console.error(message, detail), warn: (detail, message) => console.warn(message, detail) };
   const clock = deps.clock ?? realClock;
 
   /** The shortest interval the Provider allows, when this instance has it and it imports dives; else null (no fetch). */
@@ -29,22 +32,26 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
     return adapter.capabilities.limits.fetchEveryMinutes;
   }
 
-  /** What keeps the Connection from fetching now, whatever the time: a sign-in only the User can give, import off, or an import under way. */
-  async function blocked(conn: Connection): Promise<boolean> {
+  /**
+   * What keeps the Connection from fetching now, whatever the time: a sign-in only the User can give, import off, or an
+   * import under way (`running`: the Connections with one, when the caller has asked for them all at once).
+   */
+  async function blocked(conn: Connection, running?: Set<string>): Promise<boolean> {
     if (conn.fetchEveryMinutes === null || conn.importMode === 'off') return true;
     if (conn.state === 'needs_sign_in' && !conn.keepSignedIn) return true;
+    if (running) return running.has(conn.id);
     const [busy] = await db.select({ id: importJob.id }).from(importJob)
       .where(and(eq(importJob.connectionId, conn.id), inArray(importJob.status, ['pending', 'processing']))).limit(1);
     return !!busy;
   }
 
   /** Whether the Connection's last fetch is older than `minutes` (and than the Provider's minimum), and nothing blocks it. */
-  async function due(conn: Connection, minutes: number, at: number): Promise<boolean> {
+  async function due(conn: Connection, minutes: number, at: number, running?: Set<string>): Promise<boolean> {
     const minimum = minimumOf(conn.provider);
     if (minimum === null) return false;
     const every = Math.max(minutes, minimum) * MINUTE_MS;
     if (conn.lastFetchedAt && at - conn.lastFetchedAt.getTime() <= every) return false;
-    return !(await blocked(conn));
+    return !(await blocked(conn, running));
   }
 
   const queue = (connectionId: string) => db.execute(sql`select graphile_worker.add_job(${FETCH_TASK},
@@ -54,7 +61,7 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
     /**
      * The job: starts an unattended Import of the Connection's dives, unless something blocks it or the last fetch is
      * younger than the Provider's minimum. Every attempt claims the interval before it reads (a Provider that is down is
-     * not read every minute); a successful one also keeps its Import for the summary (`lastFetchImportId`).
+     * not read every minute). Its Import becomes the summary (`lastFetchImportId`) when it finishes (`finished`).
      */
     async fetch(connectionId: string): Promise<void> {
       const [conn] = await db.select().from(connection).where(eq(connection.id, connectionId));
@@ -69,19 +76,34 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
         .returning({ id: connection.id });
       if (claimed.length === 0) return;
       try {
-        const made = await diveImports.start(conn.userId, conn.id, { computers: {}, decisions: {}, unattended: true });
-        await db.update(connection).set({ lastFetchImportId: made.id }).where(eq(connection.id, conn.id));
+        await diveImports.start(conn.userId, conn.id, { computers: {}, decisions: {}, unattended: true });
       } catch (error) {
         // The Provider's answer (signed out, down): the Connection shows it, and the next interval tries again.
         if (!(error instanceof ProviderServiceError)) throw error;
+        log.warn({ connectionId: conn.id, provider: conn.provider, code: error.code }, 'a scheduled fetch failed');
       }
+    },
+
+    /**
+     * An Import finished: when it is a scheduled fetch's and done, it is the Connection's last fetch for the summary,
+     * unless the one there is newer. A running or failed fetch leaves the last finished one.
+     */
+    async finished(importId: string): Promise<void> {
+      const [made] = await db.select().from(importJob).where(eq(importJob.id, importId));
+      if (!made?.connectionId || made.status !== 'done' || !made.plan?.unattended) return;
+      const [stored] = await db.select({ createdAt: importJob.createdAt }).from(connection)
+        .leftJoin(importJob, eq(importJob.id, connection.lastFetchImportId)).where(eq(connection.id, made.connectionId));
+      if (stored?.createdAt && stored.createdAt >= made.createdAt) return;
+      await db.update(connection).set({ lastFetchImportId: made.id }).where(eq(connection.id, made.connectionId));
     },
 
     /** The minute tick's part: a fetch job for each Connection whose interval passed since its last fetch. */
     async tick(): Promise<void> {
       const at = clock.now();
+      const running = new Set((await db.selectDistinct({ id: importJob.connectionId }).from(importJob)
+        .where(and(isNotNull(importJob.connectionId), inArray(importJob.status, ['pending', 'processing'])))).map((r) => r.id!));
       for (const conn of await db.select().from(connection).where(isNotNull(connection.fetchEveryMinutes))) {
-        if (await due(conn, conn.fetchEveryMinutes!, at)) await queue(conn.id);
+        if (await due(conn, conn.fetchEveryMinutes!, at, running)) await queue(conn.id);
       }
     },
 

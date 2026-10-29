@@ -22,7 +22,7 @@ export interface RouteDeps {
   /** For the logbook's "changed since sent" filter, which needs the adapters' fingerprints. */
   pushes: PushService;
   /** Which Connections offer an Import's new Dives that weren't sent by themselves (ADR 0056). */
-  waitingPushes: Pick<WaitingPushService, 'offersOf'>;
+  waitingPushes: Pick<WaitingPushService, 'offersOf' | 'waitingOf'>;
   maxUploadBytes: number;
   auth: Auth;
 }
@@ -295,7 +295,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
       };
     }
     const { rows, total, counts, totals, months } = await logbook.listDives(scope, { limit, offset });
-    const waiting = await deps.pushes.waitingOf(rows.map((r) => r.d.id));
+    const waiting = await deps.waitingPushes.waitingOf(rows.map((r) => r.d.id));
     return {
       dives: rows.map((r) => toDiveSummary(r.d, r.siteName, r.findings, r.extras, waiting.get(r.d.id) ?? [])),
       total,

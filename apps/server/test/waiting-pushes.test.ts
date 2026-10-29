@@ -5,7 +5,9 @@ import { runOnce } from 'graphile-worker';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, diveSiteExternalId, importJob, providerConflict, push, revision, waitingPush } from '../src/db/schema.js';
 import { writeRevision } from '../src/dives/revisions.js';
+import { record } from '../src/providers/conflicts.js';
 import { mark, QUIET_MS, settle, WAITING_PUSHES_TASK, waitingPushesKey } from '../src/providers/waiting-push-queue.js';
+import { ProviderError } from '../src/providers/provider.js';
 import { createWaitingPushService, GIVE_UP_MS, RETRY_AFTER_MS } from '../src/providers/waiting-push-service.js';
 import type { ImportedValues, SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
@@ -259,6 +261,56 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     expect(await rows()).toMatchObject([{ diveId: sent }]);
   });
 
+  it("a site change queues at the time of the site's Revision", async () => {
+    const site = await json<{ id: string; version: number }>('POST', '/api/dive-sites', { name: 'Revision Reef' });
+    const sent = await upload(day(1));
+    await call('PATCH', `/api/dives/${sent}`, { version: await version(sent), siteId: site.id });
+    await send(sent);
+    expect((await call('PATCH', `/api/dive-sites/${site.id}`, { version: site.version, name: 'Revision Reef, Dahab' })).statusCode).toBe(200);
+    const [row] = await rows();
+    expect(row!.changedAt).toEqual((await lastRevision(site.id)).at);
+  });
+
+  it('a site rename queues the sent live Dives there, of Connections with send changes on', async () => {
+    const site = await json<{ id: string; version: number }>('POST', '/api/dive-sites', { name: 'Shared Reef' });
+    const atSite = async (id: string, cookie = ann) =>
+      expect((await call('PATCH', `/api/dives/${id}`, { version: (await json<{ version: number }>('GET', `/api/dives/${id}`, undefined, cookie)).version, siteId: site.id }, cookie)).statusCode).toBe(200);
+    const sentLive = await upload(day(1), 101);
+    const unsentLive = await upload(day(2), 102);
+    const sentDeleted = await upload(day(3), 103);
+    for (const id of [sentLive, unsentLive, sentDeleted]) await atSite(id);
+    for (const id of [sentLive, sentDeleted]) await send(id);
+    expect((await call('DELETE', `/api/dives/${sentDeleted}`, { version: await version(sentDeleted) })).statusCode).toBe(200);
+    // Bob's Connection has every setting off; his Dive is sent.
+    const bobsDiver = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', undefined, bob)).find((d) => d.isOwn)!.id;
+    const bobs = (await json<{ id: string }>('POST', '/api/connections/ledger', { diverId: bobsDiver, token: 'ledger-token-2', keepSignedIn: false }, bob)).id;
+    await t.db.update(connection).set({ sendChanges: false, sendNewDives: false, deleteAtProvider: false }).where(eq(connection.id, bobs));
+    const { payload, headers } = multipartFile('bob.fit', makeSyntheticDive({ serialNumber: 200, start: day(4) }));
+    const created = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: bob } });
+    await ctx.imports.processImport(created.json().id);
+    const bobsDive = (await json<{ outcome: { diveId: string }[] }>('GET', `/api/imports/${created.json().id}`, undefined, bob)).outcome[0]!.diveId;
+    await atSite(bobsDive, bob);
+    expect((await call('POST', `/api/dives/${bobsDive}/providers/ledger`, {}, bob)).statusCode).toBeLessThan(300);
+    await t.db.delete(waitingPush);
+    expect((await call('PATCH', `/api/dive-sites/${site.id}`, { version: site.version, name: 'Shared Reef, Dahab' })).statusCode).toBe(200);
+    expect(await rows()).toMatchObject([{ diveId: sentLive, provider: 'ledger', connectionId, action: 'send', state: 'waiting' }]);
+    expect(await rows()).toHaveLength(1);
+  });
+
+  it('a Revision of a Diver without a sending setting writes nothing, and a restore still cancels a waiting delete', async () => {
+    const id = await upload(day(1));
+    await send(id);
+    await settings({ sendChanges: false });
+    await edit(id, 'Turtle');
+    expect(await rows()).toEqual([]);
+    await settings({ deleteAtProvider: true });
+    expect((await call('DELETE', `/api/dives/${id}`, { version: await version(id) })).statusCode).toBe(200);
+    expect(await rows()).toMatchObject([{ diveId: id, action: 'delete', state: 'waiting' }]);
+    await settings({ deleteAtProvider: false });
+    expect((await call('POST', `/api/dives/${id}/restore`, { version: await deletedVersion(id) })).statusCode).toBeLessThan(300);
+    expect(await rows()).toEqual([]);
+  });
+
   /** A sent Dive at a site without a position (or with one), the queue empty. */
   const sentAt = async (siteId: string) => {
     const id = await upload(day(1));
@@ -426,7 +478,7 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       const logged: { level: string; detail: object; message: string }[] = [];
       const at = (level: string) => (detail: object, message: string) => { logged.push({ level, detail, message }); };
       const failing = { afterImport: async () => { throw new Error('the queue is gone'); } };
-      await processImportTask(ctx.imports, failing, { info: at('info'), warn: at('warn'), error: at('error') })({ importId });
+      await processImportTask(ctx.imports, failing, ctx.providers.scheduledFetch, { info: at('info'), warn: at('warn'), error: at('error') })({ importId });
       expect(logged.map((l) => l.level)).toEqual(['info', 'warn', 'error']);
       expect(logged[2]!.detail).toMatchObject({ importId, err: { message: 'the queue is gone' } });
       expect(await rows()).toEqual([]);
@@ -520,6 +572,24 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       expect(await unsentTo()).toEqual([]);
     }, 60_000);
 
+    it('an offer drops the Imports whose Dives were all sent', async () => {
+      const first = await upload(day(1), 101);
+      const second = await upload(day(2), 102);
+      const third = await upload(day(3), 103);
+      const [one, other] = [await importOf([first, second]), await importOf([third])];
+      await settings({ unsentImportIds: [one, other] });
+      const offered = async () => {
+        await json('GET', '/api/connections');
+        return (await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.unsentImportIds;
+      };
+      expect(await offered()).toEqual([one, other]);
+      // Some of the first Import's Dives are sent: it stays. All of them: it leaves, and the other Import stays.
+      expect((await call('POST', `/api/dives/${first}/providers/ledger`, {})).statusCode).toBeLessThan(300);
+      expect(await offered()).toEqual([one, other]);
+      expect((await call('POST', `/api/dives/${second}/providers/ledger`, {})).statusCode).toBeLessThan(300);
+      expect(await offered()).toEqual([other]);
+    });
+
     it('dismissing removes the offer', async () => {
       await settings({ sendNewDives: true });
       const ids: string[] = [];
@@ -536,10 +606,14 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
   describe('the worker step', () => {
     const step = (id = connectionId) => ctx.providers.waitingPushes.step(id);
     const of = async (provider = 'ledger') => (await rows()).filter((r) => r.provider === provider);
-    /** Moves the clock to the entry's due time, as if the worker's job ran then. */
+    /**
+     * Moves the clock to the entry's due time, as if the worker's job ran then. A later entry of the same test is queued
+     * at the database's time, which the clock has already passed: it is due and the clock stays (it never goes back).
+     */
     const untilDue = async (provider = 'ledger') => {
       const [row] = await of(provider);
-      ctx.clock.skip(Math.max(0, row!.dueAt.getTime() - ctx.clock.now()));
+      const due = row!.dueAt.getTime();
+      if (due > ctx.clock.now()) ctx.clock.skip(due - ctx.clock.now());
     };
     const remoteOf = async (id: string, provider = 'ledger') =>
       (await json<{ provider: string; current: { remoteId: string } | null }[]>('GET', `/api/dives/${id}/providers`)).find((s) => s.provider === provider)!.current;
@@ -560,7 +634,7 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       for (let i = 0; i < 20; i++) {
         const [before] = await rows();
         if (before!.state === 'stopped') break;
-        ctx.clock.skip(Math.max(0, before!.dueAt.getTime() - ctx.clock.now()));
+        ctx.clock.skip(before!.dueAt.getTime() - ctx.clock.now());
         const at = ctx.clock.now();
         await stepOnce();
         const [after] = await rows();
@@ -593,11 +667,64 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     beforeEach(() => {
       // Back to real time: the queue's notes take the database's time, the step the clock's, which earlier tests moved
       // on. Each test has a new Connection and new Dives, so no lease taken at the skipped time is in the way.
-      ctx.clock.skip(Date.now() - ctx.clock.now());
+      ctx.clock.reset();
       saves = 0;
       ledger.down = false;
       ledger.refuseDelete = false;
       ledger.beforeSave = counting;
+    });
+
+    it("a decision is due at the Clock's now", async () => {
+      const id = await upload(day(1));
+      await send(id);
+      ctx.clock.skip(3_600_000);
+      expect((await call('POST', `/api/dives/${id}/providers/ledger/decision`, { conflicts: { notes: 'hub' } })).statusCode).toBe(204);
+      const [row] = await rows();
+      expect(Math.abs(row!.dueAt.getTime() - ctx.clock.now())).toBeLessThan(1000);
+      expect(Math.abs(row!.changedAt.getTime() - ctx.clock.now())).toBeLessThan(1000);
+    });
+
+    it('two decisions at once both end in the entry', async () => {
+      for (let i = 0; i < 10; i++) {
+        await t.db.delete(waitingPush);
+        const id = await upload(day(1 + i), 100 + i);
+        await send(id);
+        const decide = (conflicts: Record<string, 'hub' | 'provider'>) => ctx.providers.waitingPushes.decide(annId, id, 'ledger', { conflicts });
+        await Promise.all([decide({ notes: 'hub' }), decide({ site: 'provider' })]);
+        const [row] = await rows();
+        expect(row!.options.conflicts).toEqual({ notes: 'hub', site: 'provider' });
+      }
+    });
+
+    it('a decision leaves a waiting delete as it is', async () => {
+      const id = await upload(day(1));
+      await send(id);
+      await settings({ deleteAtProvider: true });
+      await ctx.providers.waitingPushes.decide(annId, id, 'ledger', {});
+      await t.db.update(waitingPush).set({ action: 'delete' });
+      await ctx.providers.waitingPushes.decide(annId, id, 'ledger', { conflicts: { notes: 'hub' } });
+      expect(await rows()).toMatchObject([{ diveId: id, action: 'delete', options: {} }]);
+    });
+
+    it('goes through the Connection of an open Conflict when there is no entry', async () => {
+      const id = await upload(day(1));
+      await send(id);
+      // The Conflict was found at a Connection of the User's that has since moved to another Diver of theirs, so the
+      // Diver of the Dive has no Connection of the User's but the Conflict's.
+      const lena = (await json<{ id: string }>('POST', '/api/divers', { name: 'Lena' })).id;
+      await t.db.update(connection).set({ diverId: lena }).where(eq(connection.id, connectionId));
+      await record(t.db, { diveId: id, provider: 'ledger', connectionId, remoteId: 'L1', fields: [{ field: 'notes', hub: 'Turtle', provider: 'Ray' }], runId: null, foundAt: new Date() });
+      expect(await rows()).toEqual([]);
+      await ctx.providers.waitingPushes.decide(annId, id, 'ledger', { conflicts: { notes: 'hub' } });
+      expect(await rows()).toMatchObject([{ diveId: id, connectionId, action: 'send', state: 'waiting', options: { conflicts: { notes: 'hub' } } }]);
+    });
+
+    it("falls back to the User's own Connection of the Diver", async () => {
+      const id = await upload(day(1));
+      await send(id);
+      expect(await rows()).toEqual([]);
+      await ctx.providers.waitingPushes.decide(annId, id, 'ledger', { onExisting: 'create' });
+      expect(await rows()).toMatchObject([{ diveId: id, connectionId, state: 'waiting', options: { onExisting: 'create' } }]);
     });
 
     it('sends a due entry and removes it', async () => {
@@ -723,6 +850,19 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       expect(await remoteOf(id, 'ssi')).toBeNull();
     });
 
+    it('a hold for another reason clears an earlier exists', async () => {
+      const ssiConnection = await connectSsi({ sendNewDives: true });
+      const id = await upload(day(1));
+      await edit(id, 'Turtle');
+      await t.db.update(waitingPush).set({ state: 'held', reason: 'exists', detail: { remoteId: '77', remoteNumber: 4, startsAt: '2025-05-01 09:00' } })
+        .where(eq(waitingPush.diveId, id));
+      // "Link to it", but the Dive has no site by now: the send finds the requirements unmet.
+      expect((await call('POST', `/api/dives/${id}/providers/ssi/decision`, { onExisting: 'link' })).statusCode).toBe(204);
+      await untilDue('ssi');
+      expect(await step(ssiConnection)).toBeNull();
+      expect(await of('ssi')).toMatchObject([{ diveId: id, state: 'held', reason: 'requirements', detail: null }]);
+    });
+
     it('holds an update that would remove a verification', async () => {
       expect((await call('PATCH', `/api/connections/${connectionId}`, { diveNumbers: { follow: true } })).statusCode).toBeLessThan(300);
       // The ledger numbers the Dive 2, since it has a dive 1; the dive there is renumbered after.
@@ -822,7 +962,7 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       const logged: { detail: object; message: string }[] = [];
       const logging = createWaitingPushService({
         db: t.db, registry: ctx.providers.providers, pushes: ctx.providers.pushes, clock: ctx.clock,
-        log: { error: (detail, message) => logged.push({ detail, message }) },
+        log: { error: (detail, message) => logged.push({ detail, message }), warn: () => {} },
       });
       const delays = await failUntilStopped(() => logging.step(connectionId));
       expect(delays).toEqual([5, 30, 120, 360, 360, 360, 205]);
@@ -860,6 +1000,26 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       expect(await step()).toBeNull();
       expect(ledger.dives.size).toBe(0);
       expect(await rows()).toEqual([]);
+    });
+
+    it('a refused create stops at once', async () => {
+      await settings({ sendNewDives: true });
+      const id = await upload(day(1));
+      await edit(id, 'Turtle');
+      expect(await rows()).toMatchObject([{ diveId: id, action: 'send', state: 'waiting' }]);
+      ledger.beforeSave = async () => { throw new ProviderError('refused', 'create refused'); };
+      await untilDue();
+      expect(await step()).toBeNull();
+      expect(await rows()).toMatchObject([{ diveId: id, action: 'send', state: 'stopped', reason: 'provider_refused', attempts: 1 }]);
+      expect(ledger.dives.size).toBe(0);
+    });
+
+    it('a refused update stops at once', async () => {
+      const id = await waiting('Turtle');
+      ledger.beforeSave = async () => { throw new ProviderError('refused', 'update refused'); };
+      await untilDue();
+      expect(await step()).toBeNull();
+      expect(await rows()).toMatchObject([{ diveId: id, action: 'send', state: 'stopped', reason: 'provider_refused', attempts: 1 }]);
     });
 
     it('a token-only Connection holds its entries and the tick wakes them after sign-in', async () => {
@@ -923,6 +1083,8 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       await failUntilStopped();
       ledger.down = false;
       const bobsUser = ((await t.db.execute(sql`select id from "user" where email = 'bob@example.com'`)).rows[0] as { id: string }).id;
+      // Bob co-manages the Diver (an earlier test leaves the same row), but sends through his own Connection only.
+      await t.db.execute(sql`insert into diver_management (user_id, diver_id) values (${bobsUser}, ${diverId}) on conflict do nothing`);
       await expect(ctx.providers.waitingPushes.retry(bobsUser, id, 'ledger')).rejects.toMatchObject({ code: 'connection_not_found' });
       await expect(ctx.providers.waitingPushes.retry(annId, id, 'ssi')).rejects.toMatchObject({ code: 'waiting_push_not_found' });
       await ctx.providers.waitingPushes.retry(annId, id, 'ledger');
