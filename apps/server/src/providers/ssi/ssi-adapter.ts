@@ -264,11 +264,11 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
     return found;
   }
 
-  /** Saves, then lists what SSI stored differently from what was sent. */
-  async function saveAndReadBack(ctx: ActionContext, sent: SsiRecord, number: number | null, expect: { reference?: string }): Promise<Delivered> {
+  /** Saves, then lists what SSI stored differently from what was sent; the number is the one SSI stored. */
+  async function saveAndReadBack(ctx: ActionContext, sent: SsiRecord, expect: { reference?: string }): Promise<Delivered> {
     const saved = await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, sent));
     const stored = await confirmed(ctx, sent, saved, expect);
-    return { remoteId: saved.id, remoteNumber: number, payload: withoutDatasets(sent), differences: compareReadBack(sent, stored) };
+    return { remoteId: saved.id, remoteNumber: numberOf(stored.odin_user_log_nr), payload: withoutDatasets(sent), differences: compareReadBack(sent, stored) };
   }
 
   function open(ctx: ActionContext): DiveExportAction {
@@ -295,7 +295,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const number = wanted != null && !taken ? wanted : Math.max(0, ...dives.map((r) => numberOf(r.odin_user_log_nr) ?? 0)) + 1;
         const { ids, leftOut } = buddiesFor(dive, await buddyList.recent());
         const record = withBuddies(createRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), ids);
-        return { ...(await saveAndReadBack(ctx, record, number, { reference })), leftOut };
+        return { ...(await saveAndReadBack(ctx, record, { reference })), leftOut };
       },
       async current(remoteId) {
         const read = await logbook.current();
@@ -320,7 +320,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         // The number there stays unless Dive Hub's is asked for and no other dive has it.
         const number = wanted != null && !(await holderOf(wanted, remoteId)) ? wanted : numberOf(remote.odin_user_log_nr);
         const record = { ...withBuddies(updateRecord(remote, forSsi(dive), leave), [...ids, ...kept]), odin_user_log_nr: number };
-        return { ...(await saveAndReadBack(ctx, record, number, {})), leftOut };
+        return { ...(await saveAndReadBack(ctx, record, {})), leftOut };
       },
       async setNumber(remoteId, number, sharedWith) {
         const remote = await byId(remoteId);

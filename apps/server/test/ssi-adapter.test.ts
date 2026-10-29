@@ -72,6 +72,12 @@ describe('the SSI adapter\'s logbook reads', () => {
     expect(reads()).toBe(2);
   });
 
+  it('reports the number SSI stored, not the one sent', async () => {
+    const { fake, adapter, ctx } = await setUp();
+    fake.answerRecord = (r) => ({ ...r, odin_user_log_nr: 5 });
+    expect((await adapter.dives!.open(ctx).create(dive('2026-01-15T09:00:00Z'), 'divehub-1', 3)).remoteNumber).toBe(5);
+  });
+
   it('reads again once the kept read-back is two minutes old', async () => {
     const { adapter, ctx, reads, wait } = await setUp();
     await adapter.dives!.open(ctx).create(dive('2026-01-15T09:00:00Z'), 'divehub-1');
