@@ -4,7 +4,7 @@
 // wall-clock time is kept as if it were UTC.
 import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { find } from 'geo-tz';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable } from '../db/client.js';
 import { dive, type UtcOffsetSource } from '../db/schema.js';
 import { DAY_MS, MAX_OFFSET_MS } from '../imports/matching.js';
 
@@ -69,7 +69,7 @@ export function inZone(localMs: number, zone: string): { startsAt: Date; utcOffs
  * site's), else the offset of the Diver's closest Dive within 7 days whose offset is known, else unknown (kept as if UTC).
  */
 export async function placeLocalTime(
-  tx: Tx | Db, diverId: string, localMs: number, positions: (Position | null | undefined)[],
+  tx: Queryable, diverId: string, localMs: number, positions: (Position | null | undefined)[],
 ): Promise<PlacedTime> {
   for (const p of positions) {
     const zone = p ? zoneAt(p) : null;
@@ -81,7 +81,7 @@ export async function placeLocalTime(
 }
 
 /** The offset of the Diver's live Dive closest to this wall-clock time, within NEARBY_DAYS, whose offset is known. */
-async function nearbyOffset(tx: Tx | Db, diverId: string, localMs: number): Promise<number | null> {
+async function nearbyOffset(tx: Queryable, diverId: string, localMs: number): Promise<number | null> {
   const from = new Date(localMs - NEARBY_DAYS * DAY_MS - MAX_OFFSET_MS);
   const to = new Date(localMs + NEARBY_DAYS * DAY_MS + MAX_OFFSET_MS);
   const local = sql`${dive.startsAt} + make_interval(secs => ${dive.utcOffsetSeconds})`;

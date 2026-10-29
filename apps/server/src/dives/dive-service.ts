@@ -1,6 +1,6 @@
 // Keeping a Dive: Overrides, resetting them, the Primary recording, and refreshing from it (ADR 0015).
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Db, Queryable, Tx } from '../db/client.js';
 import {
   OVERRIDABLE_FIELDS, PARTICIPANT_ROLES, dive, diveSite, diver, diverManagement, importJob, participant, recording,
   type OverridableField, type ParticipantRole, type UtcOffsetSource,
@@ -138,7 +138,7 @@ function merge(current: DiveValues, fromRecording: DiveValues | null, overrides:
 }
 
 /** A Dive's Participants with their names, buddies first, then guides and instructors, each by name (ADR 0028). */
-export async function participantsOf(tx: Tx | Db, diveId: string) {
+export async function participantsOf(tx: Queryable, diveId: string) {
   const rows = await tx.select({ diverId: participant.diverId, name: diver.name, role: participant.role }).from(participant)
     .innerJoin(diver, eq(diver.id, participant.diverId)).where(eq(participant.diveId, diveId));
   return rows.sort((a, b) => PARTICIPANT_ROLES.indexOf(a.role) - PARTICIPANT_ROLES.indexOf(b.role)
@@ -146,7 +146,7 @@ export async function participantsOf(tx: Tx | Db, diveId: string) {
 }
 
 /** Divers the User manages: the one lookup behind "does this User manage this Diver". Deleted Divers keep their rows, so `live` leaves them out. */
-export async function managedDiverIds(tx: Tx | Db, userId: string, options: { live?: boolean } = {}): Promise<Set<string>> {
+export async function managedDiverIds(tx: Queryable, userId: string, options: { live?: boolean } = {}): Promise<Set<string>> {
   const rows = options.live
     ? await tx.select({ id: diverManagement.diverId }).from(diverManagement)
       .innerJoin(diver, eq(diver.id, diverManagement.diverId)).where(and(eq(diverManagement.userId, userId), isNull(diver.deletedAt)))

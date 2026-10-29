@@ -4,7 +4,7 @@
 // values the Provider gives (name, position, country, water type). A site the Provider marks private to the account is
 // stored as the account's private ID, without a Revision for it (ADR 0057).
 import { and, eq, isNull } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable, Tx } from '../db/client.js';
 import { diveSite, providerSiteData } from '../db/schema.js';
 import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
 import { matchingSite, MATCH_WITHIN_M } from './import/import-plan.js';
@@ -34,7 +34,7 @@ export interface ProviderSite {
 export type SiteOutlook = { kind: 'known' | 'match'; siteId: string } | { kind: 'new' } | { kind: 'taken' };
 
 /** Whether an admin allowed creating sites from this Provider's site data (ADR 0030). */
-export async function siteDataAllowed(q: Db | Tx, provider: string): Promise<boolean> {
+export async function siteDataAllowed(q: Queryable, provider: string): Promise<boolean> {
   const [row] = await q.select({ provider: providerSiteData.provider }).from(providerSiteData).where(eq(providerSiteData.provider, provider));
   return !!row;
 }
@@ -43,7 +43,7 @@ export async function siteDataAllowed(q: Db | Tx, provider: string): Promise<boo
  * What the site would be, without changing anything. `taken`: a site deleted here holds the ID (it can't be given to
  * another, and a deleted site isn't used).
  */
-export async function siteOutlook(q: Db | Tx, s: ProviderSite): Promise<SiteOutlook> {
+export async function siteOutlook(q: Queryable, s: ProviderSite): Promise<SiteOutlook> {
   const known = await holderOf(q, s.source, s.externalId);
   if (known) return known.deleted ? { kind: 'taken' } : { kind: 'known', siteId: known.siteId };
   if (!s.position) return { kind: 'new' };

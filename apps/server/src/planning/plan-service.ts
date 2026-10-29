@@ -1,7 +1,7 @@
 // What the gas plan route and the MCP tool answer (ADR 0033, slice 22): the plan's litres and pressures per Diver, with
 // where each value came from. Computed on request, nothing stored; any Diver of the instance can be named by id (ADR 0028),
 // and only of a Diver the User manages a logbook value is read: the others plan with what is typed or the default. Limits from the Diver's own input and settings, not advice.
-import type { Db } from '../db/client.js';
+import type { Queryable } from '../db/client.js';
 import { ASCENT_RATE_M_PER_MIN, planGas, type GasRule } from './gas-plan.js';
 import { DESCENT_RATE_M_PER_MIN } from './ndl.js';
 import { DEFAULT_PLANNING_SAC_LPM, planningSac } from './planning-sac.js';
@@ -28,7 +28,7 @@ export interface GasPlanQuery {
 
 const round = (n: number, places: number) => Math.round(n * 10 ** places) / 10 ** places;
 
-export async function planGasPlan(reader: Pick<Db, 'select'>, managedDiverIds: readonly string[], q: GasPlanQuery): Promise<
+export async function planGasPlan(reader: Queryable, managedDiverIds: readonly string[], q: GasPlanQuery): Promise<
   | { ok: false; code: PlanningError }
   | { ok: true; value: Record<string, unknown> }
 > {

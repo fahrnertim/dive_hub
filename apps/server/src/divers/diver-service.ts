@@ -3,7 +3,7 @@
 // Diver's SSI buddy code says about them, with the codes built from it and a scanned code finding its Diver (ADR 0043).
 import { and, eq, ilike, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { personCodes, readVerificationCode, type VerificationCode } from '../centres/verification-code.js';
-import type { Db, Tx } from '../db/client.js';
+import type { Db, Queryable, Tx } from '../db/client.js';
 import {
   connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, participant, recording,
 } from '../db/schema.js';
@@ -101,13 +101,13 @@ export function createDiverService(db: Db) {
   });
 
   /** Who keeps the Diver's logbook; none for an external Diver. The actor may change it when it is external or theirs. */
-  async function editable(tx: Tx | Db, actor: DiverActor, id: string) {
+  async function editable(tx: Queryable, actor: DiverActor, id: string) {
     const managers = await tx.select({ userId: diverManagement.userId }).from(diverManagement).where(eq(diverManagement.diverId, id));
     return { external: managers.length === 0, canEdit: managers.length === 0 || managers.some((m) => m.userId === actor.userId) };
   }
 
   /** A Diver as every User sees it since ADR 0043: its name, its details, its accounts and the codes built from them. */
-  async function detailsOf(tx: Tx | Db, actor: DiverActor, id: string) {
+  async function detailsOf(tx: Queryable, actor: DiverActor, id: string) {
     const [row] = await tx.select({
       id: diver.id, name: diver.name, firstName: diver.firstName, lastName: diver.lastName, email: diver.email, leaderNumber: diver.leaderNumber,
     }).from(diver).where(and(eq(diver.id, id), live));
@@ -144,7 +144,7 @@ export function createDiverService(db: Db) {
   }
 
   /** The live Diver that has this account at a service. */
-  async function holderOf(tx: Tx | Db, source: DiverSource, externalId: string) {
+  async function holderOf(tx: Queryable, source: DiverSource, externalId: string) {
     const [row] = await tx.select({ id: diver.id, name: diver.name }).from(diverExternalId)
       .innerJoin(diver, eq(diver.id, diverExternalId.diverId))
       .where(and(eq(diverExternalId.source, source), eq(diverExternalId.externalId, externalId), live));

@@ -4,7 +4,7 @@
 // like a file's. A preview first (nothing stored), then an Import over one JSON Original per dive that the worker runs.
 import { isDeepStrictEqual } from 'node:util';
 import { and, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Db, Queryable, Tx } from '../db/client.js';
 import {
   connection, dive, diveSite, device, importJob, importOriginal, original, providerSiteData, push, user,
   recording, type ComputerChoice, type DiveImportMode, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
@@ -125,7 +125,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /** The computers among the dives, with the User's choice kept on the Connection, else the suggestion. */
-  async function computersOf(q: Db | Tx, run: ProviderRun, dives: ImportedDive[], saved: Record<string, ComputerChoice>) {
+  async function computersOf(q: Queryable, run: ProviderRun, dives: ImportedDive[], saved: Record<string, ComputerChoice>) {
     const found = new Map<string, ComputerView>();
     for (const d of dives) {
       // A dive Dive Hub sent, or one linked to a Dive that has this computer's Recording, carries what Dive Hub has or
@@ -152,7 +152,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /** Whether the Dive has a live Recording from this computer (a file's or a Provider's copy). */
-  async function hasRecordingOf(q: Db | Tx, diveId: string, d: { manufacturer: string; serialNumber: string }) {
+  async function hasRecordingOf(q: Queryable, diveId: string, d: { manufacturer: string; serialNumber: string }) {
     const [row] = await q.select({ id: recording.id }).from(recording).innerJoin(device, eq(device.id, recording.deviceId))
       .where(and(eq(recording.diveId, diveId), isNull(recording.deletedAt), eq(device.manufacturer, d.manufacturer), eq(device.serialNumber, d.serialNumber)))
       .limit(1);
@@ -160,7 +160,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /** The Dive this remote dive is linked to now (by a Push), among the User's, or null. */
-  async function linkedTo(q: Db | Tx, run: ProviderRun, remoteId: string) {
+  async function linkedTo(q: Queryable, run: ProviderRun, remoteId: string) {
     const rows = await q.selectDistinct({ diveId: push.diveId }).from(push)
       .where(and(eq(push.provider, run.adapter.id), eq(push.remoteId, remoteId)));
     for (const { diveId } of rows) {
@@ -177,14 +177,14 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * The Dive whose values Dive Hub sent to this remote dive (a confirmed create or update Push), among the User's: the
    * remote dive is Dive Hub's own then, like one carrying our reference (ADR 0030).
    */
-  async function sentTo(q: Db | Tx, run: ProviderRun, remoteId: string): Promise<string | null> {
+  async function sentTo(q: Queryable, run: ProviderRun, remoteId: string): Promise<string | null> {
     const rows = await q.select({ diveId: push.diveId, diverId: dive.diverId }).from(push).innerJoin(dive, eq(dive.id, push.diveId))
       .where(and(eq(push.provider, run.adapter.id), eq(push.remoteId, remoteId), eq(push.state, 'confirmed'), inArray(push.action, ['create', 'update'])));
     return rows.find((r) => run.managed.has(r.diverId))?.diveId ?? null;
   }
 
   /** Of these Dives, those that have a remote dive at the Provider now (they are another remote dive's already). */
-  async function withRemote(q: Db | Tx, run: ProviderRun, diveIds: string[]) {
+  async function withRemote(q: Queryable, run: ProviderRun, diveIds: string[]) {
     if (diveIds.length === 0) return new Set<string>();
     const rows = await q.select().from(push).where(and(eq(push.provider, run.adapter.id), inArray(push.diveId, diveIds)))
       .orderBy(desc(push.createdAt), desc(push.id));
@@ -195,7 +195,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * What the import does with one dive (the preview says it, the worker does it). `unattended`: a computer's dive whose
    * computer has no choice in `run.choices` waits for the User (Recordings or entries could go wrong, hard to undo).
    */
-  async function assess(q: Db | Tx, run: ProviderRun, d: ImportedDive, unattended = false): Promise<Assessment> {
+  async function assess(q: Queryable, run: ProviderRun, d: ImportedDive, unattended = false): Promise<Assessment> {
     if (d.evidence === 'ours') {
       // The Dive it is linked to now, when that isn't the one our reference names: the Dive it was sent from was merged
       // into another, which took the link (ADR 0038). Changes made at the Provider then come back to that Dive.
@@ -341,7 +341,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * stays"): never taken, nor "changed only here" because a newer Original moved the base; a Conflict while the two
    * sides differ. `open`: the entry's fields the comparison covers; `equal`: those whose two sides are now the same.
    */
-  async function held(q: Db | Tx, run: ProviderRun, diveId: string, d: ImportedDive, found: FoundChanges) {
+  async function held(q: Queryable, run: ProviderRun, diveId: string, d: ImportedDive, found: FoundChanges) {
     const open = (await openFields(q, diveId, run.adapter.id, d.remoteId)).filter((f) => found.here.fields.includes(f));
     // As a send: a Provider without a site never clears one here.
     const clash = open.filter((f) => !(f === 'site' && found.provider.site === null) && !same(f, found.provider, found.here.hub));

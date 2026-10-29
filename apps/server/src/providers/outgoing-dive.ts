@@ -1,7 +1,7 @@
 // A Dive as it leaves Dive Hub (ADR 0027): the same values for every Provider, read once from the Dive, its Primary
 // recording, Device, samples and site. Each adapter turns it into its own record.
 import { and, eq, inArray, isNull } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable } from '../db/client.js';
 import { device, dive, diveSite, diverExternalId, recording, sampleSeries } from '../db/schema.js';
 import { cylindersOf, providerCylinderOf } from '../dives/cylinders.js';
 import { managedDiverIds, participantsOf } from '../dives/dive-service.js';
@@ -21,7 +21,7 @@ export type DiveRow = typeof dive.$inferSelect;
  * The Dive site's ids at the services that know it, as a send for the Diver uses them (`pickId`: the remote dive's when
  * the Diver's account may use it, else the public one, else the account's private one), and its position and water.
  */
-async function outgoingSite(db: Db | Tx, siteId: string | null, diverId: string, remoteSiteIds: Partial<Record<SiteSource, string>>) {
+async function outgoingSite(db: Queryable, siteId: string | null, diverId: string, remoteSiteIds: Partial<Record<SiteSource, string>>) {
   const siteIds: Partial<Record<SiteSource, string>> = {};
   if (!siteId) return { siteIds, site: undefined };
   const accounts = Object.fromEntries(await Promise.all(SITE_SOURCES.map(async (s) => [s, await accountOf(db, diverId, s)] as const)));
@@ -35,7 +35,7 @@ async function outgoingSite(db: Db | Tx, siteId: string | null, diverId: string,
 }
 
 /** Who else was on the Dive, with their accounts at services: all an adapter may know of them (ADR 0029). */
-async function outgoingParticipants(db: Db | Tx, diveId: string, ownerId: string): Promise<OutgoingParticipant[]> {
+async function outgoingParticipants(db: Queryable, diveId: string, ownerId: string): Promise<OutgoingParticipant[]> {
   const people = await participantsOf(db, diveId);
   const accounts = people.length === 0 ? [] : await db.select().from(diverExternalId)
     .where(inArray(diverExternalId.diverId, people.map((p) => p.diverId)));
@@ -60,7 +60,7 @@ async function outgoingParticipants(db: Db | Tx, diveId: string, ownerId: string
  * with `deleted`: its state and deleting it at a Provider still work (the reminder, ADR 0026), sending doesn't.
  * `remoteSiteIds`: the site IDs of the dive at the Provider, kept when the Diver's account may use them.
  */
-export async function loadOutgoingDive(db: Db | Tx, userId: string, diveId: string, options: {
+export async function loadOutgoingDive(db: Queryable, userId: string, diveId: string, options: {
   deleted?: boolean; remoteSiteIds?: Partial<Record<SiteSource, string>>;
 } = {}) {
   const [row] = await db.select().from(dive).where(and(eq(dive.id, diveId), options.deleted ? undefined : isNull(dive.deletedAt)));

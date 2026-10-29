@@ -4,10 +4,10 @@
 // its remote dive is still the Dive's current one, and at least one of its fields still differs between the Dive now and
 // the Provider's value as the run found it (design 2026-10-28). Nothing is written on reading; nothing here calls a Provider.
 // Two ways in: the send and the import write through the bare functions (`record`, `entryOf`, `openFields`, `closeFields`,
-// `close`) with their own `Db | Tx`, inside their own flow; `createConflictService` is the one read side, for the Dive's
+// `close`) with their own `Queryable`, inside their own flow; `createConflictService` is the one read side, for the Dive's
 // page, "Needs your decision" and a Push run's count.
 import { and, desc, eq, inArray, or } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Db, Queryable } from '../db/client.js';
 import { connection, dive, diveSite, providerConflict, push, waitingPush, type ConnectionRow } from '../db/schema.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import type { ConnectionService } from './connection-service.js';
@@ -47,14 +47,14 @@ const fieldsOf = (stored: unknown): StoredConflictField[] => stored as StoredCon
 const shownFields = (fields: StoredConflictField[]): ConflictField[] => fields.map(({ field, hub, provider }) => ({ field, hub, provider }));
 
 /** Stores the Conflict of a Dive at a Provider; a newer one for the same Dive and Provider replaces the older. */
-export async function record(q: Db | Tx, entry: ConflictEntry): Promise<void> {
+export async function record(q: Queryable, entry: ConflictEntry): Promise<void> {
   const values = { connectionId: entry.connectionId, remoteId: entry.remoteId, fields: entry.fields, runId: entry.runId, foundAt: entry.foundAt };
   await q.insert(providerConflict).values({ diveId: entry.diveId, provider: entry.provider, ...values })
     .onConflictDoUpdate({ target: [providerConflict.diveId, providerConflict.provider], set: values });
 }
 
 /** The Dive's entry at the Provider: the remote dive it is about and its fields; null when there is none. */
-export async function entryOf(q: Db | Tx, diveId: string, provider: string): Promise<{ remoteId: string; fields: StoredConflictField[] } | null> {
+export async function entryOf(q: Queryable, diveId: string, provider: string): Promise<{ remoteId: string; fields: StoredConflictField[] } | null> {
   const [row] = await q.select({ remoteId: providerConflict.remoteId, fields: providerConflict.fields }).from(providerConflict)
     .where(and(eq(providerConflict.diveId, diveId), eq(providerConflict.provider, provider)));
   return row ? { remoteId: row.remoteId, fields: fieldsOf(row.fields) } : null;
@@ -64,14 +64,14 @@ export async function entryOf(q: Db | Tx, diveId: string, provider: string): Pro
  * The fields of the Dive's open entry at the Provider (none when there is no entry). With `remoteId`, only an entry
  * about that remote dive counts: one about a dive no longer the Dive's current one blocks nothing.
  */
-export async function openFields(q: Db | Tx, diveId: string, provider: string, remoteId?: string): Promise<SyncedField[]> {
+export async function openFields(q: Queryable, diveId: string, provider: string, remoteId?: string): Promise<SyncedField[]> {
   const entry = await entryOf(q, diveId, provider);
   if (!entry || (remoteId !== undefined && entry.remoteId !== remoteId)) return [];
   return entry.fields.map((f) => f.field);
 }
 
 /** Removes these fields from the Dive's entry at the Provider (the User chose for them); without fields left, the entry. */
-export async function closeFields(q: Db | Tx, diveId: string, provider: string, fields: readonly SyncedField[]): Promise<void> {
+export async function closeFields(q: Queryable, diveId: string, provider: string, fields: readonly SyncedField[]): Promise<void> {
   const entry = await entryOf(q, diveId, provider);
   if (!entry || fields.length === 0) return;
   const left = entry.fields.filter((f) => !fields.includes(f.field));
@@ -81,7 +81,7 @@ export async function closeFields(q: Db | Tx, diveId: string, provider: string, 
 }
 
 /** Removes the Dive's entry at the Provider. */
-export async function close(q: Db | Tx, diveId: string, provider: string): Promise<void> {
+export async function close(q: Queryable, diveId: string, provider: string): Promise<void> {
   await q.delete(providerConflict).where(and(eq(providerConflict.diveId, diveId), eq(providerConflict.provider, provider)));
 }
 

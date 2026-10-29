@@ -3,7 +3,7 @@
 // way (ADR 0026). A Dive that is linked to a Provider moves as a copy, the old one deleted with its links, so no import
 // of the old Diver's makes it again. Links are read as the Pushes say, for any Provider.
 import { and, desc, eq, gte, inArray, isNull, lte, ne, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Db, Queryable, Tx } from '../db/client.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
 import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localStartMs } from '../imports/matching.js';
 import { currentRemote, type PushRow } from '../providers/remote-state.js';
@@ -35,10 +35,10 @@ function byProvider(pushes: PushRow[], diveId: string): Map<string, PushRow[]> {
   return found;
 }
 
-const pushesOf = (tx: Tx | Db, diveIds: string[]) =>
+const pushesOf = (tx: Queryable, diveIds: string[]) =>
   tx.select().from(push).where(inArray(push.diveId, diveIds)).orderBy(desc(push.createdAt), desc(push.id));
 
-const liveRecordings = (tx: Tx | Db, diveId: string) =>
+const liveRecordings = (tx: Queryable, diveId: string) =>
   tx.select({ id: recording.id }).from(recording).where(and(eq(recording.diveId, diveId), isNull(recording.deletedAt))).orderBy(recording.startsAt);
 
 /** Of two Dives, the one a merge keeps: the one with a Recording when only one has; else the first. */

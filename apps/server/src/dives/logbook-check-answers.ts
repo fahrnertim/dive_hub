@@ -3,7 +3,7 @@
 // given on the logbook, so the pair isn't asked about right after the decision. Restoring a Dive that is probably no dive
 // says "keep it" the same way.
 import { and, eq, inArray, isNull } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable, Tx } from '../db/client.js';
 import { dive, logbookCheckAnswer, logbookCheckDiveAnswer, recording } from '../db/schema.js';
 import { ordered, probablyNoDive, ruleFor } from './logbook-check-rules.js';
 
@@ -27,7 +27,7 @@ export async function keepApart(tx: Tx, userId: string, diveId: string, otherIds
 }
 
 /** Records "keep it" for a Dive with the duration and depth it has now. */
-export async function keepDive(q: Db | Tx, userId: string, d: { id: string; durationSeconds: number; maxDepthM: number | null }): Promise<void> {
+export async function keepDive(q: Queryable, userId: string, d: { id: string; durationSeconds: number; maxDepthM: number | null }): Promise<void> {
   const answer = { rule: 'short_shallow_dive', durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, answeredBy: userId };
   await q.insert(logbookCheckDiveAnswer).values({ diveId: d.id, ...answer })
     .onConflictDoUpdate({ target: [logbookCheckDiveAnswer.diveId, logbookCheckDiveAnswer.rule], set: answer });

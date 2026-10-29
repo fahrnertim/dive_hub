@@ -2,7 +2,7 @@
 // last import or send left, the Dive as the comparison sees it, what changed at the Provider since, and taking those
 // changes. Generic; the adapter says what it has. Lives apart from the import so that the send can use it as well (ADR 0053).
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Db, Queryable, Tx } from '../db/client.js';
 import {
   dive, diveSite, diver, diverExternalId, importJob, importOriginal, original, participant, push,
   type ComputerChoice, type DiveImportMode,
@@ -58,7 +58,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
    * found by its ID (no name to match or create it by). `private`: the Provider marks the site private and the account's
    * own, or doesn't say (kept as the account's, never public); the context holds no other account's private site.
    */
-  async function sitesOf(q: Db | Tx, run: ProviderRun, d: ImportedDive): Promise<ProviderSite[]> {
+  async function sitesOf(q: Queryable, run: ProviderRun, d: ImportedDive): Promise<ProviderSite[]> {
     return Promise.all(Object.entries(d.siteIds).map(async ([source, externalId]) => {
       const known = run.context.sites[externalId];
       return {
@@ -85,7 +85,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
   }
 
   /** The start's instant: from the dive's position, else its site's at the Provider, else nearby Dives, else unknown. */
-  const placeTime = (q: Db | Tx, run: ProviderRun, d: ImportedDive): Promise<PlacedTime> =>
+  const placeTime = (q: Queryable, run: ProviderRun, d: ImportedDive): Promise<PlacedTime> =>
     placeLocalTime(q, run.diverId, wallClockMs(d.localStart)!, [d.exit, d.entry, d.sitePosition]);
 
   /** The Dive's site from the first of the Provider's sites that is here (or may be created): its ID, or null. */
@@ -152,7 +152,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
    * What the Provider had for this dive when Dive Hub last saw it (ADR 0030, amended): the newer of the Original an
    * earlier finished Import brought and what Dive Hub last sent there. Null when Dive Hub never saw it.
    */
-  async function baseOf(q: Db | Tx, run: ProviderRun, diveId: string, remoteId: string, notImport?: string): Promise<ImportedDive | null> {
+  async function baseOf(q: Queryable, run: ProviderRun, diveId: string, remoteId: string, notImport?: string): Promise<ImportedDive | null> {
     const [seen] = await q.select({ storageKey: original.storageKey, at: importJob.createdAt }).from(original)
       .innerJoin(importOriginal, eq(importOriginal.originalId, original.id))
       .innerJoin(importJob, eq(importJob.id, importOriginal.importId))
@@ -176,7 +176,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
    * ID a send would use (`pickId`): `remoteSiteId` when the Diver's account may use it, else the public one, else the
    * account's private one.
    */
-  async function hubOf(q: Db | Tx, run: ProviderRun, diveId: string, siteSource: SiteSource | null, remoteSiteId?: string | null) {
+  async function hubOf(q: Queryable, run: ProviderRun, diveId: string, siteSource: SiteSource | null, remoteSiteId?: string | null) {
     const [row] = await q.select().from(dive).where(eq(dive.id, diveId));
     if (!row) return null;
     let siteId: string | null = null;
@@ -204,7 +204,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
   }
 
   /** What changed at the Provider since Dive Hub last saw the dive, compared with the Dive here; null without a base. */
-  async function changesOf(q: Db | Tx, run: ProviderRun, diveId: string, d: ImportedDive, notImport?: string) {
+  async function changesOf(q: Queryable, run: ProviderRun, diveId: string, d: ImportedDive, notImport?: string) {
     const base = await baseOf(q, run, diveId, d.remoteId, notImport);
     if (!base) return null;
     const source = (Object.keys(d.siteIds)[0] ?? Object.keys(base.siteIds)[0] ?? null) as SiteSource | null;
@@ -352,7 +352,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     })));
   }
 
-  async function runOf(q: Db | Tx, userId: string, adapter: ProviderAdapter, s: {
+  async function runOf(q: Queryable, userId: string, adapter: ProviderAdapter, s: {
     diverId: string; connectionId: string | null; mode: DiveImportMode; windowMinutes: number; choices: Record<string, ComputerChoice>;
     context: ImportContext;
   }): Promise<ProviderRun> {

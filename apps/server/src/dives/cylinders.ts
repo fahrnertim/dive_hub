@@ -1,7 +1,7 @@
 // The Cylinders of a Dive (ADR 0031, 0045): the Dive's own values, set as one list. A Cylinder may be tied to one
 // pressure series of one of the Dive's Recordings; an import makes them from a tank pod's data where the Dive has none.
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Db, Queryable, Tx } from '../db/client.js';
 import { cylinder, dive, recording, revision, sampleSeries, type CylinderMaterial } from '../db/schema.js';
 import type { ProviderCylinder } from '../providers/provider.js';
 import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
@@ -36,7 +36,7 @@ const sameSeries = (a: Cylinder['series'], b: Cylinder['series']) =>
   !!a && !!b && a.recordingId === b.recordingId && a.channel === b.channel;
 
 /** A Dive's Cylinders in their order. */
-export async function cylindersOf(tx: Tx | Db, diveId: string): Promise<Cylinder[]> {
+export async function cylindersOf(tx: Queryable, diveId: string): Promise<Cylinder[]> {
   const rows = await tx.select().from(cylinder).where(eq(cylinder.diveId, diveId)).orderBy(asc(cylinder.position));
   return rows.map((r) => ({
     volumeL: r.volumeL, workingPressureBar: r.workingPressureBar, material: r.material,

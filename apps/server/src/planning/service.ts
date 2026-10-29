@@ -1,7 +1,7 @@
 // What the routes and the MCP tool answer (ADR 0032, slice 21): gas numbers, and bottom time with its defaults from the
 // Diver's own logbook. Computed on request, nothing stored. Limits from the Diver's own input and settings, not advice.
 import { and, desc, eq, gte, inArray, isNull } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
+import type { Queryable } from '../db/client.js';
 import { cylinder, dive, diveSite, recording } from '../db/schema.js';
 import { sacOfDive } from '../dives/sac.js';
 import { bottomTime } from './bottom-time.js';
@@ -87,7 +87,7 @@ export interface BottomTimeQuery {
 export type Source = 'request' | 'recording' | 'logbook' | 'site' | 'default';
 
 /** The SAC of each of a Diver's latest Dives, newest first: from its Cylinders, else a tank pod's on its Recording (ADR 0033). */
-export async function diveSacs(reader: Pick<Db, 'select'>, diverId: string): Promise<{ sacLpm: number | null }[]> {
+export async function diveSacs(reader: Queryable, diverId: string): Promise<{ sacLpm: number | null }[]> {
   const dives = await reader.select({ id: dive.id, durationSeconds: dive.durationSeconds, avgDepthM: dive.avgDepthM }).from(dive)
     .where(and(eq(dive.diverId, diverId), isNull(dive.deletedAt))).orderBy(desc(dive.startsAt)).limit(SAC_LOOKBACK_DIVES);
   if (dives.length === 0) return [];
@@ -107,7 +107,7 @@ export async function diveSacs(reader: Pick<Db, 'select'>, diverId: string): Pro
 }
 
 /** When the Diver's Dive within the last 48 hours ended, if there is one: the real limit is then shorter than shown. */
-export async function recentDiveEnd(reader: Pick<Db, 'select'>, diverId: string): Promise<Date | null> {
+export async function recentDiveEnd(reader: Queryable, diverId: string): Promise<Date | null> {
   const now = Date.now();
   const dives = await reader.select({ startsAt: dive.startsAt, durationSeconds: dive.durationSeconds }).from(dive)
     .where(and(eq(dive.diverId, diverId), isNull(dive.deletedAt), gte(dive.startsAt, new Date(now - (RECENT_DIVE_HOURS + 12) * 3600_000))));
@@ -120,7 +120,7 @@ export async function recentDiveEnd(reader: Pick<Db, 'select'>, diverId: string)
 }
 
 /** The planned site's water; brackish counts as salt for the limit. */
-export async function siteWaterOf(reader: Pick<Db, 'select'>, siteId: string | undefined) {
+export async function siteWaterOf(reader: Queryable, siteId: string | undefined) {
   if (!siteId) return { ok: true, water: undefined } as const;
   const [site] = await reader.select({ waterType: diveSite.waterType }).from(diveSite).where(eq(diveSite.id, siteId));
   if (!site) return { ok: false, code: 'site_not_found' } as const;
@@ -128,7 +128,7 @@ export async function siteWaterOf(reader: Pick<Db, 'select'>, siteId: string | u
 }
 
 /** `managedDiverIds` are the Divers the signed-in User manages: a Diver outside them is "not found". */
-export async function planBottomTime(reader: Pick<Db, 'select'>, managedDiverIds: readonly string[], q: BottomTimeQuery) {
+export async function planBottomTime(reader: Queryable, managedDiverIds: readonly string[], q: BottomTimeQuery) {
   const gas = { o2: q.o2, he: q.he ?? 0 };
   if (gas.o2 + gas.he > 100) return { ok: false, code: 'invalid_input' } as const;
   if ((q.volume === undefined) !== (q.pressure === undefined)) return { ok: false, code: 'invalid_input' } as const;

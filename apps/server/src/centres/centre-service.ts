@@ -2,7 +2,7 @@
 // (with optimistic locking and Revisions), sets their SSI centre number and links them to the Dive sites they are
 // responsible for; their creator or an admin deletes them. A Dive's centres are those of its site.
 import { and, eq, ilike, inArray, isNull, ne, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Db, Queryable, Tx } from '../db/client.js';
 import { dive, diveCentre, diveCentreExternalId, diveCentreSite, diveSite } from '../db/schema.js';
 import { writeRevision, type Changes } from '../dives/revisions.js';
 import { isUniqueViolation } from '../sites/site-service.js';
@@ -92,7 +92,7 @@ export function createCentreService(db: Db) {
     return row;
   }
 
-  async function holder(tx: Tx | Db, source: CentreSource, externalId: string, notCentreId?: string) {
+  async function holder(tx: Queryable, source: CentreSource, externalId: string, notCentreId?: string) {
     const [row] = await tx.select({ id: diveCentre.id, name: diveCentre.name }).from(diveCentreExternalId)
       .innerJoin(diveCentre, eq(diveCentre.id, diveCentreExternalId.centreId))
       .where(and(eq(diveCentreExternalId.source, source), eq(diveCentreExternalId.externalId, externalId),

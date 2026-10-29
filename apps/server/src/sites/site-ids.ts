@@ -3,7 +3,7 @@
 // is private to that account (`diver_external_id`): only sends for its Diver use it, only Users who manage that Diver
 // see it. A Source has one ID space, so `(source, external_id)` is held once, public or private.
 import { and, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable, Tx } from '../db/client.js';
 import { diveSite, diveSiteExternalId, diverExternalId, diverManagement } from '../db/schema.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
 import type { Position } from '../vocabulary.js';
@@ -12,7 +12,6 @@ import type { ImportedValues } from './import/site-source.js';
 import { isUniqueViolation, SiteError } from './site-error.js';
 import { revisionKey, type SiteSource } from './sources.js';
 
-type Q = Db | Tx;
 
 export type SiteIdRow = {
   source: SiteSource;
@@ -24,7 +23,7 @@ export type SiteIdRow = {
 };
 
 /** The Diver's account at a Source (the id of their `diver_external_id` row), or null. Only SSI has accounts. */
-export async function accountOf(q: Q, diverId: string, source: SiteSource): Promise<string | null> {
+export async function accountOf(q: Queryable, diverId: string, source: SiteSource): Promise<string | null> {
   if (source !== 'ssi') return null;
   const [r] = await q.select({ id: diverExternalId.id }).from(diverExternalId)
     .where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, source)));
@@ -32,7 +31,7 @@ export async function accountOf(q: Q, diverId: string, source: SiteSource): Prom
 }
 
 /** The accounts of the Divers the User manages, at one Source or all. */
-export async function accountsOfUser(q: Q, userId: string, source?: SiteSource): Promise<string[]> {
+export async function accountsOfUser(q: Queryable, userId: string, source?: SiteSource): Promise<string[]> {
   if (source !== undefined && source !== 'ssi') return [];
   const rows = await q.select({ id: diverExternalId.id }).from(diverExternalId)
     .innerJoin(diverManagement, eq(diverManagement.diverId, diverExternalId.diverId))
@@ -41,7 +40,7 @@ export async function accountsOfUser(q: Q, userId: string, source?: SiteSource):
 }
 
 /** The Diver of each account. */
-export async function diversOf(q: Q, accounts: string[]): Promise<Map<string, string>> {
+export async function diversOf(q: Queryable, accounts: string[]): Promise<Map<string, string>> {
   if (accounts.length === 0) return new Map();
   const rows = await q.select({ id: diverExternalId.id, diverId: diverExternalId.diverId }).from(diverExternalId).where(inArray(diverExternalId.id, accounts));
   return new Map(rows.map((r) => [r.id, r.diverId]));
@@ -51,7 +50,7 @@ const rowOf = (r: typeof diveSiteExternalId.$inferSelect): SiteIdRow =>
   ({ source: r.source, externalId: r.externalId, accountId: r.accountId, providesData: r.providesData, imported: r.imported });
 
 /** Every site's public rows, by site (the Site import plans against these only). */
-export async function allPublicIds(q: Q): Promise<Map<string, SiteIdRow[]>> {
+export async function allPublicIds(q: Queryable): Promise<Map<string, SiteIdRow[]>> {
   const result = new Map<string, SiteIdRow[]>();
   for (const r of await q.select().from(diveSiteExternalId).where(isNull(diveSiteExternalId.accountId))) {
     result.set(r.siteId, [...(result.get(r.siteId) ?? []), rowOf(r)]);
@@ -60,7 +59,7 @@ export async function allPublicIds(q: Q): Promise<Map<string, SiteIdRow[]>> {
 }
 
 /** The sites' public rows and the private rows of `accounts`, by site. */
-export async function idsOf(q: Q, siteIds: string[], accounts: string[]): Promise<Map<string, SiteIdRow[]>> {
+export async function idsOf(q: Queryable, siteIds: string[], accounts: string[]): Promise<Map<string, SiteIdRow[]>> {
   const result = new Map<string, SiteIdRow[]>();
   if (siteIds.length === 0) return result;
   const rows = await q.select().from(diveSiteExternalId).where(and(
@@ -86,7 +85,7 @@ export function pickId(rows: SiteIdRow[], source: SiteSource, account: string | 
 }
 
 /** The site that holds an ID, whoever's it is, and whether that site is deleted (or merged). */
-export async function holderOf(q: Q, source: SiteSource, externalId: string): Promise<{ siteId: string; accountId: string | null; deleted: boolean } | null> {
+export async function holderOf(q: Queryable, source: SiteSource, externalId: string): Promise<{ siteId: string; accountId: string | null; deleted: boolean } | null> {
   const [r] = await q.select({ siteId: diveSiteExternalId.siteId, accountId: diveSiteExternalId.accountId, deletedAt: diveSite.deletedAt })
     .from(diveSiteExternalId).innerJoin(diveSite, eq(diveSite.id, diveSiteExternalId.siteId))
     .where(and(eq(diveSiteExternalId.source, source), eq(diveSiteExternalId.externalId, externalId)));
@@ -148,7 +147,7 @@ export async function clearId(tx: Tx, siteId: string, source: SiteSource, accoun
 const keyOf = (r: { source: SiteSource; externalId: string }) => `${r.source}:${r.externalId}`;
 
 /** Which of these IDs some row holds (public or private, any site), as `source:externalId`. */
-export async function heldIds(q: Q, ids: { source: SiteSource; externalId: string }[]): Promise<Set<string>> {
+export async function heldIds(q: Queryable, ids: { source: SiteSource; externalId: string }[]): Promise<Set<string>> {
   const held = new Set<string>();
   for (const source of new Set(ids.map((i) => i.source))) {
     const rows = await q.select({ source: diveSiteExternalId.source, externalId: diveSiteExternalId.externalId }).from(diveSiteExternalId)

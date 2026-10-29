@@ -4,7 +4,7 @@
 // a site's name or position) and by the User's decisions; the worker step that sends is elsewhere.
 // It imports only the database layer: `dives/revisions.ts` calls it, so a `dives/` import here would be a cycle.
 import { and, asc, desc, eq, inArray, min, ne, or, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable, Tx } from '../db/client.js';
 import { currentRemote, type PushRow } from './current-remote.js';
 import { connection, dive, importJob, push, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../db/schema.js';
 
@@ -17,7 +17,6 @@ export interface ProviderLog {
 /** Without a logger (a script or a test that doesn't look), the fault still goes somewhere an operator sees it. */
 export const consoleLog: ProviderLog = { error: (detail, message) => console.error(message, detail), warn: (detail, message) => console.warn(message, detail) };
 
-type Q = Db | Tx;
 
 /** The Graphile Worker task that sends a Connection's due entries. */
 export const WAITING_PUSHES_TASK = 'waiting_pushes';
@@ -41,7 +40,7 @@ const needsSignIn = (conn: ConnectionRow) => conn.state === 'needs_sign_in' && !
  * when none waits. Held and stopped entries are not due by themselves. `keepTime`: a job already queued keeps its time
  * (the minute tick's safety net, which must not cut a pause short); only a missing one is added.
  */
-export async function scheduleConnection(q: Q, connectionId: string, options: { keepTime?: boolean } = {}): Promise<void> {
+export async function scheduleConnection(q: Queryable, connectionId: string, options: { keepTime?: boolean } = {}): Promise<void> {
   const [next] = await q.select({ due: min(waitingPush.dueAt) }).from(waitingPush)
     .where(and(eq(waitingPush.connectionId, connectionId), eq(waitingPush.state, 'waiting')));
   if (!next?.due) return;
@@ -53,7 +52,7 @@ export async function scheduleConnection(q: Q, connectionId: string, options: { 
 }
 
 /** Puts the Dive in the queue as a send, due `QUIET_MS` after `at`; a waiting delete stays (a send never replaces it). */
-export async function upsertSend(q: Q, conn: ConnectionRow, diveId: string, at: Date): Promise<void> {
+export async function upsertSend(q: Queryable, conn: ConnectionRow, diveId: string, at: Date): Promise<void> {
   const held = needsSignIn(conn);
   const fresh = {
     connectionId: conn.id, state: held ? ('held' as const) : ('waiting' as const), reason: held ? 'sign_in' : null, dueAt: new Date(at.getTime() + QUIET_MS),
@@ -66,7 +65,7 @@ export async function upsertSend(q: Q, conn: ConnectionRow, diveId: string, at: 
 
 /** Puts the Dive in the queue as a delete at the Provider, due `DELETE_QUIET_MS` after `at`; it replaces a send. */
 async function upsertDelete(
-  q: Q, conn: ConnectionRow, diveId: string, at: Date, detail: { remoteId: string; remoteNumber: number | null; startsAt: string },
+  q: Queryable, conn: ConnectionRow, diveId: string, at: Date, detail: { remoteId: string; remoteNumber: number | null; startsAt: string },
 ): Promise<void> {
   const held = needsSignIn(conn);
   const fresh = {
@@ -79,7 +78,7 @@ async function upsertDelete(
 }
 
 /** The Provider an import came from, when the Revision's actor is an import that fills or updates the Dive from one. */
-async function importedFrom(q: Q, cause: string, actor?: { type: string; id: string }): Promise<string | null> {
+async function importedFrom(q: Queryable, cause: string, actor?: { type: string; id: string }): Promise<string | null> {
   if (actor?.type !== 'import' || (cause !== 'fill' && cause !== 'update')) return null;
   const [found] = await q.select({ provider: importJob.provider }).from(importJob).where(eq(importJob.id, actor.id));
   return found?.provider ?? null;
@@ -167,7 +166,7 @@ async function noteNew(n: Note, provider: string): Promise<void> {
  * remote dive there was made through a Connection, still the Dive's Diver's, with "delete at the Provider" on (the one
  * `noteDiveChange` decides by).
  */
-export async function deletingItself(q: Q, diveIds: string[]): Promise<Map<string, Set<string>>> {
+export async function deletingItself(q: Queryable, diveIds: string[]): Promise<Map<string, Set<string>>> {
   const found = new Map<string, Set<string>>();
   if (diveIds.length === 0) return found;
   const pushes = await q.select().from(push).where(inArray(push.diveId, diveIds)).orderBy(desc(push.createdAt), desc(push.id));
@@ -200,7 +199,7 @@ export async function noteSiteChange(tx: Tx, siteId: string, at: Date): Promise<
  * Queues the Dive as a send due at `at`, the caller's now (the User's decision, Retry, a Push run's offer), merging `options` into the
  * entry's. A waiting delete stays. Schedules the Connection's job.
  */
-export async function queueNow(q: Q, diveId: string, provider: string, connectionId: string, options: WaitingPushOptions, at: Date): Promise<void> {
+export async function queueNow(q: Queryable, diveId: string, provider: string, connectionId: string, options: WaitingPushOptions, at: Date): Promise<void> {
   // Merged in the upsert itself, not read first: two decisions at once both end in the entry.
   const fresh = {
     connectionId, state: 'waiting' as const, reason: null, dueAt: at, attempts: 0, firstFailedAt: null, stoppedAt: null, changedAt: at,
@@ -220,7 +219,7 @@ export async function queueNow(q: Q, diveId: string, provider: string, connectio
  */
 export type QueueMark = string | null;
 
-export async function mark(q: Q, diveId: string, provider: string, action?: 'send' | 'delete'): Promise<QueueMark> {
+export async function mark(q: Queryable, diveId: string, provider: string, action?: 'send' | 'delete'): Promise<QueueMark> {
   const [entry] = await q.select({ at: sql<string>`${waitingPush.changedAt}::text` }).from(waitingPush)
     .where(and(eq(waitingPush.diveId, diveId), eq(waitingPush.provider, provider), ...(action ? [eq(waitingPush.action, action)] : [])));
   return entry?.at ?? null;
@@ -234,7 +233,7 @@ export async function mark(q: Q, diveId: string, provider: string, action?: 'sen
  * an edit whose transaction began before the send and committed during it carries an older time, but a new mark.
  * `action` limits it to the entries of that action (a confirmed send leaves a waiting delete alone).
  */
-export async function settle(q: Q, diveId: string, provider: string, seen: QueueMark, action?: 'send' | 'delete'): Promise<void> {
+export async function settle(q: Queryable, diveId: string, provider: string, seen: QueueMark, action?: 'send' | 'delete'): Promise<void> {
   const mine = and(eq(waitingPush.diveId, diveId), eq(waitingPush.provider, provider), ...(action ? [eq(waitingPush.action, action)] : []));
   if (seen !== null) {
     const done = await q.delete(waitingPush).where(and(mine, sql`${waitingPush.changedAt} = ${seen}::timestamptz`)).returning({ diveId: waitingPush.diveId });

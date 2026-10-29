@@ -2,7 +2,7 @@
 // Like the queue, it imports only the database layer.
 import { and, asc, inArray } from 'drizzle-orm';
 import { Type, type Static } from 'typebox';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable } from '../db/client.js';
 import { waitingPush } from '../db/schema.js';
 
 export const WaitingPushViewSchema = Type.Object({
@@ -20,7 +20,7 @@ export type WaitingPushView = Static<typeof WaitingPushViewSchema>;
  * The entries of these Dives at these Providers (the ones the instance has: an entry of a removed Provider is left out,
  * as its Connections are), by Dive (Dives without any are left out), in the order of their Providers.
  */
-export async function waitingOf(q: Db | Tx, diveIds: string[], providers: string[]): Promise<Map<string, WaitingPushView[]>> {
+export async function waitingOf(q: Queryable, diveIds: string[], providers: string[]): Promise<Map<string, WaitingPushView[]>> {
   const found = new Map<string, WaitingPushView[]>();
   if (diveIds.length === 0 || providers.length === 0) return found;
   const entries = await q.select().from(waitingPush).where(and(inArray(waitingPush.diveId, diveIds), inArray(waitingPush.provider, providers)))

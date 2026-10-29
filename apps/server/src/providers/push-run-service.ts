@@ -3,7 +3,7 @@
 // `pushes.setNumber`, so nothing is sent a different way than from a Dive's page. Dive Hub's data alone says what a
 // run would do (the preview), and it never calls a Provider.
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
+import type { Db, Queryable } from '../db/client.js';
 import { connection, dive, diveSite, push, pushRun, pushRunItem, type PushRunLeftOut, type ConnectionRow } from '../db/schema.js';
 import { asksFor, diveListFilter } from '../dives/list-filter.js';
 import { managedDiverIds } from '../dives/dive-service.js';
@@ -226,7 +226,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
   }
 
   /** Queues the next step of a run (as the worker's step does itself, after the pause). */
-  const queueStep = (tx: Pick<Db, 'execute'>, runId: string) =>
+  const queueStep = (tx: Queryable, runId: string) =>
     tx.execute(sql`select graphile_worker.add_job(${PUSH_RUN_STEP_TASK}, json_build_object('runId', ${runId}::text), job_key => ${'push-run:' + runId}, max_attempts => 1)`);
 
   /** A signed-in Connection, or `provider_sign_in_needed` before anything is queued. */

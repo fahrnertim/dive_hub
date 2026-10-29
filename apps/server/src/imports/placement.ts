@@ -3,7 +3,7 @@
 // new Dive, an attach, or a Duplicate candidate (always one for a probable non-dive beside a Dive). The same dive from a poorer and a fuller file of one Source ends in one
 // Recording (ADR 0037).
 import { and, desc, eq, gte, inArray, isNotNull, isNull, like, lte, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable, Tx } from '../db/client.js';
 import {
   device, dive, diverManagement, duplicateCandidate, original, recording, recordingEvent, sampleSeries, type ImportOutcome,
 } from '../db/schema.js';
@@ -35,7 +35,7 @@ export async function managedDivers(tx: Tx, userId: string): Promise<Set<string>
 }
 
 /** The Diver a live Device by this manufacturer and serial number belongs to, or null when there is none. */
-export async function deviceDiver(tx: Db | Tx, d: { manufacturer: string; serialNumber: string }): Promise<string | null> {
+export async function deviceDiver(tx: Queryable, d: { manufacturer: string; serialNumber: string }): Promise<string | null> {
   const [known] = await tx.select({ diverId: device.diverId }).from(device).where(and(
     eq(device.manufacturer, d.manufacturer), eq(device.serialNumber, d.serialNumber), isNull(device.deletedAt),
   ));

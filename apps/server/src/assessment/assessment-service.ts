@@ -2,7 +2,7 @@
 // they came from, and computed again when either changes or when the Diver's dives around a Dive change. Users put a
 // finding aside on one Dive (dismiss) or a rule aside for a Diver (mute); they never change what was computed.
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Db, Queryable, Tx } from '../db/client.js';
 import {
   dive, diveAssessment, diveFinding, diver, diverManagement, findingDismissal, mutedRule, recording, recordingEvent, sampleSeries,
   type RecordingSummary,
@@ -176,7 +176,7 @@ export function createAssessmentService(db: Db) {
 }
 
 /** What is stored about a Dive's assessment. Reads only: the MCP tool calls it inside its read-only transaction. */
-export async function read(tx: Tx | Db, d: { id: string; diverId: string; primaryRecordingId: string | null }) {
+export async function read(tx: Queryable, d: { id: string; diverId: string; primaryRecordingId: string | null }) {
   const [assessment] = await tx.select().from(diveAssessment).where(eq(diveAssessment.diveId, d.id));
   const findings = await tx.select().from(diveFinding).where(eq(diveFinding.diveId, d.id));
   const dismissed = new Set((await tx.select({ rule: findingDismissal.rule }).from(findingDismissal).where(eq(findingDismissal.diveId, d.id))).map((r) => r.rule));

@@ -3,7 +3,7 @@
 // An imported card is the agency's record: its fields are read-only here, only its notes change. A card's picture is
 // fetched by a worker job into the blob store and served only through the API.
 import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Db, Queryable } from '../db/client.js';
 import { certification, diver, diverManagement, original } from '../db/schema.js';
 import type { CertificationImageState, CertificationVerification } from '../db/schema.js';
 import { writeRevision } from '../dives/revisions.js';
@@ -189,7 +189,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
     if (!card && !file) await blobs.delete(key);
   }
 
-  const queueImage = (tx: Tx | Db, certificationId: string) =>
+  const queueImage = (tx: Queryable, certificationId: string) =>
     tx.execute(sql`select graphile_worker.add_job(${CERTIFICATION_IMAGE_TASK}, json_build_object('certificationId', ${certificationId}::text),
       job_key => ${'certification-image:' + certificationId}, max_attempts => ${CERTIFICATION_IMAGE_ATTEMPTS})`);
 
