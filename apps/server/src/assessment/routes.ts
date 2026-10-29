@@ -3,7 +3,7 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireUser, userOf } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import { COMPUTER_EVENTS } from '../vocabulary.js';
 import { AssessmentError, type AssessmentService, type AssessmentView } from './assessment-service.js';
@@ -77,7 +77,7 @@ export const assessmentRoutes: FastifyPluginAsyncTypebox<AssessmentRouteDeps> = 
       description: 'Not medical advice and not a score: clients show the fixed note with it and word findings as facts (docs/spec/clients.md).',
       params: IdParams, response: { 200: AssessmentViewSchema, 404: Problem },
     },
-  }, async (request) => toView(await assessments.of(request.user!.id, request.params.id)));
+  }, async (request) => toView(await assessments.of(userOf(request).id, request.params.id)));
 
   app.put('/dives/:id/findings/:rule/dismissal', {
     schema: {
@@ -87,8 +87,8 @@ export const assessmentRoutes: FastifyPluginAsyncTypebox<AssessmentRouteDeps> = 
       response: { 200: AssessmentViewSchema, 404: Problem },
     },
   }, async (request) => {
-    await assessments.dismiss(request.user!.id, request.params.id, request.params.rule, request.body.dismissed);
-    return toView(await assessments.of(request.user!.id, request.params.id));
+    await assessments.dismiss(userOf(request).id, request.params.id, request.params.rule, request.body.dismissed);
+    return toView(await assessments.of(userOf(request).id, request.params.id));
   });
 
   app.put('/divers/:id/muted-rules/:rule', {
@@ -99,7 +99,7 @@ export const assessmentRoutes: FastifyPluginAsyncTypebox<AssessmentRouteDeps> = 
       response: { 204: Type.Null(), 404: Problem },
     },
   }, async (request, reply) => {
-    await assessments.mute(request.user!.id, request.params.id, request.params.rule, request.body.muted);
+    await assessments.mute(userOf(request).id, request.params.id, request.params.rule, request.body.muted);
     return reply.code(204).send(null);
   });
 };

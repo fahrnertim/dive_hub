@@ -4,7 +4,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import { Value } from 'typebox/value';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireUser, userOf } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import type { PlanningService } from './planning-service.js';
 import { PLAN_RULES } from './plan-service.js';
@@ -144,7 +144,7 @@ export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = asyn
       querystring: BottomTimeQuery, response: { 200: BottomTimeView, 400: Problem, 404: Problem },
     },
   }, async (request, reply) => {
-    const answer = await deps.planning.bottomTime(request.user!.id, request.query);
+    const answer = await deps.planning.bottomTime(userOf(request).id, request.query);
     if (answer.ok) return answer.value;
     return reply.code(answer.code === 'diver_not_found' || answer.code === 'site_not_found' ? 404 : 400).send(problem(answer.code));
   });
@@ -163,7 +163,7 @@ export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = asyn
     let parsedDivers: unknown;
     try { parsedLevels = JSON.parse(levels); parsedDivers = JSON.parse(divers); } catch { return reply.code(400).send(problem('invalid_input')); }
     if (!Value.Check(PlanLevels, parsedLevels) || !Value.Check(PlanDivers, parsedDivers)) return reply.code(400).send(problem('invalid_input'));
-    const answer = await deps.planning.gasPlan(request.user!.id, { ...rest, levels: parsedLevels, divers: parsedDivers });
+    const answer = await deps.planning.gasPlan(userOf(request).id, { ...rest, levels: parsedLevels, divers: parsedDivers });
     if (answer.ok) return answer.value as { status: 'ok' | 'outside_limits' };
     return reply.code(answer.code === 'diver_not_found' || answer.code === 'site_not_found' ? 404 : 400).send(problem(answer.code));
   });

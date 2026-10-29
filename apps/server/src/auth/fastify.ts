@@ -72,6 +72,12 @@ export function requireUser(auth: Auth) {
   };
 }
 
+/** The signed-in User of a route behind requireUser; without the hook it is the route's mistake, so it throws. */
+export function userOf(request: FastifyRequest): SessionUser {
+  if (!request.user) throw new Error('no signed-in User: the route has no requireUser hook');
+  return request.user;
+}
+
 /** onRequest hook (after requireUser): 403 unless the signed-in User is an admin. */
 export async function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
   if (request.user?.role !== 'admin') return reply.code(403).send(problem('admins_only'));

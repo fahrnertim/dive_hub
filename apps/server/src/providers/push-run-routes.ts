@@ -2,6 +2,7 @@
 // so the sign-in hook and the Provider error handler are theirs. A run is the User's, never another's (404).
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
+import { userOf } from '../auth/fastify.js';
 import { Problem, PROBLEMS, type ProblemCode } from '../http/problems.js';
 import { DIVE_ONLY_PATTERN } from '../dives/list-filter.js';
 import { MAX_IDS, type PushRunService } from './push-run-service.js';
@@ -134,7 +135,6 @@ const PushRunProblem = Type.Object({
 const errors = { 400: PushRunProblem, 404: PushRunProblem, 409: PushRunProblem };
 
 export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService }> = async (app, { pushRuns }) => {
-  const userId = (request: { user?: object | null | undefined }) => (request.user as { id: string }).id;
   const requestOf = (body: Static<typeof StartBody>) => {
     const { list, ids } = body.dives;
     return {
@@ -154,7 +154,7 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
     },
   }, async (request, reply) => {
     if (!oneOfListAndIds(request.body)) return reply.code(400).send(invalid);
-    return runViewOf(await pushRuns.preview(userId(request), request.params.id, requestOf(request.body)));
+    return runViewOf(await pushRuns.preview(userOf(request).id, request.params.id, requestOf(request.body)));
   });
 
   app.post('/connections/:id/push-runs', {
@@ -165,12 +165,12 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
     },
   }, async (request, reply) => {
     if (!oneOfListAndIds(request.body)) return reply.code(400).send(invalid);
-    return reply.code(202).send(runView(await pushRuns.start(userId(request), request.params.id, requestOf(request.body))));
+    return reply.code(202).send(runView(await pushRuns.start(userOf(request).id, request.params.id, requestOf(request.body))));
   });
 
   app.get('/push-runs', {
     schema: { summary: 'The signed-in User\'s Push runs, newest first, without items', response: { 200: Type.Array(RunView) } },
-  }, async (request) => (await pushRuns.list(userId(request))).map(runView));
+  }, async (request) => (await pushRuns.list(userOf(request).id)).map(runView));
 
   app.get('/push-runs/:id', {
     schema: {
@@ -178,7 +178,7 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
       response: { 200: Type.Intersect([RunView, Type.Object({ withoutSomeone: Type.Array(WithoutSomeone), items: Type.Array(ItemView) })]), ...errors },
     },
   }, async (request) => {
-    const run = await pushRuns.get(userId(request), request.params.id);
+    const run = await pushRuns.get(userOf(request).id, request.params.id);
     return { ...runView(run), withoutSomeone: run.withoutSomeone.map((w) => ({ ...w, startsAt: w.startsAt.toISOString() })), items: run.items.map((i) => ({ ...i, action: i.action as Static<typeof ItemView>['action'], outcome: i.outcome as Static<typeof ItemView>['outcome'], dive: { ...i.dive, startsAt: i.dive.startsAt.toISOString() } })) };
   });
 
@@ -187,7 +187,7 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
       summary: 'Ask a run to stop: the Dive being sent is finished, the rest stay unsent',
       params: IdParams, response: { 200: RunView, ...errors },
     },
-  }, async (request) => runView(await pushRuns.cancel(userId(request), request.params.id)));
+  }, async (request) => runView(await pushRuns.cancel(userOf(request).id, request.params.id)));
 
   app.post('/push-runs/:id/dismiss', {
     schema: {
@@ -195,14 +195,14 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
       description: 'Stored with the run (dismissedAt). Only an ended run: 409 push_run_going while it goes. Taking a stopped run up again clears it.',
       params: IdParams, response: { 200: RunView, ...errors },
     },
-  }, async (request) => runView(await pushRuns.dismiss(userId(request), request.params.id)));
+  }, async (request) => runView(await pushRuns.dismiss(userOf(request).id, request.params.id)));
 
   app.post('/push-runs/:id/continue', {
     schema: {
       summary: 'Take up a stopped run: the failed Dives that are worth another try go first, then the waiting ones',
       params: IdParams, response: { 202: RunView, ...errors },
     },
-  }, async (request, reply) => reply.code(202).send(runView(await pushRuns.continue(userId(request), request.params.id))));
+  }, async (request, reply) => reply.code(202).send(runView(await pushRuns.continue(userOf(request).id, request.params.id))));
 };
 
 /** The preview carries Dates (blocked dives' start times) as strings. */

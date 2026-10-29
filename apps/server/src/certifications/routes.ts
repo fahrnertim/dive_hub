@@ -4,7 +4,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyReply } from 'fastify';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireUser, userOf } from '../auth/fastify.js';
 import { CERTIFICATION_IMAGE_STATES, CERTIFICATION_VERIFICATIONS } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
 import { CertificationError, type CertificationService } from './certification-service.js';
@@ -86,7 +86,7 @@ export const certificationRoutes: FastifyPluginAsyncTypebox<CertificationRouteDe
       description: 'ADR 0050. Never part of another view, never shown to other Users (ADR 0028).',
       params: DiverParams, response: { 200: Type.Array(CertificationView), ...errors },
     },
-  }, async (request) => certifications.list(request.user!.id, request.params.id));
+  }, async (request) => certifications.list(userOf(request).id, request.params.id));
 
   app.post('/divers/:id/certifications', {
     schema: {
@@ -95,7 +95,7 @@ export const certificationRoutes: FastifyPluginAsyncTypebox<CertificationRouteDe
       params: DiverParams, body: Type.Object(Fields, { additionalProperties: false }),
       response: { 201: CertificationView, ...errors },
     },
-  }, async (request, reply) => reply.code(201).send(await certifications.create(request.user!.id, request.params.id, request.body)));
+  }, async (request, reply) => reply.code(201).send(await certifications.create(userOf(request).id, request.params.id, request.body)));
 
   app.put('/divers/:id/certifications/:certificationId', {
     schema: {
@@ -106,7 +106,7 @@ export const certificationRoutes: FastifyPluginAsyncTypebox<CertificationRouteDe
     },
   }, async (request) => {
     const { version, ...input } = request.body;
-    return certifications.update(request.user!.id, request.params.id, request.params.certificationId, version, input);
+    return certifications.update(userOf(request).id, request.params.id, request.params.certificationId, version, input);
   });
 
   app.delete('/divers/:id/certifications/:certificationId', {
@@ -115,7 +115,7 @@ export const certificationRoutes: FastifyPluginAsyncTypebox<CertificationRouteDe
       params: CardParams, response: { 204: Type.Null(), ...errors },
     },
   }, async (request, reply) => {
-    await certifications.remove(request.user!.id, request.params.id, request.params.certificationId);
+    await certifications.remove(userOf(request).id, request.params.id, request.params.certificationId);
     return reply.code(204).send(null);
   });
 
@@ -126,7 +126,7 @@ export const certificationRoutes: FastifyPluginAsyncTypebox<CertificationRouteDe
       params: CardParams, response: { 200: Type.Unknown(), ...errors },
     },
   }, async (request, reply) => {
-    const image = await certifications.image(request.user!.id, request.params.id, request.params.certificationId);
+    const image = await certifications.image(userOf(request).id, request.params.id, request.params.certificationId);
     return reply.header('Content-Type', image.mediaType).header('Cache-Control', 'private, max-age=0, must-revalidate')
       .header('ETag', `"${image.sha256}"`).header('X-Content-Type-Options', 'nosniff').send(image.bytes);
   });
@@ -138,7 +138,7 @@ export const certificationRoutes: FastifyPluginAsyncTypebox<CertificationRouteDe
       params: CardParams, response: { 204: Type.Null(), ...errors },
     },
   }, async (request, reply) => {
-    await certifications.refetchImage(request.user!.id, request.params.id, request.params.certificationId);
+    await certifications.refetchImage(userOf(request).id, request.params.id, request.params.certificationId);
     return reply.code(204).send(null);
   });
 };

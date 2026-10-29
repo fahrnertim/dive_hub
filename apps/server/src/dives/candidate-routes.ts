@@ -4,7 +4,7 @@ import { Type } from 'typebox';
 import type { AssessmentService } from '../assessment/assessment-service.js';
 import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireUser, userOf } from '../auth/fastify.js';
 import { UTC_OFFSET_SOURCES } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
 import type { DuplicateReason } from '../imports/matching.js';
@@ -71,7 +71,7 @@ export const candidateRoutes: FastifyPluginAsyncTypebox<CandidateRouteDeps> = as
     },
   }, async (request) => {
     const status = request.query.status ?? 'open';
-    return (await candidates.list(request.user!.id, status)).map(({ candidate: c, recording: r, device: d, dives }) => ({
+    return (await candidates.list(userOf(request).id, status)).map(({ candidate: c, recording: r, device: d, dives }) => ({
       id: c.id,
       reason: c.reason as DuplicateReason,
       status,
@@ -92,23 +92,23 @@ export const candidateRoutes: FastifyPluginAsyncTypebox<CandidateRouteDeps> = as
 
   app.post('/duplicate-candidates/:id/attach', {
     schema: { summary: 'Add the Recording to one of the candidate Dives', ...decision, body: Type.Object({ diveId: Type.String({ format: 'uuid' }) }) },
-  }, async (request) => ({ diveId: await candidates.attach(request.user!.id, request.params.id, request.body.diveId) }));
+  }, async (request) => ({ diveId: await candidates.attach(userOf(request).id, request.params.id, request.body.diveId) }));
 
   app.post('/duplicate-candidates/:id/new-dive', {
     schema: { summary: 'Make the Recording a Dive of its own', ...decision },
-  }, async (request) => ({ diveId: await candidates.newDive(request.user!.id, request.params.id) }));
+  }, async (request) => ({ diveId: await candidates.newDive(userOf(request).id, request.params.id) }));
 
   app.post('/duplicate-candidates/:id/discard', {
     schema: { summary: 'Put the Recording aside; it stays, detached, and can be reopened', ...decision },
   }, async (request) => {
-    await candidates.discard(request.user!.id, request.params.id);
+    await candidates.discard(userOf(request).id, request.params.id);
     return { diveId: null };
   });
 
   app.post('/duplicate-candidates/:id/reopen', {
     schema: { summary: 'Decide about a discarded Recording again', ...decision },
   }, async (request) => {
-    await candidates.reopen(request.user!.id, request.params.id);
+    await candidates.reopen(userOf(request).id, request.params.id);
     return { diveId: null };
   });
 };

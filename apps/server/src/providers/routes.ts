@@ -4,7 +4,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyReply } from 'fastify';
 import { Type, type Static, type TOptional } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireAdmin, requireUser } from '../auth/fastify.js';
+import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
 import { Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
 import { CYLINDER_MATERIALS, DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES } from '../db/schema.js';
 import { ImportView, toImportView } from '../routes.js';
@@ -430,7 +430,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       summary: 'The User\'s Connections to Providers (one per Diver and Provider at most)',
       response: { 200: Type.Array(ConnectionView) },
     },
-  }, async (request) => connectionViews(request.user!.id, await connections.list(request.user!.id)));
+  }, async (request) => connectionViews(userOf(request).id, await connections.list(userOf(request).id)));
 
   app.post('/connections/:provider', {
     schema: {
@@ -452,8 +452,8 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     },
   }, async (request, reply) => {
     const { diverId, ...fields } = request.body;
-    const id = await connections.connect(request.user!.id, request.params.provider, diverId, fields);
-    return reply.code(201).send(await oneConnection(request.user!.id, id));
+    const id = await connections.connect(userOf(request).id, request.params.provider, diverId, fields);
+    return reply.code(201).send(await oneConnection(userOf(request).id, id));
   });
 
   app.post('/connections/:id/sign-in', {
@@ -464,8 +464,8 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       response: { 200: ConnectionView, ...errors },
     },
   }, async (request) => {
-    await connections.signInAgain(request.user!.id, request.params.id, request.body);
-    return oneConnection(request.user!.id, request.params.id);
+    await connections.signInAgain(userOf(request).id, request.params.id, request.body);
+    return oneConnection(userOf(request).id, request.params.id);
   });
 
   const BuddyView = Type.Object({
@@ -494,7 +494,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       response: { 200: Type.Object({ buddies: Type.Array(BuddyView) }), ...errors },
     },
   }, async (request) => ({
-    buddies: await buddies.list(request.user!.id, request.params.id, request.query.for ? { forDiverId: request.query.for } : {}),
+    buddies: await buddies.list(userOf(request).id, request.params.id, request.query.for ? { forDiverId: request.query.for } : {}),
   }));
 
   app.post('/connections/:id/buddies/link', {
@@ -507,7 +507,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       response: { 200: Type.Object({ diverId: Type.String() }), ...linkErrors },
     },
   }, async (request) => buddies.link(
-    { userId: request.user!.id, isAdmin: request.user!.role === 'admin' }, request.params.id, request.body.entryId, request.body.diverId,
+    { userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' }, request.params.id, request.body.entryId, request.body.diverId,
   ));
 
   app.post('/connections/:id/buddies/add', {
@@ -532,7 +532,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   }, async (request) => {
     const { diverId, firstName, lastName, email, account } = request.body;
     return buddies.add(
-      { userId: request.user!.id, isAdmin: request.user!.role === 'admin' }, request.params.id, diverId,
+      { userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' }, request.params.id, diverId,
       { firstName, lastName, email: email ?? null, account: account ?? null },
     );
   });
@@ -552,7 +552,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       response: { 200: Type.Object({ created: Type.Integer(), updated: Type.Integer({ description: 'Divers already here that got details they lacked' }), buddies: Type.Array(BuddyView) }), ...errors },
     },
   }, async (request) => buddies.import(
-    { userId: request.user!.id, isAdmin: request.user!.role === 'admin' }, request.params.id, request.body.accounts, request.body.entries,
+    { userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' }, request.params.id, request.body.accounts, request.body.entries,
   ));
 
   app.post('/connections/:id/certifications/import', {
@@ -574,7 +574,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         }), ...errors,
       },
     },
-  }, async (request) => certifications.importFrom(request.user!.id, request.params.id));
+  }, async (request) => certifications.importFrom(userOf(request).id, request.params.id));
 
   const Choice = Type.Enum(['recordings', 'entries'], {
     description: 'recordings: its dives become Recordings, like a file\'s; entries: only logbook entries that fill Dives here',
@@ -609,7 +609,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     },
   }, async (request) => {
     const { diveImport, diveNumbers, ...automation } = request.body;
-    const userId = request.user!.id;
+    const userId = userOf(request).id;
     // Every part is checked before any is written: a refusal in one changes nothing.
     const parts = Object.keys(automation).length > 0;
     await connections.checkChanges(userId, request.params.id, { ...(parts && { automation }), ...(diveNumbers && { follow: diveNumbers.follow }) });
@@ -617,12 +617,12 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     if (parts) await connections.setAutomation(userId, request.params.id, automation);
     if (diveImport) {
       const { computers, ...set } = diveImport;
-      await diveImports.settings(request.user!.id, request.params.id, {
+      await diveImports.settings(userOf(request).id, request.params.id, {
         ...set, ...(computers && { computers: Object.fromEntries(computers.map((c) => [c.key, c.choice])) }),
       });
     }
-    if (diveNumbers) await connections.setFollowNumbers(request.user!.id, request.params.id, diveNumbers.follow);
-    return oneConnection(request.user!.id, request.params.id);
+    if (diveNumbers) await connections.setFollowNumbers(userOf(request).id, request.params.id, diveNumbers.follow);
+    return oneConnection(userOf(request).id, request.params.id);
   });
 
   const Candidate = Type.Object({
@@ -720,7 +720,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       description: 'Works whatever the import mode of the Connection is. One paced action at the Provider. No names of people or places.',
       params: IdParams, response: { 200: DiveTimes, ...errors },
     },
-  }, async (request) => diveImports.diveTimes(request.user!.id, request.params.id));
+  }, async (request) => diveImports.diveTimes(userOf(request).id, request.params.id));
 
   app.get('/connections/:id/dive-import', {
     schema: {
@@ -729,7 +729,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       params: IdParams, response: { 200: Preview, ...errors },
     },
   }, async (request) => {
-    const p = await diveImports.preview(request.user!.id, request.params.id);
+    const p = await diveImports.preview(userOf(request).id, request.params.id);
     return {
       ...p,
       decisions: p.decisions.map((d) => ({ ...d, candidates: d.candidates.map((c) => ({ ...c, startsAt: c.startsAt.toISOString() })) })),
@@ -758,7 +758,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       response: { 202: ImportView, ...errors },
     },
   }, async (request, reply) => {
-    const created = await diveImports.start(request.user!.id, request.params.id, {
+    const created = await diveImports.start(userOf(request).id, request.params.id, {
       computers: Object.fromEntries(request.body.computers.map((c) => [c.key, c.choice])),
       decisions: Object.fromEntries(request.body.decisions.map((d) => [d.remoteId, d.choice])),
       conflicts: Object.fromEntries((request.body.conflicts ?? []).map((c) => [`${c.remoteId}:${c.field}`, c.choice])),
@@ -797,7 +797,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         + 'Both first confirm: POST /api/connections/{id}/gone-dives/confirm. "Delete here too" then deletes the one Dive with its own dialog.',
       response: { 200: Type.Array(GoneDivesView), ...errors },
     },
-  }, async (request) => (await goneDives.waiting(request.user!.id)).map((c) => ({
+  }, async (request) => (await goneDives.waiting(userOf(request).id)).map((c) => ({
     ...c, dives: c.dives.map((d) => ({ ...d, startsAt: d.startsAt.toISOString(), foundAt: d.foundAt.toISOString() })),
   })));
 
@@ -840,7 +840,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       response: { 200: Type.Object({ connections: Type.Array(ConflictsView) }), ...errors },
     },
   }, async (request) => ({
-    connections: (await conflicts.waiting(request.user!.id)).map((c) => ({
+    connections: (await conflicts.waiting(userOf(request).id)).map((c) => ({
       ...c, providerName: providers.get(c.provider).capabilities.name,
       entries: c.entries.map((e) => ({ ...e, startsAt: e.startsAt.toISOString(), foundAt: e.foundAt.toISOString() })),
     })),
@@ -853,7 +853,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         + 'The Connection\'s owner only (others: 404).',
       params: IdParams, response: { 200: GoneSummary, ...errors },
     },
-  }, async (request) => goneDives.check(request.user!.id, request.params.id));
+  }, async (request) => goneDives.check(userOf(request).id, request.params.id));
 
   app.post('/connections/:id/gone-dives/confirm', {
     schema: {
@@ -874,7 +874,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         ...errors,
       },
     },
-  }, async (request) => goneDives.confirm(request.user!.id, request.params.id, request.body.diveIds));
+  }, async (request) => goneDives.confirm(userOf(request).id, request.params.id, request.body.diveIds));
 
   const SiteDataView = Type.Object({
     provider: Type.String(),
@@ -904,7 +904,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     },
   }, async (request, reply) => {
     if (request.body.allowed && request.body.confirm !== true) return reply.code(400).send(problem('provider_site_data_not_confirmed'));
-    await diveImports.allowSiteData(request.user!.id, request.params.provider, request.body.allowed);
+    await diveImports.allowSiteData(userOf(request).id, request.params.provider, request.body.allowed);
     return { providers: (await diveImports.siteData()).map(siteDataView) };
   });
 
@@ -916,7 +916,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         + 'Answers how many fetches were queued.',
       response: { 200: Type.Object({ queued: Type.Integer() }), 401: Problem },
     },
-  }, async (request) => ({ queued: await scheduledFetch.fetchDue(request.user!.id) }));
+  }, async (request) => ({ queued: await scheduledFetch.fetchDue(userOf(request).id) }));
 
   app.post('/connections/:id/unsent-dives/dismiss', {
     schema: {
@@ -925,7 +925,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       params: IdParams, response: { 204: Type.Null(), 404: Problem },
     },
   }, async (request, reply) => {
-    await waitingPushes.dismissOffer(request.user!.id, request.params.id);
+    await waitingPushes.dismissOffer(userOf(request).id, request.params.id);
     return reply.code(204).send(null);
   });
 
@@ -943,7 +943,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       params: DiveProviderParams, response: { 204: Type.Null(), 404: Problem },
     },
   }, async (request, reply) => {
-    await waitingPushes.retry(request.user!.id, request.params.id, request.params.provider);
+    await waitingPushes.retry(userOf(request).id, request.params.id, request.params.provider);
     return reply.code(204).send(null);
   });
 
@@ -960,7 +960,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     },
   }, async (request, reply) => {
     const { onExisting, conflicts: choices } = request.body;
-    await waitingPushes.decide(request.user!.id, request.params.id, request.params.provider, {
+    await waitingPushes.decide(userOf(request).id, request.params.id, request.params.provider, {
       ...(onExisting && { onExisting }), ...(choices && { conflicts: choices }),
     });
     return reply.code(204).send(null);
@@ -972,7 +972,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       params: IdParams, response: { 204: Type.Null(), 404: Problem },
     },
   }, async (request, reply) => {
-    await connections.disconnect(request.user!.id, request.params.id);
+    await connections.disconnect(userOf(request).id, request.params.id);
     return reply.code(204).send(null);
   });
 
@@ -981,14 +981,14 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       summary: 'The Dive at every Provider that takes dives: the Connection of its Diver, what is unmet, the remote dive it has now, every Push',
       params: IdParams, response: { 200: Type.Array(StatusView), 404: Problem },
     },
-  }, async (request) => (await pushes.statusAll(request.user!.id, request.params.id)).map(statusView));
+  }, async (request) => (await pushes.statusAll(userOf(request).id, request.params.id)).map(statusView));
 
   app.get('/dives/:id/providers/:provider', {
     schema: {
       summary: 'The Dive at one Provider: the Connection of its Diver, what is unmet, the remote dive it has now, every Push',
       params: DiveProviderParams, response: { 200: StatusView, 400: Problem, 404: Problem },
     },
-  }, async (request) => statusView(await pushes.status(request.user!.id, request.params.id, request.params.provider)));
+  }, async (request) => statusView(await pushes.status(userOf(request).id, request.params.id, request.params.provider)));
 
   app.get('/dives/:id/providers/:provider/sites', {
     schema: {
@@ -1008,7 +1008,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         ...errors,
       },
     },
-  }, async (request) => pushes.siteSuggestions(request.user!.id, request.params.id, request.params.provider));
+  }, async (request) => pushes.siteSuggestions(userOf(request).id, request.params.id, request.params.provider));
 
   app.put('/connections/:id/dive-sites/:siteId', {
     schema: {
@@ -1030,7 +1030,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
         ...errors,
       },
     },
-  }, async (request) => sitePicks.set(request.user!.id, request.params.id, request.params.siteId, request.body.externalId));
+  }, async (request) => sitePicks.set(userOf(request).id, request.params.id, request.params.siteId, request.body.externalId));
 
   app.post('/dives/:id/providers/:provider', {
     schema: {
@@ -1067,14 +1067,14 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   }, async (request) => {
     const { id, provider } = request.params;
     const { onExisting, conflicts: choices } = request.body;
-    const sent = await pushes.send(request.user!.id, id, provider, { ...(onExisting && { onExisting }), ...(choices && { conflicts: choices }) });
+    const sent = await pushes.send(userOf(request).id, id, provider, { ...(onExisting && { onExisting }), ...(choices && { conflicts: choices }) });
     return {
       outcome: sent.result, existing: sent.result === 'exists' ? sent.existing : null,
       conflicts: sent.result === 'conflicts' ? sent.conflicts : null,
       taken: sent.result === 'updated' ? sent.taken : null,
       deferred: sent.result === 'updated' ? sent.deferred : null,
       buddies: sent.buddies ?? null,
-      status: statusView(await pushes.status(request.user!.id, id, provider)),
+      status: statusView(await pushes.status(userOf(request).id, id, provider)),
     };
   });
 
@@ -1089,8 +1089,8 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     },
   }, async (request) => {
     const { id, provider } = request.params;
-    await pushes.setNumber(request.user!.id, id, provider);
-    return { status: statusView(await pushes.status(request.user!.id, id, provider)) };
+    await pushes.setNumber(userOf(request).id, id, provider);
+    return { status: statusView(await pushes.status(userOf(request).id, id, provider)) };
   });
 
   app.delete('/dives/:id/providers/:provider', {
@@ -1100,7 +1100,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
     },
   }, async (request) => {
     const { id, provider } = request.params;
-    await pushes.remove(request.user!.id, id, provider);
-    return statusView(await pushes.status(request.user!.id, id, provider));
+    await pushes.remove(userOf(request).id, id, provider);
+    return statusView(await pushes.status(userOf(request).id, id, provider));
   });
 };

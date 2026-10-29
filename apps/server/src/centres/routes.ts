@@ -3,7 +3,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireUser, userOf } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import type { DiverService } from '../divers/diver-service.js';
 import { CENTRE_SOURCE_NAME, CENTRE_SOURCES, CentreError, type CentreActor, type CentreService } from './centre-service.js';
@@ -93,7 +93,7 @@ const STATUS: Record<CentreError['code'], number> = {
 };
 const errors = { 400: CentreProblem, 403: CentreProblem, 404: CentreProblem, 409: CentreProblem };
 
-const actorOf = (request: FastifyRequest): CentreActor => ({ userId: request.user!.id, isAdmin: request.user!.role === 'admin' });
+const actorOf = (request: FastifyRequest): CentreActor => ({ userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' });
 
 export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (app, { auth, centres, divers }) => {
   app.addHook('onRequest', requireUser(auth));

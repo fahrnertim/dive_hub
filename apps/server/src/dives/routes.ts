@@ -4,7 +4,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireUser, userOf } from '../auth/fastify.js';
 import {
   CYLINDER_MATERIALS, LEAD_PLACEMENTS, OVERRIDABLE_FIELDS, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive,
   type RecordingSummary,
@@ -401,7 +401,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
 
 
   /** The Dive if the signed-in User manages its Diver. */
-  const findDive = (request: FastifyRequest, id: string) => logbook.findManagedDive(request.user!.id, id);
+  const findDive = (request: FastifyRequest, id: string) => logbook.findManagedDive(userOf(request).id, id);
 
   const view = async (row: typeof dive.$inferSelect): Promise<Static<typeof DiveView>> => {
     const { recordings: recs, site } = await logbook.recordingsAndSite(row);
@@ -465,7 +465,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request) => {
     const { version, set, reset, notes, siteId, cylinders, lead, weightingFeedback, suit } = request.body;
-    await dives.edit(request.user!.id, request.params.id, {
+    await dives.edit(userOf(request).id, request.params.id, {
       version, ...(set && { set: fromValues(set) }), ...(reset && { reset }), ...(notes !== undefined && { notes }),
       ...(siteId !== undefined && { siteId }), ...(cylinders && { cylinders }), ...(lead && { lead }),
       ...(weightingFeedback !== undefined && { weightingFeedback }), ...(suit !== undefined && { suit }),
@@ -532,7 +532,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    await dives.setParticipants(request.user!.id, request.params.id, request.body.version, request.body.participants);
+    await dives.setParticipants(userOf(request).id, request.params.id, request.body.version, request.body.participants);
     return view((await findDive(request, request.params.id))!);
   });
 
@@ -543,7 +543,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    await dives.setPrimary(request.user!.id, request.params.id, request.body.recordingId, request.body.version);
+    await dives.setPrimary(userOf(request).id, request.params.id, request.body.recordingId, request.body.version);
     return view((await findDive(request, request.params.id))!);
   });
 
@@ -557,7 +557,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       response: { 200: DiveView, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    const id = await merging.move(request.user!.id, request.params.id, request.body.diverId, request.body.version);
+    const id = await merging.move(userOf(request).id, request.params.id, request.body.diverId, request.body.version);
     return view((await findDive(request, id))!);
   });
 
@@ -572,7 +572,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       querystring: Type.Object({ scope: Type.Optional(Type.Enum(['rule', 'nearby'], { default: 'rule' })) }),
       response: { 200: Type.Array(MergeCandidate), 404: Problem },
     },
-  }, async (request) => (await merging.candidates(request.user!.id, request.params.id, request.query.scope)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, deletesItself, rule, answered }) => ({
+  }, async (request) => (await merging.candidates(userOf(request).id, request.params.id, request.query.scope)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, deletesItself, rule, answered }) => ({
     id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
     utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
     site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null, fromProvider: d.fromProvider, recordings, at, keeps, bothAt, deletesItself,
@@ -599,8 +599,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request) => {
     const status = request.query.status ?? 'open';
-    const list = await checks.list(request.user!.id, status);
-    const short = await checks.shortDives(request.user!.id, atProvider, status);
+    const list = await checks.list(userOf(request).id, status);
+    const short = await checks.shortDives(userOf(request).id, atProvider, status);
     const remote = await pushes.currentOf([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
     const at = (id: string) => [...(remote.get(id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber }));
     const itself = await waitingPushes.deletingItself([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
@@ -642,8 +642,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request, reply) => {
     const { diveIds: [a, b], answer } = request.body;
     // The schema lets `keep` through only with one Dive, `two_dives` only with two.
-    if (b === undefined) await checks.keep(request.user!.id, a, atProvider, answer && 'keep');
-    else await checks.answer(request.user!.id, [a, b], answer && 'two_dives');
+    if (b === undefined) await checks.keep(userOf(request).id, a, atProvider, answer && 'keep');
+    else await checks.answer(userOf(request).id, [a, b], answer && 'two_dives');
     return reply.code(204).send(null);
   });
 
@@ -667,7 +667,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request, reply) => {
     const { version, otherId, otherVersion, alsoAt = [] } = request.body;
-    const userId = request.user!.id;
+    const userId = userOf(request).id;
     const candidate = (await merging.candidates(userId, request.params.id)).find((c) => c.dive.id === otherId);
     // Deleted at the Provider before anything changes here, as when deleting a Dive: only the copy of the Dive not kept,
     // and only where the kept one has its own.
@@ -691,7 +691,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       params: IdParams, body: Type.Object({ version: Type.Integer() }),
       response: { 200: Type.Object({ diveId: Type.String({ description: 'The new Dive' }) }), 404: Problem, 409: Problem },
     },
-  }, async (request) => ({ diveId: await dives.detach(request.user!.id, request.params.id, request.body.version) }));
+  }, async (request) => ({ diveId: await dives.detach(userOf(request).id, request.params.id, request.body.version) }));
 
   app.delete('/dives/:id', {
     schema: {
@@ -720,10 +720,10 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     // Where the Dive's Connection deletes by itself, the queue does it after 5 minutes, even when `alsoAt` names it (Undo cancels it).
     const itself = (await waitingPushes.deletingItself([row.id])).get(row.id);
     const asked = at.filter((provider) => alsoAt.includes(provider) && !itself?.has(provider));
-    const { copies, failure } = asked.length > 0 ? await pushes.removeAt(request.user!.id, row.id, asked) : { copies: [], failure: null };
+    const { copies, failure } = asked.length > 0 ? await pushes.removeAt(userOf(request).id, row.id, asked) : { copies: [], failure: null };
     const providers = at.map((provider) => ({ provider, copy: copies.find((c) => c.provider === provider)?.copy ?? 'kept' as const }));
     if (failure) return replyProviderError(failure, reply, { providers });
-    await dives.remove(request.user!.id, row.id, version);
+    await dives.remove(userOf(request).id, row.id, version);
     return { providers };
   });
 
@@ -733,7 +733,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       response: { 200: Type.Object({ dives: Type.Array(DeletedDiveView) }) },
     },
   }, async (request) => {
-    const rows = await logbook.deletedDives(request.user!.id, DELETED_SHOWN);
+    const rows = await logbook.deletedDives(userOf(request).id, DELETED_SHOWN);
     const remote = await pushes.currentOf(rows.map((r) => r.d.id));
     const waiting = await waitingPushes.waitingOf(rows.map((r) => r.d.id));
     return {
@@ -756,7 +756,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       response: { 200: DiveView, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    await dives.restore(request.user!.id, request.params.id, request.body.version);
+    await dives.restore(userOf(request).id, request.params.id, request.body.version);
     return view((await findDive(request, request.params.id))!);
   });
 

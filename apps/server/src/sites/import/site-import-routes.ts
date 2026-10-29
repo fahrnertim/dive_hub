@@ -2,7 +2,7 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../../auth/auth.js';
-import { requireAdmin, requireUser } from '../../auth/fastify.js';
+import { requireAdmin, requireUser, userOf } from '../../auth/fastify.js';
 import type { siteImport } from '../../db/schema.js';
 import { Problem, problem, PROBLEMS, type ProblemCode } from '../../http/problems.js';
 import { IMPORT_SOURCES } from '../sources.js';
@@ -93,7 +93,7 @@ export const siteImportRoutes: FastifyPluginAsyncTypebox<SiteImportRouteDeps> = 
   }, async (request, reply) => {
     const { sources, area, language, confirmOdbl, confirmSsi, createSites } = request.body;
     if (area.kind === 'box' && area.south >= area.north) return reply.code(400).send(problem('invalid_input', 'south must be less than north'));
-    const row = await siteImports.start(request.user!.id, {
+    const row = await siteImports.start(userOf(request).id, {
       sources, area, language, confirmOdbl: confirmOdbl ?? false, confirmSsi: confirmSsi ?? false, createSites: createSites ?? true,
     });
     return reply.code(202).send(toView(row));

@@ -4,7 +4,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import { Value } from 'typebox/value';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireUser, userOf } from '../auth/fastify.js';
 import { CYLINDER_MATERIALS, SUIT_TYPES, SUIT_UNDERGARMENTS } from '../db/schema.js';
 import type { Suit } from '../dives/weighting.js';
 import { Problem, problem } from '../http/problems.js';
@@ -117,7 +117,7 @@ export const leadRoutes: FastifyPluginAsyncTypebox<LeadRouteDeps> = async (app, 
     if (!Value.Check(PlannedCylinders, planned)) return reply.code(400).send(problem('invalid_input'));
 
     const plannedSuit: Suit = { type: suit, thicknessMm: suitThicknessMm ?? null, hood: suitHood ?? null, undergarment: suitUndergarment ?? null };
-    const answer = await deps.lead.estimate(request.user!.id, request.params.id, {
+    const answer = await deps.lead.estimate(userOf(request).id, request.params.id, {
       water, suit: plannedSuit, cylinders: planned.map((c) => ({ volumeL: c.volumeL, material: c.material ?? null })),
     }, unit);
     if (!answer) return reply.code(404).send(problem('diver_not_found'));

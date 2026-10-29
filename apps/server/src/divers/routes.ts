@@ -4,7 +4,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireAdmin, requireUser } from '../auth/fastify.js';
+import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import { NO_CERTIFICATIONS, type CertificationService } from '../certifications/certification-service.js';
 import { DiverError } from './diver-error.js';
@@ -104,7 +104,7 @@ const STATUS: Record<DiverError['code'], number> = {
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
-const actorOf = (request: FastifyRequest): DiverActor => ({ userId: request.user!.id, isAdmin: request.user!.role === 'admin' });
+const actorOf = (request: FastifyRequest): DiverActor => ({ userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' });
 
 export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app, { auth, divers, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
@@ -123,7 +123,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
 
   app.get('/divers', {
     schema: { summary: 'The Divers whose logbooks the User keeps, own first', response: { 200: Type.Array(DiverView) } },
-  }, async (request) => listDivers(request.user!.id));
+  }, async (request) => listDivers(userOf(request).id));
 
   app.get('/divers/search', {
     schema: {
@@ -135,12 +135,12 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       }),
       response: { 200: Type.Object({ divers: Type.Array(FoundDiver) }) },
     },
-  }, async (request) => ({ divers: await divers.search(request.user!.id, request.query.q, request.query.limit ?? 20) }));
+  }, async (request) => ({ divers: await divers.search(userOf(request).id, request.query.q, request.query.limit ?? 20) }));
 
   app.post('/divers', {
     schema: { summary: 'Start keeping another Diver\'s logbook (e.g. a child\'s)', body: Type.Object({ name: Name }), response: { 201: DiverView, ...errors } },
   }, async (request, reply) => {
-    const created = await divers.create(request.user!.id, request.body.name.trim());
+    const created = await divers.create(userOf(request).id, request.body.name.trim());
     return reply.code(201).send({ id: created.id, name: created.name, isOwn: false, divesBefore: 0, apneaCounts: true, diveCount: 0, deviceCount: 0, mutedRules: [], certifications: NO_CERTIFICATIONS });
   });
 
@@ -158,15 +158,15 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
     },
   }, async (request) => {
     const { name, ...settings } = request.body;
-    await divers.update(request.user!.id, request.params.id, { ...settings, ...(name !== undefined && { name: name.trim() }) });
-    return (await listDivers(request.user!.id)).find((d) => d.id === request.params.id)!;
+    await divers.update(userOf(request).id, request.params.id, { ...settings, ...(name !== undefined && { name: name.trim() }) });
+    return (await listDivers(userOf(request).id)).find((d) => d.id === request.params.id)!;
   });
 
   app.delete('/divers/:id', {
     schema: { summary: 'Delete a Diver without Dives or Devices who is on no Dive', params: IdParams, response: { 204: Type.Null(), ...errors } },
   }, async (request, reply) => {
     const pictures = await certifications.imageKeysOf(request.params.id);
-    await divers.remove(request.user!.id, request.params.id);
+    await divers.remove(userOf(request).id, request.params.id);
     await certifications.releaseKeys(pictures);
     return reply.code(204).send(null);
   });
@@ -191,7 +191,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       description: 'ADR 0031: the first health-like data on a Diver. Always kilograms; clients show lb for imperial (ADR 0014). Never part of another view.',
       params: IdParams, response: { 200: Type.Array(BodyWeightView), ...errors },
     },
-  }, async (request) => divers.bodyWeights(request.user!.id, request.params.id));
+  }, async (request) => divers.bodyWeights(userOf(request).id, request.params.id));
 
   app.put('/divers/:id/body-weights/:date', {
     schema: {
@@ -202,7 +202,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       response: { 204: Type.Null(), ...errors },
     },
   }, async (request, reply) => {
-    await divers.setBodyWeight(request.user!.id, request.params.id, request.params.date, request.body.kg);
+    await divers.setBodyWeight(userOf(request).id, request.params.id, request.params.date, request.body.kg);
     return reply.code(204).send(null);
   });
 
@@ -212,7 +212,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       params: Type.Object({ id: Type.String({ format: 'uuid' }), date: DateParam }), response: { 204: Type.Null(), ...errors },
     },
   }, async (request, reply) => {
-    await divers.removeBodyWeight(request.user!.id, request.params.id, request.params.date);
+    await divers.removeBodyWeight(userOf(request).id, request.params.id, request.params.date);
     return reply.code(204).send(null);
   });
 
@@ -310,7 +310,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
 
   app.get('/devices', {
     schema: { summary: 'Devices of the User\'s Divers', response: { 200: Type.Array(DeviceView) } },
-  }, async (request) => (await divers.devices(request.user!.id)).map((d) => ({
+  }, async (request) => (await divers.devices(userOf(request).id)).map((d) => ({
     ...d, lastUsedAt: d.lastUsedAt ? new Date(d.lastUsedAt).toISOString() : null,
   })));
 
@@ -320,7 +320,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       params: IdParams, body: Type.Object({ diverId: Type.String({ format: 'uuid' }) }), response: { 204: Type.Null(), ...errors },
     },
   }, async (request, reply) => {
-    await divers.assignDevice(request.user!.id, request.params.id, request.body.diverId);
+    await divers.assignDevice(userOf(request).id, request.params.id, request.body.diverId);
     return reply.code(204).send(null);
   });
 };

@@ -4,7 +4,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import { APIError } from 'better-auth/api';
 import type { Auth } from '../auth/auth.js';
-import { authHeaders, forwardCookies, requireAdmin, requireUser } from '../auth/fastify.js';
+import { authHeaders, forwardCookies, requireAdmin, requireUser, userOf } from '../auth/fastify.js';
 import { EmailTakenError, invitationStatus, type InvitationRow, type Invitations, type Role } from './invitations.js';
 import type { ProfileService } from './profile-service.js';
 import type { Setup } from './setup.js';
@@ -126,7 +126,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
     signedIn.get('/me', {
       schema: { summary: 'The signed-in User and their own Diver', response: { 200: MeView } },
     }, async (request) => {
-      const me = request.user!;
+      const me = userOf(request);
       return { user: toUserView(me), ...(await profiles.read(me.id)) };
     });
 
@@ -137,7 +137,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
         response: { 200: PreferencesView },
       },
     }, async (request) => {
-      return profiles.savePreferences(request.user!.id, request.body);
+      return profiles.savePreferences(userOf(request).id, request.body);
     });
 
     // --- Admins ----------------------------------------------------------------------------------
@@ -159,7 +159,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
       }, async (request, reply) => {
         try {
           const { invitation, token } = await invitations.create({
-            email: request.body.email, role: request.body.role ?? 'user', createdBy: request.user!.id,
+            email: request.body.email, role: request.body.role ?? 'user', createdBy: userOf(request).id,
           });
           // The token travels in the URL fragment, which browsers never send to the server or in Referer.
           return reply.code(201).send({ ...toInvitationView(invitation), url: `${baseUrl}/#/invite/${token}` });

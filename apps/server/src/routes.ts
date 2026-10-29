@@ -2,7 +2,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from './auth/auth.js';
-import { requireUser } from './auth/fastify.js';
+import { requireUser, userOf } from './auth/fastify.js';
 import {
   DIVE_KINDS, IMPORT_ERROR_CODES, OUTCOME_REASONS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive, importJob,
 } from './db/schema.js';
@@ -208,7 +208,7 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
 
   // Every logbook route needs a signed-in User and only shows what that User may see.
   app.addHook('onRequest', requireUser(deps.auth));
-  const userId = (request: FastifyRequest) => request.user!.id;
+  const userId = (request: FastifyRequest) => userOf(request).id;
 
   /** Divers the signed-in User manages; all logbook reads are scoped to them. */
   const managedDivers = async (request: FastifyRequest) => await logbook.managedDivers(userId(request));

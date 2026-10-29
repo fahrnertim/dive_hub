@@ -3,7 +3,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireUser, userOf } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import { REVISION_CAUSES } from '../dives/revisions.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
@@ -163,7 +163,7 @@ const STATUS: Record<SiteError['code'], number> = {
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
-const actorOf = (request: FastifyRequest): SiteActor => ({ userId: request.user!.id, isAdmin: request.user!.role === 'admin' });
+const actorOf = (request: FastifyRequest): SiteActor => ({ userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' });
 /** Blank text is no text. */
 const text = (v: string | null | undefined) => (v === undefined ? undefined : v?.trim() || null);
 
