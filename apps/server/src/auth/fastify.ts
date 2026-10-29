@@ -78,7 +78,10 @@ export function userOf(request: FastifyRequest): SessionUser {
   return request.user;
 }
 
+/** Whether the User has the admin role: the one place that rule is written. */
+export const isAdmin = (user: SessionUser | null): boolean => user?.role === 'admin';
+
 /** onRequest hook (after requireUser): 403 unless the signed-in User is an admin. */
 export async function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
-  if (request.user?.role !== 'admin') return reply.code(403).send(problem('admins_only'));
+  if (!isAdmin(request.user)) return reply.code(403).send(problem('admins_only'));
 }

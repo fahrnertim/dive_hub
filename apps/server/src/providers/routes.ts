@@ -5,6 +5,7 @@ import type { FastifyReply } from 'fastify';
 import { Type, type Static, type TOptional } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
+import { callerOf } from '../http/caller.js';
 import { Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
 import { CYLINDER_MATERIALS, DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES } from '../db/schema.js';
 import { ImportView, toImportView } from '../routes.js';
@@ -476,7 +477,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       response: { 200: Type.Object({ diverId: Type.String() }), ...linkErrors },
     },
   }, async (request) => buddies.link(
-    { userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' }, request.params.id, request.body.entryId, request.body.diverId,
+    callerOf(request), request.params.id, request.body.entryId, request.body.diverId,
   ));
 
   app.post('/connections/:id/buddies/add', {
@@ -501,7 +502,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   }, async (request) => {
     const { diverId, firstName, lastName, email, account } = request.body;
     return buddies.add(
-      { userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' }, request.params.id, diverId,
+      callerOf(request), request.params.id, diverId,
       { firstName, lastName, email: email ?? null, account: account ?? null },
     );
   });
@@ -521,7 +522,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
       response: { 200: Type.Object({ created: Type.Integer(), updated: Type.Integer({ description: 'Divers already here that got details they lacked' }), buddies: Type.Array(BuddyView) }), ...errors },
     },
   }, async (request) => buddies.import(
-    { userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' }, request.params.id, request.body.accounts, request.body.entries,
+    callerOf(request), request.params.id, request.body.accounts, request.body.entries,
   ));
 
   app.post('/connections/:id/certifications/import', {
