@@ -12,7 +12,7 @@ import type { BlobStore } from '../storage/blob-store.js';
 import { close, openFields, record as recordConflict, type ConflictField, type ConflictService } from './conflicts.js';
 import type { ConnectionRow, ConnectionService } from './connection-service.js';
 import { createDiveChanges, type ProviderRun } from './dive-changes.js';
-import { LeaseBusy, type Leases } from './leases.js';
+import { LeaseBusy, realClock, type Clock, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import {
   DIVE_FIELDS, ProviderError, referenceOf, type ActionContext, type Delivered, type DiveExport, type DiveExportAction, type DiveField, type ImportContext,
@@ -113,8 +113,9 @@ export function numbersFor(conn: { followNumbers: boolean } | null, exports: Div
 }
 type NumbersFor = NonNullable<ReturnType<typeof numbersFor>>;
 
-export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases; conflicts: ConflictService }) {
+export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases; conflicts: ConflictService; clock?: Clock }) {
   const { db, registry, connections, leases, conflicts } = deps;
+  const clock = deps.clock ?? realClock;
   const changes = createDiveChanges({ db, blobs: deps.blobs });
 
   /** The Provider's dive export, or `provider_unsupported`. */
@@ -321,7 +322,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
   async function settle(x: Exchange, conn: ConnectionRow, diveId: string, remoteId: string, options: SendOptions) {
     if (options.onConflict === 'defer' && x.plan.keep.length > 0) {
       await recordConflict(db, {
-        diveId, provider: conn.provider, connectionId: conn.id, remoteId, fields: await shownOf(x, x.plan.keep), runId: options.runId ?? null,
+        diveId, provider: conn.provider, connectionId: conn.id, remoteId, fields: await shownOf(x, x.plan.keep), runId: options.runId ?? null, foundAt: new Date(clock.now()),
       });
     } else await close(db, diveId, conn.provider);
   }

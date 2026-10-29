@@ -259,6 +259,16 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     expect(await rows()).toMatchObject([{ diveId: sent }]);
   });
 
+  it("a site change queues at the time of the site's Revision", async () => {
+    const site = await json<{ id: string; version: number }>('POST', '/api/dive-sites', { name: 'Revision Reef' });
+    const sent = await upload(day(1));
+    await call('PATCH', `/api/dives/${sent}`, { version: await version(sent), siteId: site.id });
+    await send(sent);
+    expect((await call('PATCH', `/api/dive-sites/${site.id}`, { version: site.version, name: 'Revision Reef, Dahab' })).statusCode).toBe(200);
+    const [row] = await rows();
+    expect(row!.changedAt).toEqual((await lastRevision(site.id)).at);
+  });
+
   it('a site rename queues the sent live Dives there, of Connections with send changes on', async () => {
     const site = await json<{ id: string; version: number }>('POST', '/api/dive-sites', { name: 'Shared Reef' });
     const atSite = async (id: string, cookie = ann) =>
@@ -638,6 +648,16 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       ledger.down = false;
       ledger.refuseDelete = false;
       ledger.beforeSave = counting;
+    });
+
+    it("a decision is due at the Clock's now", async () => {
+      const id = await upload(day(1));
+      await send(id);
+      ctx.clock.skip(3_600_000);
+      expect((await call('POST', `/api/dives/${id}/providers/ledger/decision`, { conflicts: { notes: 'hub' } })).statusCode).toBe(204);
+      const [row] = await rows();
+      expect(Math.abs(row!.dueAt.getTime() - ctx.clock.now())).toBeLessThan(1000);
+      expect(Math.abs(row!.changedAt.getTime() - ctx.clock.now())).toBeLessThan(1000);
     });
 
     it('sends a due entry and removes it', async () => {

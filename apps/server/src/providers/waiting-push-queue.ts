@@ -189,11 +189,10 @@ export async function noteSiteChange(tx: Tx, siteId: string, at: Date): Promise<
 }
 
 /**
- * Queues the Dive as a send due now (the User's decision, Retry, a Push run's offer), merging `options` into the
+ * Queues the Dive as a send due at `at`, the caller's now (the User's decision, Retry, a Push run's offer), merging `options` into the
  * entry's. A waiting delete stays. Schedules the Connection's job.
  */
-export async function queueNow(q: Q, diveId: string, provider: string, connectionId: string, options: WaitingPushOptions): Promise<void> {
-  const now = new Date();
+export async function queueNow(q: Q, diveId: string, provider: string, connectionId: string, options: WaitingPushOptions, at: Date): Promise<void> {
   const [existing] = await q.select({ options: waitingPush.options }).from(waitingPush)
     .where(and(eq(waitingPush.diveId, diveId), eq(waitingPush.provider, provider)));
   const merged: WaitingPushOptions = {
@@ -201,7 +200,7 @@ export async function queueNow(q: Q, diveId: string, provider: string, connectio
     ...((existing?.options.conflicts || options.conflicts) && { conflicts: { ...existing?.options.conflicts, ...options.conflicts } }),
   };
   const fresh = {
-    connectionId, state: 'waiting' as const, reason: null, options: merged, dueAt: now, attempts: 0, firstFailedAt: null, stoppedAt: null, changedAt: now,
+    connectionId, state: 'waiting' as const, reason: null, options: merged, dueAt: at, attempts: 0, firstFailedAt: null, stoppedAt: null, changedAt: at,
   };
   await q.insert(waitingPush).values({ diveId, provider, action: 'send', ...fresh })
     .onConflictDoUpdate({ target: [waitingPush.diveId, waitingPush.provider], set: fresh, setWhere: ne(waitingPush.action, 'delete') });

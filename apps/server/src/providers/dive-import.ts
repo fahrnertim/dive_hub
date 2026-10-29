@@ -26,6 +26,7 @@ import { createDiveChanges, importsField, type ProviderRun } from './dive-change
 import { currentRemote, fingerprintNow } from './remote-state.js';
 import { same, type SyncedField } from './three-way.js';
 import { closeFields, entryOf, openFields, record as recordConflict, type StoredConflictField } from './conflicts.js';
+import { realClock, type Clock } from './leases.js';
 import { queueNow } from './waiting-push-queue.js';
 import { withRemembered } from './list-entries.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
@@ -98,8 +99,9 @@ const MAX_OFFSET_MS = 14 * 3600_000;
 const keyOf = (d: { manufacturer: string; serialNumber: string }) => `${d.manufacturer}:${d.serialNumber}`;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-export function createDiveImportService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService }) {
+export function createDiveImportService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; clock?: Clock }) {
   const { db, blobs, registry, connections } = deps;
+  const clock = deps.clock ?? realClock;
   const { runOf, sitesOf, settle, placeTime, changesOf, takeChanges, fill, shown, conflictFields } = createDiveChanges({ db, blobs });
 
   /** The Provider's dive import, or `provider_unsupported`. */
@@ -364,7 +366,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const [own] = await tx.select({ id: connection.id }).from(connection).innerJoin(dive, eq(dive.diverId, connection.diverId))
       .where(and(eq(connection.id, current.connectionId), eq(dive.id, diveId)));
     if (!own) return;
-    await queueNow(tx, diveId, run.adapter.id, current.connectionId, { conflicts: Object.fromEntries(fields.map((f) => [f, 'hub' as const])) });
+    await queueNow(tx, diveId, run.adapter.id, current.connectionId, { conflicts: Object.fromEntries(fields.map((f) => [f, 'hub' as const])) }, new Date(clock.now()));
   }
 
   /**
@@ -380,7 +382,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const merged = [...kept, ...now];
     const byField = (list: StoredConflictField[]) => list.toSorted((a, b) => a.field.localeCompare(b.field));
     if (before?.remoteId === d.remoteId && isDeepStrictEqual(byField(before.fields), byField(merged))) return;
-    await recordConflict(tx, { diveId, provider: run.adapter.id, connectionId: run.connectionId, remoteId: d.remoteId, fields: merged, runId: null });
+    await recordConflict(tx, { diveId, provider: run.adapter.id, connectionId: run.connectionId, remoteId: d.remoteId, fields: merged, runId: null, foundAt: new Date(clock.now()) });
   }
 
   /**

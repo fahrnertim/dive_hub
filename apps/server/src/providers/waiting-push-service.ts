@@ -315,7 +315,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
         ? await db.select().from(connection).where(eq(connection.id, known))
         : await db.select().from(connection).where(and(eq(connection.userId, userId), eq(connection.diverId, diverId), eq(connection.provider, provider)));
       if (!conn || conn.userId !== userId) throw new ProviderServiceError('connection_not_found');
-      await queueNow(db, diveId, provider, conn.id, options);
+      await queueNow(db, diveId, provider, conn.id, options, now());
     },
 
     /**

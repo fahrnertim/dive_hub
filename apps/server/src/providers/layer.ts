@@ -30,12 +30,12 @@ export function createProviderLayer(deps: {
   const leases = createLeases({ db: deps.db, ...clock });
   const connections = createConnectionService({ db: deps.db, registry: providers, secrets: deps.secrets, leases, ...clock });
   const conflicts = createConflictService({ db: deps.db, connections, registry: providers, blobs: deps.blobs });
-  const pushes = createPushService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, leases, conflicts });
+  const pushes = createPushService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, leases, conflicts, ...clock });
   const pushRuns = createPushRunService({ db: deps.db, registry: providers, pushes, conflicts });
   const waitingPushes = createWaitingPushService({ db: deps.db, registry: providers, pushes, ...clock, ...(deps.log && { log: deps.log }) });
   const buddies = createBuddyService({ db: deps.db, registry: providers, connections, divers: createDiverService(deps.db) });
   const sitePicks = createSitePickService({ db: deps.db, registry: providers, connections });
-  const diveImports = createDiveImportService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });
+  const diveImports = createDiveImportService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, ...clock });
   const scheduledFetch = createScheduledFetch({ db: deps.db, registry: providers, diveImports, ...clock });
   const goneDives = createGoneDiveService({ db: deps.db, registry: providers, connections, leases });
   const certifications = createCertificationService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });

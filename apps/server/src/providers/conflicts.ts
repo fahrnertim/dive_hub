@@ -37,6 +37,8 @@ export interface ConflictEntry {
   remoteId: string;
   fields: StoredConflictField[];
   runId: string | null;
+  /** The caller's now: the Clock's, not the machine's. */
+  foundAt: Date;
 }
 
 const fieldsOf = (stored: unknown): StoredConflictField[] => stored as StoredConflictField[];
@@ -46,7 +48,7 @@ const shownFields = (fields: StoredConflictField[]): ConflictField[] => fields.m
 
 /** Stores the Conflict of a Dive at a Provider; a newer one for the same Dive and Provider replaces the older. */
 export async function record(q: Db | Tx, entry: ConflictEntry): Promise<void> {
-  const values = { connectionId: entry.connectionId, remoteId: entry.remoteId, fields: entry.fields, runId: entry.runId, foundAt: new Date() };
+  const values = { connectionId: entry.connectionId, remoteId: entry.remoteId, fields: entry.fields, runId: entry.runId, foundAt: entry.foundAt };
   await q.insert(providerConflict).values({ diveId: entry.diveId, provider: entry.provider, ...values })
     .onConflictDoUpdate({ target: [providerConflict.diveId, providerConflict.provider], set: values });
 }
