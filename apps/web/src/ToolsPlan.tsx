@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { diverSearchQuery, type ToolsPlan, type ToolsPlanDiver } from './api.ts';
 import { formatRate } from './lib/assessment.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
-import { planSketch, replaceToolsAddress, type PlanDiver, type PlanLevel, type ToolsParams, type ToolsRule } from './lib/tools.ts';
+import { planSketch, replaceToolsAddress, type PlanDiver, type PlanLevel, type PlanStretch, type ToolsParams, type ToolsRule } from './lib/tools.ts';
 import { depthFromDisplay, depthIn, pressureFromDisplay, pressureIn } from './lib/units.ts';
 import { PlanProfile } from './ToolsPlanProfile.tsx';
 import { Badge, Button, Muted, Notice, NumberField, SearchList, Table, TextField, type SearchListItem } from './ui/index.ts';
@@ -139,7 +139,7 @@ const newDiver = (name: string, params: ToolsParams, diverId?: string): PlanDive
  * User's own Diver, so a plan for oneself needs nothing more.
  */
 function Levels({ params, levels, divers, segments, managed, control }: {
-  params: ToolsParams; levels: PlanLevel[]; divers: PlanDiver[]; segments: OkPlan['segments'] | undefined; managed: ManagedDiver[]; control: ListControl;
+  params: ToolsParams; levels: PlanLevel[]; divers: PlanDiver[]; segments: PlanStretch[] | undefined; managed: ManagedDiver[]; control: ListControl;
 }) {
   const { t } = useTranslation();
   const display = useDisplay();

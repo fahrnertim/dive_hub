@@ -1,4 +1,4 @@
-// MCP tool for gas plans (ADR 0033, ADR 0035): the same answer as GET /tools/gas-plan (planning/plan-service.ts), with the
+// MCP tool for gas plans (ADR 0033, ADR 0035): the same answer as POST /tools/gas-plan (planning/plan-service.ts), with the
 // assumptions and the notice in every result: never a bare number.
 import { Type } from 'typebox';
 import { PLAN_RULES, planGasPlan } from '../planning/plan-service.js';
@@ -32,27 +32,6 @@ const Input = Type.Object({
 const Used = (value: ReturnType<typeof Type.Number> | ReturnType<typeof Type.String> | ReturnType<typeof Type.Object>) => Type.Object({
   value, source: Type.Enum(['request', 'site', 'default']),
 });
-
-/** The plan service's answer, loosely typed: it is mapped field by field below and checked against the output schema. */
-interface PlanValue {
-  status: 'ok' | 'outside_limits';
-  reason?: 'depth' | 'mod' | 'gas';
-  levelIndex?: number | null;
-  gas: { o2: number; he: number };
-  used: { water: { value: string; source: string }; altitudeM: { value: number; source: string }; gasRule: { value: { kind: string; bar: number | null }; source: string };
-    descentRateMPerMin: { value: number; source: string }; ascentRateMPerMin: { value: number; source: string } };
-  runtimeMinutes: number;
-  segments: { kind: string; fromDepthM: number; depthM: number; minutes: number; ambientBar: number }[];
-  divers: {
-    name: string; diverId: string | null; sacLpm: { value: number; source: string; basedOn?: number }; volumeL: number; startPressureBar: number;
-    litres: number; endPressureBar: number; rockBottom: { depthM: number; pressureBar: number }[]; ascentPressureBar: number;
-    turnPressureBar: number | null; belowRockBottom: boolean; atAscentStartBar: number; marginBar: number; marginMinutes: number;
-    controlling: boolean; recentDiveEndedAt: string | null; pressuresBar: number[];
-  }[];
-  controllingIndex: number;
-  fits: boolean;
-  leaveLastLevelAtMinute: number;
-}
 
 export const planGasPlanTool = defineTool({
   name: 'planning_gas_plan',
@@ -116,7 +95,7 @@ Always pass on the notice and the assumptions (where each SAC came from) with th
     if (!answer.ok) {
       throw new ToolError(answer.code, 'Check the inputs: oxygen and helium over 100 %, or gas_rule reserve or ascent_pressure without rule_bar.');
     }
-    const v = answer.value as unknown as PlanValue;
+    const v = answer.value;
     const assumptions = {
       water: v.used.water, altitude_m: v.used.altitudeM, gas_rule: v.used.gasRule,
       descent_rate_m_per_min: v.used.descentRateMPerMin, ascent_rate_m_per_min: v.used.ascentRateMPerMin,

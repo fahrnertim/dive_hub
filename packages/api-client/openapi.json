@@ -41024,159 +41024,820 @@
       }
     },
     "/api/tools/gas-plan": {
-      "get": {
+      "post": {
         "summary": "A gas plan for one Diver or a group: litres, pressures, rock bottom and the ascent pressure of a gas rule (ADR 0033)",
         "description": "An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m and within the MOD at the contingency ppO2; otherwise status `outside_limits` with the level. Rock bottom is always in the answer. Any Diver can be named by `diverId`; only of one the User manages the planning SAC and the last Dive are read.",
-        "parameters": [
-          {
-            "schema": {
-              "type": "number",
-              "minimum": 1,
-              "maximum": 100
-            },
-            "in": "query",
-            "name": "o2",
-            "required": true
-          },
-          {
-            "schema": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 100
-            },
-            "in": "query",
-            "name": "he",
-            "required": false
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "query",
-            "name": "levels",
-            "required": true,
-            "description": "JSON: [{\"depth\": metres, \"minutes\": at that depth after arriving}], 1 to 8 levels"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "query",
-            "name": "divers",
-            "required": true,
-            "description": "JSON: [{\"name\", \"volume\" litres, \"pressure\" bar, \"sac\" L/min (optional), \"diverId\" (optional: any Diver; one you manage brings their planning SAC)}], 1 to 8 Divers"
-          },
-          {
-            "schema": {
-              "enum": [
-                "rock_bottom",
-                "reserve",
-                "ascent_pressure",
-                "halves",
-                "thirds",
-                "sixths"
-              ]
-            },
-            "in": "query",
-            "name": "rule",
-            "required": false,
-            "description": "Default rock_bottom: ascend at rock bottom, never below 50 bar"
-          },
-          {
-            "schema": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 350
-            },
-            "in": "query",
-            "name": "bar",
-            "required": false,
-            "description": "Bar for rule reserve (left at the end) or ascent_pressure (where the ascent starts)"
-          },
-          {
-            "schema": {
-              "enum": [
-                "fresh",
-                "salt",
-                "en13319"
-              ]
-            },
-            "in": "query",
-            "name": "water",
-            "required": false
-          },
-          {
-            "schema": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 5000
-            },
-            "in": "query",
-            "name": "altitude",
-            "required": false
-          },
-          {
-            "schema": {
-              "type": "number",
-              "minimum": 1,
-              "maximum": 2
-            },
-            "in": "query",
-            "name": "ppo2Contingency",
-            "required": false
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "query",
-            "name": "siteId",
-            "required": false,
-            "description": "Plan at this site: its water type"
-          },
-          {
-            "schema": {
-              "type": "number",
-              "minimum": 3,
-              "maximum": 30
-            },
-            "in": "query",
-            "name": "descentRate",
-            "required": false,
-            "description": "Metres a minute, default 18"
-          },
-          {
-            "schema": {
-              "type": "number",
-              "minimum": 3,
-              "maximum": 18
-            },
-            "in": "query",
-            "name": "ascentRate",
-            "required": false,
-            "description": "Metres a minute, default 9; rock bottom follows a slower one"
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "o2",
+                  "levels",
+                  "divers"
+                ],
+                "properties": {
+                  "o2": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 100
+                  },
+                  "he": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "levels": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "depth",
+                        "minutes"
+                      ],
+                      "properties": {
+                        "depth": {
+                          "type": "number",
+                          "minimum": 1,
+                          "maximum": 300,
+                          "description": "Metres"
+                        },
+                        "minutes": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 600,
+                          "description": "At that depth after arriving"
+                        }
+                      }
+                    },
+                    "minItems": 1,
+                    "maxItems": 8
+                  },
+                  "divers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "volume",
+                        "pressure"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 80
+                        },
+                        "volume": {
+                          "type": "number",
+                          "minimum": 1,
+                          "maximum": 60,
+                          "description": "Cylinder volume, litres"
+                        },
+                        "pressure": {
+                          "type": "number",
+                          "minimum": 1,
+                          "maximum": 350,
+                          "description": "Cylinder fill pressure, bar"
+                        },
+                        "sac": {
+                          "type": "number",
+                          "minimum": 1,
+                          "maximum": 100,
+                          "description": "L/min at the surface"
+                        },
+                        "diverId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "description": "Any Diver; one the User manages brings their planning SAC"
+                        }
+                      }
+                    },
+                    "minItems": 1,
+                    "maxItems": 8
+                  },
+                  "rule": {
+                    "enum": [
+                      "rock_bottom",
+                      "reserve",
+                      "ascent_pressure",
+                      "halves",
+                      "thirds",
+                      "sixths"
+                    ],
+                    "description": "Default rock_bottom: ascend at rock bottom, never below 50 bar"
+                  },
+                  "bar": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 350,
+                    "description": "Bar for rule reserve (left at the end) or ascent_pressure (where the ascent starts)"
+                  },
+                  "water": {
+                    "enum": [
+                      "fresh",
+                      "salt",
+                      "en13319"
+                    ]
+                  },
+                  "altitude": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 5000
+                  },
+                  "ppo2Contingency": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 2
+                  },
+                  "siteId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Plan at this site: its water type"
+                  },
+                  "descentRate": {
+                    "type": "number",
+                    "minimum": 3,
+                    "maximum": 30,
+                    "description": "Metres a minute, default 18"
+                  },
+                  "ascentRate": {
+                    "type": "number",
+                    "minimum": 3,
+                    "maximum": 18,
+                    "description": "Metres a minute, default 9; rock bottom follows a slower one"
+                  }
+                }
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "Default Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "status"
-                  ],
-                  "properties": {
-                    "status": {
-                      "enum": [
-                        "ok",
-                        "outside_limits"
-                      ]
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "status",
+                        "gas",
+                        "used",
+                        "rule",
+                        "runtimeMinutes",
+                        "segments",
+                        "divers",
+                        "controllingIndex",
+                        "fits",
+                        "leaveLastLevelAtMinute"
+                      ],
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "ok"
+                          ]
+                        },
+                        "gas": {
+                          "type": "object",
+                          "required": [
+                            "o2",
+                            "he"
+                          ],
+                          "properties": {
+                            "o2": {
+                              "type": "number"
+                            },
+                            "he": {
+                              "type": "number"
+                            }
+                          }
+                        },
+                        "used": {
+                          "type": "object",
+                          "required": [
+                            "water",
+                            "altitudeM",
+                            "gasRule",
+                            "descentRateMPerMin",
+                            "ascentRateMPerMin"
+                          ],
+                          "properties": {
+                            "water": {
+                              "type": "object",
+                              "required": [
+                                "value",
+                                "source"
+                              ],
+                              "properties": {
+                                "value": {
+                                  "enum": [
+                                    "fresh",
+                                    "salt",
+                                    "en13319"
+                                  ]
+                                },
+                                "source": {
+                                  "enum": [
+                                    "request",
+                                    "recording",
+                                    "logbook",
+                                    "site",
+                                    "default"
+                                  ],
+                                  "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                }
+                              }
+                            },
+                            "altitudeM": {
+                              "type": "object",
+                              "required": [
+                                "value",
+                                "source"
+                              ],
+                              "properties": {
+                                "value": {
+                                  "type": "number"
+                                },
+                                "source": {
+                                  "enum": [
+                                    "request",
+                                    "recording",
+                                    "logbook",
+                                    "site",
+                                    "default"
+                                  ],
+                                  "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                }
+                              }
+                            },
+                            "gasRule": {
+                              "type": "object",
+                              "required": [
+                                "value",
+                                "source"
+                              ],
+                              "properties": {
+                                "value": {
+                                  "type": "object",
+                                  "required": [
+                                    "kind",
+                                    "bar"
+                                  ],
+                                  "properties": {
+                                    "kind": {
+                                      "enum": [
+                                        "rock_bottom",
+                                        "reserve",
+                                        "ascent_pressure",
+                                        "halves",
+                                        "thirds",
+                                        "sixths"
+                                      ]
+                                    },
+                                    "bar": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "number"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                "source": {
+                                  "enum": [
+                                    "request",
+                                    "recording",
+                                    "logbook",
+                                    "site",
+                                    "default"
+                                  ],
+                                  "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                }
+                              }
+                            },
+                            "descentRateMPerMin": {
+                              "type": "object",
+                              "required": [
+                                "value",
+                                "source"
+                              ],
+                              "properties": {
+                                "value": {
+                                  "type": "number"
+                                },
+                                "source": {
+                                  "enum": [
+                                    "request",
+                                    "recording",
+                                    "logbook",
+                                    "site",
+                                    "default"
+                                  ],
+                                  "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                }
+                              }
+                            },
+                            "ascentRateMPerMin": {
+                              "type": "object",
+                              "required": [
+                                "value",
+                                "source"
+                              ],
+                              "properties": {
+                                "value": {
+                                  "type": "number"
+                                },
+                                "source": {
+                                  "enum": [
+                                    "request",
+                                    "recording",
+                                    "logbook",
+                                    "site",
+                                    "default"
+                                  ],
+                                  "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "rule": {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "bar"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "enum": [
+                                "rock_bottom",
+                                "reserve",
+                                "ascent_pressure",
+                                "halves",
+                                "thirds",
+                                "sixths"
+                              ]
+                            },
+                            "bar": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "runtimeMinutes": {
+                          "type": "number"
+                        },
+                        "segments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "fromDepthM",
+                              "depthM",
+                              "minutes",
+                              "ambientBar"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "enum": [
+                                  "descent",
+                                  "level",
+                                  "ascent",
+                                  "safety_stop"
+                                ]
+                              },
+                              "fromDepthM": {
+                                "type": "number"
+                              },
+                              "depthM": {
+                                "type": "number",
+                                "description": "Where it ends; the same as fromDepthM for a level and the stop"
+                              },
+                              "minutes": {
+                                "type": "number"
+                              },
+                              "ambientBar": {
+                                "type": "number",
+                                "description": "Mean over the stretch"
+                              }
+                            }
+                          },
+                          "description": "Every stretch in the order it is dived"
+                        },
+                        "divers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "name",
+                              "diverId",
+                              "sacLpm",
+                              "volumeL",
+                              "startPressureBar",
+                              "litres",
+                              "endPressureBar",
+                              "rockBottom",
+                              "ascentPressureBar",
+                              "turnPressureBar",
+                              "belowRockBottom",
+                              "atAscentStartBar",
+                              "marginBar",
+                              "marginMinutes",
+                              "controlling",
+                              "recentDiveEndedAt",
+                              "pressuresBar"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "diverId": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "string"
+                                  }
+                                ]
+                              },
+                              "sacLpm": {
+                                "allOf": [
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "value",
+                                      "source"
+                                    ],
+                                    "properties": {
+                                      "value": {
+                                        "type": "number"
+                                      },
+                                      "source": {
+                                        "enum": [
+                                          "request",
+                                          "recording",
+                                          "logbook",
+                                          "site",
+                                          "default"
+                                        ],
+                                        "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "basedOn": {
+                                        "type": "integer",
+                                        "description": "How many Dives the planning SAC rests on"
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "volumeL": {
+                                "type": "number"
+                              },
+                              "startPressureBar": {
+                                "type": "number"
+                              },
+                              "litres": {
+                                "type": "number"
+                              },
+                              "endPressureBar": {
+                                "type": "number"
+                              },
+                              "rockBottom": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "depthM",
+                                    "pressureBar"
+                                  ],
+                                  "properties": {
+                                    "depthM": {
+                                      "type": "number"
+                                    },
+                                    "pressureBar": {
+                                      "type": "number"
+                                    }
+                                  }
+                                },
+                                "description": "At every level"
+                              },
+                              "ascentPressureBar": {
+                                "type": "number"
+                              },
+                              "turnPressureBar": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "number",
+                                    "description": "Under halves, thirds and sixths"
+                                  }
+                                ]
+                              },
+                              "belowRockBottom": {
+                                "type": "boolean"
+                              },
+                              "atAscentStartBar": {
+                                "type": "number"
+                              },
+                              "marginBar": {
+                                "type": "number"
+                              },
+                              "marginMinutes": {
+                                "type": "number",
+                                "description": "Negative when the plan stays too long"
+                              },
+                              "controlling": {
+                                "type": "boolean"
+                              },
+                              "recentDiveEndedAt": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "description": "A Dive within 48 hours: the real limit is shorter than shown"
+                                  }
+                                ]
+                              },
+                              "pressuresBar": {
+                                "type": "array",
+                                "items": {
+                                  "type": "number"
+                                },
+                                "description": "At the start and at the end of every segment"
+                              }
+                            }
+                          }
+                        },
+                        "controllingIndex": {
+                          "type": "integer"
+                        },
+                        "fits": {
+                          "type": "boolean"
+                        },
+                        "leaveLastLevelAtMinute": {
+                          "type": "number",
+                          "description": "Run time at which the controlling Diver must leave the last level"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "status",
+                        "gas",
+                        "used",
+                        "rule",
+                        "reason",
+                        "levelIndex"
+                      ],
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "outside_limits"
+                          ]
+                        },
+                        "gas": {
+                          "type": "object",
+                          "required": [
+                            "o2",
+                            "he"
+                          ],
+                          "properties": {
+                            "o2": {
+                              "type": "number"
+                            },
+                            "he": {
+                              "type": "number"
+                            }
+                          }
+                        },
+                        "used": {
+                          "type": "object",
+                          "required": [
+                            "water",
+                            "altitudeM",
+                            "gasRule",
+                            "descentRateMPerMin",
+                            "ascentRateMPerMin"
+                          ],
+                          "properties": {
+                            "water": {
+                              "type": "object",
+                              "required": [
+                                "value",
+                                "source"
+                              ],
+                              "properties": {
+                                "value": {
+                                  "enum": [
+                                    "fresh",
+                                    "salt",
+                                    "en13319"
+                                  ]
+                                },
+                                "source": {
+                                  "enum": [
+                                    "request",
+                                    "recording",
+                                    "logbook",
+                                    "site",
+                                    "default"
+                                  ],
+                                  "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                }
+                              }
+                            },
+                            "altitudeM": {
+                              "type": "object",
+                              "required": [
+                                "value",
+                                "source"
+                              ],
+                              "properties": {
+                                "value": {
+                                  "type": "number"
+                                },
+                                "source": {
+                                  "enum": [
+                                    "request",
+                                    "recording",
+                                    "logbook",
+                                    "site",
+                                    "default"
+                                  ],
+                                  "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                }
+                              }
+                            },
+                            "gasRule": {
+                              "type": "object",
+                              "required": [
+                                "value",
+                                "source"
+                              ],
+                              "properties": {
+                                "value": {
+                                  "type": "object",
+                                  "required": [
+                                    "kind",
+                                    "bar"
+                                  ],
+                                  "properties": {
+                                    "kind": {
+                                      "enum": [
+                                        "rock_bottom",
+                                        "reserve",
+                                        "ascent_pressure",
+                                        "halves",
+                                        "thirds",
+                                        "sixths"
+                                      ]
+                                    },
+                                    "bar": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "number"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                "source": {
+                                  "enum": [
+                                    "request",
+                                    "recording",
+                                    "logbook",
+                                    "site",
+                                    "default"
+                                  ],
+                                  "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                }
+                              }
+                            },
+                            "descentRateMPerMin": {
+                              "type": "object",
+                              "required": [
+                                "value",
+                                "source"
+                              ],
+                              "properties": {
+                                "value": {
+                                  "type": "number"
+                                },
+                                "source": {
+                                  "enum": [
+                                    "request",
+                                    "recording",
+                                    "logbook",
+                                    "site",
+                                    "default"
+                                  ],
+                                  "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                }
+                              }
+                            },
+                            "ascentRateMPerMin": {
+                              "type": "object",
+                              "required": [
+                                "value",
+                                "source"
+                              ],
+                              "properties": {
+                                "value": {
+                                  "type": "number"
+                                },
+                                "source": {
+                                  "enum": [
+                                    "request",
+                                    "recording",
+                                    "logbook",
+                                    "site",
+                                    "default"
+                                  ],
+                                  "description": "Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "rule": {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "bar"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "enum": [
+                                "rock_bottom",
+                                "reserve",
+                                "ascent_pressure",
+                                "halves",
+                                "thirds",
+                                "sixths"
+                              ]
+                            },
+                            "bar": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "reason": {
+                          "enum": [
+                            "depth",
+                            "mod",
+                            "gas"
+                          ]
+                        },
+                        "levelIndex": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer",
+                              "description": "The level outside the limits; null for the gas"
+                            }
+                          ]
+                        }
+                      }
                     }
-                  },
-                  "additionalProperties": true
+                  ]
                 }
               }
             }
@@ -57806,7 +58467,64 @@
                               "unmet": {
                                 "type": "array",
                                 "items": {
-                                  "description": "As in a Dive's status at the Provider (unmet)"
+                                  "type": "object",
+                                  "required": [
+                                    "type",
+                                    "severity",
+                                    "source"
+                                  ],
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "description": "As in the Provider's requirements"
+                                    },
+                                    "severity": {
+                                      "enum": [
+                                        "blocking",
+                                        "advisory"
+                                      ]
+                                    },
+                                    "source": {
+                                      "type": "string"
+                                    },
+                                    "siteId": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "string",
+                                          "description": "site_external_id: the Dive site to give the ID; null: choose a site first"
+                                        }
+                                      ]
+                                    },
+                                    "bySend": {
+                                      "type": "boolean",
+                                      "description": "site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays"
+                                    },
+                                    "diverId": {
+                                      "type": "string",
+                                      "description": "diver_mapping: the Participant"
+                                    },
+                                    "diverName": {
+                                      "type": "string"
+                                    },
+                                    "role": {
+                                      "enum": [
+                                        "buddy",
+                                        "guide",
+                                        "instructor"
+                                      ]
+                                    },
+                                    "fixes": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "description": "diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list)"
+                                    }
+                                  },
+                                  "description": "A requirement this Dive doesn't meet, from Dive Hub's own data"
                                 }
                               }
                             }

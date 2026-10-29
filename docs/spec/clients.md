@@ -1012,9 +1012,9 @@ What a client **must** do, because these are limits from the Diver's own input a
 
 #### Gas plans
 
-([ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md).) `GET /api/tools/gas-plan` takes `levels` and `divers` as JSON in
-the query (`[{depth, minutes}]`, `[{name, volume, pressure, sac?, diverId?}]`, 1 to 8 each) and the same mix, water, altitude and
-rule inputs, and optionally `descentRate` and `ascentRate` in metres a minute (default 18 and 9; rock bottom follows a slower
+([ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md).) `POST /api/tools/gas-plan` takes a JSON body
+([ADR 0059](../decisions/0059-tools-with-structured-input-take-post.md)): `levels` and `divers` (`[{depth, minutes}]`,
+`[{name, volume, pressure, sac?, diverId?}]`, 1 to 8 each) and the same mix, water, altitude and rule inputs, and optionally `descentRate` and `ascentRate` in metres a minute (default 18 and 9; rock bottom follows a slower
 ascent and never counts on a faster one); nothing is stored. Any Diver of the instance can be named by `diverId` (found with
 `GET /api/divers/search`, ADR 0028); only of a Diver the User manages the planning SAC and the last Dive are read, everyone
 else plans with the SAC sent or 20 L/min, and no logbook value of theirs is in the answer. A client **must**, besides the duties above:
@@ -1037,7 +1037,8 @@ else plans with the SAC sent or 20 L/min, and no logbook value of theirs is in t
   (no mix or no Diver yet) it may draw the levels' stretches by the same rule, with no gas and no limit, and never beyond 40 m.
 - **Say who a Diver is to the plan** where it lets the User pick one: a Diver the User manages brings their SAC, another Diver
   of the instance only their name, and anyone else is a guest who exists only in the request.
-- `outside_limits` gives the `reason` and `levelIndex` and no numbers.
+- `outside_limits` gives the `reason` and `levelIndex` and no numbers, with `gas`, `used` and `rule` as for a plan. The
+  OpenAPI document declares both answers in full; a client takes their types from it.
 The MCP tool `planning_gas_plan` returns the same with `assumptions`, `controlling_diver` and the notice.
 
 #### Lead estimate

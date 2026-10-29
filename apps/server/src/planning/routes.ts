@@ -2,10 +2,10 @@
 // limits from the Diver's own input and settings, not advice; clients must show the assumptions (docs/spec/clients.md).
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
-import { Value } from 'typebox/value';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
+import { Nullable } from '../http/schemas.js';
 import type { PlanningService } from './planning-service.js';
 import { PLAN_RULES } from './plan-service.js';
 import { BOTTOM_TIME_RULES, PLANNING_WATERS, gasNumbers } from './service.js';
@@ -61,22 +61,20 @@ const BottomTimeQuery = Type.Object({
   siteId: Type.Optional(Type.String({ format: 'uuid', description: 'Plan at this site: its water type' })),
 });
 
-const PlanLevels = Type.Array(Type.Object({
-  depth: Type.Number({ minimum: 1, maximum: 300 }), minutes: Type.Number({ minimum: 0, maximum: 600 }),
-}), { minItems: 1, maxItems: 8 });
-const PlanDivers = Type.Array(Type.Object({
-  name: Type.String({ maxLength: 80 }),
-  volume: Type.Number({ minimum: 1, maximum: 60 }),
-  pressure: Type.Number({ minimum: 1, maximum: 350 }),
-  sac: Type.Optional(Type.Number({ minimum: 1, maximum: 100 })),
-  diverId: Type.Optional(Type.String({ format: 'uuid' })),
-}), { minItems: 1, maxItems: 8 });
-
-const GasPlanQuery = Type.Object({
+const GasPlanBody = Type.Object({
   o2: Type.Number({ minimum: 1, maximum: 100 }),
   he: Type.Optional(Fraction),
-  levels: Type.String({ description: 'JSON: [{"depth": metres, "minutes": at that depth after arriving}], 1 to 8 levels' }),
-  divers: Type.String({ description: 'JSON: [{"name", "volume" litres, "pressure" bar, "sac" L/min (optional), "diverId" (optional: any Diver; one you manage brings their planning SAC)}], 1 to 8 Divers' }),
+  levels: Type.Array(Type.Object({
+    depth: Type.Number({ minimum: 1, maximum: 300, description: 'Metres' }),
+    minutes: Type.Number({ minimum: 0, maximum: 600, description: 'At that depth after arriving' }),
+  }), { minItems: 1, maxItems: 8 }),
+  divers: Type.Array(Type.Object({
+    name: Type.String({ maxLength: 80 }),
+    volume: Type.Number({ minimum: 1, maximum: 60, description: 'Cylinder volume, litres' }),
+    pressure: Type.Number({ minimum: 1, maximum: 350, description: 'Cylinder fill pressure, bar' }),
+    sac: Type.Optional(Type.Number({ minimum: 1, maximum: 100, description: 'L/min at the surface' })),
+    diverId: Type.Optional(Type.String({ format: 'uuid', description: 'Any Diver; one the User manages brings their planning SAC' })),
+  }), { minItems: 1, maxItems: 8 }),
   rule: Type.Optional(Type.Enum([...PLAN_RULES], { description: 'Default rock_bottom: ascend at rock bottom, never below 50 bar' })),
   bar: Type.Optional(Type.Number({ minimum: 0, maximum: 350, description: 'Bar for rule reserve (left at the end) or ascent_pressure (where the ascent starts)' })),
   water: Type.Optional(Water),
@@ -87,15 +85,56 @@ const GasPlanQuery = Type.Object({
   ascentRate: Type.Optional(Type.Number({ minimum: 3, maximum: 18, description: 'Metres a minute, default 9; rock bottom follows a slower one' })),
 });
 
-// The plan is large and nested; clients read it as documented in docs/spec/clients.md.
-const GasPlanView = Type.Object({ status: Type.Enum(['ok', 'outside_limits']) }, { additionalProperties: true });
-
 const Used = <T extends Parameters<typeof Type.Union>[0][number]>(value: T) => Type.Object({
   value,
   source: Type.Enum(['request', 'recording', 'logbook', 'site', 'default'], {
     description: 'Where the value came from: the request, the Diver\'s latest Recording with a GF, the median of their Recordings\' SAC, the site, or the stated default',
   }),
 });
+
+const PlanRule = Type.Object({ kind: Type.Enum([...PLAN_RULES]), bar: Nullable(Type.Number()) });
+const PlanCommon = {
+  gas: Type.Object({ o2: Type.Number(), he: Type.Number() }),
+  used: Type.Object({
+    water: Used(Water), altitudeM: Used(Type.Number()), gasRule: Used(PlanRule),
+    descentRateMPerMin: Used(Type.Number()), ascentRateMPerMin: Used(Type.Number()),
+  }),
+  rule: PlanRule,
+};
+
+const GasPlanView = Type.Union([
+  Type.Object({
+    status: Type.Literal('ok'),
+    ...PlanCommon,
+    runtimeMinutes: Type.Number(),
+    segments: Type.Array(Type.Object({
+      kind: Type.Enum(['descent', 'level', 'ascent', 'safety_stop']),
+      fromDepthM: Type.Number(), depthM: Type.Number({ description: 'Where it ends; the same as fromDepthM for a level and the stop' }),
+      minutes: Type.Number(), ambientBar: Type.Number({ description: 'Mean over the stretch' }),
+    }), { description: 'Every stretch in the order it is dived' }),
+    divers: Type.Array(Type.Object({
+      name: Type.String(), diverId: Nullable(Type.String()),
+      sacLpm: Type.Intersect([Used(Type.Number()), Type.Object({ basedOn: Type.Optional(Type.Integer({ description: 'How many Dives the planning SAC rests on' })) })]),
+      volumeL: Type.Number(), startPressureBar: Type.Number(), litres: Type.Number(), endPressureBar: Type.Number(),
+      rockBottom: Type.Array(Type.Object({ depthM: Type.Number(), pressureBar: Type.Number() }), { description: 'At every level' }),
+      ascentPressureBar: Type.Number(),
+      turnPressureBar: Nullable(Type.Number({ description: 'Under halves, thirds and sixths' })),
+      belowRockBottom: Type.Boolean(), atAscentStartBar: Type.Number(), marginBar: Type.Number(),
+      marginMinutes: Type.Number({ description: 'Negative when the plan stays too long' }),
+      controlling: Type.Boolean(),
+      recentDiveEndedAt: Nullable(Type.String({ description: 'A Dive within 48 hours: the real limit is shorter than shown' })),
+      pressuresBar: Type.Array(Type.Number(), { description: 'At the start and at the end of every segment' }),
+    })),
+    controllingIndex: Type.Integer(), fits: Type.Boolean(),
+    leaveLastLevelAtMinute: Type.Number({ description: 'Run time at which the controlling Diver must leave the last level' }),
+  }),
+  Type.Object({
+    status: Type.Literal('outside_limits'),
+    ...PlanCommon,
+    reason: Type.Enum(['depth', 'mod', 'gas']),
+    levelIndex: Nullable(Type.Integer({ description: 'The level outside the limits; null for the gas' })),
+  }),
+]);
 
 const BottomTimeView = Type.Object({
   status: Type.Enum(['ok', 'outside_limits']),
@@ -149,22 +188,17 @@ export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = asyn
     return reply.code(answer.code === 'diver_not_found' || answer.code === 'site_not_found' ? 404 : 400).send(problem(answer.code));
   });
 
-  app.get('/tools/gas-plan', {
+  app.post('/tools/gas-plan', {
     schema: {
       summary: 'A gas plan for one Diver or a group: litres, pressures, rock bottom and the ascent pressure of a gas rule (ADR 0033)',
       description: 'An estimate from the Diver\'s own input and settings, not advice; the dive computer and training govern. '
         + 'Air and nitrox 21-40 % only, no-stop only, at most 40 m and within the MOD at the contingency ppO2; otherwise status `outside_limits` with the level. '
         + 'Rock bottom is always in the answer. Any Diver can be named by `diverId`; only of one the User manages the planning SAC and the last Dive are read.',
-      querystring: GasPlanQuery, response: { 200: GasPlanView, 400: Problem, 404: Problem },
+      body: GasPlanBody, response: { 200: GasPlanView, 400: Problem, 404: Problem },
     },
   }, async (request, reply) => {
-    const { levels, divers, ...rest } = request.query;
-    let parsedLevels: unknown;
-    let parsedDivers: unknown;
-    try { parsedLevels = JSON.parse(levels); parsedDivers = JSON.parse(divers); } catch { return reply.code(400).send(problem('invalid_input')); }
-    if (!Value.Check(PlanLevels, parsedLevels) || !Value.Check(PlanDivers, parsedDivers)) return reply.code(400).send(problem('invalid_input'));
-    const answer = await deps.planning.gasPlan(userOf(request).id, { ...rest, levels: parsedLevels, divers: parsedDivers });
-    if (answer.ok) return answer.value as { status: 'ok' | 'outside_limits' };
-    return reply.code(answer.code === 'diver_not_found' || answer.code === 'site_not_found' ? 404 : 400).send(problem(answer.code));
+    const answer = await deps.planning.gasPlan(userOf(request).id, request.body);
+    if (answer.ok) return answer.value;
+    return reply.code(answer.code === 'site_not_found' ? 404 : 400).send(problem(answer.code));
   });
 };

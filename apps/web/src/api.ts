@@ -515,53 +515,18 @@ export const toolsBottomTimeQuery = (p: ToolsInput, diverId: string | undefined,
   });
 };
 
-/** A gas plan (ADR 0033): the server's answer, read field by field. */
-export interface ToolsPlanDiver {
-  name: string;
-  diverId: string | null;
-  sacLpm: { value: number; source: 'request' | 'logbook' | 'default'; basedOn?: number };
-  litres: number;
-  endPressureBar: number;
-  rockBottom: { depthM: number; pressureBar: number }[];
-  ascentPressureBar: number;
-  turnPressureBar: number | null;
-  belowRockBottom: boolean;
-  atAscentStartBar: number;
-  marginBar: number;
-  marginMinutes: number;
-  controlling: boolean;
-  recentDiveEndedAt: string | null;
-  /** At the start and at the end of every segment. */
-  pressuresBar: number[];
-}
-export type ToolsPlan =
-  | { status: 'outside_limits'; reason: 'depth' | 'mod' | 'gas'; levelIndex: number | null }
-  | {
-    status: 'ok';
-    runtimeMinutes: number;
-    /** In the order they are dived; a level and the stop start and end at the same depth. */
-    segments: { kind: 'descent' | 'level' | 'ascent' | 'safety_stop'; fromDepthM: number; depthM: number; minutes: number }[];
-    divers: ToolsPlanDiver[];
-    controllingIndex: number;
-    fits: boolean;
-    leaveLastLevelAtMinute: number;
-    used: {
-      water: { value: string; source: string }; altitudeM: { value: number; source: string }; gasRule: { value: { kind: string; bar: number | null }; source: string };
-      descentRateMPerMin: { value: number; source: string }; ascentRateMPerMin: { value: number; source: string };
-    };
-  };
+/** A gas plan (ADR 0033). */
+export type ToolsPlan = Ok<'/api/tools/gas-plan', 'post'>;
+export type ToolsPlanDiver = Extract<ToolsPlan, { status: 'ok' }>['divers'][number];
 
-async function fetchToolsPlan(p: ToolsInput) {
-  const answer = await unwrap(await api.GET('/api/tools/gas-plan', {
-    params: { query: defined({
-      // The plan's own mix (air when empty), never the one of "Your dive"; no helium: a plan is air or nitrox.
-      o2: p.mix ?? 21, water: p.water, altitude: p.altitude, rule: p.rule, bar: p.bar, ppo2Contingency: p.pc, descentRate: p.dr, ascentRate: p.ar,
-      levels: JSON.stringify((p.levels ?? []).map((l) => ({ depth: l.depth, minutes: l.minutes }))),
-      divers: JSON.stringify((p.divers ?? []).map((d) => defined({ name: d.name, volume: d.volume, pressure: d.pressure, sac: d.sac, diverId: d.diverId }))),
-    }) },
-  }));
-  return answer as unknown as ToolsPlan;
-}
+const fetchToolsPlan = async (p: ToolsInput) => unwrap(await api.POST('/api/tools/gas-plan', {
+  body: defined({
+    // The plan's own mix (air when empty), never the one of "Your dive"; no helium: a plan is air or nitrox.
+    o2: p.mix ?? 21, water: p.water, altitude: p.altitude, rule: p.rule, bar: p.bar, ppo2Contingency: p.pc, descentRate: p.dr, ascentRate: p.ar,
+    levels: (p.levels ?? []).map((l) => ({ depth: l.depth, minutes: l.minutes })),
+    divers: (p.divers ?? []).map((d) => defined({ name: d.name, volume: d.volume, pressure: d.pressure, sac: d.sac, diverId: d.diverId })),
+  }),
+}));
 export const toolsPlanQuery = (p: ToolsInput) => {
   const enabled = (p.levels?.length ?? 0) > 0 && (p.divers?.length ?? 0) > 0;
   return queryOptions({

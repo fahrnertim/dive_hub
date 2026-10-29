@@ -7,6 +7,7 @@ import { Problem, PROBLEMS, type ProblemCode } from '../http/problems.js';
 import { DIVE_ONLY_PATTERN } from '../dives/list-filter.js';
 import { MAX_IDS, type PushRunService } from './push-run-service.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
+import { UnmetView } from './unmet-view.js';
 
 const Code = Type.Enum(Object.keys(PROBLEMS) as ProblemCode[]);
 
@@ -58,8 +59,6 @@ const WithoutSomeone = Type.Object({
   names: Type.Array(Type.String(), { description: 'Participants the sent Dive went without: no SSI account and no list entry, or not at the Provider' }),
 }, { description: 'A sent Dive whose Push left someone out' });
 
-const Unmet = Type.Any({ description: 'As in a Dive\'s status at the Provider (unmet)' });
-
 const PreviewView = Type.Object({
   provider: Type.String(),
   diverId: Type.String(),
@@ -81,7 +80,7 @@ const PreviewView = Type.Object({
     total: Type.Integer(),
     dives: Type.Array(Type.Object({
       diveId: Type.String(), number: Nullable(Type.Integer()), startsAt: DateTime, siteId: Nullable(Type.String()),
-      siteName: Nullable(Type.String()), unmet: Type.Array(Unmet),
+      siteName: Nullable(Type.String()), unmet: Type.Array(UnmetView),
     }), { description: 'The first 100, oldest first' }),
   }),
   inScope: Type.Integer({ description: 'How many Dives the request names (those of the list, or the ids found), whatever happens to them' }),

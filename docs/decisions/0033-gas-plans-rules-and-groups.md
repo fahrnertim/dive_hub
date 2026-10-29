@@ -110,7 +110,7 @@ real gas at every pressure and the compressibility source this ADR left open
   else a tank pod's on a Recording), from 5; under that 20 L/min with the count. It replaces the median of Recordings as the bottom time's default.
 - **Bottom time amended:** its gas limit is the minute to leave the depth by in a one-Diver plan (`rule`, `bar` replace `reserve`;
   default rock bottom). `used.gasRule` replaces `used.reserveBar`, `ascentPressureBar` is in the answer, `source` `recordings` became `logbook`.
-- **API/MCP:** `GET /tools/gas-plan` (levels and Divers as JSON in the query); MCP `planning_gas_plan` as a sibling of `planning_gas_and_bottom_time`.
+- **API/MCP:** `GET /tools/gas-plan` (levels and Divers as JSON in the query; since [ADR 0059](0059-tools-with-structured-input-take-post.md) `POST` with a JSON body); MCP `planning_gas_plan` as a sibling of `planning_gas_and_bottom_time`.
 - **Page:** a Gas plan panel (levels, Divers, result table with the controlling Diver, assumptions); the gas rule and its explanation in Settings,
   shared by Bottom time (turn rules fall back to rock bottom there). Address: `rule`, `bar`, `lv=20x20,30x10`, `dv=name~litres~bar~sac~diverId`.
 - **Open:** the rule wordings (en, de) are drafts for the owner; the NDL comparison with private Garmin samples and FIT's SAC units are

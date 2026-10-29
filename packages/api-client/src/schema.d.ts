@@ -9511,38 +9511,67 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * A gas plan for one Diver or a group: litres, pressures, rock bottom and the ascent pressure of a gas rule (ADR 0033)
          * @description An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m and within the MOD at the contingency ppO2; otherwise status `outside_limits` with the level. Rock bottom is always in the answer. Any Diver can be named by `diverId`; only of one the User manages the planning SAC and the last Dive are read.
          */
-        get: {
+        post: {
             parameters: {
-                query: {
-                    o2: number;
-                    he?: number;
-                    /** @description JSON: [{"depth": metres, "minutes": at that depth after arriving}], 1 to 8 levels */
-                    levels: string;
-                    /** @description JSON: [{"name", "volume" litres, "pressure" bar, "sac" L/min (optional), "diverId" (optional: any Diver; one you manage brings their planning SAC)}], 1 to 8 Divers */
-                    divers: string;
-                    /** @description Default rock_bottom: ascend at rock bottom, never below 50 bar */
-                    rule?: "rock_bottom" | "reserve" | "ascent_pressure" | "halves" | "thirds" | "sixths";
-                    /** @description Bar for rule reserve (left at the end) or ascent_pressure (where the ascent starts) */
-                    bar?: number;
-                    water?: "fresh" | "salt" | "en13319";
-                    altitude?: number;
-                    ppo2Contingency?: number;
-                    /** @description Plan at this site: its water type */
-                    siteId?: string;
-                    /** @description Metres a minute, default 18 */
-                    descentRate?: number;
-                    /** @description Metres a minute, default 9; rock bottom follows a slower one */
-                    ascentRate?: number;
-                };
+                query?: never;
                 header?: never;
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody: {
+                content: {
+                    "application/json": {
+                        o2: number;
+                        he?: number;
+                        levels: {
+                            /** @description Metres */
+                            depth: number;
+                            /** @description At that depth after arriving */
+                            minutes: number;
+                        }[];
+                        divers: {
+                            name: string;
+                            /** @description Cylinder volume, litres */
+                            volume: number;
+                            /** @description Cylinder fill pressure, bar */
+                            pressure: number;
+                            /** @description L/min at the surface */
+                            sac?: number;
+                            /**
+                             * Format: uuid
+                             * @description Any Diver; one the User manages brings their planning SAC
+                             */
+                            diverId?: string;
+                        }[];
+                        /**
+                         * @description Default rock_bottom: ascend at rock bottom, never below 50 bar
+                         * @enum {unknown}
+                         */
+                        rule?: "rock_bottom" | "reserve" | "ascent_pressure" | "halves" | "thirds" | "sixths";
+                        /** @description Bar for rule reserve (left at the end) or ascent_pressure (where the ascent starts) */
+                        bar?: number;
+                        /** @enum {unknown} */
+                        water?: "fresh" | "salt" | "en13319";
+                        altitude?: number;
+                        ppo2Contingency?: number;
+                        /**
+                         * Format: uuid
+                         * @description Plan at this site: its water type
+                         */
+                        siteId?: string;
+                        /** @description Metres a minute, default 18 */
+                        descentRate?: number;
+                        /** @description Metres a minute, default 9; rock bottom follows a slower one */
+                        ascentRate?: number;
+                    };
+                };
+            };
             responses: {
                 /** @description Default Response */
                 200: {
@@ -9551,10 +9580,177 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /** @enum {string} */
+                            status: "ok";
+                            gas: {
+                                o2: number;
+                                he: number;
+                            };
+                            used: {
+                                water: {
+                                    /** @enum {unknown} */
+                                    value: "fresh" | "salt" | "en13319";
+                                    /**
+                                     * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
+                                     * @enum {unknown}
+                                     */
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                };
+                                altitudeM: {
+                                    value: number;
+                                    /**
+                                     * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
+                                     * @enum {unknown}
+                                     */
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                };
+                                gasRule: {
+                                    value: {
+                                        /** @enum {unknown} */
+                                        kind: "rock_bottom" | "reserve" | "ascent_pressure" | "halves" | "thirds" | "sixths";
+                                        bar: null | number;
+                                    };
+                                    /**
+                                     * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
+                                     * @enum {unknown}
+                                     */
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                };
+                                descentRateMPerMin: {
+                                    value: number;
+                                    /**
+                                     * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
+                                     * @enum {unknown}
+                                     */
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                };
+                                ascentRateMPerMin: {
+                                    value: number;
+                                    /**
+                                     * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
+                                     * @enum {unknown}
+                                     */
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                };
+                            };
+                            rule: {
+                                /** @enum {unknown} */
+                                kind: "rock_bottom" | "reserve" | "ascent_pressure" | "halves" | "thirds" | "sixths";
+                                bar: null | number;
+                            };
+                            runtimeMinutes: number;
+                            /** @description Every stretch in the order it is dived */
+                            segments: {
+                                /** @enum {unknown} */
+                                kind: "descent" | "level" | "ascent" | "safety_stop";
+                                fromDepthM: number;
+                                /** @description Where it ends; the same as fromDepthM for a level and the stop */
+                                depthM: number;
+                                minutes: number;
+                                /** @description Mean over the stretch */
+                                ambientBar: number;
+                            }[];
+                            divers: {
+                                name: string;
+                                diverId: null | string;
+                                sacLpm: {
+                                    value: number;
+                                    /**
+                                     * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
+                                     * @enum {unknown}
+                                     */
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                } & {
+                                    /** @description How many Dives the planning SAC rests on */
+                                    basedOn?: number;
+                                };
+                                volumeL: number;
+                                startPressureBar: number;
+                                litres: number;
+                                endPressureBar: number;
+                                /** @description At every level */
+                                rockBottom: {
+                                    depthM: number;
+                                    pressureBar: number;
+                                }[];
+                                ascentPressureBar: number;
+                                turnPressureBar: null | number;
+                                belowRockBottom: boolean;
+                                atAscentStartBar: number;
+                                marginBar: number;
+                                /** @description Negative when the plan stays too long */
+                                marginMinutes: number;
+                                controlling: boolean;
+                                recentDiveEndedAt: null | string;
+                                /** @description At the start and at the end of every segment */
+                                pressuresBar: number[];
+                            }[];
+                            controllingIndex: number;
+                            fits: boolean;
+                            /** @description Run time at which the controlling Diver must leave the last level */
+                            leaveLastLevelAtMinute: number;
+                        } | {
+                            /** @enum {string} */
+                            status: "outside_limits";
+                            gas: {
+                                o2: number;
+                                he: number;
+                            };
+                            used: {
+                                water: {
+                                    /** @enum {unknown} */
+                                    value: "fresh" | "salt" | "en13319";
+                                    /**
+                                     * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
+                                     * @enum {unknown}
+                                     */
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                };
+                                altitudeM: {
+                                    value: number;
+                                    /**
+                                     * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
+                                     * @enum {unknown}
+                                     */
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                };
+                                gasRule: {
+                                    value: {
+                                        /** @enum {unknown} */
+                                        kind: "rock_bottom" | "reserve" | "ascent_pressure" | "halves" | "thirds" | "sixths";
+                                        bar: null | number;
+                                    };
+                                    /**
+                                     * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
+                                     * @enum {unknown}
+                                     */
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                };
+                                descentRateMPerMin: {
+                                    value: number;
+                                    /**
+                                     * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
+                                     * @enum {unknown}
+                                     */
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                };
+                                ascentRateMPerMin: {
+                                    value: number;
+                                    /**
+                                     * @description Where the value came from: the request, the Diver's latest Recording with a GF, the median of their Recordings' SAC, the site, or the stated default
+                                     * @enum {unknown}
+                                     */
+                                    source: "request" | "recording" | "logbook" | "site" | "default";
+                                };
+                            };
+                            rule: {
+                                /** @enum {unknown} */
+                                kind: "rock_bottom" | "reserve" | "ascent_pressure" | "halves" | "thirds" | "sixths";
+                                bar: null | number;
+                            };
                             /** @enum {unknown} */
-                            status: "ok" | "outside_limits";
-                        } & {
-                            [key: string]: unknown;
+                            reason: "depth" | "mod" | "gas";
+                            levelIndex: null | number;
                         };
                     };
                 };
@@ -9602,8 +9798,6 @@ export interface paths {
                 };
             };
         };
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -13012,7 +13206,23 @@ export interface paths {
                                     startsAt: string;
                                     siteId: null | string;
                                     siteName: null | string;
-                                    unmet: unknown[];
+                                    unmet: {
+                                        /** @description As in the Provider's requirements */
+                                        type: string;
+                                        /** @enum {unknown} */
+                                        severity: "blocking" | "advisory";
+                                        source: string;
+                                        siteId?: null | string;
+                                        /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                                        bySend?: boolean;
+                                        /** @description diver_mapping: the Participant */
+                                        diverId?: string;
+                                        diverName?: string;
+                                        /** @enum {unknown} */
+                                        role?: "buddy" | "guide" | "instructor";
+                                        /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
+                                        fixes?: string[];
+                                    }[];
                                 }[];
                             };
                             /** @description How many Dives the request names (those of the list, or the ids found), whatever happens to them */

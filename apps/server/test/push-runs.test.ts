@@ -27,7 +27,7 @@ type Preview = {
   inScope: number;
   dives: { diveId: string; number: number | null; startsAt: string; siteId: string | null; siteName: string | null; action: string }[];
 };
-type Status = { provider: string; current: { remoteId: string; remoteNumber: number | null; upToDate: boolean } | null };
+type Status = { provider: string; unmet: unknown[]; current: { remoteId: string; remoteNumber: number | null; upToDate: boolean } | null };
 
 // A year per test: a Dive deleted earlier is not imported again.
 let year = 2000;
@@ -221,6 +221,8 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect(view.counts).toMatchObject({ create: 1, requirementsUnmet: 1 });
     expect(view.blocked.total).toBe(1);
     expect(view.blocked.dives[0]).toMatchObject({ diveId: blocked, unmet: [{ type: 'site_external_id' }] });
+    // The same items, in the same shape, as the Dive's own status at the Provider.
+    expect(view.blocked.dives[0]!.unmet).toEqual((await statusOf(blocked, 'ssi')).unmet);
     const created = (await start({ dives: all }, ssiConnectionId).then((r) => r.json())) as Run;
     await runToEnd(created.id);
     const done = await run(created.id);
