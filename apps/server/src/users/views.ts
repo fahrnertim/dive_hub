@@ -11,6 +11,7 @@ export const Password = Type.String({
   description: `At least ${MIN_PASSWORD_LENGTH} characters`,
 });
 export const Token = Type.String({ minLength: 16, maxLength: 128 });
+export const Email = Type.String({ format: 'email', maxLength: 254 });
 
 export const UserView = Type.Object({
   id: Type.String(), email: Type.String(), name: Type.String(), role: RoleSchema,

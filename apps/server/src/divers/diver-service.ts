@@ -304,11 +304,11 @@ export function createDiverService(db: Db) {
 
     /**
      * Admins: merges an external Diver into another Diver, the same person (ADR 0028, amended), e.g. a buddy without an
-     * account at a Provider who became a User. Its places on Dives and its accounts move; it is deleted.
+     * account at a Provider who became a User. Its places on Dives and its accounts move; it is deleted. Its route is
+     * the admin gate (requireAdmin); the service does not check again.
      */
-    async mergeExternal(actor: Caller, fromId: string, intoId: string) {
-      if (!actor.isAdmin) throw new DiverError('diver_not_editable');
-      return db.transaction((tx) => mergeExternalDiver(tx, fromId, intoId, { type: 'user', id: actor.userId }));
+    async mergeExternal(adminId: string, fromId: string, intoId: string) {
+      return db.transaction((tx) => mergeExternalDiver(tx, fromId, intoId, { type: 'user', id: adminId }));
     },
 
     /** A Diver whose logbook the User keeps (e.g. their child). */

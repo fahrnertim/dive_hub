@@ -106,9 +106,11 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   const passwordResets = createPasswordResets(deps.db);
   const { db, auth, assessments, baseUrl } = deps;
   const { pushes, waitingPushes, certifications } = deps.providers;
-  await app.register(userRoutes, { prefix: '/api', auth, profiles: createProfileService(db), setup: deps.setup, invitations: deps.invitations, baseUrl });
+  await app.register(userRoutes, { prefix: '/api', auth, profiles: createProfileService(db), setup: deps.setup, invitations: deps.invitations });
   await app.register(accountRoutes, { prefix: '/api', auth, passwordResets, sessions: createSessionService(db) });
-  await app.register(adminRoutes, { prefix: '/api', auth, passwordResets, userAdmin: createUserAdmin(db, deps.blobs), baseUrl });
+  await app.register(adminRoutes, {
+    prefix: '/api', auth, passwordResets, userAdmin: createUserAdmin(db, deps.blobs), invitations: deps.invitations, baseUrl,
+  });
   const logbook = createLogbookService(db);
   const divers = createDiverService(db);
   const centres = createCentreService(db);

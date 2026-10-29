@@ -81,7 +81,10 @@ export function userOf(request: FastifyRequest): SessionUser {
 /** Whether the User has the admin role: the one place that rule is written. */
 export const isAdmin = (user: SessionUser | null): boolean => user?.role === 'admin';
 
-/** onRequest hook (after requireUser): 403 unless the signed-in User is an admin. */
+/**
+ * onRequest hook (after requireUser): 403 unless the signed-in User is an admin. The one admin gate: a plugin of only
+ * admin routes adds it for the whole plugin, an admin route in a mixed plugin takes it as `onRequest`; services trust it.
+ */
 export async function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
   if (!isAdmin(request.user)) return reply.code(403).send(problem('admins_only'));
 }

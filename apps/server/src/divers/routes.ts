@@ -303,7 +303,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       body: Type.Object({ into: Type.String({ format: 'uuid' }) }, { additionalProperties: false }),
       response: { 200: Type.Object({ dives: Type.Integer({ description: 'The Dives it was a Participant on' }) }), ...errors },
     },
-  }, async (request) => divers.mergeExternal(callerOf(request), request.params.id, request.body.into));
+  }, async (request) => divers.mergeExternal(userOf(request).id, request.params.id, request.body.into));
 
   app.get('/devices', {
     schema: { summary: 'Devices of the User\'s Divers', response: { 200: Type.Array(DeviceView) } },
