@@ -259,6 +259,46 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     expect(await rows()).toMatchObject([{ diveId: sent }]);
   });
 
+  it('a site rename queues the sent live Dives there, of Connections with send changes on', async () => {
+    const site = await json<{ id: string; version: number }>('POST', '/api/dive-sites', { name: 'Shared Reef' });
+    const atSite = async (id: string, cookie = ann) =>
+      expect((await call('PATCH', `/api/dives/${id}`, { version: (await json<{ version: number }>('GET', `/api/dives/${id}`, undefined, cookie)).version, siteId: site.id }, cookie)).statusCode).toBe(200);
+    const sentLive = await upload(day(1), 101);
+    const unsentLive = await upload(day(2), 102);
+    const sentDeleted = await upload(day(3), 103);
+    for (const id of [sentLive, unsentLive, sentDeleted]) await atSite(id);
+    for (const id of [sentLive, sentDeleted]) await send(id);
+    expect((await call('DELETE', `/api/dives/${sentDeleted}`, { version: await version(sentDeleted) })).statusCode).toBe(200);
+    // Bob's Connection has every setting off; his Dive is sent.
+    const bobsDiver = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', undefined, bob)).find((d) => d.isOwn)!.id;
+    const bobs = (await json<{ id: string }>('POST', '/api/connections/ledger', { diverId: bobsDiver, token: 'ledger-token-2', keepSignedIn: false }, bob)).id;
+    await t.db.update(connection).set({ sendChanges: false, sendNewDives: false, deleteAtProvider: false }).where(eq(connection.id, bobs));
+    const { payload, headers } = multipartFile('bob.fit', makeSyntheticDive({ serialNumber: 200, start: day(4) }));
+    const created = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: bob } });
+    await ctx.imports.processImport(created.json().id);
+    const bobsDive = (await json<{ outcome: { diveId: string }[] }>('GET', `/api/imports/${created.json().id}`, undefined, bob)).outcome[0]!.diveId;
+    await atSite(bobsDive, bob);
+    expect((await call('POST', `/api/dives/${bobsDive}/providers/ledger`, {}, bob)).statusCode).toBeLessThan(300);
+    await t.db.delete(waitingPush);
+    expect((await call('PATCH', `/api/dive-sites/${site.id}`, { version: site.version, name: 'Shared Reef, Dahab' })).statusCode).toBe(200);
+    expect(await rows()).toMatchObject([{ diveId: sentLive, provider: 'ledger', connectionId, action: 'send', state: 'waiting' }]);
+    expect(await rows()).toHaveLength(1);
+  });
+
+  it('a Revision of a Diver without a sending setting writes nothing, and a restore still cancels a waiting delete', async () => {
+    const id = await upload(day(1));
+    await send(id);
+    await settings({ sendChanges: false });
+    await edit(id, 'Turtle');
+    expect(await rows()).toEqual([]);
+    await settings({ deleteAtProvider: true });
+    expect((await call('DELETE', `/api/dives/${id}`, { version: await version(id) })).statusCode).toBe(200);
+    expect(await rows()).toMatchObject([{ diveId: id, action: 'delete', state: 'waiting' }]);
+    await settings({ deleteAtProvider: false });
+    expect((await call('POST', `/api/dives/${id}/restore`, { version: await deletedVersion(id) })).statusCode).toBeLessThan(300);
+    expect(await rows()).toEqual([]);
+  });
+
   /** A sent Dive at a site without a position (or with one), the queue empty. */
   const sentAt = async (siteId: string) => {
     const id = await upload(day(1));
