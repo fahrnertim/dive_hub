@@ -476,7 +476,7 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       const logged: { level: string; detail: object; message: string }[] = [];
       const at = (level: string) => (detail: object, message: string) => { logged.push({ level, detail, message }); };
       const failing = { afterImport: async () => { throw new Error('the queue is gone'); } };
-      await processImportTask(ctx.imports, failing, { info: at('info'), warn: at('warn'), error: at('error') })({ importId });
+      await processImportTask(ctx.imports, failing, ctx.providers.scheduledFetch, { info: at('info'), warn: at('warn'), error: at('error') })({ importId });
       expect(logged.map((l) => l.level)).toEqual(['info', 'warn', 'error']);
       expect(logged[2]!.detail).toMatchObject({ importId, err: { message: 'the queue is gone' } });
       expect(await rows()).toEqual([]);
@@ -935,7 +935,7 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       const logged: { detail: object; message: string }[] = [];
       const logging = createWaitingPushService({
         db: t.db, registry: ctx.providers.providers, pushes: ctx.providers.pushes, clock: ctx.clock,
-        log: { error: (detail, message) => logged.push({ detail, message }) },
+        log: { error: (detail, message) => logged.push({ detail, message }), warn: () => {} },
       });
       const delays = await failUntilStopped(() => logging.step(connectionId));
       expect(delays).toEqual([5, 30, 120, 360, 360, 360, 205]);

@@ -115,7 +115,7 @@ type NumbersFor = NonNullable<ReturnType<typeof numbersFor>>;
 
 export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases; conflicts: ConflictService; clock?: Clock; log?: WaitingPushLog }) {
   const { db, registry, connections, leases, conflicts } = deps;
-  const log: WaitingPushLog = deps.log ?? { error: (detail, message) => console.error(message, detail) };
+  const log: WaitingPushLog = deps.log ?? { error: (detail, message) => console.error(message, detail), warn: (detail, message) => console.warn(message, detail) };
   const clock = deps.clock ?? realClock;
   const changes = createDiveChanges({ db, blobs: deps.blobs });
 

@@ -2,7 +2,7 @@
 // will call (record, openFields, close) and the listing route, against a fake ledger Provider and the real database.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { connection, providerConflict, push, waitingPush } from '../src/db/schema.js';
+import { connection, importJob, providerConflict, push, waitingPush } from '../src/db/schema.js';
 import { close, openFields, record, type ConflictField, type StoredConflictField } from '../src/providers/conflicts.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -168,7 +168,7 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     const [before] = await t.db.select().from(providerConflict);
     // Changed only at the ledger since the send, but held by the open entry: neither a fetch nor a manual import takes it.
     await ctx.providers.scheduledFetch.fetch(connectionId);
-    const fetched = (await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.lastFetchImportId!;
+    const fetched = (await t.db.select().from(importJob).where(eq(importJob.connectionId, connectionId)))[0]!.id;
     await ctx.imports.processImport(fetched);
     await manualImport();
     expect(await notesOf(diveId)).toBe('Turtle');
@@ -250,6 +250,9 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     // The Connection's count comes with its last fetch: make one.
     await t.db.update(connection).set({ importMode: 'add', fetchEveryMinutes: 60, lastFetchedAt: null }).where(eq(connection.id, connectionId));
     await ctx.providers.scheduledFetch.fetch(connectionId);
+    const fetched = (await t.db.select().from(importJob).where(eq(importJob.connectionId, connectionId)))[0]!.id;
+    await ctx.imports.processImport(fetched);
+    await ctx.providers.scheduledFetch.finished(fetched);
     const counted = async () => (await json<{ id: string; lastFetch: { conflicts: number } }[]>('GET', '/api/connections'))
       .find((c) => c.id === connectionId)!.lastFetch.conflicts;
     await setNotes(diveId, 'Reef');

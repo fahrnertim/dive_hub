@@ -30,7 +30,8 @@ export interface TaskLog {
  * nothing; the operator sees which Import's new Dives weren't queued.
  */
 export function processImportTask(
-  imports: Pick<ImportService, 'processImport'>, waitingPushes: Pick<WaitingPushService, 'afterImport'>, log: TaskLog,
+  imports: Pick<ImportService, 'processImport'>, waitingPushes: Pick<WaitingPushService, 'afterImport'>,
+  scheduledFetch: Pick<ScheduledFetch, 'finished'>, log: TaskLog,
 ) {
   return async (payload: unknown) => {
     const { importId } = payload as { importId: string };
@@ -38,6 +39,12 @@ export function processImportTask(
     const outcome = await imports.processImport(importId);
     // The detail Users don't see (they get the reason code): here for the operator.
     for (const o of outcome) if (o.result === 'failed') log.warn({ importId, file: o.fileName, reason: o.reason, detail: o.message }, 'import file failed');
+    // A scheduled fetch's Import becomes its Connection's summary; a fault there loses only the summary's update.
+    try {
+      await scheduledFetch.finished(importId);
+    } catch (error) {
+      log.error({ err: error, importId }, "an Import's fetch could not be kept as the Connection's last");
+    }
     if (outcome.length === 0) return;
     try {
       await waitingPushes.afterImport(importId);
@@ -62,7 +69,7 @@ export async function startWorker(
     // Every night at 03:17 (UTC), the waiting Imports every hour, and automation every minute (ADR 0056).
     crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}\n47 * * * * ${EXPIRE_WAITING_IMPORTS_TASK}\n* * * * * ${AUTOMATION_TICK_TASK}`,
     taskList: {
-      [PROCESS_IMPORT_TASK]: processImportTask(imports, waitingPushes, log),
+      [PROCESS_IMPORT_TASK]: processImportTask(imports, waitingPushes, scheduledFetch, log),
       [IMPORT_SITES_TASK]: async (payload) => {
         const { siteImportId } = payload as { siteImportId: string };
         log.info({ siteImportId }, 'importing dive sites');

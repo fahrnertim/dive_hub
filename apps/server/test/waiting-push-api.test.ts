@@ -252,8 +252,9 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
     await edit(id, 'Turtle');
     ledger.dives.get(remoteId)!.notes = 'Manta';
     await ctx.providers.scheduledFetch.fetch(connectionId);
-    const importId = (await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.lastFetchImportId!;
+    const importId = (await t.db.select().from(importJob).where(eq(importJob.connectionId, connectionId)))[0]!.id;
     await ctx.imports.processImport(importId);
+    await ctx.providers.scheduledFetch.finished(importId);
     expect((await connectionRow()).lastFetch).toMatchObject({ created: 0, waitingForYou: 0, conflicts: 1 });
     expect((await t.db.select().from(importJob).where(and(eq(importJob.id, importId))))[0]!.status).toBe('done');
   });

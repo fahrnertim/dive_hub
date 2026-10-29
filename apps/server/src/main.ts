@@ -39,7 +39,7 @@ const providers = createProviderLayer({
     onCall: (call) => app.log.info({ ssi: call }, 'SSI call'),
   })],
   // The worker's own faults, with the entry they hit, for the operator.
-  log: { error: (detail, message) => app.log.error(detail, message) },
+  log: { error: (detail, message) => app.log.error(detail, message), warn: (detail, message) => app.log.warn(detail, message) },
 });
 const auth = createAuth({
   db, baseUrl: config.baseUrl, secret: await loadAuthSecret(config.authSecret, config.dataDir),

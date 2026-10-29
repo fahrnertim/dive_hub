@@ -11,6 +11,7 @@ import { connection, dive, importJob, push, waitingPush, type WaitingPushOptions
 /** Where Dive Hub's own faults go for the operator (the app's logger in production; Users see only the code). */
 export interface WaitingPushLog {
   error(detail: object, message: string): void;
+  warn(detail: object, message: string): void;
 }
 
 type Q = Db | Tx;

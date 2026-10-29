@@ -37,7 +37,7 @@ type Connection = typeof connection.$inferSelect;
 export function createWaitingPushService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; clock?: Clock; log?: WaitingPushLog }) {
   const { db, registry, pushes } = deps;
   // Without a logger (a script or a test that doesn't look), the fault still goes somewhere an operator sees it.
-  const log: WaitingPushLog = deps.log ?? { error: (detail, message) => console.error(message, detail) };
+  const log: WaitingPushLog = deps.log ?? { error: (detail, message) => console.error(message, detail), warn: (detail, message) => console.warn(message, detail) };
   const clock = deps.clock ?? realClock;
   const now = () => new Date(clock.now());
   const the = (entry: Entry) => and(eq(waitingPush.diveId, entry.diveId), eq(waitingPush.provider, entry.provider));
