@@ -340,15 +340,13 @@ export const siteImportsQuery = () => queryOptions({
   refetchInterval: (query) => (query.state.data?.some(running) ? 2000 : false),
 });
 
+/** A multipart upload, which openapi-fetch's JSON body doesn't carry; its answer goes through unwrap like any other. */
 export async function uploadFile(file: File) {
   const body = new FormData();
   body.append('file', file);
   const response = await fetch('/api/imports', { method: 'POST', body });
-  if (!response.ok) {
-    const problem = (await response.json().catch(() => ({}))) as { code?: ProblemCode; error?: string };
-    throw new ApiError(problem.error ?? `Upload failed (${response.status})`, response.status, problem.code);
-  }
-  return (await response.json()) as ImportView;
+  const json: unknown = await response.json().catch(() => undefined);
+  return unwrap({ data: json as ImportView, error: json, response });
 }
 
 /** The Providers of this server and what each offers (ADR 0027); they change only with the server. */
@@ -593,16 +591,7 @@ export const pushRunPreviewQuery = (connectionId: string, choices: PushRunChoice
   queryFn: async () => unwrap(await api.POST('/api/connections/{id}/push-runs/preview', { params: { path: { id: connectionId } }, body: pushRunBody(choices) })),
   placeholderData: keepPreviousData, staleTime: 0,
 });
+/** A named helper only because two screens start runs and the body is shaped as for the preview; other mutations call `api` inline. */
 export async function startPushRun(connectionId: string, choices: PushRunChoices) {
   return unwrap(await api.POST('/api/connections/{id}/push-runs', { params: { path: { id: connectionId } }, body: pushRunBody(choices) }));
-}
-export async function cancelPushRun(id: string) {
-  return unwrap(await api.POST('/api/push-runs/{id}/cancel', { params: { path: { id } } }));
-}
-/** Puts an ended run away for good, on the server: every browser of the User stops showing it (slice 25d). */
-export async function dismissPushRun(id: string) {
-  return unwrap(await api.POST('/api/push-runs/{id}/dismiss', { params: { path: { id } } }));
-}
-export async function continuePushRun(id: string) {
-  return unwrap(await api.POST('/api/push-runs/{id}/continue', { params: { path: { id } } }));
 }

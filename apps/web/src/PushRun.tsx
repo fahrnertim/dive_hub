@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Label, ProgressBar } from 'react-aria-components';
 import {
-  ApiError, cancelPushRun, connectionsQuery, continuePushRun, dismissPushRun, keys, pushRunActive, pushRunPreviewQuery, pushRunQuery, pushRunsQuery,
-  siteQuery, startPushRun, type ConnectionView, type ProviderView, type PushRunChoices, type PushRunDetail, type PushRunView,
+  api, ApiError, connectionsQuery, keys, pushRunActive, pushRunPreviewQuery, pushRunQuery, pushRunsQuery,
+  siteQuery, startPushRun, unwrap, type ConnectionView, type ProviderView, type PushRunChoices, type PushRunDetail, type PushRunView,
 } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
@@ -335,7 +335,8 @@ export function PushRunStrip() {
   const nameOf = (provider: string) => providers.data?.find((p) => p.id === provider)?.name ?? provider;
   const name = run ? nameOf(run.provider) : '';
   const dismiss = useMutation({
-    mutationFn: (id: string) => dismissPushRun(id),
+    // Puts an ended run away for good, on the server: every browser of the User stops showing it (slice 25d).
+    mutationFn: async (id: string) => unwrap(await api.POST('/api/push-runs/{id}/dismiss', { params: { path: { id } } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.pushRuns }),
   });
   useEffect(() => {
@@ -397,7 +398,7 @@ function ActiveStrip({ run, name }: { run: PushRunView; name: string }) {
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const stop = useMutation({
-    mutationFn: () => cancelPushRun(run.id),
+    mutationFn: async () => unwrap(await api.POST('/api/push-runs/{id}/cancel', { params: { path: { id: run.id } } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.pushRuns }),
   });
   const done = run.counts.sent + run.counts.skipped + run.counts.failed;
@@ -426,7 +427,7 @@ function EndedStrip({ run, name, onDismiss, dismissError }: { run: PushRunView; 
   const problemText = useProblemText();
   const queryClient = useQueryClient();
   const resume = useMutation({
-    mutationFn: () => continuePushRun(run.id),
+    mutationFn: async () => unwrap(await api.POST('/api/push-runs/{id}/continue', { params: { path: { id: run.id } } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.pushRuns }),
   });
   const unsent = run.counts.skipped + run.counts.failed;
