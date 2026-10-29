@@ -167,7 +167,10 @@ const ConnectionView = Type.Object({
     conflicts: Type.Integer({
       description: 'Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import',
     }),
-  }, { description: 'The last scheduled fetch that started an Import, as that Import came out; null before the first' })),
+  }, {
+    description: 'The last scheduled fetch whose Import finished, as that Import came out: a fetch under way or failed doesn\'t replace it; '
+      + 'null before the first',
+  })),
   unsentDives: Type.Array(Type.String(), {
     description: 'The new Dives of a large Import (more than 20) that were not sent by themselves: offer to send them (a Push run for these ids: '
       + 'POST /api/connections/{id}/push-runs/preview with dives.ids) or Dismiss (POST /api/connections/{id}/unsent-dives/dismiss). Empty: no offer',

@@ -6,7 +6,7 @@
 // Two ways in: the send and the import write through the bare functions (`record`, `entryOf`, `openFields`, `closeFields`,
 // `close`) with their own `Db | Tx`, inside their own flow; `createConflictService` is the one read side, for the Dive's
 // page, "Needs your decision" and a Push run's count.
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, or } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { connection, dive, diveSite, providerConflict, push, waitingPush } from '../db/schema.js';
 import type { BlobStore } from '../storage/blob-store.js';
@@ -85,6 +85,9 @@ export async function close(q: Db | Tx, diveId: string, provider: string): Promi
   await q.delete(providerConflict).where(and(eq(providerConflict.diveId, diveId), eq(providerConflict.provider, provider)));
 }
 
+/** A queue row held because the Provider already has a dive at the Dive's time. */
+const isExists = (w: { state: string; reason: string | null }) => w.state === 'held' && w.reason === 'exists';
+
 /** Whether an entry still waits: its Dive is live and its remote dive is still the Dive's current one at that Connection. */
 function stillWaits(entry: { remoteId: string; connectionId: string }, d: { deletedAt: Date | null } | undefined, pushes: PushRow[]): boolean {
   const current = currentRemote(pushes);
@@ -127,6 +130,53 @@ export function createConflictService(deps: { db: Db; connections: ConnectionSer
   const waitingFields = async (run: ProviderRun, e: typeof providerConflict.$inferSelect, d: { deletedAt: Date | null } | undefined, pushes: PushRow[]) =>
     (stillWaits(e, d, pushes) ? stillDiffering(run, e.diveId, fieldsOf(e.fields)) : []);
 
+  /** The Dives of these ids as "Needs your decision" shows them. */
+  const divesOf = (ids: string[]) => db.select({
+    id: dive.id, number: dive.number, startsAt: dive.startsAt, utcOffsetSeconds: dive.utcOffsetSeconds,
+    utcOffsetSource: dive.utcOffsetSource, durationSeconds: dive.durationSeconds, maxDepthM: dive.maxDepthM,
+    siteId: dive.siteId, siteName: diveSite.name, deletedAt: dive.deletedAt,
+  }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(inArray(dive.id, ids));
+  type ShownDive = Awaited<ReturnType<typeof divesOf>>[number];
+  const shown = (d: ShownDive) => ({
+    diveId: d.id, number: d.number, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource,
+    durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, site: d.siteId && d.siteName !== null ? { id: d.siteId, name: d.siteName } : null,
+  });
+
+  /**
+   * For these Connections at once: their Conflict entries, their queue rows held as `exists` or sending, and the Dives and
+   * pushes of those entries (pushes per Dive and Provider). Null when no entry waits.
+   */
+  async function loadWaiting(conns: { id: string; provider: string }[]) {
+    const ids = conns.map((c) => c.id);
+    const entries = await db.select().from(providerConflict).where(inArray(providerConflict.connectionId, ids));
+    const queue = await db.select().from(waitingPush).where(and(inArray(waitingPush.connectionId, ids), or(
+      and(eq(waitingPush.state, 'held'), eq(waitingPush.reason, 'exists')), eq(waitingPush.action, 'send'),
+    )));
+    const diveIds = [...new Set([...entries.map((e) => e.diveId), ...queue.filter(isExists).map((w) => w.diveId)])];
+    if (diveIds.length === 0) return null;
+    const dives = await divesOf(diveIds);
+    const pushes = await db.select().from(push)
+      .where(and(inArray(push.diveId, diveIds), inArray(push.provider, [...new Set(conns.map((c) => c.provider))]))).orderBy(desc(push.createdAt), desc(push.id));
+    const byDive = new Map<string, PushRow[]>();
+    for (const p of pushes) byDive.set(`${p.diveId} ${p.provider}`, [...(byDive.get(`${p.diveId} ${p.provider}`) ?? []), p]);
+    return { entries, queue, dives, byDive };
+  }
+
+  /** The Connection's Conflict entries that wait; `queued` when a choice was queued after the entry was found. */
+  async function waitingConflicts(
+    run: ProviderRun, provider: string, entries: (typeof providerConflict.$inferSelect)[], chosen: Map<string, Date>,
+    loaded: { dives: ShownDive[]; byDive: Map<string, PushRow[]> },
+  ) {
+    const conflicts = [];
+    for (const e of entries) {
+      const d = loaded.dives.find((x) => x.id === e.diveId);
+      const fields = await waitingFields(run, e, d, loaded.byDive.get(`${e.diveId} ${provider}`) ?? []);
+      if (d && fields.length > 0) conflicts.push({ ...shown(d), kind: 'conflict' as const, remoteId: e.remoteId, fields, existing: null, foundAt: e.foundAt,
+        queued: (chosen.get(e.diveId)?.getTime() ?? -1) >= e.foundAt.getTime() });
+    }
+    return conflicts;
+  }
+
   return {
     /**
      * The entries that wait, for each of the User's Connections that has any (no call to a Provider). Two kinds: a
@@ -134,41 +184,23 @@ export function createConflictService(deps: { db: Db; connections: ConnectionSer
      * Waiting push is held until the User links to it or creates a new one; `existing` names that dive).
      */
     async waiting(userId: string) {
+      // The User's Connections of the Providers this instance offers: the others cannot be acted on. Their entries, queue
+      // rows, Dives and pushes are loaded at once; the comparison runs per Connection that has entries.
+      const conns = await connections.list(userId);
+      const loaded = conns.length === 0 ? null : await loadWaiting(conns);
+      if (!loaded) return [];
+      const { dives } = loaded;
+      const ofConn = <T extends { connectionId: string; provider: string }>(rows: T[], c: (typeof conns)[number]) =>
+        rows.filter((r) => r.connectionId === c.id && r.provider === c.provider);
       const out = [];
-      // The User's Connections of the Providers this instance offers: the others cannot be acted on.
-      for (const c of await connections.list(userId)) {
-        const entries = await db.select().from(providerConflict)
-          .where(and(eq(providerConflict.connectionId, c.id), eq(providerConflict.provider, c.provider)));
-        const asked = await db.select().from(waitingPush).where(and(
-          eq(waitingPush.connectionId, c.id), eq(waitingPush.provider, c.provider), eq(waitingPush.state, 'held'), eq(waitingPush.reason, 'exists'),
-        ));
+      for (const c of conns) {
+        const entries = ofConn(loaded.entries, c);
+        const rows = ofConn(loaded.queue, c);
+        const asked = rows.filter(isExists);
         if (entries.length === 0 && asked.length === 0) continue;
         // A choice queued after the Conflict was found: the entry waits for the worker (a newer Conflict is open again).
-        const chosen = new Map((await db.select().from(waitingPush).where(and(
-          eq(waitingPush.connectionId, c.id), eq(waitingPush.provider, c.provider), eq(waitingPush.action, 'send'),
-        ))).filter((w) => Object.keys(w.options.conflicts ?? {}).length > 0).map((w) => [w.diveId, w.changedAt]));
-        const ids = [...entries.map((e) => e.diveId), ...asked.map((e) => e.diveId)];
-        const dives = await db.select({
-          id: dive.id, number: dive.number, startsAt: dive.startsAt, utcOffsetSeconds: dive.utcOffsetSeconds,
-          utcOffsetSource: dive.utcOffsetSource, durationSeconds: dive.durationSeconds, maxDepthM: dive.maxDepthM,
-          siteId: dive.siteId, siteName: diveSite.name, deletedAt: dive.deletedAt,
-        }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(inArray(dive.id, ids));
-        const pushes = await db.select().from(push)
-          .where(and(inArray(push.diveId, ids), eq(push.provider, c.provider))).orderBy(desc(push.createdAt), desc(push.id));
-        const byDive = new Map<string, PushRow[]>();
-        for (const p of pushes) byDive.set(p.diveId, [...(byDive.get(p.diveId) ?? []), p]);
-        const run = await runFor(userId, registry.get(c.provider), c, c.diverId);
-        const shown = (d: (typeof dives)[number]) => ({
-          diveId: d.id, number: d.number, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource,
-          durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, site: d.siteId && d.siteName !== null ? { id: d.siteId, name: d.siteName } : null,
-        });
-        const conflicts = [];
-        for (const e of entries) {
-          const d = dives.find((x) => x.id === e.diveId);
-          const fields = await waitingFields(run, e, d, byDive.get(e.diveId) ?? []);
-          if (d && fields.length > 0) conflicts.push({ ...shown(d), kind: 'conflict' as const, remoteId: e.remoteId, fields, existing: null, foundAt: e.foundAt,
-            queued: (chosen.get(e.diveId)?.getTime() ?? -1) >= e.foundAt.getTime() });
-        }
+        const chosen = new Map(rows.filter((w) => w.action === 'send' && Object.keys(w.options.conflicts ?? {}).length > 0).map((w) => [w.diveId, w.changedAt]));
+        const conflicts = entries.length === 0 ? [] : await waitingConflicts(await runFor(userId, registry.get(c.provider), c, c.diverId), c.provider, entries, chosen, loaded);
         const exists = asked.flatMap((e) => {
           const d = dives.find((x) => x.id === e.diveId);
           if (!d || d.deletedAt !== null || !e.detail) return [];

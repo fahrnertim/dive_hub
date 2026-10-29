@@ -3,7 +3,8 @@
 // your decision" lists, and what the Connection says about its last fetch. Real database, the test ledger.
 import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { connection, importJob, providerConflict, push, waitingPush } from '../src/db/schema.js';
+import { connection, dive, importJob, providerConflict, push, waitingPush } from '../src/db/schema.js';
+import { record } from '../src/providers/conflicts.js';
 import { createFakeHandover } from './fake-handover-provider.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -269,6 +270,49 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
     // Sent meanwhile: nothing is offered any more, though the Import is still pointed at.
     expect((await call('POST', `/api/dives/${id}/providers/ledger`, {})).statusCode).toBeLessThan(300);
     expect((await connectionRow()).unsentDives).toEqual([]);
+  });
+
+  it('lists two Connections with offers and Conflicts as one each would', async () => {
+    const lena = (await json<{ id: string }>('POST', '/api/divers', { name: 'Lena' })).id;
+    ledger.tokens.set('ledger-token-2', { accountId: 'l-6', label: 'Ledger of Lena' });
+    const other = (await json<{ id: string }>('POST', '/api/connections/ledger', { diverId: lena, token: 'ledger-token-2', keepSignedIn: false })).id;
+    /** A Dive uploaded by Ann, then the Diver's. */
+    const diveOf = async (owner: string, day: number) => {
+      const id = await upload(new Date(Date.UTC(year, 4, day, 9)));
+      if (owner !== diverId) await t.db.update(dive).set({ diverId: owner }).where(eq(dive.id, id));
+      return id;
+    };
+    /** The Dive is sent through its Diver's Connection and has a Conflict there. */
+    const clash = async (id: string, conn: string) => {
+      expect((await call('POST', `/api/dives/${id}/providers/ledger`, {})).statusCode).toBeLessThan(300);
+      const remoteId = (await json<{ current: { remoteId: string } }>('GET', `/api/dives/${id}/providers/ledger`)).current.remoteId;
+      await record(t.db, { diveId: id, provider: 'ledger', connectionId: conn, remoteId, fields: [{ field: 'notes', hub: null, provider: 'Manta' }], runId: null, foundAt: new Date(ctx.clock.now()) });
+    };
+    const made = async (ids: string[]) => (await t.db.insert(importJob).values({
+      userId: annId, uploadName: 'file.fit', status: 'done', outcome: ids.map((diveId, i) => ({ fileName: `${i}`, result: 'created' as const, diveId })),
+    }).returning())[0]!.id;
+    const [a1, a2, a3, l1, l2] = [await diveOf(diverId, 1), await diveOf(diverId, 2), await diveOf(diverId, 3), await diveOf(lena, 4), await diveOf(lena, 5)];
+    await clash(a1!, connectionId);
+    await clash(l1!, other);
+    const [sent, ofAnn, ofLena] = [await made([a1!]), await made([a1!, a2!, a3!]), await made([l1!, l2!])];
+    await set(connectionId, { unsentImportIds: [sent, ofAnn], lastFetchImportId: ofAnn });
+    await set(other, { unsentImportIds: [ofLena], lastFetchImportId: ofLena });
+
+    const imports = await json<{ id: string; unsentTo: unknown[] }[]>('GET', '/api/imports');
+    const unsentTo = (id: string) => imports.find((i) => i.id === id)!.unsentTo;
+    expect(unsentTo(sent)).toEqual([]);
+    expect(unsentTo(ofAnn)).toEqual([{ connectionId, provider: 'ledger', count: 2 }]);
+    expect(unsentTo(ofLena)).toEqual([{ connectionId: other, provider: 'ledger', count: 1 }]);
+    const ofConn = async (id: string) => {
+      const c = await connectionRow(id);
+      return { unsentDives: c.unsentDives, created: c.lastFetch?.created, conflicts: c.lastFetch?.conflicts };
+    };
+    expect(await ofConn(connectionId)).toEqual({ unsentDives: [a2, a3], created: 3, conflicts: 1 });
+    expect(await ofConn(other)).toEqual({ unsentDives: [l2], created: 2, conflicts: 1 });
+    // The Import sent in full left the offer; the others stay.
+    const stored = async (id: string) => (await t.db.select().from(connection).where(eq(connection.id, id)))[0]!.unsentImportIds;
+    expect(await stored(connectionId)).toEqual([ofAnn]);
+    expect(await stored(other)).toEqual([ofLena]);
   });
 
   it('a pair of a logbook check says where a Dive deletes itself at the Provider', async () => {
