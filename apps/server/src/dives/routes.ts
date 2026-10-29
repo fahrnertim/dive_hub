@@ -31,6 +31,7 @@ import { VerificationCodeView } from '../centres/routes.js';
 import type { PushService } from '../providers/push-service.js';
 import type { WaitingPushService } from '../providers/waiting-push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
+import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
 import { ProviderServiceError } from '../providers/registry.js';
 import { WaitingPushViewSchema } from '../providers/waiting-push-view.js';
 import { replyProviderError } from '../providers/routes.js';
@@ -389,12 +390,7 @@ const DELETED_SHOWN = 100;
 
 export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
-  // Whatever changed a Dive may change its findings and those of the dives around it (ADR 0036): brought up to date
-  // before the answer goes out, so the client's next read sees them. A failure here never fails the change itself.
-  app.addHook('onSend', async (request, reply) => {
-    if (request.method === 'GET' || reply.statusCode >= 300 || !request.user) return;
-    await assessments.refreshUser(request.user.id).catch((error) => request.log.error({ err: error }, 'dive assessment failed'));
-  });
+  refreshAssessmentsAfterChange(app, assessments);
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof DiveError) return reply.code(STATUS[error.code]).send(problem(error.code));
