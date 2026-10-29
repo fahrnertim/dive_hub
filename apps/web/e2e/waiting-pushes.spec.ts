@@ -3,7 +3,7 @@
 // The e2e server's worker settles real entries within a minute, so the states that must stay are put into the queue
 // by test-only routes (apps/server/test/e2e-server.ts); the saves and the delete are real.
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { clearQueue, connectSsi, deletableDive, diveNumber, diveRows, editElsewhere, fetchState, headers, leaveConflict, leaveSsi, openLine, queueEntry, readyForSsi, sendToSsi, setPreferences, ssiConnectionOf } from './support.ts';
+import { clearPushRuns, clearQueue, connectSsi, deletableDive, diveNumber, diveRows, editElsewhere, fetchState, headers, leaveConflict, leaveSsi, openLine, queueEntry, readyForSsi, sendToSsi, setPreferences, ssiConnectionOf } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -101,6 +101,29 @@ test('a stopped Dive in the logbook has its own Retry, and focus stays in the ro
   }
 });
 
+test('the logbook list shows a Dive as sent after its send', { tag: ['@dives'] }, async ({ page, request }) => {
+  const id = await deletableDive(request);
+  try {
+    await sendToSsi(request, id);
+    await settings(request, await ssiConnectionOf(request, id), { sendChanges: true });
+    await editElsewhere(request, id, 'A turtle at the drop-off');
+    const n = await diveNumber(request, id);
+    await page.goto('/#/');
+    await expect(rowOf(page, n).getByText('Waiting to send to SSI')).toBeVisible();
+    // Send from the Dive's page and come back inside the app, with no reload: the list has the new state.
+    await rowOf(page, n).getByRole('link').first().click();
+    await openLine(page, 'SSI');
+    await page.getByRole('group', { name: 'SSI' }).getByRole('button', { name: 'Update in SSI' }).click();
+    await expect(page.locator('#main').getByText('Up to date')).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(/#\/$/);
+    await expect(rowOf(page, n)).toBeVisible();
+    await expect(rowOf(page, n).getByText('Waiting to send to SSI')).toBeHidden();
+  } finally {
+    await leave(request);
+  }
+});
+
 test('a Dive without a site says it needs one', { tag: ['@dives'] }, async ({ page, request }) => {
   const id = await deletableDive(request);
   try {
@@ -118,6 +141,19 @@ test('a Dive without a site says it needs one', { tag: ['@dives'] }, async ({ pa
     // Next to the words, a button takes you to what the Dive lacks.
     await line.getByRole('button', { name: 'See what is needed' }).click();
     await expect(line.locator('.provider-needs')).toBeFocused();
+  } finally {
+    await leave(request);
+  }
+});
+
+test("a held Dive's fix link in the logbook keeps the list for the way back", { tag: ['@dives'] }, async ({ page, request }) => {
+  const id = await deletableDive(request);
+  try {
+    await queueEntry(request, id, { state: 'held', reason: 'requirements' });
+    const n = await diveNumber(request, id);
+    await page.goto(`/#/?q=${n}`);
+    await rowOf(page, n).getByRole('link', { name: 'See what is needed' }).click();
+    await expect(page).toHaveURL(new RegExp(`#/dives/${id}[?]list=q%3D${n}`));
   } finally {
     await leave(request);
   }
@@ -313,7 +349,18 @@ test('the offer of unsent new dives opens a Push run', { tag: ['@account'] }, as
     await offer.getByRole('button', { name: 'Dismiss' }).click();
     await expect(offer).toBeHidden();
     expect((await connectionRow(request, connectionId))?.unsentDives).toEqual([]);
+
+    // The offer again: sending starts the run, whose strip is on the logbook.
+    await fetchState(request, connectionId, { created: 1, unsent: [id] });
+    await page.reload();
+    await expect(offer).toBeVisible();
+    await offer.getByRole('button', { name: 'Send them to SSI' }).click();
+    await dialog.getByRole('button', { name: 'Send 1 dive' }).click();
+    await expect(dialog).toBeHidden();
+    await page.goto('/#/');
+    await expect(page.locator('#main').getByText(/Sent 1 of 1 dives to SSI\./)).toBeVisible();
   } finally {
+    await clearPushRuns(request);
     await leave(request);
   }
 });

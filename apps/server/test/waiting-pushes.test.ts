@@ -5,7 +5,9 @@ import { runOnce } from 'graphile-worker';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, diveSiteExternalId, importJob, providerConflict, push, revision, waitingPush } from '../src/db/schema.js';
 import { writeRevision } from '../src/dives/revisions.js';
+import { record } from '../src/providers/conflicts.js';
 import { mark, QUIET_MS, settle, WAITING_PUSHES_TASK, waitingPushesKey } from '../src/providers/waiting-push-queue.js';
+import { ProviderError } from '../src/providers/provider.js';
 import { createWaitingPushService, GIVE_UP_MS, RETRY_AFTER_MS } from '../src/providers/waiting-push-service.js';
 import type { ImportedValues, SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
@@ -700,6 +702,27 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       expect(await rows()).toMatchObject([{ diveId: id, action: 'delete', options: {} }]);
     });
 
+    it('goes through the Connection of an open Conflict when there is no entry', async () => {
+      const id = await upload(day(1));
+      await send(id);
+      // The Conflict was found at a Connection of the User's that has since moved to another Diver of theirs, so the
+      // Diver of the Dive has no Connection of the User's but the Conflict's.
+      const lena = (await json<{ id: string }>('POST', '/api/divers', { name: 'Lena' })).id;
+      await t.db.update(connection).set({ diverId: lena }).where(eq(connection.id, connectionId));
+      await record(t.db, { diveId: id, provider: 'ledger', connectionId, remoteId: 'L1', fields: [{ field: 'notes', hub: 'Turtle', provider: 'Ray' }], runId: null, foundAt: new Date() });
+      expect(await rows()).toEqual([]);
+      await ctx.providers.waitingPushes.decide(annId, id, 'ledger', { conflicts: { notes: 'hub' } });
+      expect(await rows()).toMatchObject([{ diveId: id, connectionId, action: 'send', state: 'waiting', options: { conflicts: { notes: 'hub' } } }]);
+    });
+
+    it("falls back to the User's own Connection of the Diver", async () => {
+      const id = await upload(day(1));
+      await send(id);
+      expect(await rows()).toEqual([]);
+      await ctx.providers.waitingPushes.decide(annId, id, 'ledger', { onExisting: 'create' });
+      expect(await rows()).toMatchObject([{ diveId: id, connectionId, state: 'waiting', options: { onExisting: 'create' } }]);
+    });
+
     it('sends a due entry and removes it', async () => {
       const id = await waiting('Turtle');
       saves = 0;
@@ -973,6 +996,26 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       expect(await step()).toBeNull();
       expect(ledger.dives.size).toBe(0);
       expect(await rows()).toEqual([]);
+    });
+
+    it('a refused create stops at once', async () => {
+      await settings({ sendNewDives: true });
+      const id = await upload(day(1));
+      await edit(id, 'Turtle');
+      expect(await rows()).toMatchObject([{ diveId: id, action: 'send', state: 'waiting' }]);
+      ledger.beforeSave = async () => { throw new ProviderError('refused', 'create refused'); };
+      await untilDue();
+      expect(await step()).toBeNull();
+      expect(await rows()).toMatchObject([{ diveId: id, action: 'send', state: 'stopped', reason: 'provider_refused', attempts: 1 }]);
+      expect(ledger.dives.size).toBe(0);
+    });
+
+    it('a refused update stops at once', async () => {
+      const id = await waiting('Turtle');
+      ledger.beforeSave = async () => { throw new ProviderError('refused', 'update refused'); };
+      await untilDue();
+      expect(await step()).toBeNull();
+      expect(await rows()).toMatchObject([{ diveId: id, action: 'send', state: 'stopped', reason: 'provider_refused', attempts: 1 }]);
     });
 
     it('a token-only Connection holds its entries and the tick wakes them after sign-in', async () => {

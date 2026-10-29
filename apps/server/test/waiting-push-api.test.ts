@@ -206,6 +206,20 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
     expect((await rows())[0]!.options).toEqual({ onExisting: 'link', conflicts: { notes: 'hub' } });
   });
 
+  it("a co-manager's decision answers 404 connection_not_found and queues nothing", async () => {
+    const id = await waitingDive();
+    const bobsUser = ((await t.db.execute(sql`select id from "user" where email = 'bob@example.com'`)).rows[0] as { id: string }).id;
+    // Bob co-manages the Diver, but a decision goes through the Connection of the entry, which is Ann's.
+    await t.db.execute(sql`insert into diver_management (user_id, diver_id) values (${bobsUser}, ${diverId}) on conflict do nothing`);
+    try {
+      const refused = await call('POST', `/api/dives/${id}/providers/ledger/decision`, { onExisting: 'create' }, bob);
+      expect([refused.statusCode, refused.json().code]).toEqual([404, 'connection_not_found']);
+      expect((await rows())[0]!.options).toEqual({});
+    } finally {
+      await t.db.execute(sql`delete from diver_management where user_id = ${bobsUser} and diver_id = ${diverId}`);
+    }
+  });
+
   it('the exists entry is listed under Needs your decision and leaves after Link to it', async () => {
     const id = await waitingDive();
     await t.db.update(waitingPush).set({ state: 'held', reason: 'exists', detail: { remoteId: 'L7', remoteNumber: 4, startsAt: '2025-05-01 09:00' } })
