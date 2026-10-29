@@ -1,6 +1,6 @@
 ---
 title: Code quality baseline before the desloppify cleanup
-summary: Size and quality measurements of the repository at commit b62addd (2026-10-29), before the desloppify cleanup branch - lines of code by app and by production/test, tests, lint suppressions, dependency rules, history - and desloppify's first scan (strict 20.3, objective 81.2). The yardstick for later comparisons.
+summary: Size and quality measurements of the repository at commit b62addd (2026-10-29), before the desloppify cleanup branch - lines of code by app and by production/test, tests, lint suppressions, dependency rules, history - and desloppify's first scan (strict 20.3, objective 81.2) and its first subjective review (strict 75.5). The yardstick for later comparisons.
 status: current
 date: 2026-10-29
 ---
@@ -114,3 +114,37 @@ reviewed and count as 0, so strict = 0.25 × 81.2.
 
 637 issues in total: 14 unused (tsc), 52 structural, 19 coupling, 28 signature variance,
 206 test coverage, 235 code smells, 9 security, 34 boilerplate-duplication clusters, 20 subjective review requests.
+
+## desloppify subjective review
+
+20 review batches, one dimension each, run by Sonnet subagents on the blind packet (no score targets);
+each read 15-55 production files and cited code for every finding. The first five batches were rerun
+because their quick first pass scored from grep samples. Imported with `review --import-run`:
+strict **75.5** (mechanical 81.2 at 25 %, subjective average about 75.8 at 75 %), 159 review findings queued.
+
+| Dimension | Score | Findings |
+|---|---:|---:|
+| Incomplete migration | 88 | 4 |
+| Dependency health | 84 | 3 |
+| Logic clarity | 84 | 11 |
+| Abstraction fitness | 83 | 6 |
+| AI-generated debt | 83 | 4 |
+| Initialization coupling | 82 | 5 |
+| Authorization consistency | 79 | 7 |
+| Error consistency | 78 | 9 |
+| Test strategy | 77 | 7 |
+| High-level elegance | 74 | 9 |
+| Design coherence | 74 | 10 (+16 signals dismissed) |
+| Naming quality | 73 | 9 |
+| Type safety | 73 | 9 |
+| Package organization | 72 | 8 |
+| Low-level elegance | 71 | 10 |
+| Contract coherence | 71 | 11 |
+| Cross-module architecture | 68 | 7 |
+| Mid-level elegance | 68 | 9 |
+| API surface coherence | 68 | 11 |
+| Convention outlier | 66 | 10 |
+
+Findings named by several reviewers: TypeBox helpers (`IdParams`, `Nullable`, `DateTime`) copied into about
+11 route files with differing union order; `apps/web/src/api.ts` as a 700-line hub; `providers/routes.ts`
+hosting unrelated features; three overlapping service files in `planning/`; error mapping repeated per module.
