@@ -56,7 +56,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
   }
 
   const hold = (entry: Entry, seen: QueueMark, reason: string, detail?: Entry['detail']) =>
-    db.update(waitingPush).set({ state: 'held', reason, ...(detail && { detail }) }).where(unchanged(entry, seen));
+    db.update(waitingPush).set({ state: 'held', reason, detail: detail ?? null }).where(unchanged(entry, seen));
 
   /** A failed attempt, by its problem code (the spec's "Failures and retries"). */
   async function failed(entry: Entry, seen: QueueMark, code: string): Promise<'signed_out' | void> {
@@ -143,12 +143,22 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     const [conn] = await db.select().from(connection).where(eq(connection.id, connectionId));
     if (!conn || conn.unsentImportIds.length === 0) return [];
     const offered = new Map<string, string>();
-    for (const importId of conn.unsentImportIds) for (const d of await createdBy(importId)) offered.set(d.id, d.diverId);
+    const created = new Map<string, { id: string; diverId: string }[]>();
+    for (const importId of conn.unsentImportIds) {
+      created.set(importId, await createdBy(importId));
+      for (const d of created.get(importId)!) offered.set(d.id, d.diverId);
+    }
     const ids = [...offered].filter(([, diverId]) => diverId === conn.diverId).map(([id]) => id);
     if (ids.length === 0) return [];
     const pushes = await db.select().from(push).where(and(inArray(push.diveId, ids), eq(push.provider, conn.provider)))
       .orderBy(desc(push.createdAt), desc(push.id));
-    return ids.filter((id) => !currentRemote(pushes.filter((p) => p.diveId === id)));
+    const unsent = ids.filter((id) => !currentRemote(pushes.filter((p) => p.diveId === id)));
+    // An Import none of whose Dives is still unsent has been sent in full: it leaves the offer.
+    const open = conn.unsentImportIds.filter((importId) => created.get(importId)!.some((d) => unsent.includes(d.id)));
+    if (open.length < conn.unsentImportIds.length) {
+      await db.update(connection).set({ unsentImportIds: open }).where(eq(connection.id, conn.id));
+    }
+    return unsent;
   }
 
   /** The Diver of a Dive of one of the User's Divers; else `dive_not_found`, also for a Dive another User keeps. */

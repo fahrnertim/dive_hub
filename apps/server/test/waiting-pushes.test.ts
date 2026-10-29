@@ -570,6 +570,24 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       expect(await unsentTo()).toEqual([]);
     }, 60_000);
 
+    it('an offer drops the Imports whose Dives were all sent', async () => {
+      const first = await upload(day(1), 101);
+      const second = await upload(day(2), 102);
+      const third = await upload(day(3), 103);
+      const [one, other] = [await importOf([first, second]), await importOf([third])];
+      await settings({ unsentImportIds: [one, other] });
+      const offered = async () => {
+        await json('GET', '/api/connections');
+        return (await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.unsentImportIds;
+      };
+      expect(await offered()).toEqual([one, other]);
+      // Some of the first Import's Dives are sent: it stays. All of them: it leaves, and the other Import stays.
+      expect((await call('POST', `/api/dives/${first}/providers/ledger`, {})).statusCode).toBeLessThan(300);
+      expect(await offered()).toEqual([one, other]);
+      expect((await call('POST', `/api/dives/${second}/providers/ledger`, {})).statusCode).toBeLessThan(300);
+      expect(await offered()).toEqual([other]);
+    });
+
     it('dismissing removes the offer', async () => {
       await settings({ sendNewDives: true });
       const ids: string[] = [];
@@ -803,6 +821,19 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       expect(ctx.fakeSsi.dives.has(Number(held!.detail!.remoteId))).toBe(true);
       expect(ctx.fakeSsi.dives.size).toBe(before);
       expect(await remoteOf(id, 'ssi')).toBeNull();
+    });
+
+    it('a hold for another reason clears an earlier exists', async () => {
+      const ssiConnection = await connectSsi({ sendNewDives: true });
+      const id = await upload(day(1));
+      await edit(id, 'Turtle');
+      await t.db.update(waitingPush).set({ state: 'held', reason: 'exists', detail: { remoteId: '77', remoteNumber: 4, startsAt: '2025-05-01 09:00' } })
+        .where(eq(waitingPush.diveId, id));
+      // "Link to it", but the Dive has no site by now: the send finds the requirements unmet.
+      expect((await call('POST', `/api/dives/${id}/providers/ssi/decision`, { onExisting: 'link' })).statusCode).toBe(204);
+      await untilDue('ssi');
+      expect(await step(ssiConnection)).toBeNull();
+      expect(await of('ssi')).toMatchObject([{ diveId: id, state: 'held', reason: 'requirements', detail: null }]);
     });
 
     it('holds an update that would remove a verification', async () => {

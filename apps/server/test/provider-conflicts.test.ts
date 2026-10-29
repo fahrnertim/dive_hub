@@ -99,6 +99,15 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
     await t.db.delete(waitingPush).where(eq(waitingPush.diveId, diveId));
   });
 
+  it('a choice stays queued while its entry is held', async () => {
+    const { diveId, remoteId } = await sentDive();
+    await record(t.db, entry(diveId, remoteId));
+    expect((await call('POST', '/api/dives/' + diveId + '/providers/ledger/decision', { conflicts: { notes: 'hub', maxDepthM: 'hub' } })).statusCode).toBe(204);
+    await t.db.update(waitingPush).set({ state: 'held', reason: 'requirements' }).where(eq(waitingPush.diveId, diveId));
+    expect((await listed()).connections[0]!.entries).toMatchObject([{ diveId, queued: true }]);
+    await t.db.delete(waitingPush).where(eq(waitingPush.diveId, diveId));
+  });
+
   it('recording twice keeps one entry with the newer fields', async () => {
     const { diveId, remoteId } = await sentDive();
     await record(t.db, entry(diveId, remoteId));
@@ -211,6 +220,23 @@ describe.skipIf(!(await databaseReachable()))('Conflicts with a Provider', () =>
       await t.db.update(connection).set({ diverId }).where(eq(connection.id, connectionId));
     }
     expect(diveId).toBeTruthy();
+  });
+
+  it('keeping Dive Hub\'s value without a Connection to send through leaves the field open', async () => {
+    const { diveId, remoteId } = await openOnNotes();
+    await t.db.delete(waitingPush);
+    await t.db.update(push).set({ connectionId: null }).where(eq(push.diveId, diveId));
+    await manualImport([{ remoteId, field: 'notes', choice: 'hub' }]);
+    expect(await t.db.select().from(waitingPush)).toEqual([]);
+    expect(await t.db.select().from(providerConflict)).toMatchObject([{ diveId, fields: [{ field: 'notes' }] }]);
+  });
+
+  it('an import closes an open field whose two sides became equal', async () => {
+    const { diveId, remoteId } = await openOnNotes();
+    ledger.dives.get(remoteId)!.notes = 'Turtle';
+    await manualImport();
+    expect(await t.db.select().from(providerConflict)).toEqual([]);
+    expect(await notesOf(diveId)).toBe('Turtle');
   });
 
   const setNotes = async (diveId: string, notes: string) => {

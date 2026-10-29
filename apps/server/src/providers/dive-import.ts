@@ -341,7 +341,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   /**
    * The changes with the fields of the Dive's open entry at the Provider held (ADR 0056, "while it is open the base
    * stays"): never taken, nor "changed only here" because a newer Original moved the base; a Conflict while the two
-   * sides differ. `open`: the entry's fields the comparison covers.
+   * sides differ. `open`: the entry's fields the comparison covers; `equal`: those whose two sides are now the same.
    */
   async function held(q: Db | Tx, run: ProviderRun, diveId: string, d: ImportedDive, found: FoundChanges) {
     const open = (await openFields(q, diveId, run.adapter.id, d.remoteId)).filter((f) => found.here.fields.includes(f));
@@ -349,24 +349,27 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const clash = open.filter((f) => !(f === 'site' && found.provider.site === null) && !same(f, found.provider, found.here.hub));
     return {
       take: found.take.filter((f) => !open.includes(f)), conflicts: [...found.conflicts.filter((f) => !open.includes(f)), ...clash], open,
+      equal: open.filter((f) => same(f, found.provider, found.here.hub)),
     };
   }
 
   /**
    * Fields of an open entry the User kept Dive Hub's value for: the Dive is queued as a send with that choice, through
-   * the Dive's Connection (the one its current remote dive was made through); none when it has no such Connection.
+   * the Dive's Connection (the one its current remote dive was made through). Whether it was queued: without such a
+   * Connection nothing can send the choice, and the fields stay open.
    */
-  async function queueKept(tx: Tx, run: ProviderRun, diveId: string, remoteId: string, fields: SyncedField[]) {
-    if (fields.length === 0) return;
+  async function queueKept(tx: Tx, run: ProviderRun, diveId: string, remoteId: string, fields: SyncedField[]): Promise<boolean> {
+    if (fields.length === 0) return false;
     const pushes = await tx.select().from(push).where(and(eq(push.diveId, diveId), eq(push.provider, run.adapter.id)))
       .orderBy(desc(push.createdAt), desc(push.id));
     const current = currentRemote(pushes);
-    if (current?.remoteId !== remoteId || !current.connectionId) return;
+    if (current?.remoteId !== remoteId || !current.connectionId) return false;
     // Only a Connection still the Dive's Diver's decides, as in `noteSent` (ADR 0056): another one queues nothing.
     const [own] = await tx.select({ id: connection.id }).from(connection).innerJoin(dive, eq(dive.diverId, connection.diverId))
       .where(and(eq(connection.id, current.connectionId), eq(dive.id, diveId)));
-    if (!own) return;
+    if (!own) return false;
     await queueNow(tx, diveId, run.adapter.id, current.connectionId, { conflicts: Object.fromEntries(fields.map((f) => [f, 'hub' as const])) }, new Date(clock.now()));
+    return true;
   }
 
   /**
@@ -393,13 +396,16 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const found = await changesOf(tx, run, diveId, d, importId);
     let fields: SyncedField[] = [];
     if (found) {
-      const { take, conflicts, open } = await held(tx, run, diveId, d, found);
+      const { take, conflicts, open, equal } = await held(tx, run, diveId, d, found);
       const choice = (f: SyncedField) => plan.conflicts?.[`${d.remoteId}:${f}`];
       fields = [...take, ...conflicts.filter((f) => choice(f) === 'provider')];
       // The User's choice for a field of the open entry settles it there: asked once, not twice. Keeping Dive Hub's
-      // value queues the Dive, due now, as every choice in "Needs your decision" does (ADR 0056).
-      await closeFields(tx, diveId, run.adapter.id, open.filter((f) => choice(f) !== undefined));
-      await queueKept(tx, run, diveId, d.remoteId, open.filter((f) => choice(f) === 'hub'));
+      // value queues the Dive, due now, as every choice in "Needs your decision" does (ADR 0056); it settles the field
+      // only when the Dive was queued. A field whose two sides became equal needs no choice.
+      const kept = open.filter((f) => choice(f) === 'hub');
+      const queued = await queueKept(tx, run, diveId, d.remoteId, kept);
+      await closeFields(tx, diveId, run.adapter.id,
+        open.filter((f) => choice(f) === 'provider' || (queued && kept.includes(f)) || (choice(f) === undefined && equal.includes(f))));
       if (plan.unattended) await waitForUser(tx, run, diveId, d, found, conflicts.filter((f) => choice(f) === undefined));
     }
     const taken = fields.length > 0 && (await takeChanges(tx, run, diveId, d, fields, actor)).length > 0;

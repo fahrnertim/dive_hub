@@ -145,7 +145,7 @@ export function createConflictService(deps: { db: Db; connections: ConnectionSer
         if (entries.length === 0 && asked.length === 0) continue;
         // A choice queued after the Conflict was found: the entry waits for the worker (a newer Conflict is open again).
         const chosen = new Map((await db.select().from(waitingPush).where(and(
-          eq(waitingPush.connectionId, c.id), eq(waitingPush.provider, c.provider), eq(waitingPush.action, 'send'), eq(waitingPush.state, 'waiting'),
+          eq(waitingPush.connectionId, c.id), eq(waitingPush.provider, c.provider), eq(waitingPush.action, 'send'),
         ))).filter((w) => Object.keys(w.options.conflicts ?? {}).length > 0).map((w) => [w.diveId, w.changedAt]));
         const ids = [...entries.map((e) => e.diveId), ...asked.map((e) => e.diveId)];
         const dives = await db.select({
