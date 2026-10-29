@@ -5,7 +5,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, isNull, lt, lte, or } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, diveLease } from '../db/schema.js';
+import { connection, diveLease, type ConnectionRow } from '../db/schema.js';
 
 /** Where leases take their time from. Every app process on one database must agree on it (NTP is enough). */
 export interface Clock {
@@ -89,7 +89,7 @@ export function createLeases(deps: { db: Db; clock?: Clock }) {
      * MAX_WAIT_MS, then throws TurnTimeout. `fn` gets the Connection as it is now, or null once it is gone (then
      * without a turn).
      */
-    async turn<T>(connectionId: string, pauseMs: number, fn: (row: typeof connection.$inferSelect | null) => Promise<T>): Promise<T> {
+    async turn<T>(connectionId: string, pauseMs: number, fn: (row: ConnectionRow | null) => Promise<T>): Promise<T> {
       const started = clock.now();
       for (;;) {
         const now = clock.now();

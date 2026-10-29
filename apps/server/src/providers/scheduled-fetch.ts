@@ -5,7 +5,7 @@
 // Provider's stopped Waiting pushes at the next tick.
 import { and, eq, inArray, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, importJob } from '../db/schema.js';
+import { connection, importJob, type ConnectionRow } from '../db/schema.js';
 import type { DiveImportService } from './dive-import.js';
 import { realClock, type Clock } from './leases.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
@@ -17,7 +17,6 @@ export const FETCH_TASK = 'scheduled_fetch';
 export const OPENING_AFTER_MINUTES = 60;
 
 const MINUTE_MS = 60_000;
-type Connection = typeof connection.$inferSelect;
 
 export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry; diveImports: DiveImportService; clock?: Clock; log?: WaitingPushLog }) {
   const { db, registry, diveImports } = deps;
@@ -36,7 +35,7 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
    * What keeps the Connection from fetching now, whatever the time: a sign-in only the User can give, import off, or an
    * import under way (`running`: the Connections with one, when the caller has asked for them all at once).
    */
-  async function blocked(conn: Connection, running?: Set<string>): Promise<boolean> {
+  async function blocked(conn: ConnectionRow, running?: Set<string>): Promise<boolean> {
     if (conn.fetchEveryMinutes === null || conn.importMode === 'off') return true;
     if (conn.state === 'needs_sign_in' && !conn.keepSignedIn) return true;
     if (running) return running.has(conn.id);
@@ -46,7 +45,7 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
   }
 
   /** Whether the Connection's last fetch is older than `minutes` (and than the Provider's minimum), and nothing blocks it. */
-  async function due(conn: Connection, minutes: number, at: number, running?: Set<string>): Promise<boolean> {
+  async function due(conn: ConnectionRow, minutes: number, at: number, running?: Set<string>): Promise<boolean> {
     const minimum = minimumOf(conn.provider);
     if (minimum === null) return false;
     const every = Math.max(minutes, minimum) * MINUTE_MS;

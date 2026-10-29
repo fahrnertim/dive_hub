@@ -8,9 +8,9 @@
 // page, "Needs your decision" and a Push run's count.
 import { and, desc, eq, inArray, or } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { connection, dive, diveSite, providerConflict, push, waitingPush } from '../db/schema.js';
+import { connection, dive, diveSite, providerConflict, push, waitingPush, type ConnectionRow } from '../db/schema.js';
 import type { BlobStore } from '../storage/blob-store.js';
-import type { ConnectionRow, ConnectionService } from './connection-service.js';
+import type { ConnectionService } from './connection-service.js';
 import { createDiveChanges, type ProviderRun, type ShownValue } from './dive-changes.js';
 import type { ProviderAdapter } from './provider.js';
 import type { ProviderRegistry } from './registry.js';

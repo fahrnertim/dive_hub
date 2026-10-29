@@ -6,11 +6,11 @@
 // adapter's.
 import { and, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, dive, push } from '../db/schema.js';
+import { connection, dive, push, type ConnectionRow } from '../db/schema.js';
 import type { SiteSource } from '../sites/sources.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { close, openFields, record as recordConflict, type ConflictField, type ConflictService } from './conflicts.js';
-import type { ConnectionRow, ConnectionService } from './connection-service.js';
+import type { ConnectionService } from './connection-service.js';
 import { createDiveChanges, type ProviderRun } from './dive-changes.js';
 import { LeaseBusy, realClock, type Clock, type Leases } from './leases.js';
 import { loadOutgoingDive } from './outgoing-dive.js';

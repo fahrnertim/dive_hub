@@ -868,6 +868,9 @@ export const connection = pgTable(
   ],
 );
 
+/** A Connection as stored: the one row type every provider module uses. */
+export type ConnectionRow = typeof connection.$inferSelect;
+
 /**
  * An admin's permission (ADR 0030) to create Dive sites from a Provider's site data when Users import their dives: the
  * sites their dives name that no site here matches. SSI gives no licence for its site data (ADR 0024), so it is the

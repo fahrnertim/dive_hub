@@ -4,7 +4,7 @@
 // run would do (the preview), and it never calls a Provider.
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, dive, diveSite, push, pushRun, pushRunItem, type PushRunLeftOut } from '../db/schema.js';
+import { connection, dive, diveSite, push, pushRun, pushRunItem, type PushRunLeftOut, type ConnectionRow } from '../db/schema.js';
 import { asksFor, diveListFilter } from '../dives/list-filter.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { isUniqueViolation } from '../sites/site-service.js';
@@ -68,7 +68,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
   }
 
   /** The Dives in scope, oldest first. */
-  async function scope(userId: string, conn: typeof connection.$inferSelect, request: PushRunRequest) {
+  async function scope(userId: string, conn: ConnectionRow, request: PushRunRequest) {
     const base = { id: dive.id, startsAt: dive.startsAt, number: dive.number, siteId: dive.siteId, siteName: diveSite.name };
     const order = [asc(dive.startsAt), asc(dive.id)];
     if (request.ids) {
@@ -111,7 +111,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
   });
 
   /** What a run with these options would do, from Dive Hub's data alone. */
-  async function analyse(userId: string, conn: typeof connection.$inferSelect, request: PushRunRequest) {
+  async function analyse(userId: string, conn: ConnectionRow, request: PushRunRequest) {
     const { adapter, exports, run, pauseMs } = runner(conn.provider);
     const options: PlanOptions = {
       updates: !!request.updates, updatesRemovingVerification: !!request.updatesRemovingVerification, numbers: !!request.numbers,
@@ -225,7 +225,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
     tx.execute(sql`select graphile_worker.add_job(${PUSH_RUN_STEP_TASK}, json_build_object('runId', ${runId}::text), job_key => ${'push-run:' + runId}, max_attempts => 1)`);
 
   /** A signed-in Connection, or `provider_sign_in_needed` before anything is queued. */
-  function needSignedIn(conn: typeof connection.$inferSelect) {
+  function needSignedIn(conn: ConnectionRow) {
     if (conn.state === 'needs_sign_in') throw new ProviderServiceError('provider_sign_in_needed', named(registry.get(conn.provider)));
   }
 

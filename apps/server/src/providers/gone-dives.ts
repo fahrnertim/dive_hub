@@ -4,7 +4,7 @@
 // import preview and the check below read the logbook; nothing here is scheduled.
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, dive, diveSite, providerGoneDive, push } from '../db/schema.js';
+import { dive, diveSite, providerGoneDive, push, type ConnectionRow } from '../db/schema.js';
 import type { ConnectionService } from './connection-service.js';
 import { compareGone, goneWarning, type GoneCandidate } from './gone-dive-rules.js';
 import { LeaseBusy, type Leases } from './leases.js';
@@ -12,7 +12,6 @@ import type { ProviderAdapter } from './provider.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { currentRemote, type PushRow } from './remote-state.js';
 
-type ConnectionRow = typeof connection.$inferSelect;
 
 /** What a check or a preview found. Nothing is deleted or sent by finding it. */
 export interface GoneSummary {

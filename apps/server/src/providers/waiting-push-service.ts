@@ -5,7 +5,7 @@
 // The minute tick wakes what a sign-in or the Provider's return cleared, and Retry is the User's.
 import { and, arrayOverlaps, asc, count, desc, eq, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
-import { connection, dive, importJob, providerConflict, push, pushRun, waitingPush, type WaitingPushOptions } from '../db/schema.js';
+import { connection, dive, importJob, providerConflict, push, pushRun, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { currentRemote } from './current-remote.js';
 import { realClock, type Clock } from './leases.js';
@@ -33,7 +33,6 @@ export const OFFER_ABOVE = 20;
 
 
 type Entry = typeof waitingPush.$inferSelect;
-type Connection = typeof connection.$inferSelect;
 
 export function createWaitingPushService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; clock?: Clock; log?: WaitingPushLog }) {
   const { db, registry, pushes } = deps;
@@ -89,7 +88,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
   }
 
   /** A `send` entry: held, dropped as up to date, or sent as the Connection's User. */
-  async function sendOne(conn: Connection, entry: Entry, seen: QueueMark) {
+  async function sendOne(conn: ConnectionRow, entry: Entry, seen: QueueMark) {
     const [row] = await db.select({ deletedAt: dive.deletedAt }).from(dive).where(eq(dive.id, entry.diveId));
     // Deleted here (delete at the Provider off, or never there): nothing to send.
     if (!row || row.deletedAt) {
@@ -125,7 +124,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
   }
 
   /** One attempt at the entry; never throws for its sake. */
-  async function attempt(conn: Connection, entry: Entry): Promise<'signed_out' | void> {
+  async function attempt(conn: ConnectionRow, entry: Entry): Promise<'signed_out' | void> {
     const seen = await mark(db, entry.diveId, entry.provider);
     try {
       if (entry.action === 'delete') await pushes.remove(conn.userId, entry.diveId, entry.provider);
@@ -145,12 +144,12 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
    * removed from the stored list as it is then (an Import added or dismissed meanwhile stays so). One query each for the
    * Imports' outcomes, their live Dives and the pushes, whatever the number of Connections (`created` when the caller has them).
    */
-  async function unsentOf(conns: Connection[], created?: Map<string, { id: string; diverId: string }[]>): Promise<Map<string, string[]>> {
+  async function unsentOf(conns: ConnectionRow[], created?: Map<string, { id: string; diverId: string }[]>): Promise<Map<string, string[]>> {
     const found = new Map(conns.map((c) => [c.id, [] as string[]]));
     const offering = conns.filter((c) => c.unsentImportIds.length > 0);
     if (offering.length === 0) return found;
     const made = created ?? await createdByMany([...new Set(offering.flatMap((c) => c.unsentImportIds))]);
-    const offered = (c: Connection) => [...new Set(c.unsentImportIds.flatMap((importId) =>
+    const offered = (c: ConnectionRow) => [...new Set(c.unsentImportIds.flatMap((importId) =>
       (made.get(importId) ?? []).filter((d) => d.diverId === c.diverId).map((d) => d.id)))];
     const ids = [...new Set(offering.flatMap(offered))];
     const pushes = ids.length === 0 ? [] : await db.select().from(push)
@@ -198,7 +197,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
   }
 
   /** A Connection's share of an Import's new Dives: queued, or above `OFFER_ABOVE` only offered. */
-  async function queueOrOffer(q: Tx, conn: Connection, diveIds: string[], importId: string, at: Date): Promise<void> {
+  async function queueOrOffer(q: Tx, conn: ConnectionRow, diveIds: string[], importId: string, at: Date): Promise<void> {
     if (diveIds.length > OFFER_ABOVE) {
       // Added to what the Connection already offers, once: an earlier Import's offer stays until it is sent or dismissed.
       await q.update(connection).set({ unsentImportIds: sql`array_append(${connection.unsentImportIds}, ${importId}::uuid)` })

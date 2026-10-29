@@ -6,7 +6,7 @@
 import { and, asc, desc, eq, inArray, min, ne, or, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
 import { currentRemote, type PushRow } from './current-remote.js';
-import { connection, dive, importJob, push, waitingPush, type WaitingPushOptions } from '../db/schema.js';
+import { connection, dive, importJob, push, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../db/schema.js';
 
 /** Where Dive Hub's own faults go for the operator (the app's logger in production; Users see only the code). */
 export interface WaitingPushLog {
@@ -15,7 +15,6 @@ export interface WaitingPushLog {
 }
 
 type Q = Db | Tx;
-export type Connection = typeof connection.$inferSelect;
 
 /** The Graphile Worker task that sends a Connection's due entries. */
 export const WAITING_PUSHES_TASK = 'waiting_pushes';
@@ -32,7 +31,7 @@ export const DELETE_QUIET_MS = 300_000;
 const IMPORT_CAUSES = new Set(['import-create', 'auto-attach', 'reimport', 'fill', 'update', 'auto-site']);
 
 /** Whether the Connection can't sign in by itself: its entries are held until the User signs in. */
-const needsSignIn = (conn: Connection) => conn.state === 'needs_sign_in' && !conn.keepSignedIn;
+const needsSignIn = (conn: ConnectionRow) => conn.state === 'needs_sign_in' && !conn.keepSignedIn;
 
 /**
  * Schedules the Connection's job at the earliest due time of its waiting entries (replacing the job's time); nothing
@@ -51,7 +50,7 @@ export async function scheduleConnection(q: Q, connectionId: string, options: { 
 }
 
 /** Puts the Dive in the queue as a send, due `QUIET_MS` after `at`; a waiting delete stays (a send never replaces it). */
-export async function upsertSend(q: Q, conn: Connection, diveId: string, at: Date): Promise<void> {
+export async function upsertSend(q: Q, conn: ConnectionRow, diveId: string, at: Date): Promise<void> {
   const held = needsSignIn(conn);
   const fresh = {
     connectionId: conn.id, state: held ? ('held' as const) : ('waiting' as const), reason: held ? 'sign_in' : null, dueAt: new Date(at.getTime() + QUIET_MS),
@@ -64,7 +63,7 @@ export async function upsertSend(q: Q, conn: Connection, diveId: string, at: Dat
 
 /** Puts the Dive in the queue as a delete at the Provider, due `DELETE_QUIET_MS` after `at`; it replaces a send. */
 async function upsertDelete(
-  q: Q, conn: Connection, diveId: string, at: Date, detail: { remoteId: string; remoteNumber: number | null; startsAt: string },
+  q: Q, conn: ConnectionRow, diveId: string, at: Date, detail: { remoteId: string; remoteNumber: number | null; startsAt: string },
 ): Promise<void> {
   const held = needsSignIn(conn);
   const fresh = {
@@ -115,7 +114,7 @@ async function noteDives(tx: Tx, dives: NotedDive[], cause: string, at: Date, fr
 }
 
 /** `conns` are the Divers' Connections with a sending setting on, oldest first. */
-async function decide(tx: Tx, dives: NotedDive[], conns: Connection[], cause: string, at: Date, from: string | null): Promise<void> {
+async function decide(tx: Tx, dives: NotedDive[], conns: ConnectionRow[], cause: string, at: Date, from: string | null): Promise<void> {
   const pushes = await tx.select().from(push)
     .where(and(inArray(push.diveId, dives.map((d) => d.id)), inArray(push.provider, [...new Set(conns.map((c) => c.provider))])))
     .orderBy(desc(push.createdAt), desc(push.id));
@@ -130,7 +129,7 @@ async function decide(tx: Tx, dives: NotedDive[], conns: Connection[], cause: st
 }
 
 interface Note {
-  tx: Tx; diveId: string; cause: string; at: Date; conns: Connection[]; from: string | null;
+  tx: Tx; diveId: string; cause: string; at: Date; conns: ConnectionRow[]; from: string | null;
   row: { deletedAt: Date | null; startsAt: Date };
 }
 
@@ -150,7 +149,7 @@ async function noteSent(n: Note, provider: string, current: PushRow): Promise<vo
 }
 
 /** The Connection that sends the Diver's new Dives to the Provider: the oldest with "send new dives" (`conns` oldest first). */
-export const newDivesConnection = (conns: Connection[], provider: string): Connection | undefined =>
+export const newDivesConnection = (conns: ConnectionRow[], provider: string): ConnectionRow | undefined =>
   conns.find((c) => c.provider === provider && c.sendNewDives);
 
 /** A Dive without one: the Diver's oldest Connection with "send new dives" queues it, unless an import made it. */

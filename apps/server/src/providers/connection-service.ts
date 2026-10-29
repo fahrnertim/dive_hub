@@ -5,7 +5,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, diver, diverExternalId } from '../db/schema.js';
+import { connection, diver, diverExternalId, type ConnectionRow } from '../db/schema.js';
 import { managedDiverIds } from '../dives/dive-service.js';
 import { DiverError } from '../divers/diver-error.js';
 import { externalDiver, mergeExternalDiver, participations } from '../divers/merge.js';
@@ -14,7 +14,6 @@ import { realClock, TurnTimeout, type Clock, type Leases } from './leases.js';
 import { ProviderError, type ActionContext, type ProviderAdapter, type SignInInput } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
-export type ConnectionRow = typeof connection.$inferSelect;
 
 /** What the User typed; which fields count depends on the Provider's sign-in kind. */
 export interface SignInFields {
