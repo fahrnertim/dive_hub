@@ -3,6 +3,7 @@
 // Any User can take up the data a Source offers for a hand-made site (ADR 0025).
 import { and, asc, desc, eq, ilike, isNotNull, isNull, or, sql, type SQL, type SQLWrapper } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
+import type { Caller } from '../http/caller.js';
 import { dive, diveCentreSite, diveSite, revision, siteImport } from '../db/schema.js';
 import { writeRevision, type Changes } from '../dives/revisions.js';
 import { noteSiteChange } from '../providers/waiting-push-queue.js';
@@ -15,12 +16,6 @@ import { revisionKey, SITE_SOURCES, SOURCE_INFO, typedId, type SiteSource } from
 export { isUniqueViolation, SiteError };
 
 export type { Position };
-
-/** The signed-in User as far as sites care: who they are and whether they are an admin. */
-export interface SiteActor {
-  userId: string;
-  isAdmin: boolean;
-}
 
 export interface SiteInput {
   name: string;
@@ -93,7 +88,7 @@ export function createSiteService(db: Db) {
    * The columns every site view needs, for the signed-in User. The subqueries name their tables: in a
    * single-table select Drizzle leaves columns unqualified, so `${dive.siteId}` would be ambiguous.
    */
-  const columns = (actor: SiteActor) => ({
+  const columns = (actor: Caller) => ({
     site: diveSite,
     /** How many of this User's Dives are at the site (other Users' Dives stay private). */
     diveCount: sql<number>`(select count(*)::int from dive d
@@ -106,7 +101,7 @@ export function createSiteService(db: Db) {
    * The sites as the User sees them: with their public IDs and the private IDs of the accounts of the Divers the User
    * manages (never another account's), by Source, public first.
    */
-  async function views<R extends { site: typeof diveSite.$inferSelect; diveCount: number; inUse: boolean; distanceM?: number }>(actor: SiteActor, rows: R[]) {
+  async function views<R extends { site: typeof diveSite.$inferSelect; diveCount: number; inUse: boolean; distanceM?: number }>(actor: Caller, rows: R[]) {
     const accounts = await accountsOfUser(db, actor.userId);
     const [ids, divers] = await Promise.all([idsOf(db, rows.map((r) => r.site.id), accounts), diversOf(db, accounts)]);
     const order = (a: { source: SiteSource; accountId: string | null }, b: { source: SiteSource; accountId: string | null }) =>
@@ -148,7 +143,7 @@ export function createSiteService(db: Db) {
      * One page of sites and how many match (ADR 0022): by name (default), country or the User's dives there;
      * near a position, nearest first. `q` searches name and body of water; `mine` keeps sites with the User's dives.
      */
-    async list(actor: SiteActor, options: {
+    async list(actor: Caller, options: {
       q?: string | undefined; near?: { position: Position; withinM: number } | undefined; country?: string | undefined;
       mine?: boolean | undefined; sort?: SiteSort | undefined; order?: 'asc' | 'desc' | undefined; limit?: number | undefined; offset?: number | undefined;
     }) {
@@ -180,14 +175,14 @@ export function createSiteService(db: Db) {
     },
 
     /** One site; a merged one too, so its links can lead to the site it was merged into (`mergedInto`). */
-    async get(actor: SiteActor, id: string) {
+    async get(actor: Caller, id: string) {
       const [row] = await db.select(columns(actor)).from(diveSite)
         .where(and(eq(diveSite.id, id), or(live, isNotNull(diveSite.mergedInto))));
       if (!row) throw new SiteError('site_not_found');
       return (await views(actor, [row]))[0]!;
     },
 
-    async create(actor: SiteActor, input: SiteInput) {
+    async create(actor: Caller, input: SiteInput) {
       return db.transaction(async (tx) => {
         const { position, ...rest } = input;
         const [created] = await tx.insert(diveSite).values({
@@ -200,7 +195,7 @@ export function createSiteService(db: Db) {
     },
 
     /** Any User may edit; `version` is the one they started from (409 site_changed otherwise). */
-    async edit(actor: SiteActor, id: string, version: number, input: Partial<SiteInput>) {
+    async edit(actor: Caller, id: string, version: number, input: Partial<SiteInput>) {
       await db.transaction(async (tx) => {
         const current = await lock(tx, id);
         if (current.version !== version) throw new SiteError('site_changed');
@@ -225,7 +220,7 @@ export function createSiteService(db: Db) {
      * External IDs move where the kept site has none of the same Source and account (a private one without a mention in
      * the Revision: site history is shared); earlier merges are re-pointed.
      */
-    async merge(actor: SiteActor, id: string, version: number, intoId: string, intoVersion: number) {
+    async merge(actor: Caller, id: string, version: number, intoId: string, intoVersion: number) {
       if (id === intoId) throw new SiteError('site_merge_self');
       await db.transaction(async (tx) => {
         // Locked in id order, so two opposite merges can't deadlock.
@@ -285,7 +280,7 @@ export function createSiteService(db: Db) {
      * empty fields take the Source's values, filled ones stay. The reference then provides data, so the site says
      * "From SSI" and later imports keep the taken fields current. Any User may; `version` as with editing.
      */
-    async adopt(actor: SiteActor, id: string, version: number, source: SiteSource) {
+    async adopt(actor: Caller, id: string, version: number, source: SiteSource) {
       await db.transaction(async (tx) => {
         const current = await lock(tx, id);
         if (current.version !== version) throw new SiteError('site_changed');
@@ -311,7 +306,7 @@ export function createSiteService(db: Db) {
      * shows it in. Any User may. It has its own Revision and leaves the site's version alone, so it never conflicts
      * with an edit of the other fields.
      */
-    async setExternalId(actor: SiteActor, id: string, source: SiteSource, typed: string | null) {
+    async setExternalId(actor: Caller, id: string, source: SiteSource, typed: string | null) {
       if (!SOURCE_INFO[source].typed) throw new SiteError('site_source_not_typed');
       const externalId = typed === null ? null : typedId(source, typed);
       if (externalId === null && typed !== null) throw new SiteError('invalid_input');
@@ -329,7 +324,7 @@ export function createSiteService(db: Db) {
      * The site's history, newest first. A User is named only to themselves ("you"): Users don't see who
      * else created or edits a site (ADR 0020). A Site import is named by its Sources (ADR 0021).
      */
-    async revisions(actor: SiteActor, id: string) {
+    async revisions(actor: Caller, id: string) {
       const [site] = await db.select({ id: diveSite.id }).from(diveSite).where(and(eq(diveSite.id, id), or(live, isNotNull(diveSite.mergedInto))));
       if (!site) throw new SiteError('site_not_found');
       const rows = await db.select({ r: revision, sources: siteImport.sources }).from(revision)
@@ -345,7 +340,7 @@ export function createSiteService(db: Db) {
     },
 
     /** The creator or an admin, and only while no Dive (of any User) is at the site. */
-    async remove(actor: SiteActor, id: string) {
+    async remove(actor: Caller, id: string) {
       await db.transaction(async (tx) => {
         const current = await lock(tx, id);
         if (!actor.isAdmin && current.createdBy !== actor.userId) throw new SiteError('site_not_deletable');

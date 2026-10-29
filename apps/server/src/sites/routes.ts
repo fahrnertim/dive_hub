@@ -1,13 +1,13 @@
 // Dive sites, shared by every User (ADR 0020).
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireUser, userOf } from '../auth/fastify.js';
+import { requireUser } from '../auth/fastify.js';
+import { callerOf } from '../http/caller.js';
 import { Problem, problem } from '../http/problems.js';
 import { REVISION_CAUSES } from '../dives/revisions.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
-import { NEARBY_M, SITE_SORTS, SiteError, type ExternalIdRow, type SiteActor, type SiteService } from './site-service.js';
+import { NEARBY_M, SITE_SORTS, SiteError, type ExternalIdRow, type SiteService } from './site-service.js';
 import { IMPORT_SOURCES, SITE_SOURCES, SOURCE_INFO } from './sources.js';
 import { IdParams, Nullable } from '../http/schemas.js';
 
@@ -163,7 +163,6 @@ const STATUS: Record<SiteError['code'], number> = {
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
-const actorOf = (request: FastifyRequest): SiteActor => ({ userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' });
 /** Blank text is no text. */
 const text = (v: string | null | undefined) => (v === undefined ? undefined : v?.trim() || null);
 
@@ -186,24 +185,24 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       return reply.code(400).send(problem('invalid_input', 'latitude and longitude go together'));
     }
     const near = latitude !== undefined && longitude !== undefined ? { position: { latitude, longitude }, withinM: within } : undefined;
-    const page = await sites.list(actorOf(request), { q, near, country, mine, sort, order, limit, offset });
+    const page = await sites.list(callerOf(request), { q, near, country, mine, sort, order, limit, offset });
     return { sites: page.sites.map(toSiteView), total: page.total };
   });
 
   app.get('/dive-sites/:id', {
     schema: { summary: 'One Dive site', params: IdParams, response: { 200: SiteView, 404: Problem } },
-  }, async (request) => toSiteView(await sites.get(actorOf(request), request.params.id)));
+  }, async (request) => toSiteView(await sites.get(callerOf(request), request.params.id)));
 
   app.post('/dive-sites', {
     schema: { summary: 'Create a Dive site; every User of the instance sees it', body: CreateBody, response: { 201: SiteView, ...errors } },
   }, async (request, reply) => {
     const b = request.body;
-    const id = await sites.create(actorOf(request), {
+    const id = await sites.create(callerOf(request), {
       name: b.name.trim(), position: b.position ?? null, country: b.country ?? null,
       waterBody: text(b.waterBody) ?? null, description: text(b.description) ?? null,
       maxDepthM: b.maxDepthM ?? null, waterType: b.waterType ?? null,
     });
-    return reply.code(201).send(toSiteView(await sites.get(actorOf(request), id)));
+    return reply.code(201).send(toSiteView(await sites.get(callerOf(request), id)));
   });
 
   app.patch('/dive-sites/:id', {
@@ -214,7 +213,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
     },
   }, async (request) => {
     const { version, name, position, country, waterBody, description, maxDepthM, waterType } = request.body;
-    await sites.edit(actorOf(request), request.params.id, version, {
+    await sites.edit(callerOf(request), request.params.id, version, {
       ...(name !== undefined && { name: name.trim() }),
       ...(position !== undefined && { position }),
       ...(country !== undefined && { country }),
@@ -223,7 +222,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       ...(maxDepthM !== undefined && { maxDepthM }),
       ...(waterType !== undefined && { waterType }),
     });
-    return toSiteView(await sites.get(actorOf(request), request.params.id));
+    return toSiteView(await sites.get(callerOf(request), request.params.id));
   });
 
   app.put('/dive-sites/:id/external-ids/:source', {
@@ -239,8 +238,8 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       response: { 200: SiteView, ...errors },
     },
   }, async (request) => {
-    await sites.setExternalId(actorOf(request), request.params.id, request.params.source, request.body.externalId);
-    return toSiteView(await sites.get(actorOf(request), request.params.id));
+    await sites.setExternalId(callerOf(request), request.params.id, request.params.source, request.body.externalId);
+    return toSiteView(await sites.get(callerOf(request), request.params.id));
   });
 
   app.post('/dive-sites/:id/merge', {
@@ -251,8 +250,8 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
     },
   }, async (request) => {
     const { intoId, version, intoVersion } = request.body;
-    await sites.merge(actorOf(request), request.params.id, version, intoId, intoVersion);
-    return toSiteView(await sites.get(actorOf(request), intoId));
+    await sites.merge(callerOf(request), request.params.id, version, intoId, intoVersion);
+    return toSiteView(await sites.get(callerOf(request), intoId));
   });
 
   app.post('/dive-sites/:id/adopt', {
@@ -262,8 +261,8 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       params: IdParams, body: AdoptBody, response: { 200: SiteView, ...errors },
     },
   }, async (request) => {
-    await sites.adopt(actorOf(request), request.params.id, request.body.version, request.body.source);
-    return toSiteView(await sites.get(actorOf(request), request.params.id));
+    await sites.adopt(callerOf(request), request.params.id, request.body.version, request.body.source);
+    return toSiteView(await sites.get(callerOf(request), request.params.id));
   });
 
   app.get('/dive-sites/:id/revisions', {
@@ -272,7 +271,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       description: 'Every User may read it. Other Users are never named; a Site import is named by its Sources.',
       params: IdParams, response: { 200: Type.Array(SiteRevisionView), 404: Problem },
     },
-  }, async (request) => (await sites.revisions(actorOf(request), request.params.id)).map((r) => ({
+  }, async (request) => (await sites.revisions(callerOf(request), request.params.id)).map((r) => ({
     ...r, cause: r.cause as (typeof REVISION_CAUSES)[number],
   })));
 
@@ -282,7 +281,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       params: IdParams, response: { 204: Type.Null(), ...errors },
     },
   }, async (request, reply) => {
-    await sites.remove(actorOf(request), request.params.id);
+    await sites.remove(callerOf(request), request.params.id);
     return reply.code(204).send(null);
   });
 };

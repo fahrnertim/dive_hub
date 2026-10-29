@@ -1,14 +1,15 @@
 // Divers (ADR 0016, 0028): the User's Divers and their Devices; every Diver found by name; external Divers; a Diver's
 // accounts at services.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply } from 'fastify';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
+import { callerOf } from '../http/caller.js';
 import { Problem, problem } from '../http/problems.js';
 import { NO_CERTIFICATIONS, type CertificationService } from '../certifications/certification-service.js';
 import { DiverError } from './diver-error.js';
-import type { DiverActor, DiverService } from './diver-service.js';
+import type { DiverService } from './diver-service.js';
 import { IdParams, Nullable } from '../http/schemas.js';
 
 export interface DiverRouteDeps {
@@ -109,7 +110,6 @@ export const replyDiverError = (error: DiverError, reply: FastifyReply) =>
 
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
-const actorOf = (request: FastifyRequest): DiverActor => ({ userId: userOf(request).id, isAdmin: userOf(request).role === 'admin' });
 
 export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app, { auth, divers, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
@@ -184,7 +184,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       response: { 204: Type.Null(), 400: DiverProblem, 403: DiverProblem, 404: DiverProblem, 409: DiverProblem },
     },
   }, async (request, reply) => {
-    await divers.setExternalId(actorOf(request), request.params.id, request.params.source, request.body.externalId?.trim() ?? null);
+    await divers.setExternalId(callerOf(request), request.params.id, request.params.source, request.body.externalId?.trim() ?? null);
     return reply.code(204).send(null);
   });
 
@@ -225,7 +225,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       description: 'ADR 0043: any Diver of the instance, also one whose logbook another User keeps. Nothing else of that Diver is shown.',
       params: IdParams, response: { 200: DiverDetailsView, ...errors },
     },
-  }, async (request) => divers.details(actorOf(request), request.params.id));
+  }, async (request) => divers.details(callerOf(request), request.params.id));
 
   app.patch('/divers/:id/details', {
     schema: {
@@ -234,7 +234,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
         + 'The account is set by PUT /api/divers/{id}/external-ids/{source}.',
       params: IdParams, body: DetailsBody, response: { 200: DiverDetailsView, ...errors },
     },
-  }, async (request) => divers.setDetails(actorOf(request), request.params.id, request.body));
+  }, async (request) => divers.setDetails(callerOf(request), request.params.id, request.body));
 
   app.post('/divers/from-code', {
     schema: {
@@ -252,7 +252,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
     },
   }, async (request, reply) => {
     const { text, diverId, create } = request.body;
-    const taken = await divers.takeCode(actorOf(request), text, { diverId, create });
+    const taken = await divers.takeCode(callerOf(request), text, { diverId, create });
     return reply.code(taken.created ? 201 : 200).send(taken.diver);
   });
 
@@ -266,7 +266,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       }),
       response: { 200: Type.Object({ divers: Type.Array(ExternalDiverView), total: Type.Integer() }) },
     },
-  }, async (request) => divers.externals(actorOf(request), { q: request.query.q, limit: request.query.limit ?? 50, offset: request.query.offset ?? 0 }));
+  }, async (request) => divers.externals(callerOf(request), { q: request.query.q, limit: request.query.limit ?? 50, offset: request.query.offset ?? 0 }));
 
   app.post('/external-divers', {
     schema: {
@@ -275,8 +275,8 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       response: { 201: ExternalDiverView, ...errors },
     },
   }, async (request, reply) => {
-    const id = await divers.createExternal(actorOf(request), request.body.name.trim());
-    return reply.code(201).send(await divers.external(actorOf(request), id));
+    const id = await divers.createExternal(callerOf(request), request.body.name.trim());
+    return reply.code(201).send(await divers.external(callerOf(request), id));
   });
 
   app.patch('/external-divers/:id', {
@@ -285,8 +285,8 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       body: Type.Object({ name: Name }, { additionalProperties: false }), response: { 200: ExternalDiverView, ...errors },
     },
   }, async (request) => {
-    await divers.renameExternal(actorOf(request), request.params.id, request.body.name.trim());
-    return divers.external(actorOf(request), request.params.id);
+    await divers.renameExternal(callerOf(request), request.params.id, request.body.name.trim());
+    return divers.external(callerOf(request), request.params.id);
   });
 
   app.delete('/external-divers/:id', {
@@ -295,7 +295,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       params: IdParams, response: { 204: Type.Null(), ...errors },
     },
   }, async (request, reply) => {
-    await divers.removeExternal(actorOf(request), request.params.id);
+    await divers.removeExternal(callerOf(request), request.params.id);
     return reply.code(204).send(null);
   });
 
@@ -309,7 +309,7 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
       body: Type.Object({ into: Type.String({ format: 'uuid' }) }, { additionalProperties: false }),
       response: { 200: Type.Object({ dives: Type.Integer({ description: 'The Dives it was a Participant on' }) }), ...errors },
     },
-  }, async (request) => divers.mergeExternal(actorOf(request), request.params.id, request.body.into));
+  }, async (request) => divers.mergeExternal(callerOf(request), request.params.id, request.body.into));
 
   app.get('/devices', {
     schema: { summary: 'Devices of the User\'s Divers', response: { 200: Type.Array(DeviceView) } },

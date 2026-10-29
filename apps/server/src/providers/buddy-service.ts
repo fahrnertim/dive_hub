@@ -8,7 +8,8 @@ import { and, inArray, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { diver as diverTable } from '../db/schema.js';
 import { tidyName } from '../divers/diver-name.js';
-import type { DiverActor, DiverDetails, DiverService } from '../divers/diver-service.js';
+import type { DiverDetails, DiverService } from '../divers/diver-service.js';
+import type { Caller } from '../http/caller.js';
 import { locked } from './advisory-lock.js';
 import { foldName, nameDiffers } from './buddy-names.js';
 import type { ConnectionService } from './connection-service.js';
@@ -101,14 +102,14 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
   }
 
   /** Links the entry to the Diver: an entry with an account gives the Diver that account (the rules of the PUT), and is remembered. */
-  async function linkEntry(actor: DiverActor, accountId: string, source: DiverSource, diverId: string, found: RemoteBuddy) {
+  async function linkEntry(actor: Caller, accountId: string, source: DiverSource, diverId: string, found: RemoteBuddy) {
     if (found.account) await divers.setExternalId(actor, diverId, source, found.account);
     await remember(db, accountId, diverId, found.remoteId);
   }
 
   /** An external Diver from an entry without a Diver; an entry without an account is remembered for it. Null: nameless. */
   async function createFrom(
-    actor: DiverActor, source: DiverSource, accountId: string | null, buddy: Buddy & { details: Partial<DiverDetails> },
+    actor: Caller, source: DiverSource, accountId: string | null, buddy: Buddy & { details: Partial<DiverDetails> },
   ) {
     // A Diver's name has at most 100 characters (divers/routes.ts).
     const name = tidyName(buddy.name).slice(0, 100);
@@ -135,7 +136,7 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
      * Links an entry of the User's list to a Diver. With an account, the Diver gets it (`diver_external_id_taken` when
      * another Diver has it); the entry is remembered either way. An entry not in the list is `provider_buddy_not_found`.
      */
-    async link(actor: DiverActor, connectionId: string, entryId: string, diverId: string): Promise<{ diverId: string }> {
+    async link(actor: Caller, connectionId: string, entryId: string, diverId: string): Promise<{ diverId: string }> {
       const { row, adapter, buddies, source } = await open(actor.userId, connectionId);
       const accountId = await listAccount(row, source, named(adapter));
       await divers.details(actor, diverId);
@@ -153,7 +154,7 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
      * scanned account is set on it. `knownAs`: the name the Provider answered, when it differs from the Diver's.
      */
     async add(
-      actor: DiverActor, connectionId: string, diverId: string,
+      actor: Caller, connectionId: string, diverId: string,
       person: { firstName: string; lastName: string; email: string | null; account: string | null },
     ): Promise<{ added: { diverId: string; name: string }; knownAs: string | null }> {
       const { row, adapter, buddies, source } = await open(actor.userId, connectionId);
@@ -189,7 +190,7 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
      * an account; each makes an external Diver from its name and is remembered for it, unless it is remembered already.
      * Entries not in the list, or nameless, are skipped.
      */
-    async import(actor: DiverActor, connectionId: string, accounts: string[], entries: string[] = []) {
+    async import(actor: Caller, connectionId: string, accounts: string[], entries: string[] = []) {
       const { source, accountId, buddies } = await read(actor.userId, connectionId);
       let created = 0;
       let updated = 0;

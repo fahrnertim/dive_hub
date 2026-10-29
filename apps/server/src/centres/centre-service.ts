@@ -3,6 +3,7 @@
 // responsible for; their creator or an admin deletes them. A Dive's centres are those of its site.
 import { and, eq, ilike, inArray, isNull, ne, sql } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
+import type { Caller } from '../http/caller.js';
 import { dive, diveCentre, diveCentreExternalId, diveCentreSite, diveSite } from '../db/schema.js';
 import { writeRevision, type Changes } from '../dives/revisions.js';
 import { isUniqueViolation } from '../sites/site-service.js';
@@ -23,12 +24,6 @@ export class CentreError extends Error {
   ) {
     super(code);
   }
-}
-
-/** The signed-in User as far as shared centres care (as for Dive sites). */
-export interface CentreActor {
-  userId: string;
-  isAdmin: boolean;
 }
 
 export interface CentreExternalId {
@@ -79,7 +74,7 @@ export function createCentreService(db: Db) {
       where l.centre_id = "dive_centre"."id"), '[]'::json)`,
   };
 
-  const view = (actor: CentreActor, row: { centre: typeof diveCentre.$inferSelect; externalIds: CentreExternalId[]; sites: { id: string; name: string }[] }) => ({
+  const view = (actor: Caller, row: { centre: typeof diveCentre.$inferSelect; externalIds: CentreExternalId[]; sites: { id: string; name: string }[] }) => ({
     ...row,
     canDelete: actor.isAdmin || row.centre.createdBy === actor.userId,
     displayName: displayNameOf(row.centre.name, row.externalIds),
@@ -125,7 +120,7 @@ export function createCentreService(db: Db) {
 
   return {
     /** One page of centres by name and how many match. `q` searches the name; `siteId` keeps the centres of that Dive site. */
-    async list(actor: CentreActor, options: { q?: string | undefined; siteId?: string | undefined; limit?: number | undefined; offset?: number | undefined }) {
+    async list(actor: Caller, options: { q?: string | undefined; siteId?: string | undefined; limit?: number | undefined; offset?: number | undefined }) {
       const text = options.q?.trim();
       const pattern = text && `%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
       const where = and(
@@ -141,14 +136,14 @@ export function createCentreService(db: Db) {
       return { centres: rows.map((r) => view(actor, r)), total: count?.total ?? 0 };
     },
 
-    async get(actor: CentreActor, id: string) {
+    async get(actor: Caller, id: string) {
       const [row] = await db.select(columns).from(diveCentre).where(and(eq(diveCentre.id, id), live));
       if (!row) throw new CentreError('centre_not_found');
       return view(actor, row);
     },
 
     /** Name, numbers and sites in one step, so a centre made from a pasted code is whole or not there. */
-    async create(actor: CentreActor, input: { name: string; externalIds?: { source: CentreSource; externalId: string }[] | undefined; siteIds?: string[] | undefined }) {
+    async create(actor: Caller, input: { name: string; externalIds?: { source: CentreSource; externalId: string }[] | undefined; siteIds?: string[] | undefined }) {
       const ids = (input.externalIds ?? []).map((e) => ({ source: e.source, externalId: typedId(e.source, e.externalId) }));
       if (ids.some((e) => e.externalId === null) || new Set(ids.map((e) => e.source)).size !== ids.length) throw new CentreError('invalid_input');
       return db.transaction(async (tx) => {
@@ -171,7 +166,7 @@ export function createCentreService(db: Db) {
     },
 
     /** Any User may rename; `version` is the one they started from (409 centre_changed otherwise). */
-    async rename(actor: CentreActor, id: string, version: number, name: string) {
+    async rename(actor: Caller, id: string, version: number, name: string) {
       await db.transaction(async (tx) => {
         const current = await lock(tx, id);
         if (current.version !== version) throw new CentreError('centre_changed');
@@ -185,7 +180,7 @@ export function createCentreService(db: Db) {
      * A User sets or clears the centre's External ID at a Source, typed bare or pasted as the centre's whole code (only
      * the number is taken from it). It has its own Revision and leaves the version alone, as for a Dive site (ADR 0029).
      */
-    async setExternalId(actor: CentreActor, id: string, source: CentreSource, typed: string | null) {
+    async setExternalId(actor: Caller, id: string, source: CentreSource, typed: string | null) {
       const externalId = typed === null ? null : typedId(source, typed);
       if (externalId === null && typed !== null) throw new CentreError('invalid_input');
       await db.transaction(async (tx) => {
@@ -200,7 +195,7 @@ export function createCentreService(db: Db) {
     },
 
     /** Any User says the centre is responsible for the site, or no longer is. Asking twice changes nothing. */
-    async setSite(actor: CentreActor, id: string, siteId: string, linked: boolean) {
+    async setSite(actor: Caller, id: string, siteId: string, linked: boolean) {
       await db.transaction(async (tx) => {
         await lock(tx, id);
         const link = and(eq(diveCentreSite.centreId, id), eq(diveCentreSite.siteId, siteId));
@@ -218,7 +213,7 @@ export function createCentreService(db: Db) {
     },
 
     /** The creator or an admin. Its links and numbers go with it; Dive sites and Dives are untouched. */
-    async remove(actor: CentreActor, id: string) {
+    async remove(actor: Caller, id: string) {
       await db.transaction(async (tx) => {
         const current = await lock(tx, id);
         if (!actor.isAdmin && current.createdBy !== actor.userId) throw new CentreError('centre_not_deletable');

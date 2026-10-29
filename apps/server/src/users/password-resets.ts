@@ -28,7 +28,7 @@ export function createPasswordResets(db: Db) {
     find,
 
     /** A new link for the User; any earlier open link for them stops working. */
-    async issue(userId: string, createdBy: string) {
+    async issue(createdBy: string, userId: string) {
       const token = newToken();
       const row = await db.transaction(async (tx) => {
         await tx.update(passwordReset).set({ revokedAt: new Date() })

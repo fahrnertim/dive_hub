@@ -64,7 +64,7 @@ export function createUserAdmin(db: Db, blobs: BlobStore) {
     },
 
     /** Blocks sign-in and ends every session; all data stays. */
-    async disable(userId: string, actorId: string): Promise<UserRow> {
+    async disable(actorId: string, userId: string): Promise<UserRow> {
       notSelf(userId, actorId);
       return db.transaction(async (tx) => {
         const { target, otherAdmins } = await lock(tx, userId);
@@ -94,7 +94,7 @@ export function createUserAdmin(db: Db, blobs: BlobStore) {
      * no other User's Original shares), Imports, and the Divers no one else manages, with their Dives,
      * Recordings, samples, Devices and Revisions. The admin confirms by typing the User's e-mail.
      */
-    async remove(userId: string, actorId: string, confirmEmail: string): Promise<void> {
+    async remove(actorId: string, userId: string, confirmEmail: string): Promise<void> {
       notSelf(userId, actorId);
       const fileKeys = await db.transaction(async (tx) => {
         const { target, otherAdmins } = await lock(tx, userId);

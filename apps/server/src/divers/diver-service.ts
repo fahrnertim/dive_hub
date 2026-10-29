@@ -4,6 +4,7 @@
 import { and, eq, ilike, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { personCodes, readVerificationCode, type VerificationCode } from '../centres/verification-code.js';
 import type { Db, Queryable, Tx } from '../db/client.js';
+import type { Caller } from '../http/caller.js';
 import {
   connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, participant, recording,
 } from '../db/schema.js';
@@ -14,12 +15,6 @@ import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
 import { tidyName } from './diver-name.js';
 import type { DiverSource } from '../providers/provider.js';
-
-/** The signed-in User as far as shared Divers care (as for Dive sites). */
-export interface DiverActor {
-  userId: string;
-  isAdmin: boolean;
-}
 
 /** What an account at each service looks like (ADR 0024): SSI's user master ID; PADI's isn't known yet. */
 const ACCOUNT_PATTERN: Record<DiverSource, RegExp> = { ssi: /^[1-9]\d{0,9}$/, padi: /^[A-Za-z0-9-]{1,40}$/ };
@@ -92,7 +87,7 @@ export function createDiverService(db: Db) {
   }
 
   /** External Divers with what a User may see of them: their name, which services they have accounts at, use. */
-  const externalColumns = (actor: DiverActor) => ({
+  const externalColumns = (actor: Caller) => ({
     id: diver.id,
     name: diver.name,
     accounts: sql<DiverSource[]>`coalesce((select array_agg(e.source::text order by e.source) from ${diverExternalId} e where e.diver_id = ${diverId}), '{}')`,
@@ -101,13 +96,13 @@ export function createDiverService(db: Db) {
   });
 
   /** Who keeps the Diver's logbook; none for an external Diver. The actor may change it when it is external or theirs. */
-  async function editable(tx: Queryable, actor: DiverActor, id: string) {
+  async function editable(tx: Queryable, actor: Caller, id: string) {
     const managers = await tx.select({ userId: diverManagement.userId }).from(diverManagement).where(eq(diverManagement.diverId, id));
     return { external: managers.length === 0, canEdit: managers.length === 0 || managers.some((m) => m.userId === actor.userId) };
   }
 
   /** A Diver as every User sees it since ADR 0043: its name, its details, its accounts and the codes built from them. */
-  async function detailsOf(tx: Queryable, actor: DiverActor, id: string) {
+  async function detailsOf(tx: Queryable, actor: Caller, id: string) {
     const [row] = await tx.select({
       id: diver.id, name: diver.name, firstName: diver.firstName, lastName: diver.lastName, email: diver.email, leaderNumber: diver.leaderNumber,
     }).from(diver).where(and(eq(diver.id, id), live));
@@ -124,7 +119,7 @@ export function createDiverService(db: Db) {
    * Sets the given details of a Diver in the caller's transaction: an external Diver's by any User, one with a logbook
    * by its Users. One Revision for what changed; of the e-mail it holds only whether there is one, never the address.
    */
-  async function applyDetails(tx: Tx, actor: DiverActor, id: string, patch: Partial<DiverDetails>) {
+  async function applyDetails(tx: Tx, actor: Caller, id: string, patch: Partial<DiverDetails>) {
     const [current] = await tx.select().from(diver).where(and(eq(diver.id, id), live)).for('update');
     if (!current) throw new DiverError('diver_not_found');
     if (!(await editable(tx, actor, id)).canEdit) throw new DiverError('diver_not_editable');
@@ -152,7 +147,7 @@ export function createDiverService(db: Db) {
   }
 
   /** Sets or clears a Diver's account in the caller's transaction (the rules of `setExternalId`). */
-  async function applyExternalId(tx: Tx, actor: DiverActor, diverId: string, source: DiverSource, externalId: string | null) {
+  async function applyExternalId(tx: Tx, actor: Caller, diverId: string, source: DiverSource, externalId: string | null) {
     const [target] = await tx.select({ id: diver.id }).from(diver).where(and(eq(diver.id, diverId), live)).for('update');
     if (!target) throw new DiverError('diver_not_found');
     if (!(await editable(tx, actor, diverId)).canEdit) throw new DiverError('diver_not_editable');
@@ -178,7 +173,7 @@ export function createDiverService(db: Db) {
 
   /** An external Diver with an account and details, in the caller's transaction. */
   async function insertExternal(
-    tx: Tx, actor: DiverActor, name: string, account?: { source: DiverSource; externalId: string }, details: Partial<Record<DetailField, string>> = {},
+    tx: Tx, actor: Caller, name: string, account?: { source: DiverSource; externalId: string }, details: Partial<Record<DetailField, string>> = {},
   ) {
     const [created] = await tx.insert(diver).values({ name, createdBy: actor.userId, ...details }).returning({ id: diver.id });
     if (account) await tx.insert(diverExternalId).values({ diverId: created!.id, ...account });
@@ -191,12 +186,12 @@ export function createDiverService(db: Db) {
 
   return {
     /** A Diver's details, accounts and codes, as every User sees them (ADR 0043, amending ADR 0028). */
-    async details(actor: DiverActor, id: string) {
+    async details(actor: Caller, id: string) {
       return detailsOf(db, actor, id);
     },
 
     /** Sets the given details (null clears one); the others stay. */
-    async setDetails(actor: DiverActor, id: string, patch: Partial<DiverDetails>) {
+    async setDetails(actor: Caller, id: string, patch: Partial<DiverDetails>) {
       await db.transaction((tx) => applyDetails(tx, actor, id, patch));
       return detailsOf(db, actor, id);
     },
@@ -205,7 +200,7 @@ export function createDiverService(db: Db) {
      * Whom a person's code is about here (ADR 0043): the Diver that has its SSI account, with what the code would
      * change on it; without one, the Divers of the code's name that the User could give the account to.
      */
-    async readPersonCode(actor: DiverActor, code: Exclude<VerificationCode, { kind: 'centre' }>) {
+    async readPersonCode(actor: Caller, code: Exclude<VerificationCode, { kind: 'centre' }>) {
       const holder = await holderOf(db, 'ssi', code.accountId);
       const said = detailsInCode(code);
       if (holder) {
@@ -230,7 +225,7 @@ export function createDiverService(db: Db) {
      * Diver the User chose gets the account too, or a new external Diver is made. Never a second Diver for an account.
      * A buddy code says nothing about a leader number, so one that is there stays.
      */
-    async takeCode(actor: DiverActor, text: string, choice: { diverId?: string | undefined; create?: boolean | undefined }) {
+    async takeCode(actor: Caller, text: string, choice: { diverId?: string | undefined; create?: boolean | undefined }) {
       const code = readVerificationCode(text);
       if (!code) throw new DiverError('code_not_recognised');
       if (code.kind === 'centre') throw new DiverError('code_not_a_person');
@@ -311,7 +306,7 @@ export function createDiverService(db: Db) {
      * Admins: merges an external Diver into another Diver, the same person (ADR 0028, amended), e.g. a buddy without an
      * account at a Provider who became a User. Its places on Dives and its accounts move; it is deleted.
      */
-    async mergeExternal(actor: DiverActor, fromId: string, intoId: string) {
+    async mergeExternal(actor: Caller, fromId: string, intoId: string) {
       if (!actor.isAdmin) throw new DiverError('diver_not_editable');
       return db.transaction((tx) => mergeExternalDiver(tx, fromId, intoId, { type: 'user', id: actor.userId }));
     },
@@ -377,7 +372,7 @@ export function createDiverService(db: Db) {
     },
 
     /** One page of external Divers whose name matches, and how many match. */
-    async externals(actor: DiverActor, options: { q?: string | undefined; limit: number; offset: number }) {
+    async externals(actor: Caller, options: { q?: string | undefined; limit: number; offset: number }) {
       const text = options.q?.trim();
       const where = and(live, unmanaged, text ? ilike(diver.name, like(text)) : undefined);
       const [rows, [count]] = await Promise.all([
@@ -388,14 +383,14 @@ export function createDiverService(db: Db) {
       return { divers: rows, total: count?.total ?? 0 };
     },
 
-    async external(actor: DiverActor, id: string) {
+    async external(actor: Caller, id: string) {
       const [row] = await db.select(externalColumns(actor)).from(diver).where(and(eq(diver.id, id), live, unmanaged));
       if (!row) throw new DiverError('diver_not_found');
       return row;
     },
 
     /** Someone a User dived with, not managed by anyone (ADR 0028); any User may. */
-    async createExternal(actor: DiverActor, name: string, account?: { source: DiverSource; externalId: string }, details: Partial<DiverDetails> = {}) {
+    async createExternal(actor: Caller, name: string, account?: { source: DiverSource; externalId: string }, details: Partial<DiverDetails> = {}) {
       const stored = Object.fromEntries(DETAIL_FIELDS.flatMap((f) => {
         const value = detailValue(f, details[f] ?? null);
         return value ? [[f, value]] : [];
@@ -407,7 +402,7 @@ export function createDiverService(db: Db) {
      * Fills the details a Diver doesn't have yet from what a Provider's list says (ADR 0043); what is there stays. Only
      * where the User may change the Diver; how many fields it set.
      */
-    async fillDetails(actor: DiverActor, id: string, details: Partial<DiverDetails>) {
+    async fillDetails(actor: Caller, id: string, details: Partial<DiverDetails>) {
       return db.transaction(async (tx) => {
         const [current] = await tx.select().from(diver).where(and(eq(diver.id, id), live));
         if (!current || !(await editable(tx, actor, id)).canEdit) return 0;
@@ -421,7 +416,7 @@ export function createDiverService(db: Db) {
     },
 
     /** Any User renames an external Diver, with a Revision. */
-    async renameExternal(actor: DiverActor, id: string, name: string) {
+    async renameExternal(actor: Caller, id: string, name: string) {
       const current = await externalOrThrow(id);
       if (current.name === name) return;
       await db.transaction(async (tx) => {
@@ -431,7 +426,7 @@ export function createDiverService(db: Db) {
     },
 
     /** Its creator or an admin, while no Dive lists it. */
-    async removeExternal(actor: DiverActor, id: string) {
+    async removeExternal(actor: Caller, id: string) {
       const current = await externalOrThrow(id);
       if (!actor.isAdmin && current.createdBy !== actor.userId) throw new DiverError('diver_not_deletable');
       await db.transaction(async (tx) => {
@@ -450,7 +445,7 @@ export function createDiverService(db: Db) {
      * Sets or clears a Diver's account at a service (ADR 0028): an external Diver's by any User, a managed one's by
      * its Users. Refused while a Connection of the Diver uses the account, and when another Diver has it.
      */
-    async setExternalId(actor: DiverActor, diverId: string, source: DiverSource, externalId: string | null) {
+    async setExternalId(actor: Caller, diverId: string, source: DiverSource, externalId: string | null) {
       if (externalId !== null && !ACCOUNT_PATTERN[source].test(externalId)) throw new DiverError('invalid_input');
       await db.transaction((tx) => applyExternalId(tx, actor, diverId, source, externalId));
     },

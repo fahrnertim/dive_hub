@@ -45,7 +45,7 @@ export const adminRoutes: FastifyPluginAsyncTypebox<AdminRouteDeps> = async (sco
       summary: 'Block sign-in and end all sessions; data stays (admins only)',
       params: IdParams, response: { 200: UserView, ...errors },
     },
-  }, async (request) => toUserView(await userAdmin.disable(request.params.id, userOf(request).id)));
+  }, async (request) => toUserView(await userAdmin.disable(userOf(request).id, request.params.id)));
 
   app.post('/users/:id/enable', {
     schema: { summary: 'Allow a disabled User to sign in again (admins only)', params: IdParams, response: { 200: UserView, ...errors } },
@@ -65,7 +65,7 @@ export const adminRoutes: FastifyPluginAsyncTypebox<AdminRouteDeps> = async (sco
     },
   }, async (request, reply) => {
     await userAdmin.assertCanReset(request.params.id);
-    const { reset, token } = await passwordResets.issue(request.params.id, userOf(request).id);
+    const { reset, token } = await passwordResets.issue(userOf(request).id, request.params.id);
     // In the URL fragment, which browsers never send to the server or in Referer.
     return reply.code(201).send({ url: `${baseUrl}/#/reset/${token}`, expiresAt: reset.expiresAt.toISOString() });
   });
@@ -79,7 +79,7 @@ export const adminRoutes: FastifyPluginAsyncTypebox<AdminRouteDeps> = async (sco
       response: { 204: Type.Null(), ...errors },
     },
   }, async (request, reply) => {
-    await userAdmin.remove(request.params.id, userOf(request).id, request.body.confirmEmail);
+    await userAdmin.remove(userOf(request).id, request.params.id, request.body.confirmEmail);
     request.log.info({ userId: request.params.id, by: userOf(request).id }, 'user deleted');
     return reply.code(204).send(null);
   });
