@@ -752,7 +752,8 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   log), `access-routes.ts`, `endpoint.ts` (`/mcp`: Origin check, bearer key, 401/429 that say what to do, the SDK's
   stateless handler for both protocol eras), `server.ts` (the tools an access's scopes allow, the instructions),
   `tool.ts` (what every tool shares: argument checks, a read-only transaction with a time limit, paging, the size cap,
-  logging), `tools-logbook.ts`, `tools-sites.ts`, `tools-divers.ts`, `profile.ts` (the profile summary).
+  logging), `tools-logbook.ts`, `tools-sites.ts`, `tools-divers.ts`, `read-service.ts` (every query those tools make), `profile.ts`
+  (the profile summary).
 - Tools: `logbook_search_dives`, `logbook_get_dive`, `logbook_stats`, `sites_search`, `sites_get`, `divers_buddies`,
   `divers_list`. Schemas are TypeBox, handed to the SDK as JSON Schema; no Zod in our code.
 - Migration `0019_ai_access.sql`: `apikey` (Better Auth), `ai_access_setting`, `ai_access_log`. A daily worker job
@@ -772,8 +773,9 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 
 **Slice 18 (2026-10-06): the dive assessment** ([ADR 0036](../decisions/0036-dive-assessment.md), its
 [amendment](../decisions/0036-dive-assessment.md#amendment-2026-10-06-as-built-slice-18-engine-version-1), [client contract](clients.md#the-dive-assessment)).
-- `apps/server/src/assessment/`: `rules.ts` (pure: spike cleaning, splitting at the surface, 15 s windows, fourteen rules
-  with their thresholds, evidence labels and sources, `ENGINE_VERSION` 1), `assessment-service.ts` (stored findings,
+- `apps/server/src/assessment/`: `rules.ts` (the fourteen rules with their thresholds, evidence labels and sources,
+  `ENGINE_VERSION`), `signals.ts` (pure: spike cleaning, splitting at the surface, 15 s windows), `profile-rules.ts` and
+  `series-rules.ts` (pure: one function per rule, listed in `PROFILE_RULES` / `SERIES_RULES`), `assessment-service.ts` (stored findings,
   refreshed per Diver by a stamp of engine version and Primary recording; dismissals, muted rules), `routes.ts`,
   `texts.ts` (English sentences and the fixed note, for MCP).
 - Migration `0020_dive_assessment.sql`: `dive_assessment`, `dive_finding`, `finding_dismissal`, `muted_rule`.

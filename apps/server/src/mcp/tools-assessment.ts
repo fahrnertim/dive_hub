@@ -1,12 +1,11 @@
 // The MCP tool for a Dive's assessment (ADR 0036): the stored findings in sentences, each with its guidance, evidence
 // and sources, and the fixed note in every result, so a model gets the caveats with the numbers (ADR 0035).
-import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { Type } from 'typebox';
 import { read } from '../assessment/assessment-service.js';
 import { EVIDENCE, RULES, RULE_IDS, SEVERITIES, SOURCES } from '../assessment/rules.js';
 import { ASSESSMENT_NOTE, FINDING_TEXT, NO_FLY_TEXT } from '../assessment/texts.js';
-import { dive } from '../db/schema.js';
 import { COMPUTER_EVENTS } from '../vocabulary.js';
+import { ownDive } from './read-service.js';
 import { Id, Nullable, ToolError, defineTool, round } from './tool.js';
 
 const minute = (seconds: number | null) => (seconds === null ? null : round(seconds / 60, 1));
@@ -54,8 +53,7 @@ Error "dive not found": the id is wrong, the Dive was deleted, or it is not the 
     note: Type.String({ description: 'Always pass this on with the findings' }),
   }),
   async run(ctx, a) {
-    const [d] = ctx.diverIds.length === 0 ? [] : await ctx.tx.select({ id: dive.id, diverId: dive.diverId, primaryRecordingId: dive.primaryRecordingId })
-      .from(dive).where(and(eq(dive.id, a.dive_id), inArray(dive.diverId, ctx.diverIds), isNull(dive.deletedAt)));
+    const d = await ownDive(ctx, a.dive_id);
     if (!d) {
       throw new ToolError('dive_not_found', 'No Dive of the user has this dive_id: it may be mistyped, deleted, or someone else\'s Dive. Find the Dive with logbook_search_dives and use the id it returns.');
     }

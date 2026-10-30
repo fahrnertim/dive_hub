@@ -1,12 +1,12 @@
 // MCP tools over Dive sites (ADR 0035). Sites are shared by every User (ADR 0020): their texts come back in shared_*
 // fields, their position is the site's shared one (not a Dive's own), and "your_dives" counts only the User's Dives.
-import { sql, type SQL } from 'drizzle-orm';
 import { Type } from 'typebox';
 import { accountsOfUser, idsOf, type SiteIdRow } from '../sites/site-ids.js';
 import { SITE_SOURCES, SOURCE_INFO } from '../sites/sources.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
+import { divesAtSite, findSites, siteOf, type SiteRow } from './read-service.js';
 import {
-  Cursor, Detail, Id, LOCAL_START, Nullable, Paging, SharedText, ToolError, defineTool, excerpt, like, offsetOf, page, round, type ToolContext,
+  Cursor, Detail, Id, Nullable, Paging, SharedText, ToolError, defineTool, excerpt, offsetOf, page, round, type ToolContext,
 } from './tool.js';
 
 const DESCRIPTION_IN_LIST = 400;
@@ -24,11 +24,6 @@ const SiteFields = {
   your_dives: Type.Integer({ description: 'How many of the user\'s Dives are at this site' }),
 };
 
-type SiteRow = {
-  id: string; name: string; country: string | null; water_body: string | null; water_type: (typeof SITE_WATER_TYPES)[number] | null;
-  max_depth_m: number | null; latitude: number | null; longitude: number | null; description: string | null; your_dives: number;
-};
-
 /**
  * The sites' IDs at the Sources their data comes from, by Source: public ones and those private to the accounts of the
  * User's Divers, never another account's (ADR 0057).
@@ -38,11 +33,6 @@ async function dataIdsOf(ctx: ToolContext, siteIds: string[]): Promise<Map<strin
   const order = (e: SiteIdRow) => SITE_SOURCES.indexOf(e.source);
   return new Map([...ids].map(([id, rows]) => [id, rows.filter((e) => e.providesData).sort((a, b) => order(a) - order(b))]));
 }
-
-/** How many of the User's Dives are at site `s`. */
-const yourDives = (ctx: ToolContext): SQL => (ctx.diverIds.length === 0 ? sql`0` : sql`(select count(*)::int from dive d
-  where d.site_id = s.id and d.deleted_at is null
-    and d.diver_id in (${sql.join(ctx.diverIds.map((id) => sql`${id}::uuid`), sql`, `)}))`);
 
 const siteFields = (s: SiteRow) => ({
   id: s.id, shared_name: s.name, country: s.country, shared_water_body: s.water_body, water_type: s.water_type,
@@ -85,21 +75,9 @@ Dive sites are shared by all Users of this Dive Hub and partly imported from ope
   async run(ctx, a) {
     const detailed = a.detail === 'detailed';
     const offset = offsetOf(a.cursor);
-    const divedOnly = a.dived_only ?? true;
-    const count = yourDives(ctx);
-    const where = sql.join([
-      sql`s.deleted_at is null`,
-      ...(a.query ? [sql`(s.name ilike ${like(a.query)} or s.water_body ilike ${like(a.query)})`] : []),
-      ...(a.country ? [sql`s.country = ${a.country}`] : []),
-      ...(divedOnly ? [sql`${count} > 0`] : []),
-    ], sql` and `);
-    const rows = (await ctx.tx.execute(sql`select s.id, s.name, s.country, s.water_body, s.water_type, s.max_depth_m, s.latitude, s.longitude,
-        s.description, ${count} as your_dives
-      from dive_site s where ${where}
-      order by ${divedOnly ? sql`your_dives desc, ` : sql``}lower(s.name), s.id limit ${a.limit ?? 20} offset ${offset}`)).rows as SiteRow[];
-    const [counted] = (await ctx.tx.execute(sql`select count(*)::int as n from dive_site s where ${where}`)).rows as { n: number }[];
+    const { rows, total } = await findSites(ctx, { query: a.query, country: a.country, divedOnly: a.dived_only ?? true, limit: a.limit ?? 20, offset });
     const ids = detailed ? await dataIdsOf(ctx, rows.map((s) => s.id)) : new Map<string, SiteIdRow[]>();
-    return page(rows, counted?.n ?? 0, offset, (kept) => ({
+    return page(rows, total, offset, (kept) => ({
       sites: kept.map((s) => {
         if (!detailed) return siteFields(s);
         const description = excerpt(s.description, DESCRIPTION_IN_LIST);
@@ -145,23 +123,12 @@ Error "site not found": the id is wrong or the site was deleted; find it with si
     })),
   }),
   async run(ctx, a) {
-    // A merged site's id leads to the site it was merged into (ADR 0022).
-    const [s] = (await ctx.tx.execute(sql`select s.id, s.name, s.country, s.water_body, s.water_type, s.max_depth_m, s.latitude, s.longitude,
-        s.description, ${yourDives(ctx)} as your_dives
-      from dive_site s
-      where s.deleted_at is null and s.id = coalesce((select m.merged_into from dive_site m where m.id = ${a.site_id}::uuid and m.merged_into is not null), ${a.site_id}::uuid)`))
-      .rows as SiteRow[];
+    const s = await siteOf(ctx, a.site_id);
     if (!s) {
       throw new ToolError('site_not_found', 'No Dive site has this site_id: it may be mistyped or deleted. Find the site with sites_search (dived_only=false also lists sites without Dives of the user).');
     }
     const sources = (await dataIdsOf(ctx, [s.id])).get(s.id) ?? [];
-    const mine = ctx.diverIds.length === 0 ? sql`false` : sql`d.diver_id in (${sql.join(ctx.diverIds.map((id) => sql`${id}::uuid`), sql`, `)})`;
-    const dives = (await ctx.tx.execute(sql`select d.id, d.number, to_char(${LOCAL_START}, 'YYYY-MM-DD') as date, d.max_depth_m,
-        to_char(min(${LOCAL_START}) over (), 'YYYY-MM-DD') as first, max(d.max_depth_m) over () as deepest
-      from dive d where d.site_id = ${s.id}::uuid and d.deleted_at is null and ${mine}
-      order by d.starts_at desc, d.id desc limit ${DIVES_AT_SITE}`)).rows as {
-      id: string; number: number | null; date: string; max_depth_m: number | null; first: string; deepest: number | null;
-    }[];
+    const dives = await divesAtSite(ctx, s.id, DIVES_AT_SITE);
     const output = {
       ...siteFields(s), shared_description: s.description,
       sources: sources.map(({ source, externalId }) => {

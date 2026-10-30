@@ -3,9 +3,10 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import {
-  LIMITS, RULES, RULE_IDS, SOURCES, assessProfile, assessSeries, cleanDepth, noFlyAfter, segments, type Finding, type Series, type SeriesDive,
-} from '../src/assessment/rules.js';
+import { assessProfile } from '../src/assessment/profile-rules.js';
+import { LIMITS, RULES, RULE_IDS, SOURCES, type Finding } from '../src/assessment/rules.js';
+import { assessSeries, noFlyAfter, type SeriesDive } from '../src/assessment/series-rules.js';
+import { cleanDepth, segments, type Series } from '../src/assessment/signals.js';
 import { createFitAdapter } from '../src/fit/fit-adapter.js';
 
 /** A depth series through waypoints [minute, metres], sampled every `stepS` seconds. */

@@ -67,6 +67,19 @@ export const Paging = {
   next_cursor: Type.Optional(Type.String({ description: 'Pass as cursor to get the next page; absent on the last page' })),
 };
 
+/**
+ * The User's Divers a tool reads: the one `diverId` names, or all of them. A `diverId` that is not one of theirs is
+ * refused with what to do instead.
+ */
+export function diversAsked(ctx: ToolContext, diverId: string | undefined): string[] {
+  if (!diverId) return ctx.diverIds;
+  const divers = ctx.diverIds.filter((id) => id === diverId.toLowerCase());
+  if (divers.length === 0) {
+    throw new ToolError('diver_not_found', 'No Diver of the user has this diver_id. Call divers_list for the Divers whose Dives this access can read.');
+  }
+  return divers;
+}
+
 // --- Paging and caps --------------------------------------------------------------------------------------------
 
 export function offsetOf(cursor: string | undefined): number {
@@ -101,12 +114,6 @@ export function excerpt(text: string | null, max: number): { text: string | null
 
 // --- Dive times -------------------------------------------------------------------------------------------------
 
-/**
- * A Dive's start as local wall-clock time, in SQL (ADR 0030): shifted by its offset; kept as it is when the offset is
- * unknown (then the stored time already is the wall clock); the UTC time when only the instant is known.
- */
-export const LOCAL_START = sql.raw(`(case when d.utc_offset_seconds is not null then d.starts_at + make_interval(secs => d.utc_offset_seconds) else d.starts_at end) at time zone 'UTC'`);
-
 const minute = (date: Date) => date.toISOString().slice(0, 16);
 
 /** `start_local` (wall clock where the dive was, null when unknown) and `start_utc` (null when only the wall clock is known). */
@@ -124,8 +131,6 @@ export const StartTimes = {
 
 export const round = (value: number | null, digits = 1) => (value === null ? null : Math.round(value * 10 ** digits) / 10 ** digits);
 export const minutes = (seconds: number | null) => (seconds === null ? null : Math.round(seconds / 60));
-/** Words for a case-insensitive "contains" search. */
-export const like = (text: string) => `%${text.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
 // --- Running a tool ---------------------------------------------------------------------------------------------
 

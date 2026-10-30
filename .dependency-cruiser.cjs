@@ -79,11 +79,34 @@ module.exports = {
       to: { path: '^apps/server/src/db/client[.]ts$' },
     },
     {
+      name: 'mcp-tools-use-no-drizzle',
+      severity: 'error',
+      comment: 'MCP tool files speak MCP and call services; their queries belong in mcp/read-service.ts or a domain service (db/schema.js stays allowed for its value lists).',
+      from: { path: '^apps/server/src/mcp/tools-[^/]*[.]ts$' },
+      to: { path: ['node_modules/drizzle-orm/', '^apps/server/src/db/client[.]ts$'] },
+    },
+    {
       name: 'ui-imports-no-page',
       severity: 'error',
       comment: 'Shared components (apps/web/src/ui) must not depend on a page (a component file at the top of apps/web/src).',
       from: { path: '^apps/web/src/ui/' },
       to: { path: '^apps/web/src/[A-Z][^/]*\\.tsx$' },
+    },
+    {
+      name: 'lib-imports-no-page',
+      severity: 'error',
+      comment: 'Web helpers and data hooks (apps/web/src/lib) must not depend on a page (ADR 0053).',
+      from: { path: '^apps/web/src/lib/' },
+      to: { path: '^apps/web/src/[A-Z][^/]*\\.tsx$' },
+    },
+    {
+      // lib/ may import api.ts (amendment of 2026-10-29); api.ts takes from lib/ only what describes a query's
+      // inputs. A new lib/ file for api.ts joins this list, with the reason in the commit message.
+      name: 'api-imports-only-query-inputs-from-lib',
+      severity: 'error',
+      comment: 'api.ts takes from lib/ only the types and constants of its queries\' inputs: lib/logbook, sites-list, tools and waiting-push (ADR 0053, amendment of 2026-10-29).',
+      from: { path: '^apps/web/src/api[.]ts$' },
+      to: { path: '^apps/web/src/lib/', pathNot: '^apps/web/src/lib/(logbook|sites-list|tools|waiting-push)[.]ts$' },
     },
   ],
   options: {

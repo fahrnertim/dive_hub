@@ -1,17 +1,17 @@
 // MCP tools over the User's Dives (ADR 0035): search, one Dive with its profile, statistics. Read-only; every query
 // is limited to the Divers the User manages; a Dive's own position only with the logbook:positions scope.
-import { eq, sql, type SQL } from 'drizzle-orm';
 import { Type, type Static } from 'typebox';
-import { LEAD_PLACEMENTS, PARTICIPANT_ROLES, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, dive, type RecordingSummary } from '../db/schema.js';
+import { LEAD_PLACEMENTS, PARTICIPANT_ROLES, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, type RecordingSummary } from '../db/schema.js';
 import { cylindersOf } from '../dives/cylinders.js';
 import { SAC_MISSING, sacOfDive } from '../dives/sac.js';
 import { leadOf, leadTotalKg, suitOf, weightingFeedbackOf } from '../dives/weighting.js';
 import { downsampleMinMax } from '../dives/downsample.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { ProfileSummary, summariseProfile } from './profile.js';
+import { GROUPS, diveOf, findDives, ownDive, participantsOf, recordingsOf, seriesOf as readSeries, statsOf, type DiveRow } from './read-service.js';
 import {
-  Cursor, DateOnly, Detail, Id, LOCAL_START, Nullable, Paging, SharedText, StartTimes, ToolError, defineTool, excerpt, like, minutes,
-  offsetOf, page, round, startTimes, type ToolContext,
+  Cursor, DateOnly, Detail, Id, Nullable, Paging, SharedText, StartTimes, ToolError, defineTool, diversAsked, excerpt, minutes,
+  offsetOf, page, round, startTimes,
 } from './tool.js';
 
 // --- Shapes -----------------------------------------------------------------------------------------------------
@@ -68,43 +68,7 @@ const CHANNEL_UNITS = {
 type Channel = keyof typeof CHANNEL_UNITS;
 const CHANNELS = Object.keys(CHANNEL_UNITS) as Channel[];
 
-// --- Queries ----------------------------------------------------------------------------------------------------
-
-const idList = (ids: string[]) => sql`(${sql.join(ids.map((id) => sql`${id}::uuid`), sql`, `)})`;
-const all = (conditions: (SQL | undefined)[]) => sql.join(conditions.filter((c): c is SQL => c !== undefined), sql` and `);
-
-/** The filters several tools share, over `dive d` joined to `dive_site s`. Deleted Dives never count (ADR 0026). */
-function diveFilter(ctx: ToolContext, f: {
-  diver_id?: string | undefined; site_id?: string | undefined; country?: string | undefined; from?: string | undefined; to?: string | undefined;
-}): SQL {
-  const divers = f.diver_id ? ctx.diverIds.filter((id) => id === f.diver_id!.toLowerCase()) : ctx.diverIds;
-  if (f.diver_id && divers.length === 0) {
-    throw new ToolError('diver_not_found', 'No Diver of the user has this diver_id. Call divers_list for the Divers whose Dives this access can read.');
-  }
-  return all([
-    sql`d.deleted_at is null`,
-    divers.length === 0 ? sql`false` : sql`d.diver_id in ${idList(divers)}`,
-    f.site_id ? sql`d.site_id = ${f.site_id}::uuid` : undefined,
-    f.country ? sql`s.country = ${f.country}` : undefined,
-    f.from ? sql`(${LOCAL_START})::date >= ${f.from}::date` : undefined,
-    f.to ? sql`(${LOCAL_START})::date <= ${f.to}::date` : undefined,
-  ]);
-}
-
-type DiveRow = {
-  id: string; number: number | null; starts_ms: number; utc_offset_seconds: number | null; utc_offset_source: string;
-  duration_seconds: number; max_depth_m: number | null; avg_depth_m: number | null; water_temperature_c: number | null;
-  notes: string | null; diver_id: string; diver_name: string; site_id: string | null; site_name: string | null;
-  site_country: string | null; site_water_type: (typeof SITE_WATER_TYPES)[number] | null;
-  entry_latitude: number | null; entry_longitude: number | null; exit_latitude: number | null; exit_longitude: number | null;
-};
-
-const DIVE_COLUMNS = sql.raw(`d.id, d.number, (extract(epoch from d.starts_at) * 1000)::float8 as starts_ms, d.utc_offset_seconds, d.utc_offset_source, d.duration_seconds, d.max_depth_m,
-  d.avg_depth_m, d.water_temperature_c, d.notes, d.diver_id, dv.name as diver_name, s.id as site_id, s.name as site_name,
-  s.country as site_country, s.water_type as site_water_type,
-  r.entry_latitude, r.entry_longitude, r.exit_latitude, r.exit_longitude`);
-const DIVE_FROM = sql.raw(`dive d join diver dv on dv.id = d.diver_id left join dive_site s on s.id = d.site_id
-  left join recording r on r.id = d.primary_recording_id and r.deleted_at is null`);
+// --- Answers ----------------------------------------------------------------------------------------------------
 
 const siteRef = (d: DiveRow): Static<typeof SiteRef> | null => (d.site_id && d.site_name !== null
   ? { id: d.site_id, shared_name: d.site_name, country: d.site_country, water_type: d.site_water_type } : null);
@@ -120,24 +84,6 @@ const diveBasics = (d: DiveRow) => ({
   diver: { id: d.diver_id, name: d.diver_name },
   duration_min: minutes(d.duration_seconds)!, max_depth_m: round(d.max_depth_m), site: siteRef(d),
 });
-
-/** Who else was on these Dives, by Dive: named plainly when the User keeps that Diver, as shared text otherwise. */
-async function participantsOf(ctx: ToolContext, diveIds: string[]) {
-  const byDive = new Map<string, Static<typeof Participant>[]>();
-  if (diveIds.length === 0) return byDive;
-  const rows = (await ctx.tx.execute(sql`
-    select p.dive_id, p.diver_id, p.role, b.name,
-      exists (select 1 from diver_management m where m.diver_id = b.id and m.user_id = ${ctx.userId}::uuid) as mine
-    from participant p join diver b on b.id = p.diver_id
-    where p.dive_id in ${idList(diveIds)}
-    order by p.role, lower(b.name), b.id`)).rows as { dive_id: string; diver_id: string; role: (typeof PARTICIPANT_ROLES)[number]; name: string; mine: boolean }[];
-  for (const p of rows) {
-    const list = byDive.get(p.dive_id) ?? [];
-    list.push({ diver_id: p.diver_id, role: p.role, ...(p.mine ? { name: p.name } : { shared_name: p.name }) });
-    byDive.set(p.dive_id, list);
-  }
-  return byDive;
-}
 
 // --- logbook_search_dives ---------------------------------------------------------------------------------------
 
@@ -176,22 +122,13 @@ Examples: dives in Egypt in 2025 -> country="EG", from="2025-01-01", to="2025-12
     const detailed = a.detail === 'detailed';
     const limit = Math.min(a.limit ?? 20, SEARCH_LIMIT[detailed ? 'detailed' : 'concise']);
     const offset = offsetOf(a.cursor);
-    const text = a.query?.trim();
-    const asNumber = text && /^\d{1,9}$/.test(text) ? Number(text) : undefined;
-    const where = all([
-      diveFilter(ctx, a),
-      text ? sql`(d.notes ilike ${like(text)} or s.name ilike ${like(text)}${asNumber === undefined ? sql`` : sql` or d.number = ${asNumber}`})` : undefined,
-      a.min_depth_m === undefined ? undefined : sql`d.max_depth_m >= ${a.min_depth_m}::float8`,
-      a.max_depth_m === undefined ? undefined : sql`d.max_depth_m <= ${a.max_depth_m}::float8`,
-      a.with_diver_id ? sql`exists (select 1 from participant p where p.dive_id = d.id and p.diver_id = ${a.with_diver_id}::uuid)` : undefined,
-    ]);
-    const column = { date: 'd.starts_at', depth: 'd.max_depth_m', duration: 'd.duration_seconds', number: 'd.number' }[a.sort ?? 'date'];
-    const direction = a.order === 'asc' ? 'asc' : 'desc';
-    const rows = (await ctx.tx.execute(sql`select ${DIVE_COLUMNS} from ${DIVE_FROM} where ${where}
-      order by ${sql.raw(`${column} ${direction} nulls last`)}, d.starts_at desc, d.id desc limit ${limit} offset ${offset}`)).rows as DiveRow[];
-    const [counted] = (await ctx.tx.execute(sql`select count(*)::int as n from ${DIVE_FROM} where ${where}`)).rows as { n: number }[];
+    const { rows, total } = await findDives(ctx, {
+      divers: diversAsked(ctx, a.diver_id), site_id: a.site_id, country: a.country, from: a.from, to: a.to, text: a.query?.trim(),
+      min_depth_m: a.min_depth_m, max_depth_m: a.max_depth_m, with_diver_id: a.with_diver_id,
+      sort: a.sort ?? 'date', order: a.order === 'asc' ? 'asc' : 'desc', limit, offset,
+    });
     const participants = detailed ? await participantsOf(ctx, rows.map((d) => d.id)) : null;
-    return page(rows, counted?.n ?? 0, offset, (kept) => ({
+    return page(rows, total, offset, (kept) => ({
       dives: kept.map((d) => {
         if (!participants) return diveBasics(d);
         const notes = excerpt(d.notes, NOTES_IN_LIST);
@@ -337,26 +274,14 @@ Error "dive not found": the id is wrong, the Dive was deleted, or it is not the 
   output: DiveDetail,
   async run(ctx, a) {
     const detailed = a.detail === 'detailed';
-    const [d] = (await ctx.tx.execute(sql`select ${DIVE_COLUMNS}, d.overrides, d.from_provider, d.primary_recording_id
-      from ${DIVE_FROM} where ${diveFilter(ctx, {})} and d.id = ${a.dive_id}::uuid`)).rows as (DiveRow & {
-      overrides: string[]; from_provider: string | null; primary_recording_id: string | null;
-    })[];
+    const d = await diveOf(ctx, a.dive_id);
     if (!d) {
       throw new ToolError('dive_not_found', 'No Dive of the user has this dive_id: it may be mistyped, deleted, or someone else\'s Dive. Find the Dive with logbook_search_dives and use the id it returns.');
     }
-    const recordings = (await ctx.tx.execute(sql`
-      select r.id, (extract(epoch from r.starts_at) * 1000)::float8 as starts_ms, r.duration_seconds, r.max_depth_m, r.summary, dev.manufacturer, dev.product,
-        coalesce((select array_agg(ss.channel order by ss.channel) from sample_series ss where ss.recording_id = r.id), '{}') as channels
-      from recording r left join device dev on dev.id = r.device_id
-      where r.dive_id = ${d.id}::uuid and r.deleted_at is null order by r.starts_at`)).rows as {
-      id: string; starts_ms: number; duration_seconds: number; max_depth_m: number | null; summary: RecordingSummary;
-      manufacturer: string | null; product: string | null; channels: string[];
-    }[];
+    const recordings = await recordingsOf(ctx, d.id);
     const primary = recordings.find((r) => r.id === d.primary_recording_id);
     const wanted = a.include_samples ? [...new Set(a.sample_channels ?? ['depth'])] : [];
-    const series = !primary ? [] : (await ctx.tx.execute(sql`select channel, offsets_ms, "values" from sample_series
-      where recording_id = ${primary.id}::uuid and channel in ${sql`(${sql.join(['depth', 'temperature', ...wanted].map((c) => sql`${c}`), sql`, `)})`}`))
-      .rows as { channel: string; offsets_ms: number[]; values: number[] }[];
+    const series = primary ? await readSeries(ctx, primary.id, ['depth', 'temperature', ...wanted]) : [];
     const seriesOf = (channel: string) => {
       const found = series.find((s) => s.channel === channel);
       return found && { offsetsMs: found.offsets_ms, values: found.values };
@@ -365,7 +290,7 @@ Error "dive not found": the id is wrong, the Dive was deleted, or it is not the 
     const cylinders = await cylindersOf(ctx.tx, d.id);
     const { sac, missing } = sacOfDive({ durationSeconds: d.duration_seconds, avgDepthM: d.avg_depth_m }, cylinders);
     const lead = await leadOf(ctx.tx, d.id);
-    const [own] = await ctx.tx.select().from(dive).where(eq(dive.id, d.id));
+    const own = await ownDive(ctx, d.id);
     const feedback = own && weightingFeedbackOf(own);
     const suit = own && suitOf(own);
     if (a.include_samples && wanted.every((c) => !seriesOf(c))) {
@@ -433,7 +358,6 @@ Error "dive not found": the id is wrong, the Dive was deleted, or it is not the 
 
 // --- logbook_stats ----------------------------------------------------------------------------------------------
 
-const GROUPS = ['none', 'year', 'month', 'country', 'site', 'diver'] as const;
 /** Groups an answer holds at most; the rest is counted in groups_omitted. */
 const MAX_GROUPS = 60;
 
@@ -486,46 +410,17 @@ Examples: dives per country -> group_by="country". This year's totals -> from="2
   input: StatsInput,
   output: () => StatsOutput,
   async run(ctx, a) {
-    const where = diveFilter(ctx, a);
-    const from = sql`dive d join diver dv on dv.id = d.diver_id left join dive_site s on s.id = d.site_id`;
-    const [t] = (await ctx.tx.execute(sql`select count(*)::int as dives, coalesce(sum(d.duration_seconds), 0)::float8 as seconds,
-        avg(d.max_depth_m)::float8 as avg_max, min(d.water_temperature_c)::float8 as coldest,
-        to_char(min(${LOCAL_START}), 'YYYY-MM-DD') as first, to_char(max(${LOCAL_START}), 'YYYY-MM-DD') as last,
-        count(distinct d.site_id)::int as sites, count(distinct s.country)::int as countries,
-        (count(*) filter (where d.site_id is null))::int as without_site
-      from ${from} where ${where}`)).rows as {
-      dives: number; seconds: number; avg_max: number | null; coldest: number | null; first: string | null; last: string | null;
-      sites: number; countries: number; without_site: number;
-    }[];
-    const mark = async (column: string) => {
-      const [row] = (await ctx.tx.execute(sql`select d.id, to_char(${LOCAL_START}, 'YYYY-MM-DD') as date, ${sql.raw(column)}::float8 as value
-        from ${from} where ${where} and ${sql.raw(column)} is not null order by ${sql.raw(column)} desc, d.starts_at desc limit 1`))
-        .rows as { id: string; date: string; value: number }[];
-      return row;
-    };
-    const deepest = await mark('d.max_depth_m');
-    const longest = await mark('d.duration_seconds');
-
     const groupBy = a.group_by ?? 'none';
-    const key = {
-      year: sql`to_char(${LOCAL_START}, 'YYYY')`, month: sql`to_char(${LOCAL_START}, 'YYYY-MM')`, country: sql`s.country`,
-      site: sql`d.site_id::text`, diver: sql`d.diver_id::text`,
-    };
-    const label = { year: sql`null`, month: sql`null`, country: sql`null`, site: sql`max(s.name)`, diver: sql`max(dv.name)` };
-    const groups = groupBy === 'none' ? [] : (await ctx.tx.execute(sql`select ${key[groupBy]} as key, ${label[groupBy]} as label,
-        count(*)::int as dives, coalesce(sum(d.duration_seconds), 0)::float8 as seconds, max(d.max_depth_m)::float8 as deepest
-      from ${from} where ${where} group by 1
-      order by ${sql.raw(groupBy === 'year' || groupBy === 'month' ? '1 desc nulls last' : '3 desc, 1 nulls last')} limit ${MAX_GROUPS + 1}`))
-      .rows as { key: string | null; label: string | null; dives: number; seconds: number; deepest: number | null }[];
-    const [groupCount] = groupBy === 'none' ? [{ n: 0 }] : (await ctx.tx.execute(sql`select count(distinct coalesce(${key[groupBy]}, ''))::int as n
-      from ${from} where ${where}`)).rows as { n: number }[];
+    const { totals: t, deepest, longest, groups, groupCount } = await statsOf(ctx, {
+      divers: diversAsked(ctx, a.diver_id), site_id: a.site_id, country: a.country, from: a.from, to: a.to,
+    }, groupBy, MAX_GROUPS);
     const shown = groups.slice(0, MAX_GROUPS);
     const output = {
-      dives: t!.dives, total_dive_minutes: minutes(t!.seconds)!,
+      dives: t.dives, total_dive_minutes: minutes(t.seconds)!,
       deepest: deepest ? { dive_id: deepest.id, date: deepest.date, value: round(deepest.value)! } : null,
       longest: longest ? { dive_id: longest.id, date: longest.date, value: minutes(longest.value)! } : null,
-      avg_max_depth_m: round(t!.avg_max), coldest_water_c: round(t!.coldest),
-      first_dive_date: t!.first, last_dive_date: t!.last, sites: t!.sites, countries: t!.countries, dives_without_site: t!.without_site,
+      avg_max_depth_m: round(t.avg_max), coldest_water_c: round(t.coldest),
+      first_dive_date: t.first, last_dive_date: t.last, sites: t.sites, countries: t.countries, dives_without_site: t.without_site,
       group_by: groupBy,
       groups: shown.map((g) => ({
         key: g.key,
@@ -533,8 +428,8 @@ Examples: dives per country -> group_by="country". This year's totals -> from="2
         ...(groupBy === 'site' && g.label !== null && { shared_name: g.label }),
         dives: g.dives, total_dive_minutes: minutes(g.seconds)!, deepest_m: round(g.deepest),
       })),
-      groups_omitted: Math.max(0, (groupCount?.n ?? 0) - shown.length),
+      groups_omitted: Math.max(0, groupCount - shown.length),
     };
-    return { output, rows: t!.dives };
+    return { output, rows: t.dives };
   },
 });

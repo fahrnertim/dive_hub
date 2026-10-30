@@ -11,7 +11,9 @@ import { computerEventOf } from '../imports/computer-events.js';
 import { managedDiverIds, managementOf, managesDiveDiver } from '../divers/management.js';
 import type { ComputerEvent } from '../vocabulary.js';
 import { sketchOf } from './sketch.js';
-import { ENGINE_VERSION, RULES, RULE_IDS, assessProfile, assessSeries, noFlyAfter, type Finding, type RuleId, type SeriesDive } from './rules.js';
+import { assessProfile } from './profile-rules.js';
+import { ENGINE_VERSION, RULES, RULE_IDS, type Finding, type RuleId } from './rules.js';
+import { assessSeries, noFlyAfter, type SeriesDive } from './series-rules.js';
 
 export class AssessmentError extends Error {
   constructor(readonly code: 'dive_not_found' | 'diver_not_found' | 'finding_not_found') {

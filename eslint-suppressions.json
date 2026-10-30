@@ -4,11 +4,6 @@
       "count": 1
     }
   },
-  "apps/server/src/assessment/rules.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    }
-  },
   "apps/server/src/certifications/certification-service.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
