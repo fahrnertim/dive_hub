@@ -3,7 +3,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../../auth/fastify.js';
-import type { siteImport } from '../../db/schema.js';
+import { type siteImport, siteImportStatus } from '../../db/schema.js';
 import { answerErrors, answers, Problem, problem, PROBLEM_CODES, storedProblemCode } from '../../http/problems.js';
 import { DateTime, IdParams, Nullable } from '../../http/schemas.js';
 import { IMPORT_SOURCES } from '../sources.js';
@@ -46,13 +46,13 @@ const Counts = Type.Object({
 
 export const SiteImportView = Type.Object({
   id: Type.String(),
-  status: Type.Union([Type.Literal('queued'), Type.Literal('running'), Type.Literal('done'), Type.Literal('failed')]),
+  status: Type.Enum([...siteImportStatus.enumValues]),
   sources: Type.Array(Source),
   area: Area,
   language: Type.String(),
   createSites: Type.Boolean({ description: 'false: the run only matched and filled sites already in the hub' }),
   progress: Type.Object({
-    step: Type.Union([Type.Literal('waiting'), Type.Literal('osm'), Type.Literal('wikidata'), Type.Literal('ssi'), Type.Literal('saving')]),
+    step: Type.Enum(['waiting', ...IMPORT_SOURCES, 'saving']),
     done: Type.Integer(), total: Type.Integer(),
   }),
   counts: Nullable(Counts),

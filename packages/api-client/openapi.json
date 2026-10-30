@@ -79985,31 +79985,11 @@
                       "type": "string"
                     },
                     "status": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "queued"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "running"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "done"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "failed"
-                          ]
-                        }
+                      "enum": [
+                        "queued",
+                        "running",
+                        "done",
+                        "failed"
                       ]
                     },
                     "sources": {
@@ -80119,37 +80099,12 @@
                       ],
                       "properties": {
                         "step": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "enum": [
-                                "waiting"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "osm"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "wikidata"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "ssi"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "saving"
-                              ]
-                            }
+                          "enum": [
+                            "waiting",
+                            "osm",
+                            "wikidata",
+                            "ssi",
+                            "saving"
                           ]
                         },
                         "done": {
@@ -81223,31 +81178,11 @@
                         "type": "string"
                       },
                       "status": {
-                        "anyOf": [
-                          {
-                            "type": "string",
-                            "enum": [
-                              "queued"
-                            ]
-                          },
-                          {
-                            "type": "string",
-                            "enum": [
-                              "running"
-                            ]
-                          },
-                          {
-                            "type": "string",
-                            "enum": [
-                              "done"
-                            ]
-                          },
-                          {
-                            "type": "string",
-                            "enum": [
-                              "failed"
-                            ]
-                          }
+                        "enum": [
+                          "queued",
+                          "running",
+                          "done",
+                          "failed"
                         ]
                       },
                       "sources": {
@@ -81357,37 +81292,12 @@
                         ],
                         "properties": {
                           "step": {
-                            "anyOf": [
-                              {
-                                "type": "string",
-                                "enum": [
-                                  "waiting"
-                                ]
-                              },
-                              {
-                                "type": "string",
-                                "enum": [
-                                  "osm"
-                                ]
-                              },
-                              {
-                                "type": "string",
-                                "enum": [
-                                  "wikidata"
-                                ]
-                              },
-                              {
-                                "type": "string",
-                                "enum": [
-                                  "ssi"
-                                ]
-                              },
-                              {
-                                "type": "string",
-                                "enum": [
-                                  "saving"
-                                ]
-                              }
+                            "enum": [
+                              "waiting",
+                              "osm",
+                              "wikidata",
+                              "ssi",
+                              "saving"
                             ]
                           },
                           "done": {
@@ -81969,31 +81879,11 @@
                       "type": "string"
                     },
                     "status": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "queued"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "running"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "done"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "failed"
-                          ]
-                        }
+                      "enum": [
+                        "queued",
+                        "running",
+                        "done",
+                        "failed"
                       ]
                     },
                     "sources": {
@@ -82103,37 +81993,12 @@
                       ],
                       "properties": {
                         "step": {
-                          "anyOf": [
-                            {
-                              "type": "string",
-                              "enum": [
-                                "waiting"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "osm"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "wikidata"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "ssi"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "saving"
-                              ]
-                            }
+                          "enum": [
+                            "waiting",
+                            "osm",
+                            "wikidata",
+                            "ssi",
+                            "saving"
                           ]
                         },
                         "done": {

@@ -17706,6 +17706,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string;
+                            /** @enum {unknown} */
                             status: "queued" | "running" | "done" | "failed";
                             sources: ("osm" | "wikidata" | "ssi")[];
                             /** @description Where to import: a country, a box, or everywhere */
@@ -17729,6 +17730,7 @@ export interface paths {
                             /** @description false: the run only matched and filled sites already in the hub */
                             createSites: boolean;
                             progress: {
+                                /** @enum {unknown} */
                                 step: "waiting" | "osm" | "wikidata" | "ssi" | "saving";
                                 done: number;
                                 total: number;
@@ -17872,6 +17874,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string;
+                            /** @enum {unknown} */
                             status: "queued" | "running" | "done" | "failed";
                             sources: ("osm" | "wikidata" | "ssi")[];
                             /** @description Where to import: a country, a box, or everywhere */
@@ -17895,6 +17898,7 @@ export interface paths {
                             /** @description false: the run only matched and filled sites already in the hub */
                             createSites: boolean;
                             progress: {
+                                /** @enum {unknown} */
                                 step: "waiting" | "osm" | "wikidata" | "ssi" | "saving";
                                 done: number;
                                 total: number;
@@ -18103,6 +18107,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string;
+                            /** @enum {unknown} */
                             status: "queued" | "running" | "done" | "failed";
                             sources: ("osm" | "wikidata" | "ssi")[];
                             /** @description Where to import: a country, a box, or everywhere */
@@ -18126,6 +18131,7 @@ export interface paths {
                             /** @description false: the run only matched and filled sites already in the hub */
                             createSites: boolean;
                             progress: {
+                                /** @enum {unknown} */
                                 step: "waiting" | "osm" | "wikidata" | "ssi" | "saving";
                                 done: number;
                                 total: number;
