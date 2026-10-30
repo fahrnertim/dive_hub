@@ -163,12 +163,27 @@ async function followPrimary(
   }, actor, cause, extra);
 }
 
-/** A Dive's Participants with their names, buddies first, then guides and instructors, each by name (ADR 0028). */
-export async function participantsOf(tx: Queryable, diveId: string) {
-  const rows = await tx.select({ diverId: participant.diverId, name: diver.name, role: participant.role }).from(participant)
-    .innerJoin(diver, eq(diver.id, participant.diverId)).where(eq(participant.diveId, diveId));
-  return rows.sort((a, b) => PARTICIPANT_ROLES.indexOf(a.role) - PARTICIPANT_ROLES.indexOf(b.role)
+export type Participant = { diverId: string; name: string; role: (typeof PARTICIPANT_ROLES)[number] };
+
+/**
+ * The Participants of these Dives with their names, by Dive: buddies first, then guides and instructors, each by name
+ * (ADR 0028). `live` leaves out deleted Divers.
+ */
+export async function participantsOfDives(q: Queryable, diveIds: string[], options: { live?: boolean } = {}) {
+  const byDive = new Map<string, Participant[]>();
+  if (diveIds.length === 0) return byDive;
+  const rows = await q.select({ diveId: participant.diveId, diverId: participant.diverId, name: diver.name, role: participant.role })
+    .from(participant).innerJoin(diver, eq(diver.id, participant.diverId))
+    .where(and(inArray(participant.diveId, diveIds), options.live ? isNull(diver.deletedAt) : undefined));
+  rows.sort((a, b) => PARTICIPANT_ROLES.indexOf(a.role) - PARTICIPANT_ROLES.indexOf(b.role)
     || a.name.localeCompare(b.name) || a.diverId.localeCompare(b.diverId));
+  for (const { diveId, ...p } of rows) byDive.set(diveId, [...(byDive.get(diveId) ?? []), p]);
+  return byDive;
+}
+
+/** A Dive's Participants with their names, in the order of participantsOfDives. */
+export async function participantsOf(q: Queryable, diveId: string): Promise<Participant[]> {
+  return (await participantsOfDives(q, [diveId])).get(diveId) ?? [];
 }
 
 /** A new Dive for one Diver from a Recording, which becomes its Primary recording. */

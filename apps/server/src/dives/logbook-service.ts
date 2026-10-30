@@ -5,9 +5,9 @@
 // lockManagedDive in dive-service.ts does).
 import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { PARTICIPANT_ROLES, device, dive, diveAssessment, diveSite, diver, diverManagement, importJob, participant, recording, revision, sampleSeries, user } from '../db/schema.js';
+import { device, dive, diveAssessment, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user } from '../db/schema.js';
 import { cylindersOf } from './cylinders.js';
-import { participantsOf } from './dive-service.js';
+import { participantsOf, participantsOfDives, type Participant } from './dive-service.js';
 import { managedDiverIds, managesDiveDiver } from '../divers/management.js';
 import { diveListFilter, FINDINGS_SHOWN } from './list-filter.js';
 import { leadOf } from './weighting.js';
@@ -31,13 +31,11 @@ export interface ListScope {
 /** The local month of a Dive, as the logbook groups it: an unknown offset keeps the wall-clock time as it is. */
 const LOCAL_MONTH = sql<string>`to_char("dive"."starts_at" at time zone 'UTC' + make_interval(secs => coalesce("dive"."utc_offset_seconds", 0)), 'YYYY-MM')`;
 
-const ROLE_ORDER = Object.fromEntries(PARTICIPANT_ROLES.map((r, i) => [r, i]));
-
 export interface RowExtras {
   recordings: number;
   gases: { o2: number; he: number }[];
   surfaceIntervalSeconds: number | null;
-  participants: { diverId: string; name: string; role: (typeof PARTICIPANT_ROLES)[number] }[];
+  participants: Participant[];
   profile: { depthsM: number[]; spanSeconds: number; ascentBands: [number, number, 1 | 2 | 3][] } | null;
 }
 
@@ -84,12 +82,11 @@ export function createLogbookService(db: Db) {
 
     const pageIds = rows.map((r) => r.d.id);
     const primaryIds = rows.flatMap((r) => (r.d.primaryRecordingId ? [r.d.primaryRecordingId] : []));
-    const [recordingCounts, primaries, people, assessments] = pageIds.length === 0 ? [[], [], [], []] : await Promise.all([
+    const [recordingCounts, primaries, peopleOf, assessments] = pageIds.length === 0 ? [[], [], new Map<string, Participant[]>(), []] : await Promise.all([
       db.select({ diveId: recording.diveId, n: count() }).from(recording)
         .where(and(inArray(recording.diveId, pageIds), isNull(recording.deletedAt))).groupBy(recording.diveId),
       primaryIds.length === 0 ? [] : db.select({ id: recording.id, summary: recording.summary }).from(recording).where(inArray(recording.id, primaryIds)),
-      db.select({ diveId: participant.diveId, diverId: participant.diverId, name: diver.name, role: participant.role }).from(participant)
-        .innerJoin(diver, eq(diver.id, participant.diverId)).where(and(inArray(participant.diveId, pageIds), isNull(diver.deletedAt))),
+      participantsOfDives(db, pageIds, { live: true }),
       db.select({ diveId: diveAssessment.diveId, recordingId: diveAssessment.recordingId, profile: diveAssessment.profile, ascentBands: diveAssessment.ascentBands })
         .from(diveAssessment).where(inArray(diveAssessment.diveId, pageIds)),
     ]);
@@ -97,10 +94,6 @@ export function createLogbookService(db: Db) {
     const summaryOf = new Map(primaries.map((p) => [p.id, p.summary]));
     const primary = (d: typeof dive.$inferSelect) => (d.primaryRecordingId ? summaryOf.get(d.primaryRecordingId) : undefined);
     const assessmentOf = new Map(assessments.map((a) => [a.diveId, a]));
-    const peopleOf = new Map<string, typeof people>();
-    for (const p of people.toSorted((a, b) => ROLE_ORDER[a.role]! - ROLE_ORDER[b.role]! || a.name.localeCompare(b.name))) {
-      peopleOf.set(p.diveId, [...(peopleOf.get(p.diveId) ?? []), p]);
-    }
 
     // The months of this page, with every matching Dive of each month (not only this page's share).
     let months: { month: string; dives: number; durationSeconds: number }[] = [];
@@ -120,7 +113,7 @@ export function createLogbookService(db: Db) {
           recordings: recordingsOf.get(r.d.id) ?? 0,
           gases: (primary(r.d)?.gases ?? []).map(({ o2, he }) => ({ o2, he })),
           surfaceIntervalSeconds: primary(r.d)?.surfaceIntervalSeconds ?? null,
-          participants: (peopleOf.get(r.d.id) ?? []).map(({ diverId, name, role }) => ({ diverId, name, role })),
+          participants: peopleOf.get(r.d.id) ?? [],
           profile: sketchOfDive(r.d, assessmentOf.get(r.d.id)),
         } satisfies RowExtras,
       })),

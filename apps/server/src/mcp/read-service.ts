@@ -2,6 +2,7 @@
 // query is limited to the Divers the User manages; Dives deleted (ADR 0026) never count.
 import { and, eq, inArray, isNull, sql, type SQL } from 'drizzle-orm';
 import { dive, type PARTICIPANT_ROLES, type RecordingSummary } from '../db/schema.js';
+import { participantsOfDives } from '../dives/dive-service.js';
 import type { SITE_WATER_TYPES } from '../vocabulary.js';
 import type { ToolContext } from './tool.js';
 
@@ -97,20 +98,9 @@ export type Participant = { diver_id: string; role: Role; name?: string; shared_
 
 /** Who else was on these Dives, by Dive: named plainly when the User keeps that Diver, as shared text otherwise. */
 export async function participantsOf(r: Reader, diveIds: string[]): Promise<Map<string, Participant[]>> {
-  const byDive = new Map<string, Participant[]>();
-  if (diveIds.length === 0) return byDive;
-  const rows = (await r.tx.execute(sql`
-    select p.dive_id, p.diver_id, p.role, b.name,
-      exists (select 1 from diver_management m where m.diver_id = b.id and m.user_id = ${r.userId}::uuid) as mine
-    from participant p join diver b on b.id = p.diver_id
-    where p.dive_id in ${idList(diveIds)}
-    order by p.role, lower(b.name), b.id`)).rows as { dive_id: string; diver_id: string; role: Role; name: string; mine: boolean }[];
-  for (const p of rows) {
-    const list = byDive.get(p.dive_id) ?? [];
-    list.push({ diver_id: p.diver_id, role: p.role, ...(p.mine ? { name: p.name } : { shared_name: p.name }) });
-    byDive.set(p.dive_id, list);
-  }
-  return byDive;
+  const byDive = await participantsOfDives(r.tx, diveIds);
+  return new Map([...byDive].map(([diveId, people]) => [diveId, people.map(({ diverId, role, name }) =>
+    ({ diver_id: diverId, role, ...(r.diverIds.includes(diverId) ? { name } : { shared_name: name }) }))]));
 }
 
 /** A Dive's live Recordings, oldest first, with their device and sample channels. */
