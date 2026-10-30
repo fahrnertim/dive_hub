@@ -5,7 +5,7 @@
 const SERVER = '^apps/server/src/';
 
 // The server's domain modules and the other domain modules each may import (ADR 0053). `name:type` allows type
-// imports only; `routes` is the root routes.ts. A new import between modules adds its entry here, in the same
+// imports only. A new import between modules adds its entry here, in the same
 // commit, with the reason in the commit message; no new ADR needed. Removing an entry is always welcome.
 const MODULE_IMPORTS = {
   assessment: ['divers', 'imports'],
@@ -18,16 +18,16 @@ const MODULE_IMPORTS = {
   lead: ['divers', 'dives'],
   mcp: ['assessment', 'divers', 'dives', 'planning', 'sites'],
   planning: ['divers', 'dives'],
-  providers: ['certifications', 'divers', 'dives', 'imports', 'sites', 'routes'],
+  providers: ['certifications', 'divers', 'dives', 'imports', 'sites'],
   sites: ['dives'],
   suunto: ['imports'],
   users: ['dives'],
 };
-const target = (names) => `${SERVER}(${names.map((n) => (n === 'routes' ? 'routes[.]ts$' : `${n}/`)).join('|')})`;
+const target = (names) => `${SERVER}(${names.join('|')})/`;
 const moduleRules = Object.entries(MODULE_IMPORTS).flatMap(([from, allowed]) => {
   const names = allowed.map((entry) => entry.split(':')[0]);
   const typeOnly = allowed.filter((entry) => entry.endsWith(':type')).map((entry) => entry.split(':')[0]);
-  const others = [...Object.keys(MODULE_IMPORTS), 'routes'].filter((name) => name !== from && !names.includes(name));
+  const others = Object.keys(MODULE_IMPORTS).filter((name) => name !== from && !names.includes(name));
   return [
     ...(others.length > 0 ? [{
       name: `module-imports-${from}`,

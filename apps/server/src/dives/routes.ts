@@ -14,6 +14,7 @@ import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, SITE_WATER_TYPES, WATER_TYPES } 
 import { CYLINDER_CATALOGUE } from './cylinder-catalogue.js';
 import { CylinderError, withoutPressures } from './cylinders.js';
 import { DiveError, type DiveService } from './dive-service.js';
+import { DiveSummaryFields, diveSummaryOf, providersOf } from './dive-summary-view.js';
 import { WeightingError, leadTotalKg, suitOf, weightingFeedbackOf } from './weighting.js';
 import type { Merging } from './merging.js';
 import type { LogbookService } from './logbook-service.js';
@@ -25,10 +26,10 @@ import { REVISION_CAUSES } from './revisions.js';
 import { SAC_MISSING, sacOfDive } from './sac.js';
 import { waterMismatch } from './water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
-import { PositionSchema } from '../sites/routes.js';
+import { PositionSchema } from '../sites/position-view.js';
 import type { CentreService } from '../centres/centre-service.js';
 import type { DiverService } from '../divers/diver-service.js';
-import { VerificationCodeView } from '../centres/routes.js';
+import { VerificationCodeView } from '../centres/verification-code-view.js';
 import type { PushService } from '../providers/push-service.js';
 import type { WaitingPushService } from '../providers/waiting-push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
@@ -296,13 +297,7 @@ const DeletedDiveView = Type.Object({
   id: Type.String(),
   diverId: Type.String(),
   version: Type.Integer({ description: 'Send it back to restore the Dive' }),
-  number: Nullable(Type.Integer()),
-  startsAt: DateTime,
-  utcOffsetSeconds: Nullable(Type.Integer()),
-  utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
-  durationSeconds: Type.Number(),
-  maxDepthM: Nullable(Type.Number()),
-  site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+  ...DiveSummaryFields,
   deletedAt: DateTime,
   mergedInto: Nullable(Type.String({ description: 'The Dive it was merged into (ADR 0038): clients say so and link there' })),
   movedTo: Nullable(Type.String({ description: 'The Dive it became in another Diver\'s logbook when it was moved while linked to a Provider (ADR 0038)' })),
@@ -332,13 +327,7 @@ const Rule = Type.Enum([...LOGBOOK_CHECK_RULES], {
 const PairedDive = {
   id: Type.String(),
   version: Type.Integer({ description: 'Send it when merging' }),
-  number: Nullable(Type.Integer()),
-  startsAt: DateTime,
-  utcOffsetSeconds: Nullable(Type.Integer()),
-  utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
-  durationSeconds: Type.Number(),
-  maxDepthM: Nullable(Type.Number()),
-  site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+  ...DiveSummaryFields,
   fromProvider: Nullable(Type.String()),
   recordings: Type.Integer({ description: 'How many Recordings it has' }),
   at: At,
@@ -579,9 +568,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       response: { 200: Type.Array(MergeCandidate), 404: Problem },
     },
   }, async (request) => (await merging.mergeCandidates(userOf(request).id, request.params.id, request.query.scope)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, deletesItself, rule, answered }) => ({
-    id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
-    utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
-    site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null, fromProvider: d.fromProvider, recordings, at, keeps, bothAt, deletesItself,
+    id: d.id, version: d.version, ...diveSummaryOf(d, siteName), fromProvider: d.fromProvider, recordings, at, keeps, bothAt, deletesItself,
     rule, answered,
   })));
 
@@ -607,13 +594,12 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     const status = request.query.status ?? 'open';
     const list = await checks.list(userOf(request).id, status);
     const short = await checks.shortDives(userOf(request).id, atProvider, status);
-    const remote = await pushes.currentOf([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
-    const at = (id: string) => [...(remote.get(id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber }));
-    const itself = await waitingPushes.deletingItself([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
+    const ids = [...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))];
+    const remote = await pushes.currentOf(ids);
+    const at = (id: string) => providersOf(remote, id);
+    const itself = await waitingPushes.deletingItself(ids);
     const paired = (d: (typeof list)[number]['dives'][number]) => ({
-      id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
-      utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
-      site: d.siteId && d.siteName !== null ? { id: d.siteId, name: d.siteName } : null, fromProvider: d.fromProvider, recordings: d.recordings, at: at(d.id),
+      id: d.id, version: d.version, ...diveSummaryOf(d, d.siteName), fromProvider: d.fromProvider, recordings: d.recordings, at: at(d.id),
     });
     return [...list.map(({ rule, obvious, dives: [a, b] }) => {
       const bothAt = at(b.id).filter((t) => at(a.id).some((m) => m.provider === t.provider)).map((t) => t.provider);

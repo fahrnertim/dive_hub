@@ -14,6 +14,8 @@ import { Problem, problem, useProblemErrors } from './http/problems.js';
 import { createDiveService } from './dives/dive-service.js';
 import { createDeletionService } from './dives/deletion-service.js';
 import { createLogbookService } from './dives/logbook-service.js';
+import { logbookRoutes } from './dives/logbook-routes.js';
+import { importRoutes } from './imports/routes.js';
 import { createMerging } from './dives/merging.js';
 import { createLogbookChecks } from './dives/logbook-checks.js';
 import { createCandidates } from './dives/candidates.js';
@@ -26,7 +28,6 @@ import { leadRoutes } from './lead/routes.js';
 import { createLeadService } from './lead/service.js';
 import { createPlanningService } from './planning/planning-service.js';
 import { planningRoutes } from './planning/routes.js';
-import { apiRoutes } from './routes.js';
 import { createSiteService } from './sites/site-service.js';
 import { siteRoutes } from './sites/routes.js';
 import { createCentreService } from './centres/centre-service.js';
@@ -117,7 +118,8 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   const logbook = createLogbookService(db);
   const divers = createDiverService(db);
   const centres = createCentreService(db, { ssi: ssiCentreDisplayName });
-  await app.register(apiRoutes, { prefix: '/api', auth, imports: deps.imports, logbook, pushes, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
+  await app.register(importRoutes, { prefix: '/api', auth, imports: deps.imports, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
+  await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes });
   const dives = createDiveService(db);
   const checks = createLogbookChecks(db);
   await app.register(diveRoutes, {

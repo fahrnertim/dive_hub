@@ -6,7 +6,7 @@ import { Value } from 'typebox/value';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { CYLINDER_MATERIALS, SUIT_TYPES, SUIT_UNDERGARMENTS } from '../db/schema.js';
-import { replyDiverError } from '../divers/routes.js';
+import { replyDiverError } from '../divers/diver-answers.js';
 import type { Suit } from '../dives/weighting.js';
 import { answerErrors, Problem, problem } from '../http/problems.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';

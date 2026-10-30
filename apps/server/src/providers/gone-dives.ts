@@ -6,6 +6,7 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { dive, diveSite, providerGoneDive, push, type ConnectionRow } from '../db/schema.js';
+import { siteRef } from '../dives/dive-summary-view.js';
 import type { ConnectionService } from './connection-service.js';
 import { compareGone, goneWarning, type GoneCandidate } from './gone-dive-rules.js';
 import { LeaseBusy, type Leases } from './leases.js';
@@ -147,7 +148,7 @@ export function createGoneDiveService(deps: { db: Db; registry: ProviderRegistry
             const d = dives.find((x) => x.id === w.diveId);
             return d ? [{
               diveId: d.id, version: d.version, number: d.number, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource,
-              durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, site: d.siteId && d.siteName !== null ? { id: d.siteId, name: d.siteName } : null,
+              durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, site: siteRef(d.siteId, d.siteName),
               remoteId: w.remoteId, remoteNumber: w.remoteNumber, foundAt: w.foundAt,
             }] : [];
           }).sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime()),

@@ -1,74 +1,27 @@
+// The logbook list (ADR 0017, 0040), a Dive's neighbours in it (ADR 0042), and a Recording's samples for display.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
-import type { Auth } from './auth/auth.js';
-import { requireUser, userOf } from './auth/fastify.js';
-import {
-  DIVE_KINDS, IMPORT_ERROR_CODES, OUTCOME_REASONS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive, importJob,
-} from './db/schema.js';
-import { downsampleMinMax } from './dives/downsample.js';
-import { asksFor, DIVE_ONLY_PATTERN } from './dives/list-filter.js';
-import { DIVE_SORTS, type LogbookService, type RowExtras } from './dives/logbook-service.js';
-import { Problem, problem } from './http/problems.js';
-import type { ImportService } from './imports/import-service.js';
-import type { PushService } from './providers/push-service.js';
-import type { WaitingPushService } from './providers/waiting-push-service.js';
-import { WaitingPushViewSchema, type WaitingPushView } from './providers/waiting-push-view.js';
-import { UploadTooLargeError } from './storage/blob-store.js';
-import { DateTime, IdParams, Nullable } from './http/schemas.js';
+import type { Auth } from '../auth/auth.js';
+import { requireUser, userOf } from '../auth/fastify.js';
+import { PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive } from '../db/schema.js';
+import { Problem, problem } from '../http/problems.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
+import type { PushService } from '../providers/push-service.js';
+import type { WaitingPushService } from '../providers/waiting-push-service.js';
+import { WaitingPushViewSchema, type WaitingPushView } from '../providers/waiting-push-view.js';
+import { diveSummaryOf } from './dive-summary-view.js';
+import { downsampleMinMax } from './downsample.js';
+import { asksFor, DIVE_ONLY_PATTERN } from './list-filter.js';
+import { DIVE_SORTS, type LogbookService, type RowExtras } from './logbook-service.js';
 
-export interface RouteDeps {
-  imports: ImportService;
+export interface LogbookRouteDeps {
+  auth: Auth;
   logbook: LogbookService;
   /** For the logbook's "changed since sent" filter, which needs the adapters' fingerprints. */
   pushes: PushService;
-  /** Which Connections offer an Import's new Dives that weren't sent by themselves (ADR 0056). */
-  waitingPushes: Pick<WaitingPushService, 'offersOf' | 'waitingOf'>;
-  maxUploadBytes: number;
-  auth: Auth;
+  waitingPushes: Pick<WaitingPushService, 'waitingOf'>;
 }
-
-
-export const ImportView = Type.Object({
-  id: Type.String(),
-  status: Type.Enum(['pending', 'processing', 'done', 'failed', 'awaiting_choice', 'cancelled'], {
-    description: 'awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds '
-      + 'to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)',
-  }),
-  uploadName: Type.String({ description: 'The uploaded file\'s name; for an import from a Provider, the Provider\'s name' }),
-  provider: Nullable(Type.String({ description: 'An import of this Provider\'s dives (ADR 0030); null for an upload' })),
-  createdAt: DateTime,
-  finishedAt: Nullable(DateTime),
-  errorCode: Nullable(Type.Enum([...IMPORT_ERROR_CODES], { description: 'Why the Import failed or ended; clients translate it. The detail stays in the server log' })),
-  found: Nullable(Type.Object({
-    scuba: Type.Integer({ description: 'Dives with a gas: open circuit, rebreather, gauge' }),
-    apnea: Type.Integer({ description: 'Apnea sessions' }),
-    otherFiles: Type.Integer({ description: 'Files that are no dive (other sports, health data, anything else); they are not kept' }),
-  }, { description: 'What an upload holds, once it is analysed (ADR 0044); null before, and for an import from a Provider' })),
-  kinds: Nullable(Type.Array(Type.Enum([...DIVE_KINDS]), { description: 'The kinds of dive the User chose to import; null when nobody was asked (all were imported)' })),
-  unsentTo: Type.Array(Type.Object({
-    connectionId: Type.String(),
-    provider: Type.String(),
-    count: Type.Integer({ minimum: 1, description: 'How many of the Import’s new Dives still have no remote dive there' }),
-  }), {
-    description: 'The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) '
-      + 'and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none',
-  }),
-  outcome: Type.Array(Type.Object({
-    fileName: Type.String(),
-    result: Type.Enum(['created', 'attached', 'linked', 'updated', 'unchanged', 'duplicate-candidate', 'skipped', 'failed'], {
-      description: 'linked: a Provider\'s logbook entry tied to a Dive here and filled where it was empty (ADR 0030)',
-    }),
-    diveId: Type.Optional(Type.String()),
-    recordingId: Type.Optional(Type.String()),
-    remoteId: Type.Optional(Type.String({ description: 'A Provider\'s dive: its ID there' })),
-    remoteNumber: Type.Optional(Type.Integer({ description: 'A Provider\'s dive: its own number there' })),
-    reason: Type.Optional(Type.Enum([...OUTCOME_REASONS], { description: 'Why; clients translate it. A failure’s detail stays in the server log' })),
-    decision: Type.Optional(Type.Enum(['open', 'attached', 'new_dive', 'discarded'], {
-      description: 'For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to',
-    })),
-  })),
-});
 
 /** The logbook list (ADR 0017, 0040): a page of Dives, sorted, searched, narrowed by "show only" filters, with the total. */
 const DiveListQuery = Type.Object({
@@ -162,48 +115,15 @@ const SamplesView = Type.Object({
   })),
 });
 
-export const toImportView = (j: typeof importJob.$inferSelect): Static<typeof ImportView> => ({
-  id: j.id, status: j.status, uploadName: j.uploadName, provider: j.provider, createdAt: j.createdAt.toISOString(),
-  // A parser's own words (English, internals) stay in the database and the server log (client contract §6).
-  finishedAt: j.finishedAt?.toISOString() ?? null, outcome: j.outcome.map(({ message: _detail, ...o }) => o),
-  errorCode: j.error === null ? null : j.error === 'unsupported_file' || j.error === 'choice_expired' ? j.error : 'processing_failed',
-  found: j.found, kinds: j.kinds, unsentTo: [],
-});
-/**
- * An Import's outcome is stored once; a Duplicate candidate is decided later. Adds the current
- * decision (and the Dive the Recording went to) so the client doesn't show a stale "needs your decision".
- */
-async function withDecisions(
-  imports: ImportService, waitingPushes: RouteDeps['waitingPushes'], userId: string, rows: (typeof importJob.$inferSelect)[],
-) {
-  const views = rows.map(toImportView);
-  const offers = await waitingPushes.offersOf(userId, views.map((v) => v.id));
-  for (const v of views) v.unsentTo = offers.get(v.id) ?? [];
-  const ids = views.flatMap((v) => v.outcome.filter((o) => o.result === 'duplicate-candidate' && o.recordingId).map((o) => o.recordingId!));
-  if (ids.length === 0) return views;
-  const byRecording = await imports.decisionsOf(ids);
-  for (const v of views) {
-    v.outcome = v.outcome.map((o) => {
-      const d = o.result === 'duplicate-candidate' && o.recordingId ? byRecording.get(o.recordingId) : undefined;
-      if (!d) return o;
-      const decision = d.resolution ?? 'open';
-      return { ...o, decision, ...(d.diveId && decision !== 'discarded' && { diveId: d.diveId }) };
-    });
-  }
-  return views;
-}
-
 const toDiveSummary = (
   d: typeof dive.$inferSelect, siteName: string | null, findings: number, extras: RowExtras, waiting: WaitingPushView[],
 ): Static<typeof DiveSummaryView> => ({
   findings, ...extras, waiting, fromProvider: d.fromProvider,
-  site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
-  id: d.id, diverId: d.diverId, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
-  utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, avgDepthM: d.avgDepthM,
+  id: d.id, diverId: d.diverId, ...diveSummaryOf(d, siteName), avgDepthM: d.avgDepthM,
 });
 
-export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps) => {
-  const { imports, logbook } = deps;
+export const logbookRoutes: FastifyPluginAsyncTypebox<LogbookRouteDeps> = async (app, deps) => {
+  const { logbook } = deps;
 
   // Every logbook route needs a signed-in User and only shows what that User may see.
   app.addHook('onRequest', requireUser(deps.auth));
@@ -211,59 +131,6 @@ export const apiRoutes: FastifyPluginAsyncTypebox<RouteDeps> = async (app, deps)
 
   /** Divers the signed-in User manages; all logbook reads are scoped to them. */
   const managedDivers = async (request: FastifyRequest) => await logbook.managedDivers(userId(request));
-
-  app.post('/imports', {
-    schema: {
-      summary: 'Upload a FIT file or a zip archive (e.g. Garmin "Export Original") for import',
-      consumes: ['multipart/form-data'],
-      response: { 202: ImportView, 400: Problem, 413: Problem },
-    },
-  }, async (request, reply) => {
-    const file = await request.file();
-    if (!file) return reply.code(400).send(problem('upload_missing'));
-    try {
-      const created = await imports.createImport(userId(request), file.filename, file.file, deps.maxUploadBytes);
-      return reply.code(202).send(toImportView(created));
-    } catch (error) {
-      if (error instanceof UploadTooLargeError) return reply.code(413).send(problem('upload_too_large', error.message));
-      throw error;
-    }
-  });
-
-  app.get('/imports', {
-    schema: { summary: 'Recent Imports of the signed-in User', response: { 200: Type.Array(ImportView) } },
-  }, async (request) => {
-    return withDecisions(imports, deps.waitingPushes, userId(request), await imports.recentImports(userId(request)));
-  });
-
-  app.get('/imports/:id', {
-    schema: { summary: 'One Import with its outcome', params: IdParams, response: { 200: ImportView, 404: Problem } },
-  }, async (request, reply) => {
-    const row = await imports.findImport(userId(request), request.params.id);
-    return row ? (await withDecisions(imports, deps.waitingPushes, userId(request), [row]))[0]! : reply.code(404).send(problem('import_not_found'));
-  });
-
-  app.post('/imports/:id/start', {
-    schema: {
-      summary: 'Start an Import that waits for a choice: import these kinds of dive, leave the others out (ADR 0044)',
-      params: IdParams,
-      body: Type.Object({ kinds: Type.Array(Type.Enum([...DIVE_KINDS]), { minItems: 1, maxItems: DIVE_KINDS.length, uniqueItems: true }) }),
-      response: { 202: ImportView, 409: Problem },
-    },
-  }, async (request, reply) => {
-    const started = await imports.startImport(userId(request), request.params.id, request.body.kinds);
-    return started ? reply.code(202).send(toImportView(started)) : reply.code(409).send(problem('import_not_waiting'));
-  });
-
-  app.post('/imports/:id/cancel', {
-    schema: {
-      summary: 'Cancel an Import that waits for a choice: its upload is removed, nothing was imported (ADR 0044)',
-      params: IdParams, response: { 200: ImportView, 409: Problem },
-    },
-  }, async (request, reply) => {
-    const cancelled = await imports.cancelImport(userId(request), request.params.id);
-    return cancelled ? toImportView(cancelled) : reply.code(409).send(problem('import_not_waiting'));
-  });
 
   /** What the list shows and in which order: the Diver, search and filters, shared by the page and a Dive's neighbours (ADR 0042). */
   const listScope = async (request: FastifyRequest, query: Static<typeof DiveListQuery>, { counts = false } = {}) => {

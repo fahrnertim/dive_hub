@@ -5,31 +5,17 @@ import { Type } from 'typebox';
 import { requireAdmin, userOf } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import { DIVE_IMPORT_MODES, UTC_OFFSET_SOURCES } from '../db/schema.js';
-import { ImportView, toImportView } from '../routes.js';
+import { DiveSummaryFields } from '../dives/dive-summary-view.js';
+import { ImportView, toImportView } from '../imports/import-view.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 import { ConflictValue } from './conflict-view.js';
-import { GoneSummary } from './decision-routes.js';
 import type { DiveImportService } from './dive-import.js';
-import { errors, ProviderParam } from './route-parts.js';
+import { Choice, ComputerChoices, errors, GoneSummary, ProviderParam } from './route-parts.js';
 import { SYNCED_FIELDS } from './three-way.js';
-
-const Choice = Type.Enum(['recordings', 'entries'], {
-  description: 'recordings: its dives become Recordings, like a file\'s; entries: only logbook entries that fill Dives here',
-});
-/** The choice per dive computer, as the preview and PATCH /api/connections/{id} take it. */
-export const ComputerChoices = Type.Array(Type.Object({ key: Type.String({ maxLength: 200 }), choice: Choice }, { additionalProperties: false }), {
-  maxItems: 100, description: 'Per dive computer found at the Provider (its key from the preview): how its dives are used',
-});
 
 const Candidate = Type.Object({
   diveId: Type.String(),
-  number: Nullable(Type.Integer()),
-  startsAt: DateTime,
-  utcOffsetSeconds: Nullable(Type.Integer()),
-  utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
-  durationSeconds: Type.Number(),
-  maxDepthM: Nullable(Type.Number()),
-  site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+  ...DiveSummaryFields,
   probablyNoDive: Type.Boolean({
     description: 'A Recording under 2 minutes that stayed above 3 m (a false start): the entry never links to it by itself, so it is asked about even as the only Dive',
   }),

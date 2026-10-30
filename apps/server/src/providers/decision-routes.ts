@@ -5,22 +5,14 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import { userOf } from '../auth/fastify.js';
 import { Problem } from '../http/problems.js';
-import { UTC_OFFSET_SOURCES } from '../db/schema.js';
+import { DiveSummaryFields } from '../dives/dive-summary-view.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 import { ConflictChoices, ConflictFieldView } from './conflict-view.js';
 import type { ConflictService } from './conflicts.js';
 import type { GoneDiveService } from './gone-dives.js';
 import type { ProviderRegistry } from './registry.js';
-import { DiveProviderParams, errors } from './route-parts.js';
+import { DiveProviderParams, errors, GoneSummary } from './route-parts.js';
 import type { WaitingPushService } from './waiting-push-service.js';
-
-/** What a fresh, complete read of the logbook found gone; also part of the import preview. */
-export const GoneSummary = Type.Object({
-  empty: Type.Boolean({ description: 'The Provider\'s logbook came back empty: nothing was compared, and an empty logbook is never a finding' }),
-  compared: Type.Integer({ description: 'Dives compared: live, and sent or linked through this Connection' }),
-  gone: Type.Integer({ description: 'Dives whose remote dive is not in the logbook and wait for the User\'s choice (GET /api/gone-dives)' }),
-  warning: Type.Boolean({ description: 'More than half of at least five compared Dives are gone: say so, and to look at the Provider\'s app first' }),
-}, { description: 'Dives gone at the Provider (ADR 0051), found by this fresh, complete read; stored, nothing else changes' });
 
 const GoneDivesView = Type.Object({
   connectionId: Type.String(),
@@ -33,13 +25,7 @@ const GoneDivesView = Type.Object({
   dives: Type.Array(Type.Object({
     diveId: Type.String(),
     version: Type.Integer({ description: 'The version to send when deleting the Dive (DELETE /api/dives/{id})' }),
-    number: Nullable(Type.Integer()),
-    startsAt: DateTime,
-    utcOffsetSeconds: Nullable(Type.Integer()),
-    utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
-    durationSeconds: Type.Number(),
-    maxDepthM: Nullable(Type.Number()),
-    site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+    ...DiveSummaryFields,
     remoteId: Type.String(),
     remoteNumber: Nullable(Type.Integer()),
     foundAt: DateTime,
@@ -52,13 +38,7 @@ const ConflictsView = Type.Object({
   providerName: Type.String(),
   entries: Type.Array(Type.Object({
     diveId: Type.String(),
-    number: Nullable(Type.Integer()),
-    startsAt: DateTime,
-    utcOffsetSeconds: Nullable(Type.Integer()),
-    utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
-    durationSeconds: Type.Number(),
-    maxDepthM: Nullable(Type.Number()),
-    site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+    ...DiveSummaryFields,
     kind: Type.Enum(['conflict', 'exists'], {
       description: 'conflict: fields changed on both sides, the User chooses per field. exists: the Provider already has a dive at the Dive\'s time and the send waits (fields is empty): '
         + '"<Provider> already has a dive at this time" with "Link to it" and "Create a new one"',

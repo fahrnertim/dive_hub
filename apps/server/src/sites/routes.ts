@@ -8,6 +8,7 @@ import { answerErrors, answers, Problem, problem } from '../http/problems.js';
 import { REVISION_CAUSES } from '../dives/revisions.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { NEARBY_M, SITE_SORTS, SiteError, type ExternalIdRow, type SiteService } from './site-service.js';
+import { PositionSchema } from './position-view.js';
 import { IMPORT_SOURCES, SITE_SOURCES, SOURCE_INFO } from './sources.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
@@ -17,11 +18,6 @@ export interface SiteRouteDeps {
 }
 
 /** Null first, so Fastify's coercion keeps a null a null (ADR 0015). */
-
-export const PositionSchema = Type.Object({
-  latitude: Type.Number({ minimum: -90, maximum: 90 }),
-  longitude: Type.Number({ minimum: -180, maximum: 180 }),
-}, { additionalProperties: false, description: 'WGS84 degrees' });
 
 const Name = Type.String({ minLength: 1, maxLength: 120, pattern: '\\S' });
 const Country = Nullable(Type.String({ pattern: '^[A-Z]{2}$', description: 'ISO 3166-1 alpha-2, e.g. "EG"' }));

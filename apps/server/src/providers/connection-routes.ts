@@ -11,10 +11,9 @@ import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 import { automationOffers, type ConnectionService } from './connection-service.js';
 import type { ConflictService } from './conflicts.js';
 import type { DiveImportService } from './dive-import.js';
-import { ComputerChoices } from './dive-import-routes.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
 import type { ProviderRegistry } from './registry.js';
-import { errors, ProviderParam } from './route-parts.js';
+import { ComputerChoices, errors, ProviderParam } from './route-parts.js';
 import type { ScheduledFetch } from './scheduled-fetch.js';
 import type { WaitingPushService } from './waiting-push-service.js';
 

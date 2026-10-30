@@ -2,6 +2,7 @@
 import type { PushService, Removal } from '../providers/push-service.js';
 import type { WaitingPushService } from '../providers/waiting-push-service.js';
 import { DiveError, type DiveService } from './dive-service.js';
+import { diveSummaryOf, providersOf } from './dive-summary-view.js';
 import type { LogbookService } from './logbook-service.js';
 
 export interface DeletionDeps {
@@ -44,11 +45,9 @@ export function createDeletionService({ dives, logbook, pushes, waitingPushes }:
       const remote = await pushes.currentOf(rows.map((r) => r.d.id));
       const waiting = await waitingPushes.waitingOf(rows.map((r) => r.d.id));
       return rows.map(({ d, siteName, mergedInto, movedTo }) => ({
-        id: d.id, diverId: d.diverId, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(),
-        utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
-        site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
+        id: d.id, diverId: d.diverId, version: d.version, ...diveSummaryOf(d, siteName),
         deletedAt: d.deletedAt!.toISOString(), mergedInto, movedTo,
-        stillAt: [...(remote.get(d.id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber })),
+        stillAt: providersOf(remote, d.id),
         waiting: waiting.get(d.id) ?? [],
       }));
     },

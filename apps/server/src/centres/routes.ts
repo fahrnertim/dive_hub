@@ -8,6 +8,7 @@ import { answerErrors, answers, Problem, problem } from '../http/problems.js';
 import type { DiverService } from '../divers/diver-service.js';
 import { CENTRE_SOURCE_NAME, CENTRE_SOURCES, CentreError, type CentreService } from './centre-service.js';
 import { IdParams, Nullable } from '../http/schemas.js';
+import { VerificationCodeView } from './verification-code-view.js';
 
 export interface CentreRouteDeps {
   auth: Auth;
@@ -18,11 +19,6 @@ export interface CentreRouteDeps {
 const Name = Type.String({ minLength: 1, maxLength: 200, pattern: '\\S', description: 'As the centre spells it; for an SSI code, exactly as SSI does' });
 const Source = Type.Enum([...CENTRE_SOURCES]);
 const TypedId = Type.String({ minLength: 1, maxLength: 300, description: 'As the User typed or pasted it: the bare number, or the centre\'s whole code' });
-
-export const VerificationCodeView = Type.Object({
-  provider: Source,
-  text: Type.String({ description: 'Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md)' }),
-}, { description: 'The code a diver scans in the Provider\'s app so that it shows a dive as verified (ADR 0043). Not a secret' });
 
 const CentreView = Type.Object({
   id: Type.String(),

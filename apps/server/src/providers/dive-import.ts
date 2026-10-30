@@ -18,6 +18,7 @@ import { deviceDiver, placeRecording } from '../imports/placement.js';
 import { DAY_MS, MAX_OFFSET_MS, entryMatches } from '../imports/matching.js';
 import { recordFindings } from './gone-dives.js';
 import { probablyNoDive } from '../dives/logbook-check-rules.js';
+import { siteRef } from '../dives/dive-summary-view.js';
 import { siteOutlook } from '../sites/provider-sites.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import type { ConnectionService } from './connection-service.js';
@@ -269,7 +270,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         kind: 'decide',
         candidates: live.map((m) => ({
           diveId: m.id, number: m.number, startsAt: m.startsAt, utcOffsetSeconds: m.utcOffsetSeconds, utcOffsetSource: m.utcOffsetSource,
-          durationSeconds: m.durationSeconds, maxDepthM: m.maxDepthM, site: m.siteId && m.siteName !== null ? { id: m.siteId, name: m.siteName } : null,
+          durationSeconds: m.durationSeconds, maxDepthM: m.maxDepthM, site: siteRef(m.siteId, m.siteName),
           probablyNoDive: noDive.has(m.id),
         })),
       };

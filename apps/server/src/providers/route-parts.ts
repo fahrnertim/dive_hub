@@ -1,4 +1,5 @@
-// What the Provider route plugins share: the Provider params and how a refusal about a Provider is answered.
+// What the Provider route plugins share: the Provider params, the schemas several of them use, and how a refusal about a
+// Provider is answered.
 import type { FastifyReply } from 'fastify';
 import { Type } from 'typebox';
 import { type ErrorAnswer, Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
@@ -26,6 +27,22 @@ const ProviderProblem = Type.Object({
   ...Problem.properties,
   unmet: Type.Optional(Type.Array(UnmetView, { description: 'With provider_requirements_unmet: every requirement unmet, blocking ones among them' })),
 });
+export const Choice = Type.Enum(['recordings', 'entries'], {
+  description: 'recordings: its dives become Recordings, like a file\'s; entries: only logbook entries that fill Dives here',
+});
+/** The choice per dive computer, as the preview and PATCH /api/connections/{id} take it. */
+export const ComputerChoices = Type.Array(Type.Object({ key: Type.String({ maxLength: 200 }), choice: Choice }, { additionalProperties: false }), {
+  maxItems: 100, description: 'Per dive computer found at the Provider (its key from the preview): how its dives are used',
+});
+
+/** What a fresh, complete read of the logbook found gone; also part of the import preview. */
+export const GoneSummary = Type.Object({
+  empty: Type.Boolean({ description: 'The Provider\'s logbook came back empty: nothing was compared, and an empty logbook is never a finding' }),
+  compared: Type.Integer({ description: 'Dives compared: live, and sent or linked through this Connection' }),
+  gone: Type.Integer({ description: 'Dives whose remote dive is not in the logbook and wait for the User\'s choice (GET /api/gone-dives)' }),
+  warning: Type.Boolean({ description: 'More than half of at least five compared Dives are gone: say so, and to look at the Provider\'s app first' }),
+}, { description: 'Dives gone at the Provider (ADR 0051), found by this fresh, complete read; stored, nothing else changes' });
+
 /** The refusals a Provider route answers with. */
 export const errors = { 400: Problem, 404: Problem, 409: ProviderProblem, 422: Problem, 502: Problem };
 

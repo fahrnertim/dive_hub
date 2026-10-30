@@ -9,6 +9,7 @@
 import { and, desc, eq, inArray, or } from 'drizzle-orm';
 import type { Db, Queryable } from '../db/client.js';
 import { connection, dive, diveSite, providerConflict, push, waitingPush, type ConnectionRow } from '../db/schema.js';
+import { siteRef } from '../dives/dive-summary-view.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import type { ConnectionService } from './connection-service.js';
 import { createDiveChanges, type ProviderRun, type ShownValue } from './dive-changes.js';
@@ -139,7 +140,7 @@ export function createConflictService(deps: { db: Db; connections: ConnectionSer
   type ShownDive = Awaited<ReturnType<typeof divesOf>>[number];
   const shown = (d: ShownDive) => ({
     diveId: d.id, number: d.number, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource,
-    durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, site: d.siteId && d.siteName !== null ? { id: d.siteId, name: d.siteName } : null,
+    durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, site: siteRef(d.siteId, d.siteName),
   });
 
   /**

@@ -5,8 +5,9 @@ import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { CERTIFICATION_IMAGE_STATES, CERTIFICATION_VERIFICATIONS } from '../db/schema.js';
-import { answerErrors, answers, Problem } from '../http/problems.js';
-import { CertificationError, type CertificationService } from './certification-service.js';
+import { answerErrors, Problem } from '../http/problems.js';
+import { replyCertificationError } from './certification-answers.js';
+import type { CertificationService } from './certification-service.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface CertificationRouteDeps {
@@ -60,13 +61,6 @@ const Fields = {
   notes: Type.Optional(Nullable(Text(2000))),
   cardSeen: Type.Optional(Type.Boolean({ description: 'The User has looked at the card: verification card_seen instead of self_declared' })),
 };
-
-export const CERTIFICATION_STATUS: Record<CertificationError['code'], number> = {
-  diver_not_found: 404, certification_not_found: 404, certification_image_not_found: 404,
-  certification_changed: 409, certification_read_only: 409, invalid_input: 400,
-};
-
-export const replyCertificationError = answers(CertificationError, CERTIFICATION_STATUS);
 
 const errors = { 400: Problem, 404: Problem, 409: Problem };
 
