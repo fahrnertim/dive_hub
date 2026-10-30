@@ -12,6 +12,7 @@ import type { Db } from './db/client.js';
 import type { ImportService } from './imports/import-service.js';
 import { Problem, problem, useProblemErrors } from './http/problems.js';
 import { createDiveService } from './dives/dive-service.js';
+import { createDeletionService } from './dives/deletion-service.js';
 import { createLogbookService } from './dives/logbook-service.js';
 import { createMerging } from './dives/merging.js';
 import { createLogbookChecks } from './dives/logbook-checks.js';
@@ -115,7 +116,11 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   const divers = createDiverService(db);
   const centres = createCentreService(db);
   await app.register(apiRoutes, { prefix: '/api', auth, imports: deps.imports, logbook, pushes, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
-  await app.register(diveRoutes, { prefix: '/api', auth, logbook, divers, centres, dives: createDiveService(db), merging: createMerging(db), checks: createLogbookChecks(db), pushes, waitingPushes, assessments });
+  const dives = createDiveService(db);
+  await app.register(diveRoutes, {
+    prefix: '/api', auth, logbook, divers, centres, dives, merging: createMerging(db), checks: createLogbookChecks(db), pushes, waitingPushes,
+    deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }), assessments,
+  });
   await app.register(candidateRoutes, { prefix: '/api', auth, candidates: createCandidates(db), assessments });
   await app.register(assessmentRoutes, { prefix: '/api', auth, assessments });
   await app.register(diverRoutes, { prefix: '/api', auth, divers, certifications });

@@ -17,6 +17,7 @@ import { DiveError, type DiveService } from './dive-service.js';
 import { WeightingError, leadTotalKg, suitOf, weightingFeedbackOf } from './weighting.js';
 import type { Merging } from './merging.js';
 import type { LogbookService } from './logbook-service.js';
+import type { DeletionService } from './deletion-service.js';
 import { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
 import type { LogbookChecks } from './logbook-checks.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
@@ -47,9 +48,10 @@ export interface DiveRouteDeps {
   merging: Merging;
   /** What in a logbook can't be right as it stands (ADR 0038). */
   checks: LogbookChecks;
-  /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
   pushes: PushService;
-  waitingPushes: Pick<WaitingPushService, 'deletingItself' | 'waitingOf'>;
+  waitingPushes: Pick<WaitingPushService, 'deletingItself'>;
+  /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
+  deletion: DeletionService;
   assessments: AssessmentService;
 }
 
@@ -388,7 +390,7 @@ const DeleteProblem = Type.Object({
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, assessments }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
   refreshAssessmentsAfterChange(app, assessments);
 
@@ -718,18 +720,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request, reply) => {
     const { version, alsoAt = [] } = request.body;
-    const row = await findDive(request, request.params.id);
-    if (!row) return reply.code(404).send(problem('dive_not_found'));
-    // Checked before any Provider is asked, so a changed Dive isn't deleted there and then kept here.
-    if (row.version !== version) return reply.code(409).send(problem('dive_changed'));
-    const at = [...((await pushes.currentOf([row.id])).get(row.id)?.keys() ?? [])];
-    // Where the Dive's Connection deletes by itself, the queue does it after 5 minutes, even when `alsoAt` names it (Undo cancels it).
-    const itself = (await waitingPushes.deletingItself([row.id])).get(row.id);
-    const asked = at.filter((provider) => alsoAt.includes(provider) && !itself?.has(provider));
-    const { copies, failure } = asked.length > 0 ? await pushes.removeAt(userOf(request).id, row.id, asked) : { copies: [], failure: null };
-    const providers = at.map((provider) => ({ provider, copy: copies.find((c) => c.provider === provider)?.copy ?? 'kept' as const }));
+    const { providers, failure } = await deletion.remove(userOf(request).id, request.params.id, version, alsoAt);
     if (failure) return replyProviderError(failure, reply, { providers });
-    await dives.remove(userOf(request).id, row.id, version);
     return { providers };
   });
 
@@ -738,19 +730,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       summary: 'The User\'s deleted Dives, most recently deleted first (at most 100), to restore them; which Providers they are still at',
       response: { 200: Type.Array(DeletedDiveView) },
     },
-  }, async (request) => {
-    const rows = await logbook.deletedDives(userOf(request).id, DELETED_SHOWN);
-    const remote = await pushes.currentOf(rows.map((r) => r.d.id));
-    const waiting = await waitingPushes.waitingOf(rows.map((r) => r.d.id));
-    return rows.map(({ d, siteName, mergedInto, movedTo }) => ({
-      id: d.id, diverId: d.diverId, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(),
-      utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
-      site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
-      deletedAt: d.deletedAt!.toISOString(), mergedInto, movedTo,
-      stillAt: [...(remote.get(d.id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber })),
-      waiting: waiting.get(d.id) ?? [],
-    }));
-  });
+  }, async (request) => deletion.deleted(userOf(request).id, DELETED_SHOWN));
 
   app.post('/dives/:id/restore', {
     schema: {
