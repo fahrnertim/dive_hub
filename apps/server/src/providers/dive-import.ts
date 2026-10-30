@@ -94,6 +94,16 @@ type Assessment =
 /** What changed at the Provider since Dive Hub last saw a linked dive, compared with the Dive here. */
 type FoundChanges = NonNullable<Awaited<ReturnType<ReturnType<typeof createDiveChanges>['changesOf']>>>;
 
+/** The preview's count each assessment adds to; `unchosen` only comes unattended, and isn't counted. */
+const COUNTED = {
+  ours: 'ours', linked: 'linked', deleted: 'deleted', recording: 'recordings', link: 'link', decide: 'decide', create: 'create',
+  no_match: 'noMatch', unchosen: null,
+} as const satisfies Record<Assessment['kind'], string | null>;
+
+/** The preview's site count a site's outlook adds to: a new one is created only where an admin allowed the site data. */
+const siteCounted = (kind: string, allowed: boolean) =>
+  kind === 'known' || kind === 'match' ? kind : kind === 'new' && allowed ? 'create' : 'missing';
+
 const keyOf = (d: { manufacturer: string; serialNumber: string }) => `${d.manufacturer}:${d.serialNumber}`;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -122,6 +132,16 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const context = await withRemembered(db, row.diverId, adapter.accountSource, listing.context);
     const parsed = listing.records.map(({ remoteId, record }) => ({ remoteId, record, dive: parse(record, context) }));
     return { row, adapter, context, parsed };
+  }
+
+  /** `read`, with the readable dives and the run over them, no computer chosen yet: what preview and start begin with. */
+  async function readRun(userId: string, connectionId: string, options: { recent?: boolean } = {}) {
+    const { row, adapter, context, parsed } = await read(userId, connectionId, options);
+    const dives = parsed.flatMap((p) => (p.dive ? [p.dive] : []));
+    const run = await runOf(db, userId, adapter, {
+      diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {}, context,
+    });
+    return { row, adapter, context, parsed, dives, run };
   }
 
   /** The computers among the dives, with the User's choice kept on the Connection, else the suggestion. */
@@ -426,6 +446,58 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     return null;
   }
 
+  /**
+   * A preview's counts of how the dives go (`dives` oldest first) and the logbook entries the User decides. Changed:
+   * linked dives changed at the Provider since Dive Hub last saw them (ADR 0030, amended); a field of the Dive's open
+   * entry is shown as a Conflict, never as a change to take.
+   */
+  async function previewDives(run: ProviderRun, parsed: number, dives: ImportedDive[]) {
+    const counts = { total: parsed, unreadable: parsed - dives.length, ours: 0, linked: 0, deleted: 0, recordings: 0, link: 0, decide: 0, create: 0, noMatch: 0, changed: 0 };
+    const conflicts: ConflictView[] = [];
+    const decisions: { remoteId: string; remoteNumber: number | null; localStart: string; durationSeconds: number; maxDepthM: number | null; candidates: CandidateView[] }[] = [];
+    for (const d of dives) {
+      const a = await assess(db, run, d);
+      const counted = COUNTED[a.kind];
+      if (counted) counts[counted] += 1;
+      if (a.kind === 'decide') {
+        decisions.push({
+          remoteId: d.remoteId, remoteNumber: d.remoteNumber, localStart: d.localStart, durationSeconds: d.durationSeconds,
+          maxDepthM: d.maxDepthM, candidates: a.candidates,
+        });
+      }
+      const diveId = await diveOfLinked(run, a, d);
+      const found = diveId ? await changesOf(db, run, diveId, d) : null;
+      if (!diveId || !found) continue;
+      const { take, conflicts: clashes } = await held(db, run, diveId, d, found);
+      if (take.length > 0) counts.changed += 1;
+      for (const field of clashes) {
+        conflicts.push({
+          remoteId: d.remoteId, remoteNumber: d.remoteNumber, diveId, number: found.here.row.number, field,
+          startsAt: found.here.row.startsAt, utcOffsetSeconds: found.here.row.utcOffsetSeconds, utcOffsetSource: found.here.row.utcOffsetSource,
+          hub: await shown(run, field, found.here.hub, found.here.row.siteId), provider: await shown(run, field, found.provider, null),
+        });
+      }
+    }
+    return { counts, decisions, conflicts };
+  }
+
+  /** The sites the dives name (not those Dive Hub sent), each once: here already, the same as one here, or new. */
+  async function previewSites(run: ProviderRun, dives: ImportedDive[]) {
+    const sites = { known: 0, match: 0, create: 0, missing: 0 };
+    const seen = new Set<string>();
+    for (const d of dives) {
+      if (d.evidence === 'ours') continue;
+      for (const site of await sitesOf(db, run, d)) {
+        const key = `${site.source}:${site.externalId}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const { kind } = site.name ? await siteOutlook(db, site) : { kind: 'taken' as const };
+        sites[siteCounted(kind, run.sitesAllowed)] += 1;
+      }
+    }
+    return sites;
+  }
+
   /** One dive of a running Import, in its own transaction. `seen`: its Original came with an earlier Import unchanged. */
   async function processDive(
     tx: Tx, run: ProviderRun, plan: ProviderImportPlan, d: ImportedDive, at: { importId: string; originalId: string; fileName: string; seen: boolean },
@@ -547,65 +619,14 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
      * store what the fresh listing shows gone (ADR 0051), as findings.
      */
     async preview(userId: string, connectionId: string) {
-      const { row, adapter, context, parsed } = await read(userId, connectionId);
-      const dives = parsed.flatMap((p) => (p.dive ? [p.dive] : []));
-      const run = await runOf(db, userId, adapter, {
-        diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {}, context,
-      });
+      const { row, parsed, dives, run } = await readRun(userId, connectionId);
       // Dives whose remote dive isn't in this fresh, complete listing (ADR 0051): stored as findings, nothing else changes.
       const goneDives = await recordFindings(db, row, parsed);
       const computers = await computersOf(db, run, dives, row.importComputers);
       run.choices = Object.fromEntries(computers.map((c) => [c.key, c.choice]));
-      const counts = { total: parsed.length, unreadable: parsed.length - dives.length, ours: 0, linked: 0, deleted: 0, recordings: 0, link: 0, decide: 0, create: 0, noMatch: 0, changed: 0 };
-      const conflicts: ConflictView[] = [];
-      const decisions: { remoteId: string; remoteNumber: number | null; localStart: string; durationSeconds: number; maxDepthM: number | null; candidates: CandidateView[] }[] = [];
-      for (const d of dives.sort((a, b) => a.localStart.localeCompare(b.localStart))) {
-        const a = await assess(db, run, d);
-        if (a.kind === 'ours') counts.ours += 1;
-        else if (a.kind === 'linked') counts.linked += 1;
-        else if (a.kind === 'deleted') counts.deleted += 1;
-        else if (a.kind === 'recording') counts.recordings += 1;
-        else if (a.kind === 'link') counts.link += 1;
-        else if (a.kind === 'create') counts.create += 1;
-        else if (a.kind === 'no_match') counts.noMatch += 1;
-        else if (a.kind === 'decide') {
-          counts.decide += 1;
-          decisions.push({
-            remoteId: d.remoteId, remoteNumber: d.remoteNumber, localStart: d.localStart, durationSeconds: d.durationSeconds,
-            maxDepthM: d.maxDepthM, candidates: a.candidates,
-          });
-        }
-        // Changed at the Provider since Dive Hub last saw it (ADR 0030, amended).
-        const diveId = await diveOfLinked(run, a, d);
-        const found = diveId ? await changesOf(db, run, diveId, d) : null;
-        if (!found) continue;
-        // A field of the Dive's open entry is shown as a Conflict, never as a change to take.
-        const { take, conflicts: clashes } = await held(db, run, diveId!, d, found);
-        if (take.length > 0) counts.changed += 1;
-        for (const field of clashes) {
-          conflicts.push({
-            remoteId: d.remoteId, remoteNumber: d.remoteNumber, diveId: diveId!, number: found.here.row.number, field,
-            startsAt: found.here.row.startsAt, utcOffsetSeconds: found.here.row.utcOffsetSeconds, utcOffsetSource: found.here.row.utcOffsetSource,
-            hub: await shown(run, field, found.here.hub, found.here.row.siteId), provider: await shown(run, field, found.provider, null),
-          });
-        }
-      }
-      // The sites the dives name (not those Dive Hub sent): here already, the same as one here, or new.
-      const sites = { known: 0, match: 0, create: 0, missing: 0 };
-      const seen = new Set<string>();
-      for (const d of dives) {
-        if (d.evidence === 'ours') continue;
-        for (const site of await sitesOf(db, run, d)) {
-          const key = `${site.source}:${site.externalId}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          const outlook = site.name ? await siteOutlook(db, site) : { kind: 'taken' as const };
-          if (outlook.kind === 'known') sites.known += 1;
-          else if (outlook.kind === 'match') sites.match += 1;
-          else if (outlook.kind === 'new' && run.sitesAllowed) sites.create += 1;
-          else sites.missing += 1;
-        }
-      }
+      dives.sort((x, y) => x.localStart.localeCompare(y.localStart));
+      const { counts, decisions, conflicts } = await previewDives(run, parsed.length, dives);
+      const sites = await previewSites(run, dives);
       return { mode: row.importMode, windowMinutes: row.importWindowMinutes, computers, counts, sites, sitesAllowed: run.sitesAllowed, decisions, conflicts, goneDives };
     },
 
@@ -620,12 +641,8 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       computers: Record<string, ComputerChoice>; decisions: Record<string, string>; conflicts?: Record<string, 'hub' | 'provider'>;
       unattended?: boolean;
     }) {
-      const { row, adapter, context, parsed } = await read(userId, connectionId, { recent: !given.unattended });
+      const { row, adapter, context, parsed, dives, run } = await readRun(userId, connectionId, { recent: !given.unattended });
       if (given.unattended) await recordFindings(db, row, parsed);
-      const dives = parsed.flatMap((p) => (p.dive ? [p.dive] : []));
-      const run = await runOf(db, userId, adapter, {
-        diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {}, context,
-      });
       const saved = { ...row.importComputers, ...given.computers };
       const computers = (await computersOf(db, run, dives, saved)).filter((c) => !given.unattended || saved[c.key] !== undefined);
       const choices = Object.fromEntries(computers.map((c) => [c.key, c.choice]));
