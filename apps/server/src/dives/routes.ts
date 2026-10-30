@@ -16,12 +16,12 @@ import { CylinderError, withoutPressures } from './cylinders.js';
 import { DiveError, type DiveService } from './dive-service.js';
 import { DiveSummaryFields, diveSummaryOf, providersOf } from './dive-summary-view.js';
 import { WeightingError, leadTotalKg, suitOf, weightingFeedbackOf } from './weighting.js';
-import type { Merging } from './merging.js';
+import type { MergingService } from './merging-service.js';
 import type { LogbookService } from './logbook-service.js';
 import type { DeletionService } from './deletion-service.js';
 import type { MergeService } from './merge-service.js';
 import { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
-import type { LogbookChecks } from './logbook-checks.js';
+import type { LogbookCheckService } from './logbook-check-service.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
 import { REVISION_CAUSES } from './revisions.js';
 import { SAC_MISSING, sacOfDive } from './sac.js';
@@ -46,9 +46,9 @@ export interface DiveRouteDeps {
   divers: DiverService;
   centres: CentreService;
   /** Merging two Dives and moving one to another Diver (ADR 0038). */
-  merging: Merging;
+  merging: MergingService;
   /** What in a logbook can't be right as it stands (ADR 0038). */
-  checks: LogbookChecks;
+  checks: LogbookCheckService;
   pushes: PushService;
   waitingPushes: Pick<WaitingPushService, 'deletingItself'>;
   /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */

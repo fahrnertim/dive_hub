@@ -2,10 +2,10 @@
 // `round-trip.ts twoway start | send | clear | finish`. It writes to the real SSI account: one throwaway dive dated
 // 2000-01-04 10:00 (notes "Dive Hub test", lead 6 kg), which `finish` deletes again. It prints only that dive's keys.
 // It runs the push service's comparison (`planSend`, no database) with the base saved by `start` and sends with
-// `updateRecord(…, leave)` plus the client's save, as clear-checks.ts does (not through the adapter).
+// `buildUpdateRecord(…, leave)` plus the client's save, as clear-checks.ts does (not through the adapter).
 import type { SsiClient, SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
 import { contextOf, parseSsiDive } from '../../../src/providers/ssi/ssi-import.js';
-import { createRecord, deleteRecord, updateRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
+import { buildCreateRecord, buildDeleteRecord, buildUpdateRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
 import { comparableOf, planSend, SYNCED_FIELDS, type Comparable } from '../../../src/providers/three-way.js';
 
 const NOTES = 'Dive Hub test';
@@ -35,7 +35,7 @@ const stateOf = (r: SsiRecord) => `notes ${show(r.odin_user_log_comment)}, lead 
 export async function startTwoway(o: TwowayChecks & { accountId: string; siteId: string }): Promise<TwowaySaved> {
   const before = await o.client.logbook(o.access);
   const number = Math.max(0, ...before.dives.map((d) => Number(d.odin_user_log_nr) || 0)) + 1;
-  const { id } = await o.client.save(o.access, createRecord(twowayDive(o.siteId), { number, accountId: o.accountId, reference: 'divehub-twoway-test' }));
+  const { id } = await o.client.save(o.access, buildCreateRecord(twowayDive(o.siteId), { number, accountId: o.accountId, reference: 'divehub-twoway-test' }));
   const stored = await findIn(o, id);
   if (!stored) throw new Error(`dive ${id} is not in the logbook`);
   o.log(`created SSI dive ${id} as number ${number}; stored: ${stateOf(stored)}`);
@@ -64,7 +64,7 @@ export async function sendTwoway(o: TwowayChecks, saved: TwowaySaved, hubNotes: 
   // A taken field becomes the Dive's here before the send, as the push service does.
   if (plan.take.includes('notes')) dive.notes = provider.notes;
   if (plan.take.includes('lead')) dive.leadKg = provider.leadKg;
-  await o.client.save(o.access, updateRecord(remote, dive, { keep: plan.keep, clear: plan.clear }));
+  await o.client.save(o.access, buildUpdateRecord(remote, dive, { keep: plan.keep, clear: plan.clear }));
   const after = await findIn(o, saved.id);
   if (!after) throw new Error(`dive ${saved.id} is gone from the logbook`);
   o.log(`stored after the send: ${stateOf(after)}`);
@@ -85,6 +85,6 @@ export async function finishTwoway(o: TwowayChecks, id: string): Promise<void> {
     o.log(`SSI dive ${id}: is not a Dive Hub test dive, left alone (delete it in the app)`);
     return;
   }
-  await o.client.save(o.access, deleteRecord(stored));
+  await o.client.save(o.access, buildDeleteRecord(stored));
   o.log(`SSI dive ${id}: ${(await findIn(o, id)) ? 'still there after deleting, delete it in the app' : 'deleted'}`);
 }

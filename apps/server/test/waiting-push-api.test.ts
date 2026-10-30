@@ -4,7 +4,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, importJob, providerConflict, push, waitingPush } from '../src/db/schema.js';
-import { record } from '../src/providers/conflicts.js';
+import { record } from '../src/providers/conflict-service.js';
 import { createFakeHandover } from './fake-handover-provider.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';

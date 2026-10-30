@@ -3,10 +3,10 @@ import type { PushService, Removal } from '../providers/push-service.js';
 import type { ProviderServiceError } from '../providers/registry.js';
 import { DiveError } from './dive-service.js';
 import type { LogbookService } from './logbook-service.js';
-import type { Merging } from './merging.js';
+import type { MergingService } from './merging-service.js';
 
 export interface MergeDeps {
-  merging: Pick<Merging, 'mergeCandidates' | 'merge'>;
+  merging: Pick<MergingService, 'mergeCandidates' | 'merge'>;
   logbook: Pick<LogbookService, 'versionOf'>;
   pushes: Pick<PushService, 'removeAt'>;
 }

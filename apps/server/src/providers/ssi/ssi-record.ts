@@ -238,7 +238,7 @@ function emptyRecord(): SsiRecord {
 }
 
 /** A new SSI dive. `number` is SSI's own dive number (the next in the User's SSI logbook). */
-export function createRecord(d: DiveForSsi, ids: { number: number; accountId: string; reference: string }): SsiRecord {
+export function buildCreateRecord(d: DiveForSsi, ids: { number: number; accountId: string; reference: string }): SsiRecord {
   return {
     ...emptyRecord(), ...ownFields(d),
     // A new dive without a known type is open circuit.
@@ -293,7 +293,7 @@ const keysOf = (fields: DiveField[]) => fields.flatMap((f) => (SSI_FIELD_KEYS as
  * stay as SSI has them; `leave.clear` fields are emptied with `null` on each key, which SSI takes as a clear (checked
  * 2026-10-24, docs/research/2026-10-24-ssi-clearing-keys.md). The site is never cleared (ADR 0030).
  */
-export function updateRecord(remote: SsiRecord, d: DiveForSsi, leave?: Leave): SsiRecord {
+export function buildUpdateRecord(remote: SsiRecord, d: DiveForSsi, leave?: Leave): SsiRecord {
   const fields = ownFields(d);
   // A training variant SSI holds (7 for apnea 6) and its extended-range type (2, 3) stay.
   fields.odin_user_log_dive_type = keepTraining(remote.odin_user_log_dive_type, asNumber(fields.odin_user_log_dive_type));
@@ -307,7 +307,7 @@ export function updateRecord(remote: SsiRecord, d: DiveForSsi, leave?: Leave): S
 }
 
 /** SSI's record marked deleted (SSI keeps it, hidden; its app has no way back). */
-export function deleteRecord(remote: SsiRecord): SsiRecord {
+export function buildDeleteRecord(remote: SsiRecord): SsiRecord {
   return { ...writableRecord(remote), odin_user_log_deleted: true };
 }
 

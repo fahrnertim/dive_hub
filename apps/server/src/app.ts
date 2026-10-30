@@ -17,9 +17,9 @@ import { createLogbookService } from './dives/logbook-service.js';
 import { logbookRoutes } from './dives/logbook-routes.js';
 import { importRoutes } from './imports/routes.js';
 import { createMergeService } from './dives/merge-service.js';
-import { createMerging } from './dives/merging.js';
-import { createLogbookChecks } from './dives/logbook-checks.js';
-import { createCandidates } from './dives/candidates.js';
+import { createMergingService } from './dives/merging-service.js';
+import { createLogbookCheckService } from './dives/logbook-check-service.js';
+import { createCandidateService } from './dives/candidate-service.js';
 import { candidateRoutes } from './dives/candidate-routes.js';
 import { diveRoutes } from './dives/routes.js';
 import { createDiverService } from './divers/diver-service.js';
@@ -46,13 +46,13 @@ import { mcpEndpoint } from './mcp/endpoint.js';
 import type { BlobStore } from './storage/blob-store.js';
 import { accountRoutes } from './users/account-routes.js';
 import { adminRoutes } from './users/admin-routes.js';
-import type { Invitations } from './users/invitations.js';
-import { createPasswordResets } from './users/password-resets.js';
+import type { InvitationService } from './users/invitation-service.js';
+import { createPasswordResetService } from './users/password-reset-service.js';
 import { createProfileService } from './users/profile-service.js';
 import { createSessionService } from './users/session-service.js';
 import { userRoutes } from './users/routes.js';
-import type { Setup } from './users/setup.js';
-import { createUserAdmin } from './users/user-admin.js';
+import type { SetupService } from './users/setup-service.js';
+import { createUserAdminService } from './users/user-admin-service.js';
 
 export interface AppDeps {
   db: Db;
@@ -67,8 +67,8 @@ export interface AppDeps {
   assessments: AssessmentService;
   /** AI accesses to the MCP endpoint, the instance's switch and the log (ADR 0035). */
   aiAccesses: AiAccessService;
-  setup: Setup;
-  invitations: Invitations;
+  setup: SetupService;
+  invitations: InvitationService;
   /** Public URL of the instance; invitation links point there. */
   baseUrl: string;
   maxUploadBytes: number;
@@ -108,13 +108,13 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   app.get('/api/openapi.json', { schema: { hide: true } }, async () => withAuthEndpoints(app.swagger(), deps.auth));
 
   await app.register(authHandler, { auth: deps.auth });
-  const passwordResets = createPasswordResets(deps.db);
+  const passwordResets = createPasswordResetService(deps.db);
   const { db, auth, assessments, baseUrl } = deps;
   const { pushes, waitingPushes, certifications } = deps.providers;
   await app.register(userRoutes, { prefix: '/api', auth, profiles: createProfileService(db), setup: deps.setup, invitations: deps.invitations });
   await app.register(accountRoutes, { prefix: '/api', auth, passwordResets, sessions: createSessionService(db) });
   await app.register(adminRoutes, {
-    prefix: '/api', auth, passwordResets, userAdmin: createUserAdmin(db, deps.blobs), invitations: deps.invitations, baseUrl,
+    prefix: '/api', auth, passwordResets, userAdmin: createUserAdminService(db, deps.blobs), invitations: deps.invitations, baseUrl,
   });
   const logbook = createLogbookService(db);
   const divers = createDiverService(db);
@@ -122,14 +122,14 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(importRoutes, { prefix: '/api', auth, imports: deps.imports, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
   await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes });
   const dives = createDiveService(db);
-  const checks = createLogbookChecks(db);
-  const merging = createMerging(db, checks);
+  const checks = createLogbookCheckService(db);
+  const merging = createMergingService(db, checks);
   await app.register(diveRoutes, {
     prefix: '/api', auth, logbook, divers, centres, dives, merging, checks, pushes, waitingPushes,
     deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }),
     merge: createMergeService({ merging, logbook, pushes }), assessments,
   });
-  await app.register(candidateRoutes, { prefix: '/api', auth, candidates: createCandidates(db), assessments });
+  await app.register(candidateRoutes, { prefix: '/api', auth, candidates: createCandidateService(db), assessments });
   await app.register(assessmentRoutes, { prefix: '/api', auth, assessments });
   await app.register(diverRoutes, { prefix: '/api', auth, divers, certifications });
   await app.register(certificationRoutes, { prefix: '/api', auth, certifications });

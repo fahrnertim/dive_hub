@@ -53,46 +53,46 @@ async function diverLogbook(reader: Queryable, managedIds: readonly string[], di
   };
 }
 
-export async function planBottomTime(reader: Queryable, managedIds: readonly string[], q: BottomTimeQuery) {
-  const gas = { o2: q.o2, he: q.he ?? 0 };
+export async function planBottomTime(reader: Queryable, managedIds: readonly string[], query: BottomTimeQuery) {
+  const gas = { o2: query.o2, he: query.he ?? 0 };
   if (gas.o2 + gas.he > 100) throw new PlanningError('invalid_input');
-  if ((q.volume === undefined) !== (q.pressure === undefined)) throw new PlanningError('invalid_input');
+  if ((query.volume === undefined) !== (query.pressure === undefined)) throw new PlanningError('invalid_input');
   // Reserve and ascent pressure need their bar.
-  if ((q.rule === 'reserve' || q.rule === 'ascent_pressure') && q.bar === undefined) throw new PlanningError('invalid_input');
+  if ((query.rule === 'reserve' || query.rule === 'ascent_pressure') && query.bar === undefined) throw new PlanningError('invalid_input');
 
   // What the Diver's own computer and logbook say, where the User manages the Diver.
-  const logbook = q.diverId ? await diverLogbook(reader, managedIds, q.diverId) : undefined;
+  const logbook = query.diverId ? await diverLogbook(reader, managedIds, query.diverId) : undefined;
   const logbookSac = logbook?.logbookSac;
 
-  const siteWater = await siteWaterOf(reader, q.siteId);
+  const siteWater = await siteWaterOf(reader, query.siteId);
 
   const pick = <T>(requested: T | undefined, found: [T | undefined, Source] | undefined, fallback: T): { value: T; source: Source } =>
     requested !== undefined ? { value: requested, source: 'request' }
       : found?.[0] !== undefined ? { value: found[0], source: found[1] }
       : { value: fallback, source: 'default' };
   const used = {
-    gfHigh: pick(q.gfHigh, [logbook?.gfFromRecording, 'recording'], DEFAULT_GF_HIGH),
+    gfHigh: pick(query.gfHigh, [logbook?.gfFromRecording, 'recording'], DEFAULT_GF_HIGH),
     sacLpm: {
-      ...pick(q.sac, logbookSac?.source === 'logbook' ? [logbookSac.lpm, 'logbook'] : undefined, DEFAULT_PLANNING_SAC_LPM),
+      ...pick(query.sac, logbookSac?.source === 'logbook' ? [logbookSac.lpm, 'logbook'] : undefined, DEFAULT_PLANNING_SAC_LPM),
       // How many Dives the logbook's planning SAC rests on, also when it is too few and the default stands.
-      ...(logbookSac && q.sac === undefined ? { basedOn: logbookSac.basedOn } : {}),
+      ...(logbookSac && query.sac === undefined ? { basedOn: logbookSac.basedOn } : {}),
     },
-    water: pick<PlanningWater>(q.water, [siteWater, 'site'], 'salt'),
-    altitudeM: pick(q.altitude, undefined, 0),
+    water: pick<PlanningWater>(query.water, [siteWater, 'site'], 'salt'),
+    altitudeM: pick(query.altitude, undefined, 0),
     gasRule: ((): { value: { kind: (typeof BOTTOM_TIME_RULES)[number]; bar: number | null }; source: Source } => {
-      if (q.rule === undefined) return { value: { kind: 'rock_bottom', bar: null }, source: 'default' };
-      return { value: { kind: q.rule, bar: q.rule === 'rock_bottom' ? null : q.bar! }, source: 'request' };
+      if (query.rule === undefined) return { value: { kind: 'rock_bottom', bar: null }, source: 'default' };
+      return { value: { kind: query.rule, bar: query.rule === 'rock_bottom' ? null : query.bar! }, source: 'request' };
     })(),
   };
 
   const result = bottomTime({
-    gas, depthM: q.depth, gfHigh: used.gfHigh.value,
+    gas, depthM: query.depth, gfHigh: used.gfHigh.value,
     conditions: { water: used.water.value, altitudeM: used.altitudeM.value },
-    cylinder: q.volume !== undefined ? { volumeL: q.volume, startPressureBar: q.pressure! } : null,
+    cylinder: query.volume !== undefined ? { volumeL: query.volume, startPressureBar: query.pressure! } : null,
     sacLpm: used.sacLpm.value, rule: used.gasRule.value.kind === 'rock_bottom' ? { kind: 'rock_bottom' } : { kind: used.gasRule.value.kind, bar: used.gasRule.value.bar! } as GasRule,
-    ppO2: { working: q.ppo2Working ?? DEFAULT_PPO2.working, contingency: q.ppo2Contingency ?? DEFAULT_PPO2.contingency },
+    ppO2: { working: query.ppo2Working ?? DEFAULT_PPO2.working, contingency: query.ppo2Contingency ?? DEFAULT_PPO2.contingency },
   });
-  const common = { used, gas, depthM: q.depth, recentDiveEndedAt: logbook?.recentDiveEndedAt?.toISOString() ?? null };
+  const common = { used, gas, depthM: query.depth, recentDiveEndedAt: logbook?.recentDiveEndedAt?.toISOString() ?? null };
   if (result.status === 'outside_limits') {
     return { status: result.status, reason: result.reason, modM: result.modM === null ? null : floorTenth(result.modM), ...common };
   }

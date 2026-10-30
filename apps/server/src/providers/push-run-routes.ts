@@ -152,7 +152,7 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
     },
   }, async (request, reply) => {
     if (!oneOfListAndIds(request.body)) return reply.code(400).send(invalid);
-    return runViewOf(await pushRuns.preview(userOf(request).id, request.params.id, requestOf(request.body)));
+    return previewViewOf(await pushRuns.preview(userOf(request).id, request.params.id, requestOf(request.body)));
   });
 
   app.post('/connections/:id/push-runs', {
@@ -204,7 +204,7 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
 };
 
 /** The preview carries Dates (blocked dives' start times) as strings. */
-function runViewOf(preview: Awaited<ReturnType<PushRunService['preview']>>) {
+function previewViewOf(preview: Awaited<ReturnType<PushRunService['preview']>>) {
   return {
     ...preview,
     blocked: { ...preview.blocked, dives: preview.blocked.dives.map((d) => ({ ...d, startsAt: d.startsAt.toISOString() })) },

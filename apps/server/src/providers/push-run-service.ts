@@ -9,7 +9,7 @@ import { asksFor, diveListFilter } from '../dives/list-filter.js';
 import type { ProblemCode } from '../http/problems.js';
 import { managedDiverIds } from '../divers/management.js';
 import { isUniqueViolation } from '../sites/site-service.js';
-import type { ConflictService } from './conflicts.js';
+import type { ConflictService } from './conflict-service.js';
 import { classify, failureOutcome, numberPlanOf, orderItems, planItem, type PlanOptions, type ScopedDive } from './push-run-plan.js';
 import type { RemoteDive } from './provider.js';
 import type { PushService } from './push-service.js';

@@ -1,7 +1,7 @@
 // API shapes shared by the user, account and admin routes.
 import { Type, type Static } from 'typebox';
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from '../auth/password.js';
-import type { Role } from './invitations.js';
+import type { Role } from './invitation-service.js';
 import { DateTime, Nullable } from '../http/schemas.js';
 import { userRole } from '../db/schema.js';
 

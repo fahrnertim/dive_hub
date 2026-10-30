@@ -2,7 +2,7 @@
 // its capabilities (how Users sign in, what it imports or exports, with which operations, how fast it may be called)
 // and does only what is its own; the registry refuses an adapter without the method for something it declares. Connections,
 // credentials, Pushes, leases, pacing, problem codes and the routes are the generic layer's (connection-service.ts,
-// push-service.ts, leases.ts, routes.ts).
+// push-service.ts, lease-service.ts, routes.ts).
 import type { CylinderMaterial, ParticipantRole, ProviderImportPlan } from '../db/schema.js';
 import type { DiveMode, Position, SiteWaterType } from '../vocabulary.js';
 import type { SiteSource } from '../sites/sources.js';

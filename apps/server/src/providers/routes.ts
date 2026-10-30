@@ -11,7 +11,7 @@ import { replyCertificationError } from '../certifications/certification-answers
 import { replyDiverError } from '../divers/diver-answers.js';
 import { accountRoutes } from './account-routes.js';
 import type { BuddyService } from './buddy-service.js';
-import type { ConflictService } from './conflicts.js';
+import type { ConflictService } from './conflict-service.js';
 import { connectionRoutes } from './connection-routes.js';
 import type { ConnectionService } from './connection-service.js';
 import { decisionRoutes } from './decision-routes.js';

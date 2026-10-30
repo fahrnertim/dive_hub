@@ -11,7 +11,7 @@ import { accountOf, heldIds, idsOf, nearbyMatch, pickId, settleVisibility, store
 import { SiteError } from '../sites/site-error.js';
 import type { SiteSource } from '../sites/sources.js';
 import { locked } from './advisory-lock.js';
-import { realClock, type Clock } from './leases.js';
+import { realClock, type Clock } from './lease-service.js';
 import type { ActionContext, ProviderAdapter, RemoteSite } from './provider.js';
 
 export type SiteForSend = 'had' | 'matched' | 'created' | 'none';

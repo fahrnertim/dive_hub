@@ -9,7 +9,7 @@ import { DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES } from '../db/sc
 import { SOURCE_INFO } from '../sites/sources.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 import { automationOffers, type ConnectionService } from './connection-service.js';
-import type { ConflictService } from './conflicts.js';
+import type { ConflictService } from './conflict-service.js';
 import type { DiveImportService } from './dive-import.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
 import type { ProviderRegistry } from './registry.js';

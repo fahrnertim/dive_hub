@@ -1,7 +1,7 @@
 // Connections to Providers (ADR 0024, 0027): one per User, Diver and Provider. Connecting signs in once; the
 // credentials are sealed in one field shaped by the Provider's sign-in kind, the password only when the User chose to
 // keep it. When the Provider no longer accepts the access, a kept password signs in again silently; otherwise the
-// Connection needs the User to sign in again. Every action on a Connection waits its turn (leases.ts).
+// Connection needs the User to sign in again. Every action on a Connection waits its turn (lease-service.ts).
 import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
@@ -10,7 +10,7 @@ import { managedDiverIds } from '../divers/management.js';
 import { DiverError } from '../divers/diver-error.js';
 import { externalDiver, mergeExternalDiver, participations } from '../divers/merge.js';
 import type { SecretBox } from '../secrets/secret-box.js';
-import { realClock, TurnTimeout, type Clock, type Leases } from './leases.js';
+import { realClock, TurnTimeout, type Clock, type LeaseService } from './lease-service.js';
 import { ProviderError, type ActionContext, type ProviderAdapter, type SignInInput } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
@@ -64,7 +64,7 @@ export interface AutomationSettings {
   fetchEveryMinutes?: FetchInterval | null;
 }
 
-export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: Leases; clock?: Clock }) {
+export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: LeaseService; clock?: Clock }) {
   const { db, registry, secrets, leases } = deps;
   const clock = deps.clock ?? realClock;
   /** When the Provider last answered the Connection: a stopped Waiting push wakes on any later answer (ADR 0056). */

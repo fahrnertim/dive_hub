@@ -8,11 +8,11 @@ import type { Db, Tx } from '../db/client.js';
 import { connection, dive, importJob, providerConflict, push, pushRun, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../db/schema.js';
 import { managedDiverIds } from '../divers/management.js';
 import { currentRemote } from './current-remote.js';
-import { realClock, type Clock } from './leases.js';
+import { realClock, type Clock } from './lease-service.js';
 import type { PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { blocking } from './requirements.js';
-import { deletingItself, mark, newDivesConnection, queueNow, scheduleConnection, settle, upsertSend, type QueueMark, type ProviderLog } from './waiting-push-queue.js';
+import { clearIfUnchanged, deletingItself, newDivesConnection, queueNow, scheduleConnection, stampOf, upsertSend, type QueueStamp, type ProviderLog } from './waiting-push-queue.js';
 import { waitingOf } from './waiting-push-view.js';
 export type { ProviderLog };
 
@@ -41,7 +41,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
   const now = () => new Date(clock.now());
   const the = (entry: Entry) => and(eq(waitingPush.diveId, entry.diveId), eq(waitingPush.provider, entry.provider));
   /** The entry as the step found it: an update after the attempt leaves alone an entry a change made fresh meanwhile. */
-  const unchanged = (entry: Entry, seen: QueueMark) => and(the(entry), sql`${waitingPush.changedAt} = ${seen}::timestamptz`);
+  const unchanged = (entry: Entry, seen: QueueStamp) => and(the(entry), sql`${waitingPush.changedAt} = ${seen}::timestamptz`);
 
   /** The Connection's due entries, oldest due first. */
   const dueOf = (connectionId: string, limit: number) => db.select().from(waitingPush)
@@ -54,11 +54,11 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
       .where(and(eq(waitingPush.connectionId, connectionId), eq(waitingPush.state, 'waiting')));
   }
 
-  const hold = (entry: Entry, seen: QueueMark, reason: string, detail?: Entry['detail']) =>
+  const hold = (entry: Entry, seen: QueueStamp, reason: string, detail?: Entry['detail']) =>
     db.update(waitingPush).set({ state: 'held', reason, detail: detail ?? null }).where(unchanged(entry, seen));
 
   /** A failed attempt, by its problem code (the spec's "Failures and retries"). */
-  async function failed(entry: Entry, seen: QueueMark, code: string): Promise<'signed_out' | void> {
+  async function failed(entry: Entry, seen: QueueStamp, code: string): Promise<'signed_out' | void> {
     if (code === 'provider_sign_in_needed') {
       await holdForSignIn(entry.connectionId);
       return 'signed_out';
@@ -87,7 +87,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
   }
 
   /** A `send` entry: held, dropped as up to date, or sent as the Connection's User. */
-  async function sendOne(conn: ConnectionRow, entry: Entry, seen: QueueMark) {
+  async function sendOne(conn: ConnectionRow, entry: Entry, seen: QueueStamp) {
     const [row] = await db.select({ deletedAt: dive.deletedAt }).from(dive).where(eq(dive.id, entry.diveId));
     // Deleted here (delete at the Provider off, or never there): nothing to send.
     if (!row || row.deletedAt) {
@@ -103,7 +103,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     const decided = entry.options.onExisting !== undefined || Object.keys(entry.options.conflicts ?? {}).length > 0;
     // A number the Connection follows that an update would set counts as a change, as in the logbook's filter.
     if (current && current.upToDate && !(current.number?.differs && current.number.canSet) && !decided) {
-      await settle(db, entry.diveId, entry.provider, seen, 'send');
+      await clearIfUnchanged(db, entry.diveId, entry.provider, seen, 'send');
       return;
     }
     if (current?.updateRemovesVerification) {
@@ -118,13 +118,13 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
       throw new Error('a deferred send answers no Conflicts');
     } else if (sent.push.state !== 'confirmed') {
       // Handed over without an ID: the send settles only confirmed Pushes, but this one is done too.
-      await settle(db, entry.diveId, entry.provider, seen, 'send');
+      await clearIfUnchanged(db, entry.diveId, entry.provider, seen, 'send');
     }
   }
 
   /** One attempt at the entry; never throws for its sake. */
   async function attempt(conn: ConnectionRow, entry: Entry): Promise<'signed_out' | void> {
-    const seen = await mark(db, entry.diveId, entry.provider);
+    const seen = await stampOf(db, entry.diveId, entry.provider);
     try {
       if (entry.action === 'delete') await pushes.remove(conn.userId, entry.diveId, entry.provider);
       else await sendOne(conn, entry, seen);

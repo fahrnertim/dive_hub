@@ -3,7 +3,7 @@
 // It writes to the real SSI account: two throwaway dives dated 2000-01-02 (10:00 and 14:00, notes "Dive Hub test"), which
 // `finish` deletes again. It prints only the two test dives' values, never those of other dives.
 import type { SsiClient, SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
-import { compareReadBack, createRecord, deleteRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
+import { compareReadBack, buildCreateRecord, buildDeleteRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
 
 const NOTES = 'Dive Hub test – values, delete me';
 const GAS = { o2: 21, he: 0 };
@@ -111,7 +111,7 @@ export async function startValuesChecks(o: ValuesChecks): Promise<string[]> {
   const ids: string[] = [];
   for (const [name, dive] of [['A (apnea)', apneaDive(o.siteId)], ['B (scuba)', scubaDive(o.siteId)]] as const) {
     number += 1;
-    const sent = createRecord(dive, { number, accountId, reference: `divehub-values-test-${name[0]}` });
+    const sent = buildCreateRecord(dive, { number, accountId, reference: `divehub-values-test-${name[0]}` });
     const { id } = await client.save(access, sent);
     ids.push(id);
     log(`created dive ${name}: SSI dive ${id} as number ${number}`);
@@ -138,7 +138,7 @@ export async function finishValuesChecks(o: Pick<ValuesChecks, 'client' | 'acces
       o.log(`SSI dive ${id}: is not a Dive Hub test dive, left alone`);
       continue;
     }
-    await o.client.save(o.access, deleteRecord(stored));
+    await o.client.save(o.access, buildDeleteRecord(stored));
     o.log(`SSI dive ${id}: ${(await findIn(o, id)) ? 'still there after deleting, delete it in the app' : 'deleted'}`);
   }
 }

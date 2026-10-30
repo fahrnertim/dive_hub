@@ -9,7 +9,7 @@ import { dive, diveSite, providerGoneDive, push, type ConnectionRow } from '../d
 import { siteRef } from '../dives/dive-summary-view.js';
 import type { ConnectionService } from './connection-service.js';
 import { compareGone, goneWarning, type GoneCandidate } from './gone-dive-rules.js';
-import { LeaseBusy, type Leases } from './leases.js';
+import { LeaseBusy, type LeaseService } from './lease-service.js';
 import type { ProviderAdapter } from './provider.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { currentRemote, type PushRow } from './remote-state.js';
@@ -86,7 +86,7 @@ async function waitingCount(db: Db, row: ConnectionRow, candidates: (GoneCandida
   return (await waitingRows(db, row, candidates)).length;
 }
 
-export function createGoneDiveService(deps: { db: Db; registry: ProviderRegistry; connections: ConnectionService; leases: Leases }) {
+export function createGoneDiveService(deps: { db: Db; registry: ProviderRegistry; connections: ConnectionService; leases: LeaseService }) {
   const { db, registry, connections, leases } = deps;
 
   /** The Provider's dive listing, or `provider_unsupported`. Works whatever the Connection's import mode is. */

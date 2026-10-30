@@ -59,7 +59,7 @@ const isCalendarDate = (text: string) => {
   return /^\d{4}-\d{2}-\d{2}$/.test(text) && !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(text);
 };
 
-const like = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+const like = (text: string) => `%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
 /** Not deleted. */
 const live = isNull(diver.deletedAt);
@@ -292,8 +292,8 @@ export function createDiverService(db: Db) {
      * Every Diver of the instance whose name matches (ADR 0028), the User's own first: id, name, whether the User
      * manages it and whether it is external. Nothing else of another User's Diver.
      */
-    async search(userId: string, q: string | undefined, limit: number) {
-      const text = q?.trim();
+    async search(userId: string, words: string | undefined, limit: number) {
+      const text = words?.trim();
       const managed = sql<boolean>`exists (select 1 from ${diverManagement} m where m.diver_id = ${diverId} and m.user_id = ${userId})`;
       return db.select({ id: diver.id, name: diver.name, managed, external: sql<boolean>`${unmanaged}` }).from(diver)
         .where(and(live, text ? ilike(diver.name, like(text)) : undefined))

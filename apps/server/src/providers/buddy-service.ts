@@ -13,7 +13,7 @@ import type { Caller } from '../http/caller.js';
 import { locked } from './advisory-lock.js';
 import { foldName, nameDiffers } from './buddy-names.js';
 import type { ConnectionService } from './connection-service.js';
-import { realClock } from './leases.js';
+import { realClock } from './lease-service.js';
 import { listAccountOf, remember, rememberedEntries } from './list-entries.js';
 import type { ActionContext, DiverSource, RemoteBuddy } from './provider.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';

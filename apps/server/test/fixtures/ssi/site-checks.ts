@@ -10,7 +10,7 @@
 import { DEFAULT_SSI_URL } from '../../../src/providers/ssi/ssi-client.js';
 import yauzl from 'yauzl';
 import type { SsiClient, SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
-import { createRecord, deleteRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
+import { buildCreateRecord, buildDeleteRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
 import { DEFAULT_SSI_SITES_URL } from '../../../src/providers/ssi/ssi-sites.js';
 import { createSsiTransport, SSI_APP_USER_AGENT, SsiError, type Fetch } from '../../../src/providers/ssi/ssi-transport.js';
 
@@ -276,7 +276,7 @@ export async function runSiteVisibleStart(
   const before = await o.client.logbook(o.access);
   const number = Math.max(0, ...before.dives.map((d) => Number(d.odin_user_log_nr) || 0)) + 1;
   const startedAt = new Date().toISOString();
-  const { id } = await o.client.save(o.access, createRecord(visibleDive(VISIBLE_SITE_ID), { number, accountId: o.accountId, reference: 'divehub-site-visible-test' }));
+  const { id } = await o.client.save(o.access, buildCreateRecord(visibleDive(VISIBLE_SITE_ID), { number, accountId: o.accountId, reference: 'divehub-site-visible-test' }));
   o.log(`created SSI dive ${id} as number ${number} on site ${VISIBLE_SITE_ID}; started at ${startedAt}`);
   const stored = await findDive(o.client, o.access, id);
   o.log(stored ? `  the dive is in the logbook; its site ID: ${String(stored.odin_user_log_dive_sites_id)}` : '  the dive is NOT in the logbook');
@@ -410,7 +410,7 @@ export async function runSiteVisibleFinish(
     if (String(stored.odin_user_log_comment ?? '') !== NAME || !dated) {
       throw new Error(`Refused: dive ${o.saved.diveId} is not a "${NAME}" dive dated ${TEST_DATE}.`);
     }
-    await o.client.save(o.access, deleteRecord(stored));
+    await o.client.save(o.access, buildDeleteRecord(stored));
     const left = await findDive(o.client, o.access, o.saved.diveId);
     o.log(left ? `dive ${o.saved.diveId} is STILL there after deleting` : `dive ${o.saved.diveId} is gone`);
   } else {

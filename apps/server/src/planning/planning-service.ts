@@ -8,8 +8,8 @@ import { planGasPlan, type GasPlanQuery } from './gas-plan-service.js';
 export function createPlanningService(db: Db) {
   const managedBy = async (userId: string) => [...(await managedDiverIds(db, userId))];
   return {
-    bottomTime: async (userId: string, q: BottomTimeQuery) => planBottomTime(db, await managedBy(userId), q),
-    gasPlan: async (userId: string, q: GasPlanQuery) => planGasPlan(db, await managedBy(userId), q),
+    bottomTime: async (userId: string, query: BottomTimeQuery) => planBottomTime(db, await managedBy(userId), query),
+    gasPlan: async (userId: string, query: GasPlanQuery) => planGasPlan(db, await managedBy(userId), query),
   };
 }
 

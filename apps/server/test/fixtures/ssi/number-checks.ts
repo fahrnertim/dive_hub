@@ -1,7 +1,7 @@
 // The owner's checks of how SSI treats a dive's number (ADR 0048), run by `round-trip.ts number`. Run on 2026-10-10 except
 // for a verified dive; the results are in docs/references/ssi-app-api.md.
 // It writes to the real SSI account: throwaway dives dated 2000, which it deletes again.
-import { createRecord, deleteRecord, writableRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
+import { buildCreateRecord, buildDeleteRecord, writableRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
 import type { SsiClient, SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
 
 export interface NumberChecks {
@@ -82,7 +82,7 @@ export async function runNumberChecks(o: NumberChecks): Promise<void> {
       const dive = { ...base, startsAt: new Date(startsAt) };
       // New for every run: SSI may merge a dive with an earlier one that has the same reference.
       const reference = `divehub-number-test-${number}-${runId}`;
-      const { id } = await client.save(account.token, createRecord(dive, { number, accountId: account.accountId, reference }));
+      const { id } = await client.save(account.token, buildCreateRecord(dive, { number, accountId: account.accountId, reference }));
       created.push(id);
       references.set(id, reference);
       log(`   saved ${reference} for account ${account.accountId}; SSI answered dive ID ${id}`);
@@ -157,7 +157,7 @@ export async function runNumberChecks(o: NumberChecks): Promise<void> {
       let deleted = 0;
       const leftovers = (await read()).filter(isOurs);
       for (const d of leftovers) {
-        await client.save(account.token, deleteRecord(d));
+        await client.save(account.token, buildDeleteRecord(d));
         deleted++;
       }
       const missing = created.filter((id) => !leftovers.some((d) => String(d.odin_user_log_id) === id));

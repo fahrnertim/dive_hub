@@ -21,24 +21,24 @@ export interface GasQuery {
   oxygenNarcotic?: boolean | undefined;
 }
 
-export function gasNumbers(q: GasQuery) {
-  const gas = { o2: q.o2, he: q.he ?? 0 };
+export function gasNumbers(query: GasQuery) {
+  const gas = { o2: query.o2, he: query.he ?? 0 };
   if (gas.o2 + gas.he > 100) throw new PlanningError('invalid_input');
   // Below 0.16 bar of oxygen at the surface a mix is not breathable.
   if (gas.o2 < 16) throw new PlanningError('gas_not_breathable');
-  const conditions: Conditions = { water: q.water ?? 'salt', altitudeM: q.altitude ?? 0 };
-  const ppO2Limits = { working: q.ppo2Working ?? DEFAULT_PPO2.working, contingency: q.ppo2Contingency ?? DEFAULT_PPO2.contingency };
-  const oxygenNarcotic = q.oxygenNarcotic ?? true;
+  const conditions: Conditions = { water: query.water ?? 'salt', altitudeM: query.altitude ?? 0 };
+  const ppO2Limits = { working: query.ppo2Working ?? DEFAULT_PPO2.working, contingency: query.ppo2Contingency ?? DEFAULT_PPO2.contingency };
+  const oxygenNarcotic = query.oxygenNarcotic ?? true;
   return {
     gas, hypoxic: isHypoxic(gas), ppO2Limits,
     modWorkingM: floorTenth(modMetres(gas, ppO2Limits.working, conditions)),
     modContingencyM: floorTenth(modMetres(gas, ppO2Limits.contingency, conditions)),
-    atDepth: q.depth === undefined ? null : {
-      depthM: q.depth,
-      ppO2: round((gas.o2 / 100) * ambientPressureBar(q.depth, conditions), 2),
-      bestMixPercent: bestMixPercent(q.depth, ppO2Limits.working, conditions),
-      eadM: round(eadMetres(gas, q.depth, conditions), 1),
-      endM: round(endMetres(gas, q.depth, conditions, { oxygenNarcotic }), 1),
+    atDepth: query.depth === undefined ? null : {
+      depthM: query.depth,
+      ppO2: round((gas.o2 / 100) * ambientPressureBar(query.depth, conditions), 2),
+      bestMixPercent: bestMixPercent(query.depth, ppO2Limits.working, conditions),
+      eadM: round(eadMetres(gas, query.depth, conditions), 1),
+      endM: round(endMetres(gas, query.depth, conditions, { oxygenNarcotic }), 1),
     },
     conditions, oxygenNarcotic,
   };

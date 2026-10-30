@@ -5,9 +5,9 @@ import { Type } from 'typebox';
 import { APIError } from 'better-auth/api';
 import type { Auth } from '../auth/auth.js';
 import { authHeaders, forwardCookies, requireUser, userOf } from '../auth/fastify.js';
-import type { Invitations, Role } from './invitations.js';
+import type { InvitationService, Role } from './invitation-service.js';
 import type { ProfileService } from './profile-service.js';
-import type { Setup } from './setup.js';
+import type { SetupService } from './setup-service.js';
 import { problem } from '../http/problems.js';
 import { Email, Password, PreferencesView, Problem, Token, UserView, toUserView } from './views.js';
 import { DateTime } from '../http/schemas.js';
@@ -15,8 +15,8 @@ import { DateTime } from '../http/schemas.js';
 export interface UserRouteDeps {
   auth: Auth;
   profiles: ProfileService;
-  setup: Setup;
-  invitations: Invitations;
+  setup: SetupService;
+  invitations: InvitationService;
 }
 
 const Name = Type.String({ minLength: 1, maxLength: 100, pattern: '\\S' });

@@ -24,11 +24,11 @@ import type { BlobStore } from '../storage/blob-store.js';
 import type { ConnectionService } from './connection-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import { REFERENCE_PREFIX, localStartOf, type DiveField, type ImportContext, type ImportedDive, type ProviderCylinder } from './provider.js';
-import { createDiveChanges, importsField, type ProviderRun } from './dive-changes.js';
+import { createDiveChanges, importsField, type ProviderContext } from './dive-changes.js';
 import { currentRemote, fingerprintNow } from './remote-state.js';
-import { same, type SyncedField } from './three-way.js';
-import { closeFields, entryOf, openFields, record as recordConflict, type StoredConflictField } from './conflicts.js';
-import { realClock, type Clock } from './leases.js';
+import { sameAtProvider, type SyncedField } from './three-way.js';
+import { closeFields, entryOf, openFields, record as recordConflict, type StoredConflictField } from './conflict-service.js';
+import { realClock, type Clock } from './lease-service.js';
 import { queueNow } from './waiting-push-queue.js';
 import { withRemembered } from './list-entries.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
@@ -99,7 +99,7 @@ type ReadOriginal =
   | { fileName: string; originalId: string; dive: ImportedDive; seen: boolean };
 
 /** What changed at the Provider since Dive Hub last saw a linked dive, compared with the Dive here. */
-type FoundChanges = NonNullable<Awaited<ReturnType<ReturnType<typeof createDiveChanges>['changesOf']>>>;
+type FoundChanges = NonNullable<Awaited<ReturnType<ReturnType<typeof createDiveChanges>['providerChangesOf']>>>;
 
 /** The preview's count each assessment adds to; `unchosen` only comes unattended, and isn't counted. */
 const COUNTED = {
@@ -117,7 +117,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export function createDiveImportService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; clock?: Clock }) {
   const { db, blobs, registry, connections } = deps;
   const clock = deps.clock ?? realClock;
-  const { runOf, sitesOf, settle, placeTime, changesOf, takeChanges, fill, shown, conflictFields } = createDiveChanges({ db, blobs });
+  const { contextOf, providerSitesOf, settleSiteVisibility, placeTime, providerChangesOf, takeChanges, fillFromProvider, shown, conflictFields } = createDiveChanges({ db, blobs });
 
   /** The Provider's dive import, or `provider_unsupported`. */
   function importer(provider: string) {
@@ -141,24 +141,24 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     return { row, adapter, context, parsed };
   }
 
-  /** `read`, with the readable dives and the run over them, no computer chosen yet: what preview and start begin with. */
-  async function readRun(userId: string, connectionId: string, options: { recent?: boolean } = {}) {
+  /** `read`, with the readable dives and their context, no computer chosen yet: what preview and start begin with. */
+  async function readWithContext(userId: string, connectionId: string, options: { recent?: boolean } = {}) {
     const { row, adapter, context, parsed } = await read(userId, connectionId, options);
     const dives = parsed.flatMap((p) => (p.dive ? [p.dive] : []));
-    const run = await runOf(db, userId, adapter, {
+    const pc = await contextOf(db, userId, adapter, {
       diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {}, context,
     });
-    return { row, adapter, context, parsed, dives, run };
+    return { row, adapter, context, parsed, dives, pc };
   }
 
   /** The computers among the dives, with the User's choice kept on the Connection, else the suggestion. */
-  async function computersOf(q: Queryable, run: ProviderRun, dives: ImportedDive[], saved: Record<string, ComputerChoice>) {
+  async function computersOf(q: Queryable, pc: ProviderContext, dives: ImportedDive[], saved: Record<string, ComputerChoice>) {
     const found = new Map<string, ComputerView>();
     for (const d of dives) {
       // A dive Dive Hub sent, or one linked to a Dive that has this computer's Recording, carries what Dive Hub has or
       // sent: not a computer found there.
-      if (d.evidence !== 'computer' || !d.device || (await sentTo(q, run, d.remoteId))) continue;
-      const linked = await linkedTo(q, run, d.remoteId);
+      if (d.evidence !== 'computer' || !d.device || (await sentTo(q, pc, d.remoteId))) continue;
+      const linked = await linkedTo(q, pc, d.remoteId);
       if (linked && (await hasRecordingOf(q, linked.diveId, d.device))) continue;
       const key = keyOf(d.device);
       const known = found.get(key);
@@ -172,7 +172,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       const suggested: ComputerChoice = fromFile ? 'entries' : 'recordings';
       found.set(key, {
         key, manufacturer: d.device.manufacturer, product: d.device.product, serialNumber: d.device.serialNumber, dives: 1,
-        choice: saved[key] ?? suggested, suggested, fromFiles: !!fromFile, otherDiver: owner !== null && !run.managed.has(owner),
+        choice: saved[key] ?? suggested, suggested, fromFiles: !!fromFile, otherDiver: owner !== null && !pc.managed.has(owner),
       });
     }
     return [...found.values()].sort((a, b) => b.dives - a.dives || a.key.localeCompare(b.key));
@@ -187,15 +187,15 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /** The Dive this remote dive is linked to now (by a Push), among the User's, or null. */
-  async function linkedTo(q: Queryable, run: ProviderRun, remoteId: string) {
+  async function linkedTo(q: Queryable, pc: ProviderContext, remoteId: string) {
     const rows = await q.selectDistinct({ diveId: push.diveId }).from(push)
-      .where(and(eq(push.provider, run.adapter.id), eq(push.remoteId, remoteId)));
+      .where(and(eq(push.provider, pc.adapter.id), eq(push.remoteId, remoteId)));
     for (const { diveId } of rows) {
-      const pushes = await q.select().from(push).where(and(eq(push.diveId, diveId), eq(push.provider, run.adapter.id)))
+      const pushes = await q.select().from(push).where(and(eq(push.diveId, diveId), eq(push.provider, pc.adapter.id)))
         .orderBy(desc(push.createdAt), desc(push.id));
       if (currentRemote(pushes)?.remoteId !== remoteId) continue;
       const [d] = await q.select({ diverId: dive.diverId, deletedAt: dive.deletedAt }).from(dive).where(eq(dive.id, diveId));
-      if (d && run.managed.has(d.diverId)) return { diveId, deleted: d.deletedAt !== null };
+      if (d && pc.managed.has(d.diverId)) return { diveId, deleted: d.deletedAt !== null };
     }
     return null;
   }
@@ -204,29 +204,29 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * The Dive whose values Dive Hub sent to this remote dive (a confirmed create or update Push), among the User's: the
    * remote dive is Dive Hub's own then, like one carrying our reference (ADR 0030).
    */
-  async function sentTo(q: Queryable, run: ProviderRun, remoteId: string): Promise<string | null> {
+  async function sentTo(q: Queryable, pc: ProviderContext, remoteId: string): Promise<string | null> {
     const rows = await q.select({ diveId: push.diveId, diverId: dive.diverId }).from(push).innerJoin(dive, eq(dive.id, push.diveId))
-      .where(and(eq(push.provider, run.adapter.id), eq(push.remoteId, remoteId), eq(push.state, 'confirmed'), inArray(push.action, ['create', 'update'])));
-    return rows.find((r) => run.managed.has(r.diverId))?.diveId ?? null;
+      .where(and(eq(push.provider, pc.adapter.id), eq(push.remoteId, remoteId), eq(push.state, 'confirmed'), inArray(push.action, ['create', 'update'])));
+    return rows.find((r) => pc.managed.has(r.diverId))?.diveId ?? null;
   }
 
   /** Whether the Dive is live and one of the User's (a Dive our reference names may be gone, or another User's). */
-  async function ownsLive(q: Queryable, run: ProviderRun, diveId: string) {
+  async function ownsLive(q: Queryable, pc: ProviderContext, diveId: string) {
     const [own] = await q.select({ diverId: dive.diverId }).from(dive).where(and(eq(dive.id, diveId), isNull(dive.deletedAt)));
-    return !!own && run.managed.has(own.diverId);
+    return !!own && pc.managed.has(own.diverId);
   }
 
   /** The live Recording made from this remote dive before, if any. */
-  async function recordingOf(q: Queryable, run: ProviderRun, remoteId: string) {
+  async function recordingOf(q: Queryable, pc: ProviderContext, remoteId: string) {
     const [row] = await q.select({ id: recording.id, diveId: recording.diveId }).from(recording)
-      .where(and(eq(recording.recordingKey, `${run.adapter.id}:${remoteId}`), isNull(recording.deletedAt)));
+      .where(and(eq(recording.recordingKey, `${pc.adapter.id}:${remoteId}`), isNull(recording.deletedAt)));
     return row ?? null;
   }
 
   /** Of these Dives, those that have a remote dive at the Provider now (they are another remote dive's already). */
-  async function withRemote(q: Queryable, run: ProviderRun, diveIds: string[]) {
+  async function withRemote(q: Queryable, pc: ProviderContext, diveIds: string[]) {
     if (diveIds.length === 0) return new Set<string>();
-    const rows = await q.select().from(push).where(and(eq(push.provider, run.adapter.id), inArray(push.diveId, diveIds)))
+    const rows = await q.select().from(push).where(and(eq(push.provider, pc.adapter.id), inArray(push.diveId, diveIds)))
       .orderBy(desc(push.createdAt), desc(push.id));
     return new Set(diveIds.filter((id) => currentRemote(rows.filter((p) => p.diveId === id))));
   }
@@ -235,28 +235,28 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * What the import does with one dive (the preview says it, the worker does it). `unattended`: a computer's dive whose
    * computer has no choice in `run.choices` waits for the User (Recordings or entries could go wrong, hard to undo).
    */
-  async function assess(q: Queryable, run: ProviderRun, d: ImportedDive, unattended = false): Promise<Assessment> {
+  async function assess(q: Queryable, pc: ProviderContext, d: ImportedDive, unattended = false): Promise<Assessment> {
     if (d.evidence === 'ours') {
       // The Dive it is linked to now, when that isn't the one our reference names: the Dive it was sent from was merged
       // into another, which took the link (ADR 0038). Changes made at the Provider then come back to that Dive.
-      const now = await linkedTo(q, run, d.remoteId);
+      const now = await linkedTo(q, pc, d.remoteId);
       if (now && !now.deleted) return { kind: 'ours', diveId: now.diveId };
       const id = d.reference?.slice(REFERENCE_PREFIX.length) ?? '';
       return { kind: 'ours', diveId: uuid.test(id) ? id : null };
     }
-    const sent = await sentTo(q, run, d.remoteId);
+    const sent = await sentTo(q, pc, d.remoteId);
     if (sent) return { kind: 'ours', diveId: sent };
     // A Recording made from it before is placed again: changed at the Provider, it is updated in place.
-    if (await recordingOf(q, run, d.remoteId)) return { kind: 'recording' };
-    const linked = await linkedTo(q, run, d.remoteId);
+    if (await recordingOf(q, pc, d.remoteId)) return { kind: 'recording' };
+    const linked = await linkedTo(q, pc, d.remoteId);
     if (linked?.deleted) return { kind: 'deleted' };
-    if (d.evidence === 'computer' && d.device && run.choices[keyOf(d.device)] !== 'entries') {
+    if (d.evidence === 'computer' && d.device && pc.choices[keyOf(d.device)] !== 'entries') {
       const owner = await deviceDiver(q, d.device);
       // Linked already (made from it as a logbook entry, before its computer was recognised): its profile still comes in,
       // unless the Dive has that computer's Recording (its own file) already.
-      const usable = owner === null || run.managed.has(owner);
+      const usable = owner === null || pc.managed.has(owner);
       if (usable && (!linked || !(await hasRecordingOf(q, linked.diveId, d.device)))) {
-        return unattended && !(keyOf(d.device) in run.choices) ? { kind: 'unchosen' } : { kind: 'recording' };
+        return unattended && !(keyOf(d.device) in pc.choices) ? { kind: 'unchosen' } : { kind: 'recording' };
       }
     }
     if (linked) return { kind: 'linked', diveId: linked.diveId };
@@ -267,11 +267,11 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       deletedAt: dive.deletedAt, siteId: dive.siteId, siteName: diveSite.name,
     }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
       .where(and(
-        eq(dive.diverId, run.diverId),
+        eq(dive.diverId, pc.diverId),
         gte(dive.startsAt, new Date(local - DAY_MS - MAX_OFFSET_MS)), lte(dive.startsAt, new Date(local + DAY_MS + MAX_OFFSET_MS)),
       ));
-    const matches = entryMatches(local, rows, run.windowMinutes);
-    const taken = await withRemote(q, run, matches.map((m) => m.id));
+    const matches = entryMatches(local, rows, pc.windowMinutes);
+    const taken = await withRemote(q, pc, matches.map((m) => m.id));
     const free = matches.filter((m) => !m.deletedAt && !taken.has(m.id));
     // A probable non-dive doesn't count as a match (ADR 0030, amended); where nothing else is in the window, the User
     // decides about it instead of the entry linking to it by itself.
@@ -293,82 +293,82 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     }
     // A Dive deleted here stays deleted (ADR 0026): its entry doesn't come back as a new Dive.
     if (matches.some((m) => m.deletedAt && !taken.has(m.id))) return { kind: 'deleted' };
-    return run.mode === 'create' ? { kind: 'create' } : { kind: 'no_match' };
+    return pc.mode === 'create' ? { kind: 'create' } : { kind: 'no_match' };
   }
 
   /**
    * Links the Dive to the Provider's dive (a `link` Push), unless it has a remote dive there already: sending then updates
    * that dive instead of making another. `upToDate`: the Dive was made from it, so it shows up to date.
    */
-  async function link(tx: Tx, run: ProviderRun, diveId: string, d: ImportedDive, upToDate: boolean) {
-    if ((await withRemote(tx, run, [diveId])).size > 0) return;
-    const loaded = await loadOutgoingDive(tx, run.userId, diveId);
+  async function link(tx: Tx, pc: ProviderContext, diveId: string, d: ImportedDive, upToDate: boolean) {
+    if ((await withRemote(tx, pc, [diveId])).size > 0) return;
+    const loaded = await loadOutgoingDive(tx, pc.userId, diveId);
     await tx.insert(push).values({
-      diveId, connectionId: run.connectionId, userId: run.userId, provider: run.adapter.id, mode: run.adapter.dives!.mode,
+      diveId, connectionId: pc.connectionId, userId: pc.userId, provider: pc.adapter.id, mode: pc.adapter.dives!.mode,
       action: 'link', state: 'confirmed', remoteId: d.remoteId, remoteNumber: d.remoteNumber, diveVersion: loaded.row.version,
-      fingerprint: upToDate ? fingerprintNow(run.adapter, loaded) : null,
+      fingerprint: upToDate ? fingerprintNow(pc.adapter, loaded) : null,
     });
   }
 
   /** A Dive without a Recording from a logbook entry (ADR 0030): its values, marked as the Provider's. */
-  async function createDive(tx: Tx, run: ProviderRun, d: ImportedDive, actor: Actor): Promise<string> {
-    const time = await placeTime(tx, run, d);
+  async function createDive(tx: Tx, pc: ProviderContext, d: ImportedDive, actor: Actor): Promise<string> {
+    const time = await placeTime(tx, pc, d);
     const [created] = await tx.insert(dive).values({
-      diverId: run.diverId, startsAt: time.startsAt, utcOffsetSeconds: time.utcOffsetSeconds, utcOffsetSource: time.utcOffsetSource,
+      diverId: pc.diverId, startsAt: time.startsAt, utcOffsetSeconds: time.utcOffsetSeconds, utcOffsetSource: time.utcOffsetSource,
       durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM, avgDepthM: d.avgDepthM, waterTemperatureC: d.waterTemperatureC,
-      fromProvider: run.adapter.id,
+      fromProvider: pc.adapter.id,
     }).returning({ id: dive.id });
-    await writeRevision(tx, 'dive', created!.id, actor, 'import-create', { fromProvider: { from: null, to: run.adapter.id } });
-    await fill(tx, run, created!.id, d, actor);
-    await link(tx, run, created!.id, d, true);
-    await renumber(tx, [run.diverId]);
+    await writeRevision(tx, 'dive', created!.id, actor, 'import-create', { fromProvider: { from: null, to: pc.adapter.id } });
+    await fillFromProvider(tx, pc, created!.id, d, actor);
+    await link(tx, pc, created!.id, d, true);
+    await renumber(tx, [pc.diverId]);
     return created!.id;
   }
 
   /** The dive mode, surface interval and average heart rate a Provider names, where it names them and lets them in. */
-  function summaryValuesOf(run: ProviderRun, d: ImportedDive) {
+  function summaryValuesOf(pc: ProviderContext, d: ImportedDive) {
     return {
-      ...(d.diveMode !== null && importsField(run, 'diveType') && { diveMode: d.diveMode }),
-      ...(d.surfaceIntervalSeconds !== null && importsField(run, 'surfaceInterval') && { surfaceIntervalSeconds: d.surfaceIntervalSeconds }),
-      ...(d.avgHeartRate !== null && importsField(run, 'heartRate') && { avgHeartRate: d.avgHeartRate }),
+      ...(d.diveMode !== null && importsField(pc, 'diveType') && { diveMode: d.diveMode }),
+      ...(d.surfaceIntervalSeconds !== null && importsField(pc, 'surfaceInterval') && { surfaceIntervalSeconds: d.surfaceIntervalSeconds }),
+      ...(d.avgHeartRate !== null && importsField(pc, 'heartRate') && { avgHeartRate: d.avgHeartRate }),
     };
   }
 
   /** A value the Provider names, where its `dives.fields` let that field in; else null. */
-  const ifImported = <T>(run: ProviderRun, field: DiveField, value: T | null): T | null => (importsField(run, field) ? value : null);
+  const ifImported = <T>(pc: ProviderContext, field: DiveField, value: T | null): T | null => (importsField(pc, field) ? value : null);
 
   const CHANNEL_FIELD = { depth: 'profile', temperature: 'profile', ndl: 'profile', tankPressure: 'tankPressure', heartRate: 'heartRate', cns: 'cns' } as const;
 
   /** A computer's dive as a Recording, the way a FIT file's would be (ADR 0030); only the values the Provider's `dives.fields` let in. */
-  function asRecording(run: ProviderRun, d: ImportedDive, time: PlacedTime): ParsedRecording {
+  function asRecording(pc: ProviderContext, d: ImportedDive, time: PlacedTime): ParsedRecording {
     const series = (['depth', 'temperature', 'ndl', 'tankPressure', 'heartRate', 'cns'] as const).flatMap((channel) => {
-      const s = importsField(run, CHANNEL_FIELD[channel]) ? d.samples[channel] : undefined;
+      const s = importsField(pc, CHANNEL_FIELD[channel]) ? d.samples[channel] : undefined;
       return s ? [{ channel, offsetsMs: s.offsetsMs.map(Math.round), values: s.values }] : [];
     });
     const temperatures = series.find((s) => s.channel === 'temperature')?.values ?? [];
-    const cns = importsField(run, 'cns');
+    const cns = importsField(pc, 'cns');
     // The Provider's own values only where they come in; else what the profile (when it comes in) says.
-    const minTemperatureC = ifImported(run, 'waterTemperatureC', d.waterTemperatureC) ?? (temperatures.length ? Math.min(...temperatures) : null);
-    const maxTemperatureC = ifImported(run, 'maxTemperatureC', d.maxTemperatureC) ?? (temperatures.length ? Math.max(...temperatures) : null);
+    const minTemperatureC = ifImported(pc, 'waterTemperatureC', d.waterTemperatureC) ?? (temperatures.length ? Math.min(...temperatures) : null);
+    const maxTemperatureC = ifImported(pc, 'maxTemperatureC', d.maxTemperatureC) ?? (temperatures.length ? Math.max(...temperatures) : null);
     const summary = {
-      ...(d.gases.length > 0 && importsField(run, 'gas') && { gases: d.gases }),
+      ...(d.gases.length > 0 && importsField(pc, 'gas') && { gases: d.gases }),
       ...(d.gfLow !== null && { gfLow: d.gfLow }), ...(d.gfHigh !== null && { gfHigh: d.gfHigh }),
       ...(minTemperatureC !== null && { minTemperatureC }),
       ...(maxTemperatureC !== null && { maxTemperatureC }),
       ...(cns && d.cnsStart !== null && { cnsStart: d.cnsStart }), ...(cns && d.cnsEnd !== null && { cnsEnd: d.cnsEnd }),
-      ...summaryValuesOf(run, d),
+      ...summaryValuesOf(pc, d),
     };
     const depths = series.find((s) => s.channel === 'depth')?.values ?? [];
-    const device = importsField(run, 'device') ? d.device : null;
+    const device = importsField(pc, 'device') ? d.device : null;
     return {
       device: device ? {
         manufacturer: device.manufacturer, serialNumber: device.serialNumber,
         ...(device.product && { product: device.product }), ...(device.firmware && { firmware: device.firmware }),
       } : undefined,
-      recordingKey: `${run.adapter.id}:${d.remoteId}`,
+      recordingKey: `${pc.adapter.id}:${d.remoteId}`,
       startsAt: time.startsAt, utcOffsetSeconds: time.utcOffsetSeconds ?? undefined, utcOffsetSource: time.utcOffsetSource,
       durationSeconds: d.durationSeconds,
-      maxDepthM: ifImported(run, 'maxDepthM', d.maxDepthM) ?? (depths.length ? Math.max(...depths) : undefined), avgDepthM: d.avgDepthM ?? undefined,
+      maxDepthM: ifImported(pc, 'maxDepthM', d.maxDepthM) ?? (depths.length ? Math.max(...depths) : undefined), avgDepthM: d.avgDepthM ?? undefined,
       entryPosition: d.entry ?? undefined, exitPosition: d.exit ?? undefined,
       summary, series, events: [],
     };
@@ -379,13 +379,13 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * stays"): never taken, nor "changed only here" because a newer Original moved the base; a Conflict while the two
    * sides differ. `open`: the entry's fields the comparison covers; `equal`: those whose two sides are now the same.
    */
-  async function held(q: Queryable, run: ProviderRun, diveId: string, d: ImportedDive, found: FoundChanges) {
-    const open = (await openFields(q, diveId, run.adapter.id, d.remoteId)).filter((f) => found.here.fields.includes(f));
+  async function held(q: Queryable, pc: ProviderContext, diveId: string, d: ImportedDive, found: FoundChanges) {
+    const open = (await openFields(q, diveId, pc.adapter.id, d.remoteId)).filter((f) => found.here.fields.includes(f));
     // As a send: a Provider without a site never clears one here.
-    const clash = open.filter((f) => !(f === 'site' && found.provider.site === null) && !same(f, found.provider, found.here.hub));
+    const clash = open.filter((f) => !(f === 'site' && found.provider.site === null) && !sameAtProvider(f, found.provider, found.here.hub));
     return {
       take: found.take.filter((f) => !open.includes(f)), conflicts: [...found.conflicts.filter((f) => !open.includes(f)), ...clash], open,
-      equal: open.filter((f) => same(f, found.provider, found.here.hub)),
+      equal: open.filter((f) => sameAtProvider(f, found.provider, found.here.hub)),
     };
   }
 
@@ -394,9 +394,9 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * the Dive's Connection (the one its current remote dive was made through). Whether it was queued: without such a
    * Connection nothing can send the choice, and the fields stay open.
    */
-  async function queueKept(tx: Tx, run: ProviderRun, diveId: string, remoteId: string, fields: SyncedField[]): Promise<boolean> {
+  async function queueKept(tx: Tx, pc: ProviderContext, diveId: string, remoteId: string, fields: SyncedField[]): Promise<boolean> {
     if (fields.length === 0) return false;
-    const pushes = await tx.select().from(push).where(and(eq(push.diveId, diveId), eq(push.provider, run.adapter.id)))
+    const pushes = await tx.select().from(push).where(and(eq(push.diveId, diveId), eq(push.provider, pc.adapter.id)))
       .orderBy(desc(push.createdAt), desc(push.id));
     const current = currentRemote(pushes);
     if (current?.remoteId !== remoteId || !current.connectionId) return false;
@@ -404,7 +404,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const [own] = await tx.select({ id: connection.id }).from(connection).innerJoin(dive, eq(dive.diverId, connection.diverId))
       .where(and(eq(connection.id, current.connectionId), eq(dive.id, diveId)));
     if (!own) return false;
-    await queueNow(tx, diveId, run.adapter.id, current.connectionId, { conflicts: Object.fromEntries(fields.map((f) => [f, 'hub' as const])) }, new Date(clock.now()));
+    await queueNow(tx, diveId, pc.adapter.id, current.connectionId, { conflicts: Object.fromEntries(fields.map((f) => [f, 'hub' as const])) }, new Date(clock.now()));
     return true;
   }
 
@@ -413,47 +413,47 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * "Needs your decision", the fields merged into an open one (one entry per Dive and Provider, no run). An entry that
    * would be the same is left as it is, so it isn't raised twice.
    */
-  async function waitForUser(tx: Tx, run: ProviderRun, diveId: string, d: ImportedDive, found: FoundChanges, fields: SyncedField[]) {
-    if (fields.length === 0 || !run.connectionId) return;
-    const now = await conflictFields(run, fields, found.here, found.provider);
-    const before = await entryOf(tx, diveId, run.adapter.id);
+  async function waitForUser(tx: Tx, pc: ProviderContext, diveId: string, d: ImportedDive, found: FoundChanges, fields: SyncedField[]) {
+    if (fields.length === 0 || !pc.connectionId) return;
+    const now = await conflictFields(pc, fields, found.here, found.provider);
+    const before = await entryOf(tx, diveId, pc.adapter.id);
     const kept = before?.remoteId === d.remoteId ? before.fields.filter((f) => !fields.includes(f.field)) : [];
     const merged = [...kept, ...now];
     const byField = (list: StoredConflictField[]) => list.toSorted((a, b) => a.field.localeCompare(b.field));
     if (before?.remoteId === d.remoteId && isDeepStrictEqual(byField(before.fields), byField(merged))) return;
-    await recordConflict(tx, { diveId, provider: run.adapter.id, connectionId: run.connectionId, remoteId: d.remoteId, fields: merged, runId: null, foundAt: new Date(clock.now()) });
+    await recordConflict(tx, { diveId, provider: pc.adapter.id, connectionId: pc.connectionId, remoteId: d.remoteId, fields: merged, runId: null, foundAt: new Date(clock.now()) });
   }
 
   /**
    * The Provider's changes since Dive Hub last saw the dive, taken where the Dive here kept its value, and where the User
    * chose the Provider's in a conflict; then what is still empty is filled. Whether anything changed.
    */
-  async function sync(tx: Tx, run: ProviderRun, plan: ProviderImportPlan, diveId: string, d: ImportedDive, importId: string, actor: Actor) {
-    const found = await changesOf(tx, run, diveId, d, importId);
+  async function sync(tx: Tx, pc: ProviderContext, plan: ProviderImportPlan, diveId: string, d: ImportedDive, importId: string, actor: Actor) {
+    const found = await providerChangesOf(tx, pc, diveId, d, importId);
     let fields: SyncedField[] = [];
     if (found) {
-      const { take, conflicts, open, equal } = await held(tx, run, diveId, d, found);
+      const { take, conflicts, open, equal } = await held(tx, pc, diveId, d, found);
       const choice = (f: SyncedField) => plan.conflicts?.[`${d.remoteId}:${f}`];
       fields = [...take, ...conflicts.filter((f) => choice(f) === 'provider')];
       // The User's choice for a field of the open entry settles it there: asked once, not twice. Keeping Dive Hub's
       // value queues the Dive, due now, as every choice in "Needs your decision" does (ADR 0056); it settles the field
       // only when the Dive was queued. A field whose two sides became equal needs no choice.
       const kept = open.filter((f) => choice(f) === 'hub');
-      const queued = await queueKept(tx, run, diveId, d.remoteId, kept);
-      await closeFields(tx, diveId, run.adapter.id,
+      const queued = await queueKept(tx, pc, diveId, d.remoteId, kept);
+      await closeFields(tx, diveId, pc.adapter.id,
         open.filter((f) => choice(f) === 'provider' || (queued && kept.includes(f)) || (choice(f) === undefined && equal.includes(f))));
-      if (plan.unattended) await waitForUser(tx, run, diveId, d, found, conflicts.filter((f) => choice(f) === undefined));
+      if (plan.unattended) await waitForUser(tx, pc, diveId, d, found, conflicts.filter((f) => choice(f) === undefined));
     }
-    const taken = fields.length > 0 && (await takeChanges(tx, run, diveId, d, fields, actor)).length > 0;
-    const filled = await fill(tx, run, diveId, d, actor);
+    const taken = fields.length > 0 && (await takeChanges(tx, pc, diveId, d, fields, actor)).length > 0;
+    const filled = await fillFromProvider(tx, pc, diveId, d, actor);
     return taken || filled;
   }
 
   /** The Dive a Provider's dive is linked to already (sent from here, linked, or a Recording of it), for comparing. */
-  async function diveOfLinked(run: ProviderRun, a: Assessment, d: ImportedDive): Promise<string | null> {
+  async function diveOfLinked(pc: ProviderContext, a: Assessment, d: ImportedDive): Promise<string | null> {
     if (a.kind === 'linked') return a.diveId;
-    if (a.kind === 'ours' && a.diveId) return (await ownsLive(db, run, a.diveId)) ? a.diveId : null;
-    if (a.kind === 'recording') return (await recordingOf(db, run, d.remoteId))?.diveId ?? null;
+    if (a.kind === 'ours' && a.diveId) return (await ownsLive(db, pc, a.diveId)) ? a.diveId : null;
+    if (a.kind === 'recording') return (await recordingOf(db, pc, d.remoteId))?.diveId ?? null;
     return null;
   }
 
@@ -462,12 +462,12 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * linked dives changed at the Provider since Dive Hub last saw them (ADR 0030, amended); a field of the Dive's open
    * entry is shown as a Conflict, never as a change to take.
    */
-  async function previewDives(run: ProviderRun, parsed: number, dives: ImportedDive[]) {
+  async function previewDives(pc: ProviderContext, parsed: number, dives: ImportedDive[]) {
     const counts = { total: parsed, unreadable: parsed - dives.length, ours: 0, linked: 0, deleted: 0, recordings: 0, link: 0, decide: 0, create: 0, noMatch: 0, changed: 0 };
     const conflicts: ConflictView[] = [];
     const decisions: { remoteId: string; remoteNumber: number | null; localStart: string; durationSeconds: number; maxDepthM: number | null; candidates: CandidateView[] }[] = [];
     for (const d of dives) {
-      const a = await assess(db, run, d);
+      const a = await assess(db, pc, d);
       const counted = COUNTED[a.kind];
       if (counted) counts[counted] += 1;
       if (a.kind === 'decide') {
@@ -476,16 +476,16 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
           maxDepthM: d.maxDepthM, candidates: a.candidates,
         });
       }
-      const diveId = await diveOfLinked(run, a, d);
-      const found = diveId ? await changesOf(db, run, diveId, d) : null;
+      const diveId = await diveOfLinked(pc, a, d);
+      const found = diveId ? await providerChangesOf(db, pc, diveId, d) : null;
       if (!diveId || !found) continue;
-      const { take, conflicts: clashes } = await held(db, run, diveId, d, found);
+      const { take, conflicts: clashes } = await held(db, pc, diveId, d, found);
       if (take.length > 0) counts.changed += 1;
       for (const field of clashes) {
         conflicts.push({
           remoteId: d.remoteId, remoteNumber: d.remoteNumber, diveId, number: found.here.row.number, field,
           startsAt: found.here.row.startsAt, utcOffsetSeconds: found.here.row.utcOffsetSeconds, utcOffsetSource: found.here.row.utcOffsetSource,
-          hub: await shown(run, field, found.here.hub, found.here.row.siteId), provider: await shown(run, field, found.provider, null),
+          hub: await shown(pc, field, found.here.hub, found.here.row.siteId), provider: await shown(pc, field, found.provider, null),
         });
       }
     }
@@ -493,17 +493,17 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   }
 
   /** The sites the dives name (not those Dive Hub sent), each once: here already, the same as one here, or new. */
-  async function previewSites(run: ProviderRun, dives: ImportedDive[]) {
+  async function previewSites(pc: ProviderContext, dives: ImportedDive[]) {
     const sites = { known: 0, match: 0, create: 0, missing: 0 };
     const seen = new Set<string>();
     for (const d of dives) {
       if (d.evidence === 'ours') continue;
-      for (const site of await sitesOf(db, run, d)) {
+      for (const site of await providerSitesOf(db, pc, d)) {
         const key = `${site.source}:${site.externalId}`;
         if (seen.has(key)) continue;
         seen.add(key);
         const { kind } = site.name ? await siteOutlook(db, site) : { kind: 'taken' as const };
-        sites[siteCounted(kind, run.sitesAllowed)] += 1;
+        sites[siteCounted(kind, pc.sitesAllowed)] += 1;
       }
     }
     return sites;
@@ -511,58 +511,58 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
 
   /** One dive of a running Import, in its own transaction. `seen`: its Original came with an earlier Import unchanged. */
   async function processDive(
-    tx: Tx, run: ProviderRun, plan: ProviderImportPlan, d: ImportedDive, at: { importId: string; originalId: string; fileName: string; seen: boolean },
+    tx: Tx, pc: ProviderContext, plan: ProviderImportPlan, d: ImportedDive, at: { importId: string; originalId: string; fileName: string; seen: boolean },
   ): Promise<ImportOutcome[number]> {
     const actor: Actor = { type: 'import', id: at.importId };
     const base = { fileName: at.fileName, remoteId: d.remoteId, ...(d.remoteNumber !== null && { remoteNumber: d.remoteNumber }) };
-    const a = await assess(tx, run, d, plan.unattended);
+    const a = await assess(tx, pc, d, plan.unattended);
     switch (a.kind) {
       case 'ours': {
         // Sent by Dive Hub: already ours. One whose answer got lost is linked to its Dive, as sending would.
         const diveId = a.diveId;
-        if (!diveId || !(await ownsLive(tx, run, diveId))) return { ...base, result: 'skipped', reason: 'sent_by_dive_hub' };
-        await link(tx, run, diveId, d, false);
+        if (!diveId || !(await ownsLive(tx, pc, diveId))) return { ...base, result: 'skipped', reason: 'sent_by_dive_hub' };
+        await link(tx, pc, diveId, d, false);
         // Changed in the Provider's app since it was sent: the Dive takes it, as for any linked dive.
-        if (await sync(tx, run, plan, diveId, d, at.importId, actor)) return { ...base, result: 'updated', diveId };
+        if (await sync(tx, pc, plan, diveId, d, at.importId, actor)) return { ...base, result: 'updated', diveId };
         return { ...base, result: 'skipped', reason: 'sent_by_dive_hub', diveId };
       }
       case 'deleted':
         return { ...base, result: 'skipped', reason: 'deleted_earlier' };
       case 'linked': {
         // Filled where still empty, also when unchanged: what Dive Hub can fill may have grown (a site an admin allowed).
-        return { ...base, result: (await sync(tx, run, plan, a.diveId, d, at.importId, actor)) ? 'updated' : 'unchanged', diveId: a.diveId };
+        return { ...base, result: (await sync(tx, pc, plan, a.diveId, d, at.importId, actor)) ? 'updated' : 'unchanged', diveId: a.diveId };
       }
       case 'recording': {
-        const known = await recordingOf(tx, run, d.remoteId);
+        const known = await recordingOf(tx, pc, d.remoteId);
         if (known && at.seen) return { ...base, result: 'unchanged', recordingId: known.id, ...(known.diveId && { diveId: known.diveId }) };
         const placed = await placeRecording(tx, {
-          userId: run.userId, importId: at.importId, originalId: at.originalId, fileName: at.fileName, actor,
-          parser: run.adapter.dives!.parser ?? { name: run.adapter.id, version: '1' }, diverId: run.diverId,
-        }, asRecording(run, d, await placeTime(tx, run, d)));
+          userId: pc.userId, importId: at.importId, originalId: at.originalId, fileName: at.fileName, actor,
+          parser: pc.adapter.dives!.parser ?? { name: pc.adapter.id, version: '1' }, diverId: pc.diverId,
+        }, asRecording(pc, d, await placeTime(tx, pc, d)));
         if (placed.diveId && placed.result !== 'skipped') {
-          await sync(tx, run, plan, placed.diveId, d, at.importId, actor);
-          await link(tx, run, placed.diveId, d, placed.result === 'created');
+          await sync(tx, pc, plan, placed.diveId, d, at.importId, actor);
+          await link(tx, pc, placed.diveId, d, placed.result === 'created');
         }
         return { ...placed, ...base };
       }
       case 'link':
-        await fill(tx, run, a.diveId, d, actor);
-        await link(tx, run, a.diveId, d, false);
+        await fillFromProvider(tx, pc, a.diveId, d, actor);
+        await link(tx, pc, a.diveId, d, false);
         return { ...base, result: 'linked', diveId: a.diveId };
       case 'decide': {
         const choice = plan.decisions[d.remoteId];
         if (choice === 'leave_out') return { ...base, result: 'skipped', reason: 'left_out' };
-        if (choice === 'new' && run.mode === 'create') return { ...base, result: 'created', diveId: await createDive(tx, run, d, actor) };
+        if (choice === 'new' && pc.mode === 'create') return { ...base, result: 'created', diveId: await createDive(tx, pc, d, actor) };
         if (choice && a.candidates.some((c) => c.diveId === choice)) {
-          await fill(tx, run, choice, d, actor);
-          await link(tx, run, choice, d, false);
+          await fillFromProvider(tx, pc, choice, d, actor);
+          await link(tx, pc, choice, d, false);
           return { ...base, result: 'linked', diveId: choice };
         }
         // No decision that still fits (it turned ambiguous after the preview, or the User wasn't asked yet): left out.
         return { ...base, result: 'skipped', reason: 'ambiguous' };
       }
       case 'create':
-        return { ...base, result: 'created', diveId: await createDive(tx, run, d, actor) };
+        return { ...base, result: 'created', diveId: await createDive(tx, pc, d, actor) };
       case 'no_match':
         return { ...base, result: 'skipped', reason: 'no_match' };
       case 'unchosen':
@@ -629,15 +629,15 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
      * store what the fresh listing shows gone (ADR 0051), as findings.
      */
     async preview(userId: string, connectionId: string) {
-      const { row, parsed, dives, run } = await readRun(userId, connectionId);
+      const { row, parsed, dives, pc } = await readWithContext(userId, connectionId);
       // Dives whose remote dive isn't in this fresh, complete listing (ADR 0051): stored as findings, nothing else changes.
       const goneDives = await recordFindings(db, row, parsed);
-      const computers = await computersOf(db, run, dives, row.importComputers);
-      run.choices = Object.fromEntries(computers.map((c) => [c.key, c.choice]));
+      const computers = await computersOf(db, pc, dives, row.importComputers);
+      pc.choices = Object.fromEntries(computers.map((c) => [c.key, c.choice]));
       dives.sort((x, y) => x.localStart.localeCompare(y.localStart));
-      const { counts, decisions, conflicts } = await previewDives(run, parsed.length, dives);
-      const sites = await previewSites(run, dives);
-      return { mode: row.importMode, windowMinutes: row.importWindowMinutes, computers, counts, sites, sitesAllowed: run.sitesAllowed, decisions, conflicts, goneDives };
+      const { counts, decisions, conflicts } = await previewDives(pc, parsed.length, dives);
+      const sites = await previewSites(pc, dives);
+      return { mode: row.importMode, windowMinutes: row.importWindowMinutes, computers, counts, sites, sitesAllowed: pc.sitesAllowed, decisions, conflicts, goneDives };
     },
 
     /**
@@ -651,10 +651,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       computers: Record<string, ComputerChoice>; decisions: Record<string, string>; conflicts?: Record<string, 'hub' | 'provider'>;
       unattended?: boolean;
     }) {
-      const { row, adapter, context, parsed, dives, run } = await readRun(userId, connectionId, { recent: !given.unattended });
+      const { row, adapter, context, parsed, dives, pc } = await readWithContext(userId, connectionId, { recent: !given.unattended });
       if (given.unattended) await recordFindings(db, row, parsed);
       const saved = { ...row.importComputers, ...given.computers };
-      const computers = (await computersOf(db, run, dives, saved)).filter((c) => !given.unattended || saved[c.key] !== undefined);
+      const computers = (await computersOf(db, pc, dives, saved)).filter((c) => !given.unattended || saved[c.key] !== undefined);
       const choices = Object.fromEntries(computers.map((c) => [c.key, c.choice]));
       const stored = await Promise.all(parsed.map(async ({ remoteId, record }) => ({
         remoteId, blob: await blobs.putOriginal(Buffer.from(JSON.stringify(record), 'utf8')),
@@ -690,11 +690,11 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     async process(job: typeof importJob.$inferSelect): Promise<ImportOutcome> {
       const plan = job.plan!;
       const { adapter, parse } = importer(job.provider!);
-      const run = await runOf(db, job.userId, adapter, {
+      const pc = await contextOf(db, job.userId, adapter, {
         diverId: plan.diverId, connectionId: job.connectionId, mode: plan.mode, windowMinutes: plan.windowMinutes, choices: plan.computers,
         context: plan.context,
       });
-      await db.transaction((tx) => settle(tx, run));
+      await db.transaction((tx) => settleSiteVisibility(tx, pc));
       const rows = await db.select({ id: original.id, storageKey: original.storageKey, fileName: original.fileName })
         .from(importOriginal).innerJoin(original, eq(original.id, importOriginal.originalId))
         .where(eq(importOriginal.importId, job.id));
@@ -720,7 +720,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         if ('ended' in item) { outcome.push(item.ended); continue; }
         const { dive: d, ...at } = item;
         try {
-          outcome.push(await db.transaction((tx) => processDive(tx, run, plan, d, { importId: job.id, ...at })));
+          outcome.push(await db.transaction((tx) => processDive(tx, pc, plan, d, { importId: job.id, ...at })));
         } catch (error) {
           outcome.push({ fileName: item.fileName, result: 'failed', reason: 'file_failed', message: errorMessage(error), remoteId: d.remoteId });
         }

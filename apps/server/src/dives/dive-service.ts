@@ -6,7 +6,7 @@ import {
   type OverridableField, type ParticipantRole, type UtcOffsetSource,
 } from '../db/schema.js';
 import {
-  columnsOf, plain, sameValue, valuesFromRecording, valuesOfDive, type DiveValues,
+  columnsOf, jsonValueOf, sameJson, valuesFromRecording, valuesOfDive, type DiveValues,
 } from './dive-values.js';
 import { fillCylindersFromRecording, setCylinders, untieRecording, type CylinderInput } from './cylinders.js';
 import { setLead, setSuit, setWeightingFeedback, type LeadInput, type SuitInput, type WeightingFeedbackInput } from './weighting.js';
@@ -103,15 +103,15 @@ export async function applyToDive(
   const changes: Changes = { ...extra };
   let columns: Record<string, unknown> = {};
   for (const field of OVERRIDABLE_FIELDS) {
-    const from = plain(field, before[field]);
-    const to = plain(field, next.values[field]);
-    if (!sameValue(from, to)) {
+    const from = jsonValueOf(field, before[field]);
+    const to = jsonValueOf(field, next.values[field]);
+    if (!sameJson(from, to)) {
       changes[field] = { from, to };
       columns = { ...columns, ...columnsOf(field, next.values[field]) };
     }
   }
   const overrides = OVERRIDABLE_FIELDS.filter((f) => (next.overrides ?? current.overrides).includes(f));
-  if (!sameValue(current.overrides, overrides)) {
+  if (!sameJson(current.overrides, overrides)) {
     changes.overrides = { from: current.overrides, to: overrides };
     columns.overrides = overrides;
   }

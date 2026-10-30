@@ -8,7 +8,7 @@ import {
 import { accountOnlyRow, newEntryRow, withAccountRow } from './ssi-buddy-row.js';
 import { SsiError, type SsiBuddy, type SsiClient, type SsiLogbook, type SsiRecord } from './ssi-client.js';
 import {
-  buddyIdsOf, COMPARED_FIELDS, compareReadBack, createRecord, deleteRecord, fingerprint, localTime, startChangesAtSsi, updateRecord, withBuddies, writableRecord,
+  buddyIdsOf, COMPARED_FIELDS, compareReadBack, buildCreateRecord, buildDeleteRecord, fingerprint, localTime, startChangesAtSsi, buildUpdateRecord, withBuddies, writableRecord,
   type DiveForSsi,
 } from './ssi-record.js';
 import { contextOf, parseSsiDive, ssiOrigin, SSI_PARSER } from './ssi-import.js';
@@ -286,7 +286,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const taken = wanted != null && dives.some((r) => numberOf(r.odin_user_log_nr) === wanted);
         const number = wanted != null && !taken ? wanted : Math.max(0, ...dives.map((r) => numberOf(r.odin_user_log_nr) ?? 0)) + 1;
         const { ids, leftOut } = buddiesFor(dive, await buddyList.recent());
-        const record = withBuddies(createRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), ids);
+        const record = withBuddies(buildCreateRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), ids);
         return { ...(await saveAndReadBack(ctx, record, { reference })), leftOut };
       },
       async current(remoteId) {
@@ -311,7 +311,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const kept = cleared ? [] : buddyIdsOf(remote).filter((id) => !sentBefore.includes(id) && !ids.includes(id));
         // The number there stays unless Dive Hub's is asked for and no other dive has it.
         const number = wanted != null && !(await holderOf(wanted, remoteId)) ? wanted : numberOf(remote.odin_user_log_nr);
-        const record = { ...withBuddies(updateRecord(remote, forSsi(dive), leave), [...ids, ...kept]), odin_user_log_nr: number };
+        const record = { ...withBuddies(buildUpdateRecord(remote, forSsi(dive), leave), [...ids, ...kept]), odin_user_log_nr: number };
         return { ...(await saveAndReadBack(ctx, record, {})), leftOut };
       },
       async setNumber(remoteId, number, sharedWith) {
@@ -334,7 +334,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
       async remove(remoteId) {
         const remote = await byId(remoteId);
         if (!remote) return 'gone';
-        await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, deleteRecord(remote)));
+        await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, buildDeleteRecord(remote)));
         const kept = snapshots.get(ctx.connectionId);
         if (kept) kept.logbook = { ...kept.logbook, dives: kept.logbook.dives.filter((r) => idOf(r.odin_user_log_id) !== remoteId) };
         return 'deleted';

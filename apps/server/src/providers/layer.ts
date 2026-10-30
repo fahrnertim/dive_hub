@@ -7,11 +7,11 @@ import type { SecretBox } from '../secrets/secret-box.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { createCertificationService } from '../certifications/certification-service.js';
 import { createBuddyService } from './buddy-service.js';
-import { createConflictService } from './conflicts.js';
+import { createConflictService } from './conflict-service.js';
 import { createConnectionService } from './connection-service.js';
 import { createDiveImportService } from './dive-import.js';
 import { createGoneDiveService } from './gone-dives.js';
-import { createLeases, type Clock } from './leases.js';
+import { createLeaseService, type Clock } from './lease-service.js';
 import type { ProviderAdapter } from './provider.js';
 import { createPushRunService } from './push-run-service.js';
 import { createPushService } from './push-service.js';
@@ -33,7 +33,7 @@ export function createProviderLayer(deps: {
   const clock = deps.clock && { clock: deps.clock };
   // One fallback for the whole layer: every service that logs is handed the same logger.
   const log = deps.log ?? consoleLog;
-  const leases = createLeases({ db: deps.db, ...clock, log });
+  const leases = createLeaseService({ db: deps.db, ...clock, log });
   const connections = createConnectionService({ db: deps.db, registry: providers, secrets: deps.secrets, leases, ...clock });
   const conflicts = createConflictService({ db: deps.db, connections, registry: providers, blobs: deps.blobs });
   const pushes = createPushService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, leases, conflicts, ...clock, log });

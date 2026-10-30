@@ -521,7 +521,7 @@ Deliberate simplifications, to revisit:
 the [follow-ups](../research/2026-10-05-provider-layer-follow-ups.md)). Users see no change in behaviour or texts.
 
 Implemented:
-- **Leases in PostgreSQL** (`src/providers/leases.ts`, replacing the in-memory `pacing.ts` and Dive lock): `dive_lease`
+- **Leases in PostgreSQL** (`src/providers/lease-service.ts`, replacing the in-memory `pacing.ts` and Dive lock): `dive_lease`
   (one action per Dive and Provider, one conditional upsert) and `connection.next_action_at` (pacing per Connection; a
   request waits what is left of the pause, or looks again every 250 ms, for at most 30 s, then `provider_busy`). Leases
   hold at most 5 minutes, so a crashed process frees them by itself. No advisory locks, no transaction around a Provider
@@ -697,8 +697,8 @@ Implemented:
 
 Implemented:
 - `src/providers/three-way.ts` (pure): the fields, comparing as the Provider keeps values, and the decision per field
-  (take, conflict, nothing). `dive-import.ts`: the base (`baseOf`: the last finished Import's Original or the last Push
-  that sent values, the newer), the Dive's side (`hubOf`), taking values (`takeChanges`: one Revision `update`, the site
+  (take, conflict, nothing). `dive-changes.ts`: the base (`baseDiveOf`: the last finished Import's Original or the last Push
+  that sent values, the newer), the Dive's side (`hubSideOf`), taking values (`takeChanges`: one Revision `update`, the site
   through `siteForProvider`, Participants with an account replaced, values and their Overrides on Dives without a
   Recording, and a new up-to-date `link` Push when the Dive was up to date), for linked dives, Recordings' Dives and dives
   Dive Hub sent. `parse` takes the remote ID for a record that doesn't name it (what was sent before SSI gave one).
@@ -827,7 +827,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 
 **Slice 18b (2026-10-07): merging two Dives; a linked Dive moves as a copy** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md),
 [Logbook housekeeping](../research/2026-10-07-logbook-housekeeping.md)).
-- `apps/server/src/dives/merging.ts` (`createMerging`): `candidates` (the Dives of the same Diver that overlap one, by
+- `apps/server/src/dives/merging-service.ts` (`createMergingService`): `candidates` (the Dives of the same Diver that overlap one, by
   the import's `overlaps` and tolerance, local times where an offset is unknown; with their Recordings, the Providers
   they are at, which a merge keeps), `merge` (both Dives locked in id order; the other's Recordings attached, Participants
   added, links moved, gaps filled, notes appended, then the other deleted) and `move` (as before for an unlinked Dive; a
@@ -855,7 +855,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   (`recording_beside_entry` with the import's tolerance when exactly one has a Recording, `overlapping_dives` on a real
   overlap otherwise; local times where an offset is unknown) and `findChecks` over a logbook (each pair once; `obvious`
   when an import would have attached them: one partner each, depths agreeing).
-- `logbook-checks.ts` (`createLogbookChecks`): `list` (the User's Divers' live Dives, the pairs, without those answered),
+- `logbook-check-service.ts` (`createLogbookCheckService`): `list` (the User's Divers' live Dives, the pairs, without those answered),
   `against` (one Dive's pairs, for the dive page's merge candidates, which follow the same rules now) and `answer`.
   `logbook-check-answers.ts`: `keepApart`, called when a Recording is split off (`detach`) or a Duplicate candidate
   becomes a Dive of its own.
@@ -943,7 +943,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - `pushes.send(userId, diveId, provider, options)` with `SendOptions` (`onExisting`, `conflicts`, `onConflict: 'ask' | 'defer'`,
   `runId`). An update, under the lease and `withAccess`, where the adapter offers `current` and `parse` (`updateThere` in
   `push-service.ts`): the Provider's record now (the same read the update writes from), the base and the Dive's side
-  (`dive-changes.ts`: `baseOf`, `hubOf`), the fields that travel both ways, the open entry (`conflicts.ts`) and the choices go
+  (`dive-changes.ts`: `baseDiveOf`, `hubSideOf`), the fields that travel both ways, the open entry (`conflict-service.ts`) and the choices go
   into `planSend` (`three-way.ts`). A Conflict to ask answers `conflicts` and writes nothing; otherwise what changed only at the
   Provider is taken first (`takeChanges`, one Revision `update` by the User), the Dive is read again, and the adapter's `update`
   gets `leave` (`keep`: deferred Conflicts and fields without `export`; `clear`: removed here). The Push carries the fingerprint of

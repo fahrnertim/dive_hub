@@ -15,7 +15,7 @@ export { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
 /** Which of these Dives are at a Provider (the Pushes know). */
 type AtProvider = (diveIds: string[]) => Promise<Set<string>>;
 
-export function createLogbookChecks(db: Db) {
+export function createLogbookCheckService(db: Db) {
   /** The live Dives of these Divers as the rules see them, with their sites' names. */
   async function divesOf(diverIds: string[]) {
     if (diverIds.length === 0) return [];
@@ -111,4 +111,4 @@ export function createLogbookChecks(db: Db) {
   };
 }
 
-export type LogbookChecks = ReturnType<typeof createLogbookChecks>;
+export type LogbookCheckService = ReturnType<typeof createLogbookCheckService>;

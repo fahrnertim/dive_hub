@@ -1,6 +1,6 @@
 // Pushes to Providers (ADR 0024, 0027): what every Provider needs when a Dive goes out. It records each action, knows
 // the remote record a Dive has now, works out "outdated" from the adapter's fingerprint, runs one action per Dive and
-// Provider at a time (a lease, leases.ts), deletes at several Providers only once each would, and turns adapter errors
+// Provider at a time (a lease, lease-service.ts), deletes at several Providers only once each would, and turns adapter errors
 // into problem codes. An update is three-way (ADR 0056): against the base, what changed only at the Provider is taken
 // first, a removal goes out, and a field changed on both sides is a Conflict. What a Provider does with the Dive is the
 // adapter's.
@@ -9,10 +9,10 @@ import type { Db } from '../db/client.js';
 import { connection, dive, push, type ConnectionRow } from '../db/schema.js';
 import type { SiteSource } from '../sites/sources.js';
 import type { BlobStore } from '../storage/blob-store.js';
-import { close, openFields, record as recordConflict, type ConflictField, type ConflictService } from './conflicts.js';
+import { close, openFields, record as recordConflict, type ConflictField, type ConflictService } from './conflict-service.js';
 import type { ConnectionService } from './connection-service.js';
-import { createDiveChanges, type ProviderRun } from './dive-changes.js';
-import { LeaseBusy, realClock, type Clock, type Leases } from './leases.js';
+import { createDiveChanges, type ProviderContext } from './dive-changes.js';
+import { LeaseBusy, realClock, type Clock, type LeaseService } from './lease-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import {
   DIVE_FIELDS, ProviderError, referenceOf, type ActionContext, type Delivered, type DiveExport, type DiveExportAction, type DiveField, type ImportContext,
@@ -24,9 +24,9 @@ import { currentRemote, type PushRow } from './remote-state.js';
 import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements } from './requirements.js';
 import { siteForSend } from './site-for-send.js';
 import { buddiesForSend, keepBuddies, type BuddiesForSend } from './buddies-for-send.js';
-import { deletingItself, mark as markWaitingPush, settle as settleWaitingPush, type QueueMark, type ProviderLog } from './waiting-push-queue.js';
+import { deletingItself, clearIfUnchanged, stampOf, type QueueStamp, type ProviderLog } from './waiting-push-queue.js';
 import { waitingOf } from './waiting-push-view.js';
-import { comparableOf, planSend, same, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
+import { comparableOf, planSend, sameAtProvider, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
 
 /** What deleting a Dive at Providers did: each copy deleted or kept, and why it stopped, if it did. */
 export interface Removal {
@@ -73,11 +73,11 @@ function exportsField(adapter: ProviderAdapter, field: DiveField): boolean {
   return !directions || !!directions[field]?.includes('export');
 }
 
-type Here = NonNullable<Awaited<ReturnType<ReturnType<typeof createDiveChanges>['hubOf']>>>;
+type Here = NonNullable<Awaited<ReturnType<ReturnType<typeof createDiveChanges>['hubSideOf']>>>;
 
 /** The Provider's record compared with the Dive here and the base: what an update takes, clears, keeps or asks. */
 interface Exchange {
-  run: ProviderRun;
+  pc: ProviderContext;
   remote: ImportedDive;
   here: Here;
   provider: Comparable;
@@ -115,7 +115,7 @@ export function numbersFor(conn: { followNumbers: boolean } | null, exports: Div
 }
 type NumbersFor = NonNullable<ReturnType<typeof numbersFor>>;
 
-export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases; conflicts: ConflictService; clock?: Clock; log: ProviderLog }) {
+export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: LeaseService; conflicts: ConflictService; clock?: Clock; log: ProviderLog }) {
   const { db, registry, connections, leases, conflicts } = deps;
   const { log } = deps;
   const clock = deps.clock ?? realClock;
@@ -231,14 +231,14 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       const { row } = await loadOutgoingDive(db, userId, diveId, { deleted: true });
       return await leased(diveId, adapters, async () => {
         // The entries as they are before anything is deleted: a change after this goes out once more.
-        const seen = new Map<string, QueueMark>();
-        for (const provider of providers) seen.set(provider, await markWaitingPush(db, diveId, provider, 'delete'));
+        const seen = new Map<string, QueueStamp>();
+        for (const provider of providers) seen.set(provider, await stampOf(db, diveId, provider, 'delete'));
         const gone = providers.length > 1 ? await checkAll(userId, row, providers) : new Set<string>();
         for (const provider of providers) {
           await deleteThere(userId, row, provider, gone.has(provider));
           copies.set(provider, 'deleted');
           // A confirmed delete finishes the Dive's waiting delete there (a change noted after it began would not be a delete).
-          await settleWaitingPush(db, diveId, provider, seen.get(provider)!, 'delete');
+          await clearIfUnchanged(db, diveId, provider, seen.get(provider)!, 'delete');
         }
         return answer(null);
       });
@@ -301,27 +301,27 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     // The adapter parsed the dive without the entries remembered for Divers; parse it again with them.
     const context = await withRemembered(db, conn.diverId, adapter.accountSource, read.context);
     read = { ...read, context, dive: adapter.dives!.parse!(read.record, context, read.dive.remoteId) ?? read.dive };
-    const run = await changes.runOf(db, conn.userId, adapter, {
+    const pc = await changes.contextOf(db, conn.userId, adapter, {
       diverId: conn.diverId, connectionId: conn.id, mode: conn.importMode, windowMinutes: conn.importWindowMinutes, choices: {}, context,
     });
-    const base = await changes.baseOf(db, run, diveId, remoteId);
+    const base = await changes.baseDiveOf(db, pc, diveId, remoteId);
     const source = (Object.keys(read.dive.siteIds)[0] ?? Object.keys(base?.siteIds ?? {})[0] ?? null) as SiteSource | null;
     // The remote dive's site ID, when the Diver's account may use it: an update never moves a dive between a site's IDs.
-    const here = (await changes.hubOf(db, run, diveId, source, source ? read.dive.siteIds[source] : null))!;
+    const here = (await changes.hubSideOf(db, pc, diveId, source, source ? read.dive.siteIds[source] : null))!;
     const provider = comparableOf(read.dive);
     const plan = planSend({
       fields: here.fields.filter((f) => exportsField(adapter, f)), base: base && comparableOf(base), provider, hub: here.hub,
       choices: options.conflicts ?? {}, open: await openFields(db, diveId, adapter.id, remoteId), onConflict: options.onConflict ?? 'ask',
     });
-    const deferred = [...plan.keep, ...here.fields.filter((f) => !exportsField(adapter, f) && !same(f, provider, here.hub))];
-    return { run, remote: read.dive, here, provider, plan, deferred };
+    const deferred = [...plan.keep, ...here.fields.filter((f) => !exportsField(adapter, f) && !sameAtProvider(f, provider, here.hub))];
+    return { pc, remote: read.dive, here, provider, plan, deferred };
   }
 
   /** These fields with both values, said as the import preview says them, and the Provider's comparable value. */
-  const shownOf = (x: Exchange, fields: SyncedField[]) => changes.conflictFields(x.run, fields, x.here, x.provider);
+  const shownOf = (x: Exchange, fields: SyncedField[]) => changes.conflictFields(x.pc, fields, x.here, x.provider);
 
   /** After an update: a Push run's Conflicts wait as the Dive's entry; any other successful send settles the entry. */
-  async function settle(x: Exchange, conn: ConnectionRow, diveId: string, remoteId: string, options: SendOptions) {
+  async function recordOrCloseConflict(x: Exchange, conn: ConnectionRow, diveId: string, remoteId: string, options: SendOptions) {
     if (options.onConflict === 'defer' && x.plan.keep.length > 0) {
       await recordConflict(db, {
         diveId, provider: conn.provider, connectionId: conn.id, remoteId, fields: await shownOf(x, x.plan.keep), runId: options.runId ?? null, foundAt: new Date(clock.now()),
@@ -353,7 +353,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     // The take commits on its own, before `requirementsMet` and the update: should either fail, the Dive holds the
     // Provider's values, and the next comparison sees both sides equal there, so nothing is taken twice nor lost.
     const applied = x && x.plan.take.length > 0
-      ? await db.transaction((tx) => changes.takeChanges(tx, x.run, diveId, x.remote, x.plan.take, { type: 'user', id: userId }, true))
+      ? await db.transaction((tx) => changes.takeChanges(tx, x.pc, diveId, x.remote, x.plan.take, { type: 'user', id: userId }, true))
       : [];
     for (const field of applied) taken.add(field);
     // A take that changed nothing (a site Dive Hub can't use) stays as the Provider has it; a tank a Recording
@@ -371,7 +371,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       .catch((error: unknown) => steps.failed('update', error, remoteId));
     if (!updated) return steps.gone(remoteId);
     const pushed = await steps.delivered('update', { ...updated, remoteNumber: updated.remoteNumber ?? current.remoteNumber }, now, reloaded.row.version);
-    if (x) await settle(x, conn, diveId, remoteId, options);
+    if (x) await recordOrCloseConflict(x, conn, diveId, remoteId, options);
     return { result: 'updated', push: pushed, taken: [...taken].filter((f) => !deferred.includes(f)), deferred };
   }
 
@@ -492,7 +492,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       const { onExisting } = options;
       const { adapter, dives, exports } = exporter(provider);
       // The Dive's waiting send as it is before the send reads the Dive: a change after this goes out once more.
-      const seen = await markWaitingPush(db, diveId, adapter.id, 'send');
+      const seen = await stampOf(db, diveId, adapter.id, 'send');
       const first = await loadOutgoingDive(db, userId, diveId);
       const conn = await connectionOrThrow(userId, first.row.diverId, adapter);
       requirementsMet(adapter, prepared(adapter, exports, first), { beforeSite: true });
@@ -552,8 +552,8 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       // The send is confirmed whatever the queue does after it: a throw here would answer as failed, and the next step
       // finds the Dive up to date and settles its entry.
       if ('push' in result && result.push.state === 'confirmed') {
-        await settleWaitingPush(db, diveId, adapter.id, seen, 'send').catch((err: unknown) =>
-          log.error({ err, diveId, provider: adapter.id }, 'a confirmed send could not settle its Waiting push'));
+        await clearIfUnchanged(db, diveId, adapter.id, seen, 'send').catch((err: unknown) =>
+          log.error({ err, diveId, provider: adapter.id }, 'a confirmed send could not finish its Waiting push'));
       }
       return result;
     },

@@ -58,7 +58,7 @@ const hasTolerance = (field: SyncedField): field is keyof typeof TOLERANCE => fi
 const valueOf = (field: SyncedField, c: Comparable) => (field === 'notes' ? text(c.notes) : c[field]);
 
 /** Equal as far as the Provider keeps it: minutes for times, a minute for durations, 0.1 for depths and temperatures. */
-export function same(field: SyncedField, a: Comparable, b: Comparable): boolean {
+export function sameAtProvider(field: SyncedField, a: Comparable, b: Comparable): boolean {
   if (field === 'buddies') return JSON.stringify(a.buddies) === JSON.stringify(b.buddies);
   if (field === 'cylinder') return a.cylinder === null || b.cylinder === null ? a.cylinder === b.cylinder : sameCylinder(a.cylinder, b.cylinder);
   if (hasTolerance(field)) return near(a[field], b[field], TOLERANCE[field]);
@@ -80,9 +80,9 @@ export function threeWay(fields: readonly SyncedField[], base: Comparable, provi
   const conflicts: SyncedField[] = [];
   const clear: SyncedField[] = [];
   for (const field of fields) {
-    if (same(field, provider, hub)) continue;
-    const providerChanged = !same(field, base, provider);
-    const hubChanged = !same(field, base, hub);
+    if (sameAtProvider(field, provider, hub)) continue;
+    const providerChanged = !sameAtProvider(field, base, provider);
+    const hubChanged = !sameAtProvider(field, base, hub);
     if (!providerChanged && !hubChanged) continue;
     // A dive needs a site at the Provider: a site is never cleared there, and a Provider without one never clears it here.
     if (field === 'site' && (isEmpty('site', provider) || (isEmpty('site', hub) && !providerChanged))) continue;
@@ -130,7 +130,7 @@ export function planSend(input: {
   for (const field of fields) {
     if (open.includes(field)) {
       if (field === 'site' && isEmpty('site', provider)) continue;
-      if (!same(field, provider, hub)) settle(field);
+      if (!sameAtProvider(field, provider, hub)) settle(field);
     } else if (auto.take.includes(field)) plan.take.push(field);
     else if (auto.clear.includes(field)) plan.clear.push(field);
     else if (auto.conflicts.includes(field)) settle(field);

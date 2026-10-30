@@ -11,7 +11,7 @@ const RESET_TTL_MS = 24 * 3600_000;
  * Invitation. Single-use, expires after 24 h; only the token's hash is stored. Using it sets the
  * new password and ends every session of that User.
  */
-export function createPasswordResets(db: Db) {
+export function createPasswordResetService(db: Db) {
   const open = (tokenSha256: string) => and(
     eq(passwordReset.tokenSha256, tokenSha256), isNull(passwordReset.usedAt), isNull(passwordReset.revokedAt),
     gt(passwordReset.expiresAt, sql`now()`),
@@ -76,4 +76,4 @@ export function createPasswordResets(db: Db) {
   };
 }
 
-export type PasswordResets = ReturnType<typeof createPasswordResets>;
+export type PasswordResetService = ReturnType<typeof createPasswordResetService>;

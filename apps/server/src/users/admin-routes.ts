@@ -5,17 +5,17 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
 import { answerErrors, answers, problem } from '../http/problems.js';
-import { EmailTakenError, invitationStatus, type InvitationRow, type Invitations } from './invitations.js';
-import type { PasswordResets } from './password-resets.js';
-import { UserAdminError, type UserAdmin } from './user-admin.js';
+import { EmailTakenError, invitationStatus, type InvitationRow, type InvitationService } from './invitation-service.js';
+import type { PasswordResetService } from './password-reset-service.js';
+import { UserAdminError, type UserAdminService } from './user-admin-service.js';
 import { Email, LinkView, Problem, RoleSchema, UserView, toUserView } from './views.js';
 import { DateTime, IdParams } from '../http/schemas.js';
 
 export interface AdminRouteDeps {
   auth: Auth;
-  userAdmin: UserAdmin;
-  invitations: Invitations;
-  passwordResets: PasswordResets;
+  userAdmin: UserAdminService;
+  invitations: InvitationService;
+  passwordResets: PasswordResetService;
   baseUrl: string;
 }
 

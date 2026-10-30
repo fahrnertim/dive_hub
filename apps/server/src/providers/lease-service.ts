@@ -33,7 +33,7 @@ export class LeaseBusy extends Error {
 /** The Connection's turn didn't come within MAX_WAIT_MS. */
 export class TurnTimeout extends Error {}
 
-export function createLeases(deps: { db: Db; clock?: Clock; log: ProviderLog }) {
+export function createLeaseService(deps: { db: Db; clock?: Clock; log: ProviderLog }) {
   const { db } = deps;
   const clock = deps.clock ?? realClock;
   const { log } = deps;
@@ -119,4 +119,4 @@ export function createLeases(deps: { db: Db; clock?: Clock; log: ProviderLog }) 
   };
 }
 
-export type Leases = ReturnType<typeof createLeases>;
+export type LeaseService = ReturnType<typeof createLeaseService>;

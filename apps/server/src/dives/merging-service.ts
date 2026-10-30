@@ -14,7 +14,7 @@ import {
 } from './dive-service.js';
 import { managedDiverIds } from '../divers/management.js';
 import { valuesOfDive, type DiveValues } from './dive-values.js';
-import type { LogbookChecks } from './logbook-checks.js';
+import type { LogbookCheckService } from './logbook-check-service.js';
 import { takeCylinders } from './cylinders.js';
 import { takeWeighting } from './weighting.js';
 import { changeListener, userActor, writeRevision, type Actor, type Changes } from './revisions.js';
@@ -100,7 +100,7 @@ async function deleteLeftBehind(tx: Tx, diveId: string, actor: Actor, cause: 'me
   return at;
 }
 
-export function createMerging(db: Db, checks: LogbookChecks) {
+export function createMergingService(db: Db, checks: LogbookCheckService) {
   return {
     /**
      * The Dives of the same Diver this one breaks a rule of the logbook checks with (ADR 0038): at the same time, as the
@@ -260,4 +260,4 @@ async function moveLinks(tx: Tx, userId: string, keptId: string, otherId: string
   return moved;
 }
 
-export type Merging = ReturnType<typeof createMerging>;
+export type MergingService = ReturnType<typeof createMergingService>;

@@ -10,7 +10,7 @@ import { participantsOf } from '../dives/dive-service.js';
 import { locked } from './advisory-lock.js';
 import { nameDiffers } from './buddy-names.js';
 import { forgetEntry, listAccountOf, remember, rememberedFor } from './list-entries.js';
-import { realClock, type Clock } from './leases.js';
+import { realClock, type Clock } from './lease-service.js';
 import { ProviderError, type ActionContext, type DiverSource, type ProviderAdapter, type RemoteBuddy } from './provider.js';
 
 export interface BuddiesForSend {

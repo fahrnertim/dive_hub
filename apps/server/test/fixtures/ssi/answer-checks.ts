@@ -4,7 +4,7 @@
 // is expected to answer it without storing it). Both are deleted at the end if SSI has them. It prints key names, IDs
 // and the test dives' comparisons only; the raw answers go to samples/private/ssi/answer.json.
 import { createSsiClient, type SsiClient, type SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
-import { compareReadBack, createRecord, deleteRecord, updateRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
+import { compareReadBack, buildCreateRecord, buildDeleteRecord, buildUpdateRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
 
 const NOTES = 'Dive Hub test – answer, delete me';
 const FOREIGN_USER_AGENT = 'DiveHub-check/1.0';
@@ -97,7 +97,7 @@ export async function runAnswerChecks(o: { access: string; accountId: string; si
   await pause();
 
   // 1. A create as the app.
-  const created = createRecord(testDive('2000-01-05T12:00:00Z', siteId), { number, accountId, reference: 'divehub-answer-test' });
+  const created = buildCreateRecord(testDive('2000-01-05T12:00:00Z', siteId), { number, accountId, reference: 'divehub-answer-test' });
   const { id } = await app.client.save(access, created);
   log(`created SSI dive ${id} as number ${number} (app User-Agent)`);
   const createDive = describe('create answer', app.answers[0], created, log);
@@ -110,7 +110,7 @@ export async function runAnswerChecks(o: { access: string; accountId: string; si
 
   // 2. An update as the app.
   if (stored) {
-    const updated = updateRecord(stored, { ...testDive('2000-01-05T12:00:00Z', siteId), notes: `${NOTES} (updated)` });
+    const updated = buildUpdateRecord(stored, { ...testDive('2000-01-05T12:00:00Z', siteId), notes: `${NOTES} (updated)` });
     await app.client.save(access, updated);
     const updateDive = describe('update answer', app.answers[1], updated, log);
     await pause();
@@ -122,7 +122,7 @@ export async function runAnswerChecks(o: { access: string; accountId: string; si
   }
 
   // 3. A create with another User-Agent.
-  const foreignRecord = createRecord(testDive('2000-01-05T14:00:00Z', siteId), { number: number + 1, accountId, reference: 'divehub-answer-foreign' });
+  const foreignRecord = buildCreateRecord(testDive('2000-01-05T14:00:00Z', siteId), { number: number + 1, accountId, reference: 'divehub-answer-foreign' });
   let foreignId: string | null = null;
   try {
     foreignId = (await foreign.client.save(access, foreignRecord)).id;
@@ -142,7 +142,7 @@ export async function runAnswerChecks(o: { access: string; accountId: string; si
   const ours = logbook.dives.filter((d) => String(d.odin_user_log_comment ?? '').startsWith('Dive Hub test – answer')
     && String(d.odin_user_log_datetime).startsWith('2000-01-05'));
   for (const d of ours) {
-    await app.client.save(access, deleteRecord(d));
+    await app.client.save(access, buildDeleteRecord(d));
     log(`deleted SSI dive ${String(d.odin_user_log_id)}`);
     await pause();
   }

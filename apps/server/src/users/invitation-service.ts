@@ -23,7 +23,7 @@ export class EmailTakenError extends Error {
 }
 
 /** Invitations (ADR 0012): single-use, expiring, bound to an e-mail; only the token's hash is stored. */
-export function createInvitations(db: Db) {
+export function createInvitationService(db: Db) {
   const pending = (tokenSha256: string) => and(
     eq(invitation.tokenSha256, tokenSha256), isNull(invitation.acceptedAt), isNull(invitation.revokedAt),
     gt(invitation.expiresAt, sql`now()`),
@@ -81,4 +81,4 @@ export function createInvitations(db: Db) {
   };
 }
 
-export type Invitations = ReturnType<typeof createInvitations>;
+export type InvitationService = ReturnType<typeof createInvitationService>;

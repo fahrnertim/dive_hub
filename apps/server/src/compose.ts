@@ -6,7 +6,7 @@ import type { FastifyBaseLogger } from 'fastify';
 import { createAssessmentService } from './assessment/assessment-service.js';
 import { createImportService } from './imports/import-service.js';
 import { createAiAccessService } from './mcp/access-service.js';
-import type { Clock } from './providers/leases.js';
+import type { Clock } from './providers/lease-service.js';
 import { createProviderLayer } from './providers/layer.js';
 import type { ProviderAdapter } from './providers/provider.js';
 import type { ProviderLog } from './providers/waiting-push-queue.js';
@@ -15,8 +15,8 @@ import { createSiteImportService } from './sites/import/site-import-service.js';
 import type { SiteSourceAdapter } from './sites/import/site-source.js';
 import type { ImportSource } from './sites/sources.js';
 import type { BlobStore } from './storage/blob-store.js';
-import { createInvitations } from './users/invitations.js';
-import { createSetup } from './users/setup.js';
+import { createInvitationService } from './users/invitation-service.js';
+import { createSetupService } from './users/setup-service.js';
 import type { WorkerDeps } from './worker.js';
 
 export interface ServiceParts {
@@ -42,8 +42,8 @@ export function createServices({ db, blobs, auth, secrets, adapters, siteSources
     db, blobs, auth, assessments, providers, imports,
     siteImports: createSiteImportService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),
-    setup: createSetup(db),
-    invitations: createInvitations(db),
+    setup: createSetupService(db),
+    invitations: createInvitationService(db),
   };
 }
 

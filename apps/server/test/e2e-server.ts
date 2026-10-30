@@ -22,8 +22,8 @@ import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { computerDive, createFakeSsi, fakeCard, handTypedDive, type FakeSsiSite } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { resettableClock } from './support.js';
-import { createMerging } from '../src/dives/merging.js';
-import { createLogbookChecks } from '../src/dives/logbook-checks.js';
+import { createMergingService } from '../src/dives/merging-service.js';
+import { createLogbookCheckService } from '../src/dives/logbook-check-service.js';
 import { createDiverService } from '../src/divers/diver-service.js';
 import { connection, dive, importJob, pushRun, waitingPush } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -136,7 +136,7 @@ const lena = await divers.create(user.id, 'Lena');
 // computers counted them, by the dives before these logbooks.
 await divers.update(user.id, (await divers.list(user.id)).find((d) => d.isOwn)!.id, { divesBefore: 41 });
 await divers.update(user.id, lena.id, { divesBefore: 500 });
-const dives = createMerging(db, createLogbookChecks(db));
+const dives = createMergingService(db, createLogbookCheckService(db));
 for (const [n, start] of [[501, '2025-08-12T08:00:00Z'], [502, '2025-08-12T08:40:00Z'], [503, '2025-08-13T08:00:00Z'], [504, '2025-08-13T08:40:00Z']] as const) {
   const created = await imports.createImport(user.id, `lena-${n}.fit`, Readable.from([Buffer.from(makeSyntheticDive({ serialNumber: 7070, start: new Date(start), diveNumber: n }))]), 1 << 26);
   const outcome = await imports.processImport(created.id);

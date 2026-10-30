@@ -10,7 +10,7 @@ const SETUP_TOKEN_TTL_MS = 24 * 3600_000;
  * First-admin bootstrap (ADR 0012). While no User exists, the server holds one setup token in memory
  * (hashed) and prints it to the log; whoever has it may create the first admin. A restart issues a new one.
  */
-export function createSetup(db: Db, now: () => number = Date.now) {
+export function createSetupService(db: Db, now: () => number = Date.now) {
   let current: { hash: Buffer; expiresAt: number } | null = null;
 
   const isNeeded = async () => (await db.select({ n: count() }).from(user))[0]!.n === 0;
@@ -41,4 +41,4 @@ export function createSetup(db: Db, now: () => number = Date.now) {
   };
 }
 
-export type Setup = ReturnType<typeof createSetup>;
+export type SetupService = ReturnType<typeof createSetupService>;

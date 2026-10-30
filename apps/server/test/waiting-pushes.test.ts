@@ -5,8 +5,8 @@ import { runOnce } from 'graphile-worker';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, diveSiteExternalId, importJob, providerConflict, push, revision, waitingPush } from '../src/db/schema.js';
 import { writeRevision } from '../src/dives/revisions.js';
-import { record } from '../src/providers/conflicts.js';
-import { mark, QUIET_MS, settle, WAITING_PUSHES_TASK, waitingPushesKey } from '../src/providers/waiting-push-queue.js';
+import { record } from '../src/providers/conflict-service.js';
+import { clearIfUnchanged, QUIET_MS, stampOf, WAITING_PUSHES_TASK, waitingPushesKey } from '../src/providers/waiting-push-queue.js';
 import { ProviderError } from '../src/providers/provider.js';
 import { createWaitingPushService, GIVE_UP_MS, RETRY_AFTER_MS } from '../src/providers/waiting-push-service.js';
 import type { ImportedValues, SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
@@ -392,23 +392,23 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     expect(await rows()).toEqual([]);
   });
 
-  it('settle keeps an entry changed after the send began', async () => {
+  it('clearIfUnchanged keeps an entry changed after the send began', async () => {
     const id = await upload(day(1));
     await send(id);
     // Marked before the change, as a send that began then: the change may not have gone out.
-    const before = await mark(t.db, id, 'ledger');
+    const before = await stampOf(t.db, id, 'ledger');
     expect(before).toBeNull();
     await edit(id, 'Turtle');
     const [row] = await rows();
     await t.db.update(waitingPush).set({ state: 'held', reason: 'exists', attempts: 2, options: { onExisting: 'link', conflicts: { notes: 'hub' } } })
       .where(eq(waitingPush.diveId, id));
-    await settle(t.db, id, 'ledger', before);
+    await clearIfUnchanged(t.db, id, 'ledger', before);
     // The confirmed send applied the decisions: the send of the change carries none.
     expect(await rows()).toMatchObject([{ diveId: id, state: 'waiting', reason: null, attempts: 0 }]);
     expect((await rows())[0]!.options).toEqual({});
     expect((await rows())[0]!.dueAt.getTime()).toBe(row!.changedAt.getTime() + QUIET_MS);
     // Marked after it: the send carried it.
-    await settle(t.db, id, 'ledger', await mark(t.db, id, 'ledger'));
+    await clearIfUnchanged(t.db, id, 'ledger', await stampOf(t.db, id, 'ledger'));
     expect(await rows()).toEqual([]);
   });
 

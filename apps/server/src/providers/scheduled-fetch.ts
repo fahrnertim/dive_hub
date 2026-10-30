@@ -7,7 +7,7 @@ import { and, eq, inArray, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, importJob, type ConnectionRow } from '../db/schema.js';
 import type { DiveImportService } from './dive-import.js';
-import { realClock, type Clock } from './leases.js';
+import { realClock, type Clock } from './lease-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import type { ProviderLog } from './waiting-push-queue.js';
 

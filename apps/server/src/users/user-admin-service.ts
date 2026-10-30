@@ -5,7 +5,7 @@ import { certification, original, session, user } from '../db/schema.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { PROBLEMS } from '../http/problems.js';
 import { renumber } from '../dives/dive-numbers.js';
-import type { Role } from './invitations.js';
+import type { Role } from './invitation-service.js';
 
 export class UserAdminError extends Error {
   constructor(readonly code: 'user_not_found' | 'user_disabled' | 'last_admin' | 'not_yourself' | 'confirmation_mismatch') {
@@ -15,7 +15,7 @@ export class UserAdminError extends Error {
 
 type UserRow = typeof user.$inferSelect;
 
-export function createUserAdmin(db: Db, blobs: BlobStore) {
+export function createUserAdminService(db: Db, blobs: BlobStore) {
   /**
    * Locks the target and every enabled admin row for the rest of the transaction, so two admins
    * can't demote or remove each other at the same moment and leave the instance without one.
@@ -170,4 +170,4 @@ async function deleteUserData(tx: Tx, userId: string) {
   return { originals, uploads, pictures };
 }
 
-export type UserAdmin = ReturnType<typeof createUserAdmin>;
+export type UserAdminService = ReturnType<typeof createUserAdminService>;

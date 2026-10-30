@@ -8,7 +8,7 @@ import { Problem } from '../http/problems.js';
 import { DiveSummaryFields } from '../dives/dive-summary-view.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 import { ConflictChoices, ConflictFieldView } from './conflict-view.js';
-import type { ConflictService } from './conflicts.js';
+import type { ConflictService } from './conflict-service.js';
 import type { GoneDiveService } from './gone-dives.js';
 import type { ProviderRegistry } from './registry.js';
 import { DiveProviderParams, errors, GoneSummary } from './route-parts.js';

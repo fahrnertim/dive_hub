@@ -2,7 +2,7 @@
 // (several Users managing one Diver have Connections to the same account, and two entries would send twice), and the
 // Graphile Worker job of the Connection that runs at the earliest due time. Written where a Dive changes (a Revision,
 // a site's name or position) and by the User's decisions; the worker step that sends is elsewhere.
-// It imports only the database layer: `dives/merging.ts` asks it `deletingItself`, so a `dives/` import here would be a
+// It imports only the database layer: `dives/merging-service.ts` asks it `deletingItself`, so a `dives/` import here would be a
 // cycle. Revisions and site changes reach it through the ChangeListener of `dives/revisions.ts` (set in layer.ts).
 import { and, asc, desc, eq, inArray, min, ne, or, sql } from 'drizzle-orm';
 import type { Queryable, Tx } from '../db/client.js';
@@ -216,25 +216,25 @@ export async function queueNow(q: Queryable, diveId: string, provider: string, c
 
 /**
  * The Dive's entry at the Provider as it is before a send or delete begins: its last change (exact, as the database
- * keeps it), or null without one. `settle` tells by it whether the Dive changed while the action ran.
+ * keeps it), or null without one. `clearIfUnchanged` tells by it whether the Dive changed while the action ran.
  */
-export type QueueMark = string | null;
+export type QueueStamp = string | null;
 
-export async function mark(q: Queryable, diveId: string, provider: string, action?: 'send' | 'delete'): Promise<QueueMark> {
+export async function stampOf(q: Queryable, diveId: string, provider: string, action?: 'send' | 'delete'): Promise<QueueStamp> {
   const [entry] = await q.select({ at: sql<string>`${waitingPush.changedAt}::text` }).from(waitingPush)
     .where(and(eq(waitingPush.diveId, diveId), eq(waitingPush.provider, provider), ...(action ? [eq(waitingPush.action, action)] : [])));
   return entry?.at ?? null;
 }
 
 /**
- * A send or delete of the Dive was confirmed; `seen` is the entry's mark from before it began. The entry is done,
- * unless the Dive changed since (its mark differs, or an entry came that wasn't there): then it stays `waiting`, due
+ * A send or delete of the Dive was confirmed; `seen` is the entry's stamp from before it began. The entry is done,
+ * unless the Dive changed since (its stamp differs, or an entry came that wasn't there): then it stays `waiting`, due
  * `QUIET_MS` after that change, so the change goes out once more (without the entry's options: the confirmed send
  * applied the decisions). Told by the entry's own last change, not by a clock:
- * an edit whose transaction began before the send and committed during it carries an older time, but a new mark.
+ * an edit whose transaction began before the send and committed during it carries an older time, but a new stamp.
  * `action` limits it to the entries of that action (a confirmed send leaves a waiting delete alone).
  */
-export async function settle(q: Queryable, diveId: string, provider: string, seen: QueueMark, action?: 'send' | 'delete'): Promise<void> {
+export async function clearIfUnchanged(q: Queryable, diveId: string, provider: string, seen: QueueStamp, action?: 'send' | 'delete'): Promise<void> {
   const mine = and(eq(waitingPush.diveId, diveId), eq(waitingPush.provider, provider), ...(action ? [eq(waitingPush.action, action)] : []));
   if (seen !== null) {
     const done = await q.delete(waitingPush).where(and(mine, sql`${waitingPush.changedAt} = ${seen}::timestamptz`)).returning({ diveId: waitingPush.diveId });

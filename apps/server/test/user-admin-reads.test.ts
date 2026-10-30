@@ -3,19 +3,19 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { user } from '../src/db/schema.js';
-import { UserAdminError, createUserAdmin } from '../src/users/user-admin.js';
+import { UserAdminError, createUserAdminService } from '../src/users/user-admin-service.js';
 import { createTestApp, createTestDatabase, createUser, databaseReachable, type TestDatabase } from './support.js';
 
 describe.skipIf(!(await databaseReachable()))('user admin reads', () => {
   let t: TestDatabase;
   let ctx: Awaited<ReturnType<typeof createTestApp>>;
-  let admin: ReturnType<typeof createUserAdmin>;
+  let admin: ReturnType<typeof createUserAdminService>;
   const ids: Record<string, string> = {};
 
   beforeAll(async () => {
     t = await createTestDatabase();
     ctx = await createTestApp(t);
-    admin = createUserAdmin(t.db, ctx.blobs);
+    admin = createUserAdminService(t.db, ctx.blobs);
     for (const name of ['first', 'second', 'blocked']) ids[name] = (await createUser(ctx.auth, `${name}@example.com`)).id;
     await t.db.update(user).set({ banned: true }).where(eq(user.id, ids.blocked!));
   });

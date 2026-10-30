@@ -31,9 +31,9 @@ export interface GasPlanQuery {
 
 const round = (n: number, places: number) => Math.round(n * 10 ** places) / 10 ** places;
 
-function ruleOf(q: GasPlanQuery): GasRule {
-  if (q.rule === undefined || q.rule === 'rock_bottom') return { kind: 'rock_bottom' };
-  return q.rule === 'reserve' || q.rule === 'ascent_pressure' ? { kind: q.rule, bar: q.bar! } : { kind: q.rule };
+function ruleOf(query: GasPlanQuery): GasRule {
+  if (query.rule === undefined || query.rule === 'rock_bottom') return { kind: 'rock_bottom' };
+  return query.rule === 'reserve' || query.rule === 'ascent_pressure' ? { kind: query.rule, bar: query.bar! } : { kind: query.rule };
 }
 
 type Sac = { value: number; source: 'request' | 'logbook' | 'default'; basedOn?: number };
@@ -51,33 +51,33 @@ async function diverOf(reader: Queryable, managedIds: readonly string[], d: GasP
   return { input: d, sac, recentDiveEndedAt: (await recentDiveEnd(reader, d.diverId))?.toISOString() ?? null };
 }
 
-export async function planGasPlan(reader: Queryable, managedIds: readonly string[], q: GasPlanQuery) {
-  const gas = { o2: q.o2, he: q.he ?? 0 };
+export async function planGasPlan(reader: Queryable, managedIds: readonly string[], query: GasPlanQuery) {
+  const gas = { o2: query.o2, he: query.he ?? 0 };
   if (gas.o2 + gas.he > 100) throw new PlanningError('invalid_input');
-  if ((q.rule === 'reserve' || q.rule === 'ascent_pressure') && q.bar === undefined) throw new PlanningError('invalid_input');
+  if ((query.rule === 'reserve' || query.rule === 'ascent_pressure') && query.bar === undefined) throw new PlanningError('invalid_input');
 
-  const siteWater = await siteWaterOf(reader, q.siteId);
+  const siteWater = await siteWaterOf(reader, query.siteId);
 
-  const rule = ruleOf(q);
+  const rule = ruleOf(query);
   const water: { value: PlanningWater; source: 'request' | 'site' | 'default' } =
-    q.water !== undefined ? { value: q.water, source: 'request' } : siteWater ? { value: siteWater, source: 'site' } : { value: 'salt', source: 'default' };
+    query.water !== undefined ? { value: query.water, source: 'request' } : siteWater ? { value: siteWater, source: 'site' } : { value: 'salt', source: 'default' };
   const given = (value: number | undefined, fallback: number) =>
     value !== undefined ? { value, source: 'request' as const } : { value: fallback, source: 'default' as const };
   const used = {
     water,
-    altitudeM: given(q.altitude, 0),
-    gasRule: { value: { kind: rule.kind, bar: 'bar' in rule ? rule.bar : null }, source: q.rule === undefined ? 'default' as const : 'request' as const },
-    descentRateMPerMin: given(q.descentRate, DESCENT_RATE_M_PER_MIN),
-    ascentRateMPerMin: given(q.ascentRate, ASCENT_RATE_M_PER_MIN),
+    altitudeM: given(query.altitude, 0),
+    gasRule: { value: { kind: rule.kind, bar: 'bar' in rule ? rule.bar : null }, source: query.rule === undefined ? 'default' as const : 'request' as const },
+    descentRateMPerMin: given(query.descentRate, DESCENT_RATE_M_PER_MIN),
+    ascentRateMPerMin: given(query.ascentRate, ASCENT_RATE_M_PER_MIN),
   };
 
   const divers: Awaited<ReturnType<typeof diverOf>>[] = [];
-  for (const d of q.divers) divers.push(await diverOf(reader, managedIds, d));
+  for (const d of query.divers) divers.push(await diverOf(reader, managedIds, d));
 
   const result = planGas({
-    gas, conditions: { water: water.value, altitudeM: used.altitudeM.value }, levels: q.levels.map((l) => ({ depthM: l.depth, minutes: l.minutes })),
+    gas, conditions: { water: water.value, altitudeM: used.altitudeM.value }, levels: query.levels.map((l) => ({ depthM: l.depth, minutes: l.minutes })),
     divers: divers.map((d) => ({ name: d.input.name, volumeL: d.input.volume, startPressureBar: d.input.pressure, sacLpm: d.sac.value })),
-    rule, ppO2Contingency: q.ppo2Contingency ?? DEFAULT_PPO2.contingency,
+    rule, ppO2Contingency: query.ppo2Contingency ?? DEFAULT_PPO2.contingency,
     descentRateMPerMin: used.descentRateMPerMin.value, ascentRateMPerMin: used.ascentRateMPerMin.value,
   });
   const common = { gas, used, rule: used.gasRule.value };

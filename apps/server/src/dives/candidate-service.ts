@@ -17,7 +17,7 @@ export class CandidateError extends Error {
 type CandidateRow = typeof duplicateCandidate.$inferSelect;
 type RecordingRow = typeof recording.$inferSelect;
 
-export function createCandidates(db: Db) {
+export function createCandidateService(db: Db) {
   /** The candidate, locked, if its Recording came from one of the User's Imports. */
   async function lockMine(tx: Tx, userId: string, id: string): Promise<{ c: CandidateRow; r: RecordingRow }> {
     const [row] = await tx.select({ c: duplicateCandidate, r: recording }).from(duplicateCandidate)
@@ -114,4 +114,4 @@ export function createCandidates(db: Db) {
   };
 }
 
-export type Candidates = ReturnType<typeof createCandidates>;
+export type CandidateService = ReturnType<typeof createCandidateService>;

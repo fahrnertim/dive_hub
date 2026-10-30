@@ -5,14 +5,14 @@ import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { authHeaders, forwardCookies, requireUser, userOf } from '../auth/fastify.js';
 import { problem } from '../http/problems.js';
-import type { PasswordResets } from './password-resets.js';
+import type { PasswordResetService } from './password-reset-service.js';
 import type { SessionService } from './session-service.js';
 import { Password, Problem, Token, UserView, toUserView } from './views.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface AccountRouteDeps {
   auth: Auth;
-  passwordResets: PasswordResets;
+  passwordResets: PasswordResetService;
   sessions: SessionService;
 }
 
