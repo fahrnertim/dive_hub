@@ -365,6 +365,7 @@
               "invitation_not_found",
               "email_taken",
               "reset_link_invalid",
+              "too_many_attempts",
               "user_not_found",
               "user_disabled",
               "last_admin",
@@ -3191,6 +3192,7 @@
                   "invitation_not_found",
                   "email_taken",
                   "reset_link_invalid",
+                  "too_many_attempts",
                   "user_not_found",
                   "user_disabled",
                   "last_admin",
@@ -3376,6 +3378,7 @@
                   "invitation_not_found",
                   "email_taken",
                   "reset_link_invalid",
+                  "too_many_attempts",
                   "user_not_found",
                   "user_disabled",
                   "last_admin",
@@ -4139,6 +4142,7 @@
                         "invitation_not_found",
                         "email_taken",
                         "reset_link_invalid",
+                        "too_many_attempts",
                         "user_not_found",
                         "user_disabled",
                         "last_admin",
@@ -4545,6 +4549,16 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
           }
         }
       }
@@ -4597,6 +4611,16 @@
             }
           },
           "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -4668,6 +4692,16 @@
             }
           },
           "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -4916,6 +4950,16 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
           }
         }
       }
@@ -4962,6 +5006,16 @@
             }
           },
           "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {

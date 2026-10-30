@@ -94,10 +94,10 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   app.get('/api/openapi.json', { schema: { hide: true } }, async () => withAuthEndpoints(app.swagger(), deps.auth));
 
   await app.register(authHandler, { auth: deps.auth });
-  const { db, auth, assessments, baseUrl, passwordResets, logbook, divers, centres, dives, merging, checks } = deps;
+  const { db, auth, assessments, baseUrl, passwordResets, tokenAttempts, logbook, divers, centres, dives, merging, checks } = deps;
   const { pushes, waitingPushes, certifications } = deps.providers;
-  await app.register(userRoutes, { prefix: '/api', auth, profiles: deps.profiles, setup: deps.setup, invitations: deps.invitations });
-  await app.register(accountRoutes, { prefix: '/api', auth, passwordResets, sessions: deps.sessions });
+  await app.register(userRoutes, { prefix: '/api', auth, profiles: deps.profiles, setup: deps.setup, invitations: deps.invitations, tokenAttempts });
+  await app.register(accountRoutes, { prefix: '/api', auth, passwordResets, sessions: deps.sessions, tokenAttempts });
   await app.register(adminRoutes, { prefix: '/api', auth, passwordResets, userAdmin: deps.userAdmin, invitations: deps.invitations, baseUrl });
   await app.register(importRoutes, { prefix: '/api', auth, imports: deps.imports, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
   await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes });

@@ -428,6 +428,7 @@
     "invitation_not_found": "Diese Einladung ist nicht mehr offen.",
     "email_taken": "Mit dieser E-Mail-Adresse gibt es schon ein Konto.",
     "reset_link_invalid": "Dieser Link ist ungültig, schon benutzt oder abgelaufen.",
+    "too_many_attempts": "Zu viele Versuche aus diesem Netz. Versuch es in ein paar Minuten noch einmal.",
     "user_not_found": "Diesen Benutzer gibt es nicht (mehr).",
     "user_disabled": "Aktiviere den Benutzer zuerst.",
     "last_admin": "Das ist der einzige Admin. Mach zuerst jemand anderen zum Admin.",

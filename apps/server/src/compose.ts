@@ -16,6 +16,7 @@ import { createMergeService } from './dives/merge-service.js';
 import { createMergingService } from './dives/merging-service.js';
 import { createDiverService } from './divers/diver-service.js';
 import { createImportService } from './imports/import-service.js';
+import { createAttemptLimit, TOKEN_ATTEMPTS } from './http/attempt-limit.js';
 import { createLeadService } from './lead/lead-service.js';
 import { createAiAccessService } from './mcp/access-service.js';
 import { createPlanningService } from './planning/planning-service.js';
@@ -47,7 +48,7 @@ export interface ServiceParts {
   /** The Providers of this instance (ADR 0027): the production SSI, or the fake and test-only ones. */
   adapters: ProviderAdapter[];
   siteSources: Record<ImportSource, SiteSourceAdapter>;
-  /** The leases' clock (default: real time). */
+  /** The clock of leases and attempt limits (default: real time). */
   clock?: Clock;
   /** Where the provider layer's own faults go (the app's logger). */
   log?: ProviderLog;
@@ -70,6 +71,8 @@ export function createServices({ db, blobs, auth, secrets, adapters, siteSources
     setup: createSetupService(db),
     invitations: createInvitationService(db),
     passwordResets: createPasswordResetService(db),
+    // One count per client IP across the public token routes (ADR 0061).
+    tokenAttempts: createAttemptLimit(TOKEN_ATTEMPTS, clock ? () => clock.now() : undefined),
     profiles: createProfileService(db),
     sessions: createSessionService(db),
     userAdmin: createUserAdminService(db, blobs),

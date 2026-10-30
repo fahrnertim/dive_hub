@@ -8,6 +8,7 @@ import { authHeaders, forwardCookies, requireUser, userOf } from '../auth/fastif
 import type { InvitationService, Role } from './invitation-service.js';
 import type { ProfileService } from './profile-service.js';
 import type { SetupService } from './setup-service.js';
+import { limitAttempts, type AttemptLimit } from '../http/attempt-limit.js';
 import { problem } from '../http/problems.js';
 import { Email, Password, PreferencesView, Problem, Token, UserView, toUserView } from './views.js';
 import { DateTime } from '../http/schemas.js';
@@ -17,6 +18,8 @@ export interface UserRouteDeps {
   profiles: ProfileService;
   setup: SetupService;
   invitations: InvitationService;
+  /** Counts attempts at the token routes per client IP (ADR 0061); shared with accountRoutes. */
+  tokenAttempts: AttemptLimit;
 }
 
 const Name = Type.String({ minLength: 1, maxLength: 100, pattern: '\\S' });
@@ -27,7 +30,9 @@ const MeView = Type.Object({
   preferences: PreferencesView,
 });
 
-export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, { auth, profiles, setup, invitations }) => {
+export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, { auth, profiles, setup, invitations, tokenAttempts }) => {
+  const limited = limitAttempts(tokenAttempts);
+
   /** Creates the User through Better Auth (which hashes the password), then signs them in. */
   async function createAndSignIn(
     request: FastifyRequest, reply: FastifyReply,
@@ -51,10 +56,11 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
   }, async () => ({ needed: await setup.isNeeded() }));
 
   app.post('/setup', {
+    onRequest: limited,
     schema: {
       summary: 'Create the first admin with the setup token printed to the server log',
       body: Type.Object({ token: Token, email: Email, name: Name, password: Password }),
-      response: { 201: UserView, 403: Problem, 409: Problem },
+      response: { 201: UserView, 403: Problem, 409: Problem, 429: Problem },
     },
   }, async (request, reply) => {
     if (!(await setup.isNeeded())) return reply.code(409).send(problem('setup_done'));
@@ -72,10 +78,11 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
   });
 
   app.post('/invitations/lookup', {
+    onRequest: limited,
     schema: {
       summary: 'The open invitation behind an invitation token',
       body: Type.Object({ token: Token }),
-      response: { 200: Type.Object({ email: Type.String(), expiresAt: DateTime }), 404: Problem },
+      response: { 200: Type.Object({ email: Type.String(), expiresAt: DateTime }), 404: Problem, 429: Problem },
     },
   }, async (request, reply) => {
     const found = await invitations.find(request.body.token);
@@ -85,10 +92,11 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
   });
 
   app.post('/invitations/accept', {
+    onRequest: limited,
     schema: {
       summary: 'Accept an invitation: become a User and get signed in',
       body: Type.Object({ token: Token, name: Name, password: Password }),
-      response: { 201: UserView, 404: Problem, 409: Problem },
+      response: { 201: UserView, 404: Problem, 409: Problem, 429: Problem },
     },
   }, async (request, reply) => {
     const claimed = await invitations.claim(request.body.token);

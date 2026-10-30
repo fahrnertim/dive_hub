@@ -18,6 +18,7 @@ export const PROBLEMS = {
   invitation_not_found: 'No open invitation with this id',
   email_taken: 'A User with this e-mail already exists',
   reset_link_invalid: 'This link is invalid, used or expired',
+  too_many_attempts: 'Too many attempts from this address; try again after Retry-After seconds',
   user_not_found: 'No such User',
   user_disabled: 'Enable the User first',
   last_admin: 'This is the only admin; make someone else admin first',

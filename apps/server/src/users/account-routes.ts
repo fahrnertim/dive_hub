@@ -4,6 +4,7 @@ import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/ty
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { authHeaders, forwardCookies, requireUser, sessionIdOf, userOf } from '../auth/fastify.js';
+import { limitAttempts, type AttemptLimit } from '../http/attempt-limit.js';
 import { problem } from '../http/problems.js';
 import type { PasswordResetService } from './password-reset-service.js';
 import type { SessionService } from './session-service.js';
@@ -14,6 +15,8 @@ export interface AccountRouteDeps {
   auth: Auth;
   passwordResets: PasswordResetService;
   sessions: SessionService;
+  /** Counts attempts at the token routes per client IP (ADR 0061); shared with userRoutes. */
+  tokenAttempts: AttemptLimit;
 }
 
 const SessionView = Type.Object({
@@ -26,14 +29,16 @@ const SessionView = Type.Object({
   current: Type.Boolean({ description: 'The session this request came with' }),
 });
 
-export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async (app, { auth, passwordResets, sessions }) => {
+export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async (app, { auth, passwordResets, sessions, tokenAttempts }) => {
   // --- Public: using a password reset link ---------------------------------------------------------
+  const limited = limitAttempts(tokenAttempts);
 
   app.post('/password-resets/lookup', {
+    onRequest: limited,
     schema: {
       summary: 'Whose password a reset link is for',
       body: Type.Object({ token: Token }),
-      response: { 200: Type.Object({ email: Type.String() }), 404: Problem },
+      response: { 200: Type.Object({ email: Type.String() }), 404: Problem, 429: Problem },
     },
   }, async (request, reply) => {
     const found = await passwordResets.find(request.body.token);
@@ -41,10 +46,11 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
   });
 
   app.post('/password-resets/complete', {
+    onRequest: limited,
     schema: {
       summary: 'Set a new password with a reset link; signs out everywhere, then signs in here',
       body: Type.Object({ token: Token, password: Password }),
-      response: { 200: UserView, 404: Problem },
+      response: { 200: UserView, 404: Problem, 429: Problem },
     },
   }, async (request, reply) => {
     const email = await passwordResets.complete(request.body.token, request.body.password);

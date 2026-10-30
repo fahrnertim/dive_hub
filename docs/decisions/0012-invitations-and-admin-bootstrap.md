@@ -8,7 +8,8 @@ date: 2026-10-03
 # ADR 0012: Invitation links, setup token for the first admin, 2FA later
 
 ## Status
-Accepted – 2026-10-03
+Accepted – 2026-10-03. Amended by [ADR 0061](0061-attempt-limit-on-token-routes.md) (2026-10-30): the setup and
+invitation routes count attempts per client IP (30 per 15 minutes) and answer 429 `too_many_attempts` over it.
 
 ## Context
 [ADR 0011](0011-better-auth.md) makes accounts invite-only and leaves the invitation flow and the

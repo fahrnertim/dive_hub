@@ -78,6 +78,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   *Web:* `AdminPage.tsx` (`LinkToPassOn`), `ui/Overlay.tsx` (`CopyField`).
 - **Must not tell whether an e-mail address has an account.** A failed sign-in says "wrong e-mail or password".
   Only "too many attempts" (429) and "disabled" (`BANNED_USER`) get their own message. *Web:* `SignedOut.tsx` (`SignIn`).
+- **Must show the "too many attempts" refusal on the token forms.** Setup, invitation and reset link routes count
+  attempts per client IP (30 per 15 minutes, [ADR 0061](../decisions/0061-attempt-limit-on-token-routes.md)) and
+  answer 429 `too_many_attempts` with `Retry-After` (seconds). Say to try again later; don't retry by itself.
+  *Web:* `SignedOut.tsx` (`Setup`, `AcceptInvitation`, `ResetPassword`, through `useErrorText`).
 - **Changing the password ends the User's other sessions.** The server enforces it, whatever
   `revokeOtherSessions` says. Tell the User afterwards that their other sessions were signed out. *Web:* `AccountPage.tsx` (`ChangePassword`).
 - **Must ask for the current password** to change it, and the server checks it (`INVALID_PASSWORD`).
