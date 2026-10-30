@@ -43,4 +43,6 @@ setup token is checked by these routes alone. The owner chose to close it on 202
 - The count lives in one process: it starts over on restart, and two app processes would count apart. That's
   enough for a self-hosted instance with one app process; several would need a shared store.
 - Behind a proxy that isn't in `DIVEHUB_TRUSTED_PROXIES`, every client shares the proxy's address and its count.
+- An IPv6 client counts by its /64 (an IPv4-mapped address as its IPv4), so stepping through the addresses of
+  one network neither escapes the limit nor grows the count's memory (`clientKey`, 2026-10-31).
 - Clients show the refusal ([client contract](../spec/clients.md)); the web translates `errors.too_many_attempts`.

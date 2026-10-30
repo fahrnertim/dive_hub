@@ -29,6 +29,8 @@ web client, enter the token and create the first admin. Invite everyone else fro
 ([ADR 0012](decisions/0012-invitations-and-admin-bootstrap.md)). For the Vite dev server set
 `DIVEHUB_BASE_URL=http://localhost:5173` (as in `.env.example`), so invitation links point at it.
 Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); re-import your files afterwards.
+If the server stops at start-up with migration 0046's message (Recordings whose positions were never read), start
+the last version without migration 0046 once so its backfill finishes, then upgrade again.
 
 ## Layout
 

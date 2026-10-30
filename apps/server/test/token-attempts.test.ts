@@ -1,7 +1,7 @@
 // The public routes that take a token (setup, invitations, password reset links) count attempts per client IP
 // and refuse more than TOKEN_ATTEMPTS.max in a window with 429 too_many_attempts and Retry-After (ADR 0061).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { TOKEN_ATTEMPTS } from '../src/http/attempt-limit.js';
+import { TOKEN_ATTEMPTS, clientKey } from '../src/http/attempt-limit.js';
 import { BASE_URL, PASSWORD, createTestApp, createTestDatabase, databaseReachable, resettableClock, type TestDatabase } from './support.js';
 
 const TOKEN = 'not-a-real-token-0123456789abcdef';
@@ -14,6 +14,20 @@ const ROUTES = [
   ['/api/password-resets/lookup', { token: TOKEN }],
   ['/api/password-resets/complete', { token: TOKEN, password: PASSWORD }],
 ] as const;
+
+describe('the client an attempt is counted for', () => {
+  it('is the IPv4 address, also when it comes IPv4-mapped', () => {
+    expect(clientKey('203.0.113.1')).toBe('203.0.113.1');
+    expect(clientKey('::ffff:203.0.113.1')).toBe('203.0.113.1');
+  });
+
+  it('is the /64 of an IPv6 address, so a client cannot step through the addresses of its network', () => {
+    expect(clientKey('2001:db8:1:2::1')).toBe('2001:db8:1:2::/64');
+    expect(clientKey('2001:db8:1:2:aaaa:bbbb:cccc:dddd')).toBe('2001:db8:1:2::/64');
+    expect(clientKey('2001:db8::1')).toBe('2001:db8:0:0::/64');
+    expect(clientKey('2001:db8:1:3::1')).not.toBe(clientKey('2001:db8:1:2::1'));
+  });
+});
 
 describe.skipIf(!(await databaseReachable()))('attempts at the token routes', () => {
   let t: TestDatabase;

@@ -172,7 +172,11 @@ Each line is a rule later code follows; the commit that introduced it is in brac
 - Migrations 0044–0045: `connection.credentials` is NOT NULL; old rows got label-only credentials.
 - Migrations 0046–0047: the start-up backfills (`backfill_positions`, `backfill_gas_figures`,
   `fill_cylinders`) are gone. **0046 refuses to run while a live Recording's positions were never read**:
-  a database that never ran the old backfill to the end must run it on the previous version first.
+  a database that never ran the old backfill to the end must run it on the previous version first. The guard
+  covers positions only: `gas_figures_read_at` was never set at import, so nothing shows which Recordings lack
+  SAC/RMV (ADR 0032) or Cylinders from pod data (ADR 0045). An instance last started before 2026-10-09 passes
+  0046 and keeps those gaps for its older Dives; a re-import of their files fills them. ADRs 0020, 0032 and 0045
+  still describe the start-up jobs and want a one-line amendment each (owner paths, left for the owner).
 - Migrations 0048–0050: an Import's failure is `error_code` (enum) plus `error_detail`; the route passes the
   code through.
 
