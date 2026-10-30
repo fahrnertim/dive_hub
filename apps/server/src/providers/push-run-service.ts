@@ -9,18 +9,15 @@ import { asksFor, diveListFilter } from '../dives/list-filter.js';
 import { managedDiverIds } from '../divers/management.js';
 import { isUniqueViolation } from '../sites/site-service.js';
 import type { ConflictService } from './conflicts.js';
-import { planItem, orderItems, type PlanOptions, type Planned } from './push-run-plan.js';
+import { classify, failureOutcome, numberPlanOf, orderItems, planItem, type PlanOptions, type ScopedDive } from './push-run-plan.js';
 import type { RemoteDive } from './provider.js';
 import type { PushService } from './push-service.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
-import { blocking } from './requirements.js';
 import { consoleLog, type ProviderLog } from './waiting-push-queue.js';
 
 export const PUSH_RUN_STEP_TASK = 'push_run_step';
 /** Runs kept per Connection; an older one is deleted when a new one starts. */
 const KEPT_RUNS = 5;
-/** A Dive that is busy is tried again later; this many tries in all. */
-const BUSY_TRIES = 3;
 /** The second failure in a row stops a run. */
 const FAILURES_IN_A_ROW = 2;
 export const MAX_IDS = 500;
@@ -38,14 +35,14 @@ export interface PushRunRequest {
   withHolders?: boolean | undefined;
 }
 
-/** What stops a run at once: the account needs the User, not another try. */
-const STOPS_AT_ONCE = new Set(['provider_sign_in_needed', 'provider_wrong_credentials', 'provider_not_connected']);
 /** Failures the second of which stops a run; and the ones `continue` tries again. */
 const RETRIED_ON_CONTINUE = ['provider_unavailable', 'provider_refused', 'provider_not_stored', 'provider_dive_gone', 'internal_error'];
 
 type RunRow = typeof pushRun.$inferSelect;
 type ItemRow = typeof pushRunItem.$inferSelect;
 type Status = Awaited<ReturnType<PushService['status']>>;
+/** An item `step` took up, as the claiming update returns it. */
+type Claimed = { dive_id: string; action: string; attempts: number; position: number; shares_with_dive_id: string | null };
 
 export function createPushRunService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; conflicts: ConflictService; log?: ProviderLog }) {
   const { db, registry, pushes, conflicts } = deps;
@@ -120,103 +117,59 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       numbersRemovingVerification: !!request.numbersRemovingVerification, canUpdate: exports.operations.includes('update'),
     };
     const { dives, notFound } = await scope(userId, conn, request);
-    const leftOut: PushRunLeftOut = {
-      upToDate: 0, requirementsUnmet: 0, updateNotChosen: 0, removesVerification: 0, updateUnsupported: 0, beyondCeiling: 0, notFound,
-      numberNotChosen: 0, numberTaken: 0, numberHeldAtProvider: 0,
-    };
-    const counts = {
-      create: 0, update: 0, updateRemovingVerification: 0, upToDate: 0, requirementsUnmet: 0, updateUnsupported: 0, notFound,
-      number: 0, numberRemovingVerification: 0, numberTaken: 0, numberHeldAtProvider: 0,
-    };
-    const blocked: { diveId: string; number: number | null; startsAt: Date; siteId: string | null; siteName: string | null; unmet: Status['unmet'] }[] = [];
-    /** `along`: the number an update carries with it (its own save), shown in the plan though no item of its own. */
-    const candidates: {
-      diveId: string; startsAt: Date; planned: Exclude<Planned, { leftOut: unknown }>; withLeftOut: boolean; along: { from: number | null; to: number } | null;
-    }[] = [];
-    const numberOnly: { diveId: string; startsAt: Date; planned: { send: 'number'; wanted: number; held: number | null } }[] = [];
-    const held = new Map<string, number | null>();
+    const scoped: ScopedDive<Status>[] = [];
+    for (const d of dives) scoped.push({ dive: d, status: await pushes.status(userId, d.id, conn.provider) });
+    const sorted = classify(scoped, options);
 
-    for (const d of dives) {
-      const status = await pushes.status(userId, d.id, conn.provider);
-      const current = status.current;
-      if (blocking(status.unmet, { beforeSite: true }).length > 0) {
-        counts.requirementsUnmet++;
-        blocked.push({ diveId: d.id, number: d.number, startsAt: d.startsAt, siteId: d.siteId, siteName: d.siteName, unmet: status.unmet });
-      } else if (!current) counts.create++;
-      else if (current.upToDate) counts.upToDate++;
-      else if (!options.canUpdate) counts.updateUnsupported++;
-      else if (current.updateRemovesVerification) counts.updateRemovingVerification++;
-      else counts.update++;
-      if (current?.number?.differs && current.number.canSet) {
-        counts.number++;
-        if (current.number.removesVerification) counts.numberRemovingVerification++;
-        // Whether these could be ordered doesn't depend on the run's choices.
-        const asNumber = planItem(status, { ...options, updates: false, numbers: true, numbersRemovingVerification: true });
-        if ('send' in asNumber && asNumber.send === 'number') numberOnly.push({ diveId: d.id, startsAt: d.startsAt, planned: asNumber });
-      }
-      const planned = planItem(status, options);
-      if ('leftOut' in planned) {
-        const key = { up_to_date: 'upToDate', requirements_unmet: 'requirementsUnmet', update_not_chosen: 'updateNotChosen',
-          removes_verification: 'removesVerification', update_unsupported: 'updateUnsupported' } as const;
-        leftOut[key[planned.leftOut]]++;
-        if (planned.numberNotChosen) leftOut.numberNotChosen++;
-      } else {
-        const along = planned.send === 'update' && current?.number?.differs && current.number.canSet
-          ? { from: current.remoteNumber, to: current.number.wanted } : null;
-        candidates.push({ diveId: d.id, startsAt: d.startsAt, planned, withLeftOut: status.unmet.length > 0, along });
-      }
-    }
-
-    // Where the numbers of dives already there matter for the order: every current remote dive of the Diver here, and,
-    // for a run that sets numbers, the Provider's logbook once, so that holders only there are known before the start.
-    const fixed = new Set<number>();
-    const holders = new Map<number, RemoteDive>();
-    if (numberOnly.length > 0) {
-      const all = await db.select({ id: dive.id }).from(dive).where(eq(dive.diverId, conn.diverId));
-      const knownRemote = new Set<string>();
-      for (const [diveId, byProvider] of await pushes.currentOf(all.map((r) => r.id))) {
-        const remote = byProvider.get(conn.provider);
-        held.set(diveId, remote?.remoteNumber ?? null);
-        if (remote?.remoteId) knownRemote.add(remote.remoteId);
-      }
-      if (options.numbers) {
-        // A Provider that can't be read now (signed out, down) leaves the preview as before: the send finds a holder as it did.
-        const read = await pushes.heldNumbers(userId, conn.diverId, conn.provider).catch((err: unknown) => {
-          log.warn({ err, connectionId: conn.id, provider: conn.provider }, 'a Push run preview could not read the numbers held at the Provider');
-          return null;
-        });
-        for (const r of read ?? []) {
-          if (r.number === null || knownRemote.has(r.remoteId)) continue;
-          fixed.add(r.number);
-          holders.set(r.number, r);
-        }
-      }
-      const ordering = orderItems(numberOnly, held, fixed);
-      counts.numberTaken = ordering.numberTaken.length;
-      counts.numberHeldAtProvider = ordering.numberHeld.length;
-    }
-    const { ordered, numberTaken, numberHeld, shares } = orderItems(candidates, held, fixed);
-    // Taken numbers only leave out the run's own number items; the counts above are for the preview's whole picture.
-    leftOut.numberTaken = numberTaken.length;
-    leftOut.numberHeldAtProvider = numberHeld.length;
+    const { held, fixed, holders } = sorted.numberOnly.length > 0
+      ? await numbersHere(userId, conn, options.numbers)
+      : { held: new Map<string, number | null>(), fixed: new Set<number>(), holders: new Map<number, RemoteDive>() };
+    const whole = sorted.numberOnly.length > 0 ? orderItems(sorted.numberOnly, held, fixed) : null;
+    const counts = { ...sorted.counts, notFound, numberTaken: whole?.numberTaken.length ?? 0, numberHeldAtProvider: whole?.numberHeld.length ?? 0 };
+    const { ordered, numberTaken, numberHeld, shares } = orderItems(sorted.candidates, held, fixed);
     const sendList = ordered.slice(0, run.maxDives);
-    leftOut.beyondCeiling = ordered.length - sendList.length;
+    // Taken numbers only leave out the run's own number items; the counts above are for the preview's whole picture.
+    const leftOut: PushRunLeftOut = {
+      ...sorted.leftOut, notFound, numberTaken: numberTaken.length, numberHeldAtProvider: numberHeld.length, beyondCeiling: ordered.length - sendList.length,
+    };
     const diveOf = new Map(dives.map((d) => [d.id, d]));
-    // Every number the run would set, in the order it goes (ADR 0052): the User sees it before anything is sent.
-    type NumberStep = { diveId: string; number: number | null; from: number | null; to: number; sharesWith: string | null; with: 'number' | 'update' };
-    const numberPlan = sendList.flatMap((i): NumberStep[] => {
-      const number = diveOf.get(i.diveId)?.number ?? null;
-      if (i.planned.send === 'number') return [{ diveId: i.diveId, number, from: i.planned.held, to: i.planned.wanted, sharesWith: shares.get(i.diveId) ?? null, with: 'number' }];
-      return i.along ? [{ diveId: i.diveId, number, from: i.along.from, to: i.along.to, sharesWith: null, with: 'update' }] : [];
-    });
     const heldAtProvider = numberHeld.map((i) => {
       const wanted = (i.planned as { wanted: number }).wanted;
       return { diveId: i.diveId, number: diveOf.get(i.diveId)?.number ?? null, wanted, holder: holders.get(wanted) ?? null };
     });
     return {
-      adapter, run, pauseMs, options, counts, leftOut, blocked, sendList, withLeftOut: sendList.filter((i) => i.withLeftOut).length,
-      inScope: dives.length + notFound, diveOf, numberPlan, heldAtProvider, shares,
+      adapter, run, pauseMs, options, counts, leftOut, blocked: sorted.blocked, sendList, withLeftOut: sendList.filter((i) => i.withLeftOut).length,
+      inScope: dives.length + notFound, diveOf, numberPlan: numberPlanOf(sendList, diveOf, shares), heldAtProvider, shares,
     };
+  }
+
+  /**
+   * Where the numbers of dives already there matter for the order: every current remote dive of the Diver here, and,
+   * for a run that sets numbers, the Provider's logbook once, so that holders only there are known before the start.
+   */
+  async function numbersHere(userId: string, conn: ConnectionRow, readProvider: boolean) {
+    const held = new Map<string, number | null>();
+    const fixed = new Set<number>();
+    const holders = new Map<number, RemoteDive>();
+    const all = await db.select({ id: dive.id }).from(dive).where(eq(dive.diverId, conn.diverId));
+    const knownRemote = new Set<string>();
+    for (const [diveId, byProvider] of await pushes.currentOf(all.map((r) => r.id))) {
+      const remote = byProvider.get(conn.provider);
+      held.set(diveId, remote?.remoteNumber ?? null);
+      if (remote?.remoteId) knownRemote.add(remote.remoteId);
+    }
+    if (!readProvider) return { held, fixed, holders };
+    // A Provider that can't be read now (signed out, down) leaves the preview as before: the send finds a holder as it did.
+    const read = await pushes.heldNumbers(userId, conn.diverId, conn.provider).catch((err: unknown) => {
+      log.warn({ err, connectionId: conn.id, provider: conn.provider }, 'a Push run preview could not read the numbers held at the Provider');
+      return null;
+    });
+    for (const r of read ?? []) {
+      if (r.number === null || knownRemote.has(r.remoteId)) continue;
+      fixed.add(r.number);
+      holders.set(r.number, r);
+    }
+    return { held, fixed, holders };
   }
 
   async function activeRunOf(connectionId: string) {
@@ -266,6 +219,77 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
   }
   async function stop(runId: string, code: string) {
     await db.update(pushRun).set({ status: 'stopped', stopCode: code, finishedAt: new Date() }).where(and(eq(pushRun.id, runId), inArray(pushRun.status, ['queued', 'running'])));
+  }
+
+  /** The next waiting item of a run, now "sending" with one more try; null when none waits. */
+  async function claimNext(runId: string): Promise<Claimed | null> {
+    const [item] = await db.execute<Claimed>(sql`
+      update push_run_item set state = 'sending', attempts = attempts + 1
+      where run_id = ${runId}::uuid and dive_id = (
+        select dive_id from push_run_item where run_id = ${runId}::uuid and state = 'waiting' order by position limit 1 for update skip locked)
+      returning dive_id, action, attempts, position, shares_with_dive_id`).then((r) => r.rows);
+    return item ?? null;
+  }
+
+  const itemOf = (runId: string, diveId: string) => and(eq(pushRunItem.runId, runId), eq(pushRunItem.diveId, diveId));
+
+  /** Sends or numbers one claimed Dive and settles its item; throws what the send threw. */
+  async function sendOne(run: RunRow, item: Claimed, canUpdate: boolean, settle: (values: Partial<ItemRow>) => Promise<unknown>) {
+    const diveId = item.dive_id;
+    const skip = (reason: string) => settle({ state: 'skipped', reason });
+    const [row] = await db.select({ deletedAt: dive.deletedAt }).from(dive).where(eq(dive.id, diveId));
+    if (!row || row.deletedAt) { await skip('dive_not_found'); return; }
+    const planned = planItem(await pushes.status(run.userId, diveId, run.provider), {
+      updates: run.updates, updatesRemovingVerification: run.updatesRemovingVerification, numbers: run.numbers,
+      numbersRemovingVerification: run.numbersRemovingVerification, canUpdate,
+    });
+    if ('leftOut' in planned) { await skip(planned.leftOut); return; }
+    if (planned.send === 'number') {
+      const { push } = await pushes.setNumber(run.userId, diveId, run.provider, { sharesWithDiveId: item.shares_with_dive_id ?? undefined });
+      await settle({ state: 'sent', outcome: 'numbered', pushId: push.id });
+      return;
+    }
+    // A Conflict doesn't stop a run (ADR 0056): the field is left as the Provider has it, and an entry waits.
+    const sent = await pushes.send(run.userId, diveId, run.provider, { onConflict: 'defer', runId: run.id });
+    if (sent.result === 'exists') await skip('exists');
+    else if (sent.result === 'conflicts') throw new Error('a Push run defers Conflicts');
+    else await settle({ state: 'sent', outcome: sent.result, pushId: sent.push.id });
+  }
+
+  /**
+   * One claimed Dive sent and its item settled, a failure as `failureOutcome` says: `stopped` when the run stopped at
+   * once, else the failure that counts towards the ones in a row (null for none). It never throws for a Dive's sake.
+   */
+  async function sendItem(run: RunRow, item: Claimed, canUpdate: boolean): Promise<{ stopped: true } | { stopped: false; failure: string | null }> {
+    const diveId = item.dive_id;
+    const settle = (values: Partial<ItemRow>) => db.update(pushRunItem).set({ finishedAt: new Date(), ...values }).where(itemOf(run.id, diveId));
+    try {
+      await sendOne(run, item, canUpdate, settle);
+      return { stopped: false, failure: null };
+    } catch (e) {
+      const code = e instanceof ProviderServiceError ? e.code : 'internal_error';
+      // Dive Hub's own fault: the run shows the code; the error is for the operator.
+      if (code === 'internal_error') log.error({ err: e, runId: run.id, diveId, provider: run.provider }, 'a Push run step failed with an internal error');
+      const outcome = failureOutcome(code, item.attempts);
+      switch (outcome.then) {
+        case 'later': {
+          // Behind the Dives still waiting.
+          const [last] = await db.select({ p: sql<number>`max(${pushRunItem.position})`.mapWith(Number) }).from(pushRunItem).where(eq(pushRunItem.runId, run.id));
+          await db.update(pushRunItem).set({ state: 'waiting', position: (last?.p ?? item.position) + 1 }).where(itemOf(run.id, diveId));
+          return { stopped: false, failure: null };
+        }
+        case 'stop':
+          await db.update(pushRunItem).set({ state: 'waiting', attempts: sql`${pushRunItem.attempts} - 1` }).where(itemOf(run.id, diveId));
+          await stop(run.id, code);
+          return { stopped: true };
+        case 'skip':
+          await settle({ state: 'skipped', reason: outcome.reason });
+          return { stopped: false, failure: null };
+        case 'fail':
+          await settle({ state: 'failed', reason: code });
+          return { stopped: false, failure: outcome.inARow ? code : null };
+      }
+    }
   }
 
   return {
@@ -402,67 +426,17 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       if (!run || (run.status !== 'queued' && run.status !== 'running')) return null;
       if (run.cancelRequestedAt) { await finish(runId, 'cancelled'); return null; }
       await db.update(pushRun).set({ status: 'running', startedAt: run.startedAt ?? new Date() }).where(eq(pushRun.id, runId));
-      const [item] = await db.execute<{ dive_id: string; action: string; attempts: number; position: number; shares_with_dive_id: string | null }>(sql`
-        update push_run_item set state = 'sending', attempts = attempts + 1
-        where run_id = ${runId}::uuid and dive_id = (
-          select dive_id from push_run_item where run_id = ${runId}::uuid and state = 'waiting' order by position limit 1 for update skip locked)
-        returning dive_id, action, attempts, position, shares_with_dive_id`).then((r) => r.rows);
+      const item = await claimNext(runId);
       if (!item) {
         await finish(runId, 'done');
         return null;
       }
-      const diveId = item.dive_id;
-      const { run: limits, pauseMs } = runner(run.provider);
-      const settle = (values: Partial<ItemRow>) => db.update(pushRunItem).set({ finishedAt: new Date(), ...values })
-        .where(and(eq(pushRunItem.runId, runId), eq(pushRunItem.diveId, diveId)));
-      const skip = (reason: string) => settle({ state: 'skipped', reason });
-      let failure: string | null = null;
-      try {
-        const [row] = await db.select({ deletedAt: dive.deletedAt }).from(dive).where(eq(dive.id, diveId));
-        if (!row || row.deletedAt) {
-          await skip('dive_not_found');
-        } else {
-          const exports = runner(run.provider).exports;
-          const planned = planItem(await pushes.status(run.userId, diveId, run.provider), {
-            updates: run.updates, updatesRemovingVerification: run.updatesRemovingVerification, numbers: run.numbers,
-            numbersRemovingVerification: run.numbersRemovingVerification, canUpdate: exports.operations.includes('update'),
-          });
-          if ('leftOut' in planned) await skip(planned.leftOut);
-          else if (planned.send === 'number') {
-            const { push } = await pushes.setNumber(run.userId, diveId, run.provider, { sharesWithDiveId: item.shares_with_dive_id ?? undefined });
-            await settle({ state: 'sent', outcome: 'numbered', pushId: push.id });
-          } else {
-            // A Conflict doesn't stop a run (ADR 0056): the field is left as the Provider has it, and an entry waits.
-            const sent = await pushes.send(run.userId, diveId, run.provider, { onConflict: 'defer', runId });
-            if (sent.result === 'exists') await skip('exists');
-            else if (sent.result === 'conflicts') throw new Error('a Push run defers Conflicts');
-            else await settle({ state: 'sent', outcome: sent.result, pushId: sent.push.id });
-          }
-        }
-      } catch (e) {
-        const code = e instanceof ProviderServiceError ? e.code : 'internal_error';
-        // Dive Hub's own fault: the run shows the code; the error is for the operator.
-        if (code === 'internal_error') log.error({ err: e, runId, diveId, provider: run.provider }, 'a Push run step failed with an internal error');
-        if (code === 'provider_busy' && item.attempts < BUSY_TRIES) {
-          // Later: behind the Dives still waiting.
-          const [last] = await db.select({ p: sql<number>`max(${pushRunItem.position})`.mapWith(Number) }).from(pushRunItem).where(eq(pushRunItem.runId, runId));
-          await db.update(pushRunItem).set({ state: 'waiting', position: (last?.p ?? item.position) + 1 })
-            .where(and(eq(pushRunItem.runId, runId), eq(pushRunItem.diveId, diveId)));
-        } else if (STOPS_AT_ONCE.has(code)) {
-          await db.update(pushRunItem).set({ state: 'waiting', attempts: sql`${pushRunItem.attempts} - 1` })
-            .where(and(eq(pushRunItem.runId, runId), eq(pushRunItem.diveId, diveId)));
-          await stop(runId, code);
-          return null;
-        } else if (code === 'provider_requirements_unmet') await skip('requirements_unmet');
-        else if (code === 'provider_number_taken') await skip('number_taken');
-        else if (code === 'provider_number_nothing_to_set') await skip('up_to_date');
-        else {
-          await settle({ state: 'failed', reason: code });
-          if (code !== 'provider_busy') failure = code;
-        }
-      }
+      const { exports, pauseMs } = runner(run.provider);
+      const sent = await sendItem(run, item, exports.operations.includes('update'));
+      if (sent.stopped) return null;
+      const { failure } = sent;
       // Failures in a row: a sent Dive ends the row, a skipped one doesn't touch it.
-      const [now] = await db.select({ state: pushRunItem.state }).from(pushRunItem).where(and(eq(pushRunItem.runId, runId), eq(pushRunItem.diveId, diveId)));
+      const [now] = await db.select({ state: pushRunItem.state }).from(pushRunItem).where(itemOf(runId, item.dive_id));
       const failures = failure ? run.consecutiveFailures + 1 : now?.state === 'sent' ? 0 : run.consecutiveFailures;
       await db.update(pushRun).set({ consecutiveFailures: failures }).where(eq(pushRun.id, runId));
       if (failure && failures >= FAILURES_IN_A_ROW) {
@@ -473,7 +447,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       if (again?.cancel) { await finish(runId, 'cancelled'); return null; }
       const [waiting] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(pushRunItem).where(and(eq(pushRunItem.runId, runId), eq(pushRunItem.state, 'waiting')));
       if (!waiting?.n) { await finish(runId, 'done'); return null; }
-      return { afterMs: Math.max(limits.pauseMs, pauseMs) };
+      return { afterMs: pauseMs };
     },
 
     /** At worker start: every active run gets its step queued again, and an item a crash left "sending" waits again. */
