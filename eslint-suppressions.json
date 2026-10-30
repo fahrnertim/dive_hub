@@ -42,11 +42,6 @@
       "count": 1
     }
   },
-  "apps/server/src/main.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "apps/server/src/mcp/endpoint.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1

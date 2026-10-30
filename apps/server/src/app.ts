@@ -70,15 +70,16 @@ export interface AppDeps {
   /** Public URL of the instance; invitation links point there. */
   baseUrl: string;
   maxUploadBytes: number;
-  /** Reverse proxies whose X-Forwarded-For is believed; empty means none. */
-  trustedProxies?: string[];
   webDir?: string | undefined;
 }
 
-export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}) {
-  const trustedProxies = deps.trustedProxies ?? [];
-  const app = Fastify({ ...options, ...(trustedProxies.length > 0 && { trustProxy: trustedProxies }) })
-    .withTypeProvider<TypeBoxTypeProvider>();
+/** The Fastify instance, logger included, before any route: main.ts hands its logger to the services first. */
+export const createServer = (options: FastifyServerOptions = {}) => Fastify(options).withTypeProvider<TypeBoxTypeProvider>();
+
+export type Server = ReturnType<typeof createServer>;
+
+/** Registers the routes on `app` (a fresh instance unless given) and returns it. */
+export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   app.decorateRequest('user', null);
   app.decorateRequest('sessionId', null);
   useProblemErrors(app);

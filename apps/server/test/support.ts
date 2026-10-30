@@ -8,24 +8,18 @@ import pg from 'pg';
 import type { LightMyRequestResponse } from 'fastify';
 import { createAuth, type Auth } from '../src/auth/auth.js';
 import { buildApp } from '../src/app.js';
+import { createServices } from '../src/compose.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
 import { listenToChanges } from '../src/dives/revisions.js';
-import { createImportService, type ImportService } from '../src/imports/import-service.js';
-import { createSiteImportService } from '../src/sites/import/site-import-service.js';
 import type { SiteSourceAdapter } from '../src/sites/import/site-source.js';
 import type { ImportSource } from '../src/sites/sources.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
-import { createProviderLayer } from '../src/providers/layer.js';
 import type { ProviderAdapter } from '../src/providers/provider.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
-import { createAiAccessService } from '../src/mcp/access-service.js';
-import { createAssessmentService } from '../src/assessment/assessment-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createFakeSsi, type FakeSsi } from './fake-ssi.js';
-import { createInvitations } from '../src/users/invitations.js';
-import { createSetup, type Setup } from '../src/users/setup.js';
 
 const baseDbUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? 'postgres://divehub:divehub-dev@127.0.0.1:5432/divehub';
 export const BASE_URL = 'http://localhost:3000';
@@ -116,17 +110,12 @@ export async function createTestApp(t: TestDatabase, options: {
     webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = resettableClock(), ssi = (a) => a,
     ...authOptions
   } = options;
-  const auth = createTestAuth(t.db, authOptions);
-  const setup: Setup = createSetup(t.db);
-  const blobs = createLocalBlobStore(t.dataDir);
-  const assessments = createAssessmentService(t.db);
-  const imports: ImportService = createImportService({ db: t.db, blobs, providerImports: () => providers.diveImports, afterImport: (userId) => assessments.refreshUser(userId) });
-  const siteImports = createSiteImportService({ db: t.db, sources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') } });
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
   const ssiClock = { now: 0, advance(ms: number) { this.now += ms; } };
-  const providers = createProviderLayer({
-    db: t.db, blobs, secrets: createSecretBox(encryptionKey ?? undefined),
+  const services = createServices({
+    db: t.db, auth: createTestAuth(t.db, authOptions), blobs: createLocalBlobStore(t.dataDir), secrets: createSecretBox(encryptionKey ?? undefined),
+    siteSources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') },
     adapters: [
       ssi(createSsiAdapter({
         client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }),
@@ -136,11 +125,8 @@ export async function createTestApp(t: TestDatabase, options: {
     ],
     clock,
   });
-  const aiAccesses = createAiAccessService(t.db, auth);
-  const app = await buildApp({
-    db: t.db, imports, siteImports, providers, blobs, auth, aiAccesses, assessments, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
-  });
-  return { app, auth, aiAccesses, assessments, setup, imports, siteImports, providers, fakeSsi, ssiClock, clock, pauses: clock.slept, blobs };
+  const app = await buildApp({ ...services, baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir });
+  return { ...services, app, fakeSsi, ssiClock, clock, pauses: clock.slept };
 }
 
 /**

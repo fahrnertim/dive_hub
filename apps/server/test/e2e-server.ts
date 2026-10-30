@@ -9,15 +9,13 @@ import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { createAuth } from '../src/auth/auth.js';
 import { buildApp } from '../src/app.js';
+import { createServices, workerDeps } from '../src/compose.js';
 import { createDb } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
-import { createImportService } from '../src/imports/import-service.js';
 import { createSiteSources } from '../src/site-sources.js';
 import type { Fetch } from '../src/sites/import/polite-http.js';
-import { createSiteImportService } from '../src/sites/import/site-import-service.js';
 import { ssiSitesZip } from './zip.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
-import { createProviderLayer } from '../src/providers/layer.js';
 import { skippingClock } from '../src/providers/leases.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
@@ -29,11 +27,7 @@ import { createLogbookChecks } from '../src/dives/logbook-checks.js';
 import { createDiverService } from '../src/divers/diver-service.js';
 import { connection, dive, importJob, pushRun, waitingPush } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
-import { createInvitations } from '../src/users/invitations.js';
-import { createSetup } from '../src/users/setup.js';
 import { startWorker } from '../src/worker.js';
-import { createAiAccessService } from '../src/mcp/access-service.js';
-import { createAssessmentService } from '../src/assessment/assessment-service.js';
 
 export const E2E_USER = { email: 'erika@example.com', name: 'Erika', password: 'correct horse battery staple' };
 
@@ -54,9 +48,6 @@ url.pathname = `/${dbName}`;
 
 const { db, pool } = createDb(url.toString());
 await migrateDatabase(db, pool, here('../drizzle'));
-const blobs = createLocalBlobStore(await mkdtemp(join(tmpdir(), 'divehub-e2e-')));
-const assessments = createAssessmentService(db);
-const imports = createImportService({ db, blobs, providerImports: () => providers.diveImports, afterImport: assessments.refreshUser });
 
 /**
  * Overpass and Wikidata as recorded, SSI's site list hand-made in its format (test/fixtures/site-sources): the
@@ -79,12 +70,6 @@ const replay: Fetch = async (url, init) => {
     arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
   };
 };
-const siteImports = createSiteImportService({
-  db, sources: createSiteSources({
-    fetch: replay, overpassUrl: 'https://overpass.invalid/api/interpreter', wikidataUrl: 'https://wikidata.invalid/sparql',
-    ssiSitesUrl: 'https://ssi.invalid/app/APP_CACHE_SITES.zip',
-  }),
-});
 // SSI as the fake answers it (ADR 0024): the browser tests never reach SSI. Its account is Erika's,
 // with the password below; the e2e server keeps passwords (it has an encryption key).
 // Each reset gives its entries new IDs, so what an earlier test remembered for an entry never sticks to a new one.
@@ -118,19 +103,20 @@ const fakeSsi = createFakeSsi({
 const quick = <A extends { capabilities: { limits: { pauseMs: number; run: unknown } } }>(adapter: A): A => ({
   ...adapter, capabilities: { ...adapter.capabilities, limits: { ...adapter.capabilities.limits, pauseMs: 0, run: { pauseMs: 150, maxDives: 100 } } },
 });
-const providers = createProviderLayer({
-  db, blobs, secrets: createSecretBox(Buffer.alloc(32, 9)),
+const auth = createAuth({ db, baseUrl: `http://localhost:${port}`, secret: 'e2e-secret-with-enough-entropy-0123456789abcdef' });
+const services = createServices({
+  db, auth, blobs: createLocalBlobStore(await mkdtemp(join(tmpdir(), 'divehub-e2e-'))), secrets: createSecretBox(Buffer.alloc(32, 9)),
+  siteSources: createSiteSources({
+    fetch: replay, overpassUrl: 'https://overpass.invalid/api/interpreter', wikidataUrl: 'https://wikidata.invalid/sparql',
+    ssiSitesUrl: 'https://ssi.invalid/app/APP_CACHE_SITES.zip',
+  }),
   // SSI's pauses between Dives are for the real SSI (5 s in a run); the fake takes them as fast as the browser tests go.
   adapters: [quick(createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }) }))],
   // The fake needs no pause between actions; the browser tests would only wait, so the pauses are skipped.
   clock: skippingClock(),
 });
-const auth = createAuth({ db, baseUrl: `http://localhost:${port}`, secret: 'e2e-secret-with-enough-entropy-0123456789abcdef' });
-const aiAccesses = createAiAccessService(db, auth);
-const app = await buildApp({
-  db, imports, siteImports, providers, blobs, auth, aiAccesses, assessments, setup: createSetup(db), invitations: createInvitations(db),
-  baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist'),
-});
+const { imports } = services;
+const app = await buildApp({ ...services, baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist') });
 
 // Seed: one User, one Dive from a main computer and a backup that auto-attaches to it.
 const { user } = await auth.api.createUser({ body: { ...E2E_USER, role: 'admin' } });
@@ -166,10 +152,7 @@ for (const record of [
 ]) fakeSsi.addDive(6_100_200, record);
 
 // Uploads made by the tests are processed in the background, as in the real app.
-const worker = await startWorker(pool, {
-  imports, siteImports, aiAccesses, assessments, pushRuns: providers.pushRuns, waitingPushes: providers.waitingPushes,
-  scheduledFetch: providers.scheduledFetch, certifications: providers.certifications, log: app.log,
-});
+const worker = await startWorker(pool, workerDeps(services, app.log));
 // Test-only (never in the production app): a browser test changes a dive in an SSI account's logbook, as the User would
 // in SSI's app (ADR 0030: changes taken back). By the account's e-mail and SSI's dive number or ID; only the fields given.
 // `site`: a site SSI then lists too (one Dive Hub doesn't know), when it isn't listed yet.

@@ -472,7 +472,7 @@ Implemented:
   (Connections, one sealed `credentials` value, renewal with a kept password, "sign in again"), `push-service.ts` (Pushes,
   the current remote dive, outdated by fingerprint, one action per Dive), `pacing.ts` (one action at a time per Connection
   with the Provider's pause; a second request waits), `outgoing-dive.ts` (the Dive as it leaves Dive Hub), `routes.ts`, and
-  `layer.ts` that builds them. `main.ts` registers the SSI adapter only.
+  `layer.ts` that builds them. `start.ts` registers the SSI adapter only.
 - **SSI as an adapter** (`src/providers/ssi/`): `ssi-adapter.ts` (capabilities, sign-in, the logbook read, the ±2 min match,
   SSI's numbers, the site ID), with `ssi-client.ts`, `ssi-record.ts` and `ssi-sites.ts` moved in. No `odin_*` field is read
   outside it. Its fingerprint is unchanged, so earlier Pushes stay up to date.

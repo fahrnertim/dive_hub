@@ -44,7 +44,7 @@ export interface ImportServiceDeps {
    * Runs an Import of a Provider's dives (ADR 0030; src/providers/dive-import.ts), whose Originals were stored when it
    * started. Without it, such an Import fails.
    */
-  providerImports?: () => { process(job: typeof importJob.$inferSelect): Promise<ImportOutcome> };
+  providerImports?: { process(job: typeof importJob.$inferSelect): Promise<ImportOutcome> };
   /** Runs once an Import is done, for its User: the dive assessment catches up (ADR 0036). */
   afterImport?: (userId: string) => Promise<void>;
 }
@@ -85,7 +85,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
     if (job.provider) {
       try {
         if (!providerImports) throw new Error('This server runs no imports from Providers');
-        const outcome = await providerImports().process(job);
+        const outcome = await providerImports.process(job);
         await db.update(importJob).set({ status: 'done', outcome, finishedAt: new Date() }).where(eq(importJob.id, importId));
         await afterImport?.(job.userId);
         return outcome;
