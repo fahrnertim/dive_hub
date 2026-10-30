@@ -93,6 +93,11 @@ type Assessment =
   /** Unattended: from a dive computer the User hasn't chosen for yet. */
   | { kind: 'unchosen' };
 
+/** An Import's Original read again by the worker: its dive to process, or the outcome it ends with already. */
+type ReadOriginal =
+  | { fileName: string; ended: ImportOutcome[number] }
+  | { fileName: string; originalId: string; dive: ImportedDive; seen: boolean };
+
 /** What changed at the Provider since Dive Hub last saw a linked dive, compared with the Dive here. */
 type FoundChanges = NonNullable<Awaited<ReturnType<ReturnType<typeof createDiveChanges>['changesOf']>>>;
 
@@ -205,6 +210,19 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     return rows.find((r) => run.managed.has(r.diverId))?.diveId ?? null;
   }
 
+  /** Whether the Dive is live and one of the User's (a Dive our reference names may be gone, or another User's). */
+  async function ownsLive(q: Queryable, run: ProviderRun, diveId: string) {
+    const [own] = await q.select({ diverId: dive.diverId }).from(dive).where(and(eq(dive.id, diveId), isNull(dive.deletedAt)));
+    return !!own && run.managed.has(own.diverId);
+  }
+
+  /** The live Recording made from this remote dive before, if any. */
+  async function recordingOf(q: Queryable, run: ProviderRun, remoteId: string) {
+    const [row] = await q.select({ id: recording.id, diveId: recording.diveId }).from(recording)
+      .where(and(eq(recording.recordingKey, `${run.adapter.id}:${remoteId}`), isNull(recording.deletedAt)));
+    return row ?? null;
+  }
+
   /** Of these Dives, those that have a remote dive at the Provider now (they are another remote dive's already). */
   async function withRemote(q: Queryable, run: ProviderRun, diveIds: string[]) {
     if (diveIds.length === 0) return new Set<string>();
@@ -229,9 +247,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const sent = await sentTo(q, run, d.remoteId);
     if (sent) return { kind: 'ours', diveId: sent };
     // A Recording made from it before is placed again: changed at the Provider, it is updated in place.
-    const [asRecording] = await q.select({ id: recording.id }).from(recording)
-      .where(and(eq(recording.recordingKey, `${run.adapter.id}:${d.remoteId}`), isNull(recording.deletedAt)));
-    if (asRecording) return { kind: 'recording' };
+    if (await recordingOf(q, run, d.remoteId)) return { kind: 'recording' };
     const linked = await linkedTo(q, run, d.remoteId);
     if (linked?.deleted) return { kind: 'deleted' };
     if (d.evidence === 'computer' && d.device && run.choices[keyOf(d.device)] !== 'entries') {
@@ -436,15 +452,8 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
   /** The Dive a Provider's dive is linked to already (sent from here, linked, or a Recording of it), for comparing. */
   async function diveOfLinked(run: ProviderRun, a: Assessment, d: ImportedDive): Promise<string | null> {
     if (a.kind === 'linked') return a.diveId;
-    if (a.kind === 'ours' && a.diveId) {
-      const [own] = await db.select({ diverId: dive.diverId }).from(dive).where(and(eq(dive.id, a.diveId), isNull(dive.deletedAt)));
-      return own && run.managed.has(own.diverId) ? a.diveId : null;
-    }
-    if (a.kind === 'recording') {
-      const [rec] = await db.select({ diveId: recording.diveId }).from(recording)
-        .where(and(eq(recording.recordingKey, `${run.adapter.id}:${d.remoteId}`), isNull(recording.deletedAt)));
-      return rec?.diveId ?? null;
-    }
+    if (a.kind === 'ours' && a.diveId) return (await ownsLive(db, run, a.diveId)) ? a.diveId : null;
+    if (a.kind === 'recording') return (await recordingOf(db, run, d.remoteId))?.diveId ?? null;
     return null;
   }
 
@@ -510,12 +519,12 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     switch (a.kind) {
       case 'ours': {
         // Sent by Dive Hub: already ours. One whose answer got lost is linked to its Dive, as sending would.
-        const [own] = a.diveId ? await tx.select({ diverId: dive.diverId }).from(dive).where(and(eq(dive.id, a.diveId), isNull(dive.deletedAt))) : [];
-        if (!own || !run.managed.has(own.diverId)) return { ...base, result: 'skipped', reason: 'sent_by_dive_hub' };
-        await link(tx, run, a.diveId!, d, false);
+        const diveId = a.diveId;
+        if (!diveId || !(await ownsLive(tx, run, diveId))) return { ...base, result: 'skipped', reason: 'sent_by_dive_hub' };
+        await link(tx, run, diveId, d, false);
         // Changed in the Provider's app since it was sent: the Dive takes it, as for any linked dive.
-        if (await sync(tx, run, plan, a.diveId!, d, at.importId, actor)) return { ...base, result: 'updated', diveId: a.diveId! };
-        return { ...base, result: 'skipped', reason: 'sent_by_dive_hub', diveId: a.diveId! };
+        if (await sync(tx, run, plan, diveId, d, at.importId, actor)) return { ...base, result: 'updated', diveId };
+        return { ...base, result: 'skipped', reason: 'sent_by_dive_hub', diveId };
       }
       case 'deleted':
         return { ...base, result: 'skipped', reason: 'deleted_earlier' };
@@ -524,8 +533,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         return { ...base, result: (await sync(tx, run, plan, a.diveId, d, at.importId, actor)) ? 'updated' : 'unchanged', diveId: a.diveId };
       }
       case 'recording': {
-        const [known] = await tx.select({ id: recording.id, diveId: recording.diveId }).from(recording)
-          .where(and(eq(recording.recordingKey, `${run.adapter.id}:${d.remoteId}`), isNull(recording.deletedAt)));
+        const known = await recordingOf(tx, run, d.remoteId);
         if (known && at.seen) return { ...base, result: 'unchanged', recordingId: known.id, ...(known.diveId && { diveId: known.diveId }) };
         const placed = await placeRecording(tx, {
           userId: run.userId, importId: at.importId, originalId: at.originalId, fileName: at.fileName, actor,
@@ -690,33 +698,29 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       const rows = await db.select({ id: original.id, storageKey: original.storageKey, fileName: original.fileName })
         .from(importOriginal).innerJoin(original, eq(original.id, importOriginal.originalId))
         .where(eq(importOriginal.importId, job.id));
-      const items = [];
-      for (const o of rows) {
+      const readOriginal = async (o: (typeof rows)[number]): Promise<ReadOriginal> => {
         const fileName = o.fileName ?? o.id;
         try {
-          const dive_ = parse(JSON.parse((await blobs.read(o.storageKey)).toString('utf8')) as Record<string, unknown>, plan.context);
+          const d = parse(JSON.parse((await blobs.read(o.storageKey)).toString('utf8')) as Record<string, unknown>, plan.context);
+          if (!d) return { fileName, ended: { fileName, result: 'skipped', reason: 'not_a_dive' } };
           const [earlier] = await db.select({ id: importOriginal.importId }).from(importOriginal)
             .innerJoin(importJob, eq(importJob.id, importOriginal.importId))
             .where(and(eq(importOriginal.originalId, o.id), sql`${importOriginal.importId} <> ${job.id}`, eq(importJob.status, 'done'))).limit(1);
-          items.push({ o, fileName, dive: dive_, seen: !!earlier });
+          return { fileName, originalId: o.id, dive: d, seen: !!earlier };
         } catch (error) {
-          items.push({ o, fileName, dive: null, seen: false, error: errorMessage(error) });
+          return { fileName, ended: { fileName, result: 'failed', reason: 'file_failed', message: errorMessage(error) } };
         }
-      }
-      items.sort((a, b) => (a.dive?.localStart ?? '').localeCompare(b.dive?.localStart ?? ''));
+      };
+      const items: ReadOriginal[] = [];
+      for (const o of rows) items.push(await readOriginal(o));
+      const startOf = (item: ReadOriginal) => ('dive' in item ? item.dive.localStart : '');
+      items.sort((a, b) => startOf(a).localeCompare(startOf(b)));
       const outcome: ImportOutcome = [];
       for (const item of items) {
-        if (!item.dive) {
-          outcome.push(item.error
-            ? { fileName: item.fileName, result: 'failed', reason: 'file_failed', message: item.error }
-            : { fileName: item.fileName, result: 'skipped', reason: 'not_a_dive' });
-          continue;
-        }
-        const d = item.dive;
+        if ('ended' in item) { outcome.push(item.ended); continue; }
+        const { dive: d, ...at } = item;
         try {
-          outcome.push(await db.transaction((tx) => processDive(tx, run, plan, d, {
-            importId: job.id, originalId: item.o.id, fileName: item.fileName, seen: item.seen,
-          })));
+          outcome.push(await db.transaction((tx) => processDive(tx, run, plan, d, { importId: job.id, ...at })));
         } catch (error) {
           outcome.push({ fileName: item.fileName, result: 'failed', reason: 'file_failed', message: errorMessage(error), remoteId: d.remoteId });
         }

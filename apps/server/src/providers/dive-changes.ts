@@ -7,7 +7,7 @@ import {
   dive, diveSite, diver, diverExternalId, importJob, importOriginal, original, participant, push,
   type ComputerChoice, type DiveImportMode,
 } from '../db/schema.js';
-import { participantsOf } from '../dives/dive-service.js';
+import { nextVersion, participantsOf } from '../dives/dive-service.js';
 import { managedDiverIds } from '../divers/management.js';
 import { columnsOf } from '../dives/dive-values.js';
 import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
@@ -144,7 +144,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     if (d.cylinder && importsField(run, 'cylinder')) Object.assign(changes, await mergeProviderCylinder(tx, diveId, d.cylinder, 'fill'));
     if (d.leadKg !== null && importsField(run, 'lead')) Object.assign(changes, await mergeProviderLead(tx, diveId, d.leadKg, 'fill'));
     if (Object.keys(changes).length === 0) return false;
-    await tx.update(dive).set({ ...columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
+    await tx.update(dive).set({ ...columns, ...nextVersion() }).where(eq(dive.id, diveId));
     await writeRevision(tx, 'dive', diveId, actor, 'fill', changes);
     return true;
   }
@@ -312,7 +312,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
       changes.overrides = { from: current.overrides, to: [...t.overrides] };
       t.columns.overrides = [...t.overrides];
     }
-    await tx.update(dive).set({ ...t.columns, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
+    await tx.update(dive).set({ ...t.columns, ...nextVersion() }).where(eq(dive.id, diveId));
     await writeRevision(tx, 'dive', diveId, actor, 'update', changes);
     if (changes.startsAt) await renumber(tx, [current.diverId]);
     if (wasUpToDate && remote && !sending) {
