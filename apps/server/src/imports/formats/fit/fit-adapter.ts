@@ -3,9 +3,9 @@
 // One format, two dialects (ADR 0037): Garmin's own files, and the Suunto app's export, which has no dive_summary,
 // dive_settings or serial number and keeps its summary in `session` and developer fields.
 import FitParser from 'fit-file-parser';
-import type { RecordingSummary } from '../db/schema.js';
-import { errorMessage } from '../errors.js';
-import { ParseError, stripUndefined, type ParsedDevice, type ParsedEvent, type ParsedRecording, type ParsedSeries, type Position } from '../imports/parsed-recording.js';
+import type { RecordingSummary } from '../../../db/schema.js';
+import { errorMessage } from '../../../errors.js';
+import { ParseError, stripUndefined, type ParsedDevice, type ParsedEvent, type ParsedRecording, type ParsedSeries, type Position } from '../../parsed-recording.js';
 import { suuntoFitKey } from '../suunto/suunto-json.js';
 import { diveModeFromSuuntoFit } from '../suunto/suunto-vocabulary.js';
 import { circuitFromFit, decoModelFromFit, diveModeFromFit, waterTypeFromFit } from './fit-vocabulary.js';

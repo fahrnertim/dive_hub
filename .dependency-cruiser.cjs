@@ -13,14 +13,12 @@ const MODULE_IMPORTS = {
   certifications: ['divers', 'dives', 'providers'],
   divers: ['centres', 'certifications', 'dives', 'providers'],
   dives: ['assessment:type', 'centres', 'divers', 'imports', 'providers:type', 'sites'],
-  fit: ['imports', 'suunto'],
-  imports: ['divers', 'dives', 'fit', 'sites', 'suunto'],
+  imports: ['divers', 'dives', 'sites'],
   lead: ['divers', 'dives'],
   mcp: ['assessment', 'divers', 'dives', 'planning', 'sites'],
   planning: ['divers', 'dives'],
   providers: ['certifications', 'divers', 'dives', 'imports', 'sites'],
   sites: ['dives'],
-  suunto: ['imports'],
   users: ['dives'],
 };
 const target = (names) => `${SERVER}(${names.join('|')})/`;

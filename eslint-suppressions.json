@@ -19,7 +19,7 @@
       "count": 1
     }
   },
-  "apps/server/src/fit/fit-adapter.ts": {
+  "apps/server/src/imports/formats/fit/fit-adapter.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }

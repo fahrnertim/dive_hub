@@ -46,7 +46,7 @@ const AREAS = [
   [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/(site-sources|providers\/ssi\/ssi-sites)\.ts$/, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/centres\//, ['@sites', '@dives']],
-  [/^apps\/server\/src\/(dives|imports|fit|suunto|assessment)\/|^apps\/server\/src\/vocabulary\.ts$/, ['@dives']],
+  [/^apps\/server\/src\/(dives|imports|assessment)\/|^apps\/server\/src\/vocabulary\.ts$/, ['@dives']],
   // Divers reach further than their page: a Dive shows its Participants and their codes, the account page imports buddies.
   [/^apps\/server\/src\/divers\//, ['@divers', '@dives', '@account']],
   [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],

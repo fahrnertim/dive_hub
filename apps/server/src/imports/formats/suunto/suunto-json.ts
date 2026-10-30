@@ -1,9 +1,9 @@
 // The Suunto app's JSON export of a dive (ADR 0037; docs/references/suunto-formats.md): the computer's own log as
 // `{"DeviceLog": {"Header", "Samples", "Device"}}`, in SI units (Pa, K, m³, m³/s, fractions, seconds).
 // Read from a Suunto D5's exports; what other models write differently is noted where it is handled.
-import type { RecordingSummary, UtcOffsetSource } from '../db/schema.js';
-import { errorMessage } from '../errors.js';
-import { ParseError, stripUndefined, type ParsedDevice, type ParsedEvent, type ParsedRecording, type ParsedSeries } from '../imports/parsed-recording.js';
+import type { RecordingSummary, UtcOffsetSource } from '../../../db/schema.js';
+import { errorMessage } from '../../../errors.js';
+import { ParseError, stripUndefined, type ParsedDevice, type ParsedEvent, type ParsedRecording, type ParsedSeries } from '../../parsed-recording.js';
 import { SUUNTO_EVENT_TYPES, decoModelFromSuunto, diveModeFromSuunto } from './suunto-vocabulary.js';
 
 export interface SuuntoJsonAdapter {

@@ -1,6 +1,6 @@
 // Suunto's values, from the app's JSON export and its FIT export, → our vocabulary (ADR 0015, ADR 0037).
 // Unmapped values return undefined; the adapters keep them as raw extras instead of guessing.
-import type { ComputerEvent, DecoModel, DiveMode } from '../vocabulary.js';
+import type { ComputerEvent, DecoModel, DiveMode } from '../../../vocabulary.js';
 
 /** `Header.Diving.DiveMode` of the JSON export. */
 const DIVE_MODE: Record<string, DiveMode> = {

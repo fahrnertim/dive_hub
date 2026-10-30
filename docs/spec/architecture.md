@@ -783,7 +783,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   `dives/candidates/candidate-routes.ts` (an `onSend` hook), when read, and by the worker at start (`assess-dives`).
 - Routes: `GET /api/dives/{id}/assessment`, `PUT /api/dives/{id}/findings/{rule}/dismissal`,
   `PUT /api/divers/{id}/muted-rules/{rule}`; `GET /api/dives` carries `findings` per Dive. Code `finding_not_found`.
-- Computer events: `COMPUTER_EVENTS` in `vocabulary.ts`, Garmin's `dive_alert` codes in `fit/fit-vocabulary.ts`.
+- Computer events: `COMPUTER_EVENTS` in `vocabulary.ts`, Garmin's `dive_alert` codes in `imports/formats/fit/fit-vocabulary.ts`.
 - MCP: `logbook_get_dive_assessment` (eight tools now).
 - Web: `Assessment.tsx` (the panel under the Recordings, the findings' lane, a context shared with the profile),
   `DepthProfile.tsx` (the ascent coloured by speed with a legend in words, the selected finding's stretch),
@@ -801,10 +801,10 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - `apps/server/src/imports/formats.ts`: the registry (`FileFormat`: `format`, `mediaType`, `parser`, `parserVersion`,
   `detect`, `parse`). `import-service.ts`, `archive.ts` (`extractFiles` with a predicate) and the position backfill ask
   it; none names a format. `parsed-recording.ts` holds what every adapter delivers (moved out of `src/fit/`).
-- `apps/server/src/suunto/`: `suunto-json.ts` (the app's JSON export: Device, offset, summary, channels `depth`,
+- `apps/server/src/imports/formats/suunto/`: `suunto-json.ts` (the app's JSON export: Device, offset, summary, channels `depth`,
   `temperature`, `ndl`, `tts`, `ceiling`, `tankPressure`, events), `suunto-vocabulary.ts` (dive modes, RGBM models,
   computer events).
-- `fit/fit-adapter.ts`: a Suunto dialect (the summary from `session`, the developer field `dive_mode`, the key
+- `formats/fit/fit-adapter.ts`: a Suunto dialect (the summary from `session`, the developer field `dive_mode`, the key
   `suunto:fit:…` without a serial). Garmin files read as before, plus `otuEnd`.
 - `placement.ts`: `replacesKey` (a JSON takes over the FIT's Recording in place, with a `reimport` Revision) and
   `fullerCopyLike` (a FIT finds the JSON's Recording by key pattern, duration and maximum depth: `skipped`,

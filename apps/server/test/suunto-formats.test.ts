@@ -6,12 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { assessProfile } from '../src/assessment/profile-rules.js';
 import { probablyNoDive } from '../src/dives/checks/logbook-check-rules.js';
-import { createFitAdapter } from '../src/fit/fit-adapter.js';
+import { createFitAdapter } from '../src/imports/formats/fit/fit-adapter.js';
 import { computerEventOf } from '../src/imports/computer-events.js';
 import { createFileFormats, formatOf } from '../src/imports/formats.js';
 import { ParseError, type ParsedRecording } from '../src/imports/parsed-recording.js';
-import { createSuuntoJsonAdapter, looksLikeSuuntoJson } from '../src/suunto/suunto-json.js';
-import { decoModelFromSuunto, diveModeFromSuunto, diveModeFromSuuntoFit } from '../src/suunto/suunto-vocabulary.js';
+import { createSuuntoJsonAdapter, looksLikeSuuntoJson } from '../src/imports/formats/suunto/suunto-json.js';
+import { decoModelFromSuunto, diveModeFromSuunto, diveModeFromSuuntoFit } from '../src/imports/formats/suunto/suunto-vocabulary.js';
 import { makeSuuntoAppFit, makeSuuntoJson } from './fixtures/suunto-dive.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 

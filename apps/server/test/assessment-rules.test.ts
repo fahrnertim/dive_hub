@@ -7,7 +7,7 @@ import { assessProfile } from '../src/assessment/profile-rules.js';
 import { LIMITS, RULES, RULE_IDS, SOURCES, type Finding } from '../src/assessment/rules.js';
 import { assessSeries, noFlyAfter, type SeriesDive } from '../src/assessment/series-rules.js';
 import { cleanDepth, segments, type Series } from '../src/assessment/signals.js';
-import { createFitAdapter } from '../src/fit/fit-adapter.js';
+import { createFitAdapter } from '../src/imports/formats/fit/fit-adapter.js';
 
 /** A depth series through waypoints [minute, metres], sampled every `stepS` seconds. */
 function profile(waypoints: [number, number][], stepS = 1): Series {

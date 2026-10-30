@@ -1,6 +1,6 @@
 // Garmin FIT values (snake_case as fit-file-parser delivers them) → our vocabulary (ADR 0015).
 // Unmapped values return undefined; the adapter keeps them as raw extras instead of guessing.
-import type { ComputerEvent, DecoModel, DiveMode, GasCircuit, WaterType } from '../vocabulary.js';
+import type { ComputerEvent, DecoModel, DiveMode, GasCircuit, WaterType } from '../../../vocabulary.js';
 
 const WATER_TYPE: Record<string, WaterType> = { fresh: 'fresh', salt: 'salt', en13319: 'en13319', custom: 'custom' };
 

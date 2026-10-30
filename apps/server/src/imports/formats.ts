@@ -1,7 +1,7 @@
 // The file formats an Import reads (ADR 0037). The import service, the zip reader and the position backfill ask this
 // registry and name no format; a new format is one adapter and one line here.
-import { createFitAdapter, looksLikeFit } from '../fit/fit-adapter.js';
-import { createSuuntoJsonAdapter, looksLikeSuuntoJson } from '../suunto/suunto-json.js';
+import { createFitAdapter, looksLikeFit } from './formats/fit/fit-adapter.js';
+import { createSuuntoJsonAdapter, looksLikeSuuntoJson } from './formats/suunto/suunto-json.js';
 import type { ParsedRecording } from './parsed-recording.js';
 
 export interface FileFormat {
