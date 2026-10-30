@@ -11,7 +11,8 @@ import { createImportService, type ImportService } from '../src/imports/import-s
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { makeSyntheticDive, makeSyntheticRun } from './fixtures/synthetic-dive.js';
 import {
-  BASE_URL, createTestApp, createTestAuth, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
+  BASE_URL, createTestApp, createTestAuth, createTestDatabase, createUser, databaseReachable, listenToNoChanges, multipartFile, signIn,
+  type TestDatabase,
 } from './support.js';
 import { zipOf } from './zip.js';
 
@@ -53,6 +54,7 @@ describe.skipIf(!(await databaseReachable()))('an account export through the imp
     alice = (await createUser(auth, 'alice@example.com')).id;
     bob = (await createUser(auth, 'bob@example.com')).id;
     imports = createImportService({ db, blobs: createLocalBlobStore(t.dataDir) });
+    listenToNoChanges();
   });
 
   afterAll(async () => { await t?.drop(); });

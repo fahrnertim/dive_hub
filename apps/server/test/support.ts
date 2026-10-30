@@ -10,6 +10,7 @@ import { createAuth, type Auth } from '../src/auth/auth.js';
 import { buildApp } from '../src/app.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
+import { listenToChanges } from '../src/dives/revisions.js';
 import { createImportService, type ImportService } from '../src/imports/import-service.js';
 import { createSiteImportService } from '../src/sites/import/site-import-service.js';
 import type { SiteSourceAdapter } from '../src/sites/import/site-source.js';
@@ -141,6 +142,12 @@ export async function createTestApp(t: TestDatabase, options: {
   });
   return { app, auth, aiAccesses, assessments, setup, imports, siteImports, providers, fakeSsi, ssiClock, clock, pauses: clock.slept, blobs };
 }
+
+/**
+ * For a test that builds services without createTestApp: its Revisions are written, and no Provider queue hears them.
+ * Without it the test passes only when an earlier file in the shared pool built a provider layer.
+ */
+export const listenToNoChanges = () => listenToChanges({ diveChanged: async () => {}, siteChanged: async () => {} });
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */
 export async function createUser(auth: Auth, email: string, role: 'user' | 'admin' = 'user') {

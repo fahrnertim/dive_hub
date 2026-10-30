@@ -13,7 +13,7 @@ import { createImportService, type ImportService } from '../src/imports/import-s
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { makeSuuntoAppFit, makeSuuntoJson, type SuuntoDiveOptions } from './fixtures/suunto-dive.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
-import { createTestAuth, createTestDatabase, createUser, databaseReachable, type TestDatabase } from './support.js';
+import { createTestAuth, createTestDatabase, createUser, databaseReachable, listenToNoChanges, type TestDatabase } from './support.js';
 
 const zipOf = (entries: Record<string, Uint8Array>): Promise<Buffer> =>
   new Promise((resolve, reject) => {
@@ -47,6 +47,7 @@ describe.skipIf(!(await databaseReachable()))('Suunto files through the import p
   beforeAll(async () => {
     t = await createTestDatabase();
     ({ db, pool } = t);
+    listenToNoChanges();
     const auth = createTestAuth(db);
     tim = (await createUser(auth, 'tim@example.com')).id;
     bob = (await createUser(auth, 'bob@example.com')).id;
