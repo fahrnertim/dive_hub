@@ -3,7 +3,7 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import { userOf } from '../auth/fastify.js';
-import { Problem, PROBLEMS, type ProblemCode } from '../http/problems.js';
+import { Problem, PROBLEMS, problem, type ProblemCode } from '../http/problems.js';
 import { DIVE_ONLY_PATTERN } from '../dives/list-filter.js';
 import { MAX_IDS, type PushRunService } from './push-run-service.js';
 import { DateTime, IdParams, Nullable, oneOf } from '../http/schemas.js';
@@ -143,7 +143,7 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
   };
   // Exactly one of list and ids: checked here, as the validator would drop properties of a union's other branch.
   const oneOfListAndIds = (body: Static<typeof StartBody>) => !!body.dives.list !== !!body.dives.ids;
-  const invalid = { code: 'invalid_input' as const, error: 'Send exactly one of dives.list and dives.ids' };
+  const invalid = problem('invalid_input', 'Send exactly one of dives.list and dives.ids');
 
   app.post('/connections/:id/push-runs/preview', {
     schema: {

@@ -3,6 +3,7 @@
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { cylinder, dive, diveSite, diverBodyWeight, lead } from '../db/schema.js';
+import { DiverError } from '../divers/diver-error.js';
 import { managedDiverIds } from '../divers/management.js';
 import { leadTotalKg, suitOf, weightingFeedbackOf } from '../dives/weighting.js';
 import { estimateLead } from './estimate.js';
@@ -56,11 +57,13 @@ export async function leadEstimateOf(
   };
 }
 
-/** The lead estimate for a User: null unless they keep the Diver's logbook, so a route holds no query. */
+/** The lead estimate for a User who keeps the Diver's logbook; anyone else gets DiverError diver_not_found. */
 export function createLeadService(db: Db) {
   return {
-    estimate: async (userId: string, diverId: string, plan: PlannedConditions, unit: LeadUnit): Promise<LeadEstimateAnswer | null> =>
-      (await managedDiverIds(db, userId, { live: true })).has(diverId) ? leadEstimateOf(db, diverId, plan, unit) : null,
+    estimate: async (userId: string, diverId: string, plan: PlannedConditions, unit: LeadUnit): Promise<LeadEstimateAnswer> => {
+      if (!(await managedDiverIds(db, userId, { live: true })).has(diverId)) throw new DiverError('diver_not_found');
+      return leadEstimateOf(db, diverId, plan, unit);
+    },
   };
 }
 

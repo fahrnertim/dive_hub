@@ -6,6 +6,8 @@ import { Value } from 'typebox/value';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { CYLINDER_MATERIALS, SUIT_TYPES, SUIT_UNDERGARMENTS } from '../db/schema.js';
+import { DiverError } from '../divers/diver-error.js';
+import { replyDiverError } from '../divers/routes.js';
 import type { Suit } from '../dives/weighting.js';
 import { Problem, problem } from '../http/problems.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
@@ -94,6 +96,10 @@ const EstimateView = Type.Object({
 
 export const leadRoutes: FastifyPluginAsyncTypebox<LeadRouteDeps> = async (app, deps) => {
   app.addHook('onRequest', requireUser(deps.auth));
+  app.setErrorHandler((error, _request, reply) => {
+    if (error instanceof DiverError) return replyDiverError(error, reply);
+    throw error;
+  });
 
   app.get('/divers/:id/lead-estimate', {
     schema: {
@@ -120,7 +126,6 @@ export const leadRoutes: FastifyPluginAsyncTypebox<LeadRouteDeps> = async (app, 
     const answer = await deps.lead.estimate(userOf(request).id, request.params.id, {
       water, suit: plannedSuit, cylinders: planned.map((c) => ({ volumeL: c.volumeL, material: c.material ?? null })),
     }, unit);
-    if (!answer) return reply.code(404).send(problem('diver_not_found'));
     const { estimate } = answer;
 
     const basis = estimate.basis && withDiveLinks(estimate.basis, answer.dives);
