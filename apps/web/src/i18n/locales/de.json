@@ -414,6 +414,7 @@
   },
   "errors": {
     "unknown": "Etwas ist schiefgegangen. Versuch es noch einmal.",
+    "network": "Der Server ist nicht erreichbar. Prüf deine Verbindung und versuch es noch einmal.",
     "sign_in_required": "Melde dich an, um fortzufahren.",
     "admins_only": "Das dürfen nur Admins.",
     "not_found": "Das gibt es nicht (mehr).",

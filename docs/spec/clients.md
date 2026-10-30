@@ -127,6 +127,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   stays the same. *Web:* `main.tsx`, `api.ts` (`shouldRetry`, `isUnauthorized`).
 - **Must show errors by their `code`,** translated (`errors.<code>`), never the English `error` text, which is
   for logs ([ADR 0014](../decisions/0014-design-system-and-localization.md)).
+  - A request with no answer at all (offline, server unreachable) has no code: say so as such, not as an unknown
+    error. *Web:* `api.ts` (`NetworkError`), `lib/display.ts` (`useErrorText`).
   - The same goes for Import `reason`/`errorCode`, a Site import's `failureCode`, Revision `cause` and the
     device vocabulary (water type, dive mode, deco model, gas circuit).
   - A device value without our word shows as recorded, under "other values from the device".

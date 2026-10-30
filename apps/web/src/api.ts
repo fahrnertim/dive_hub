@@ -43,6 +43,14 @@ export class ApiError extends Error {
 }
 export const isUnauthorized = (error: unknown) => error instanceof ApiError && error.status === 401;
 
+/** A request that got no answer: offline, or the server can't be reached. A cancelled one stays an AbortError. */
+export class NetworkError extends Error {}
+const noAnswerError = (error: unknown) =>
+  error instanceof DOMException && error.name === 'AbortError' ? error : new NetworkError('No answer from the server', { cause: error });
+/** The client's middleware that turns fetch's TypeError for a request without an answer into a NetworkError. */
+export const noAnswer: Parameters<typeof api.use>[0] = { onError: ({ error }) => noAnswerError(error) };
+api.use(noAnswer);
+
 /**
  * Retry a failed query once, but only when trying again can help: a network error or a server error.
  * A 4xx (not found, not allowed, signed out) stays the same, and retrying only delays the message.
@@ -347,7 +355,9 @@ export const siteImportsQuery = () => queryOptions({
 export async function uploadFile(file: File) {
   const body = new FormData();
   body.append('file', file);
-  const response = await fetch('/api/imports', { method: 'POST', body });
+  const response = await fetch('/api/imports', { method: 'POST', body }).catch((error: unknown) => {
+    throw noAnswerError(error);
+  });
   const json: unknown = await response.json().catch(() => undefined);
   return unwrap({ data: json as ImportView, error: json, response });
 }
