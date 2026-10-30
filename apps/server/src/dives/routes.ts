@@ -34,7 +34,7 @@ import type { WaitingPushService } from '../providers/waiting-push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
 import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
 import { WaitingPushViewSchema } from '../providers/waiting-push-view.js';
-import { answerProviderError, replyProviderError } from '../providers/routes.js';
+import { answerProviderError, replyProviderError } from '../providers/route-parts.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface DiveRouteDeps {

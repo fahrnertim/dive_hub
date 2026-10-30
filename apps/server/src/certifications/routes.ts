@@ -1,5 +1,5 @@
 // A Diver's certification cards (ADR 0050). Only the Users who manage the Diver; everyone else, and every call for an
-// external Diver, gets 404 diver_not_found. The import from a Provider is in providers/routes.ts.
+// external Diver, gets 404 diver_not_found. The import from a Provider is in providers/account-routes.ts.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
