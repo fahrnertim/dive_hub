@@ -5,7 +5,7 @@
 import { and, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as schema from '../src/db/schema.js';
 import { dive, diveSiteExternalId } from '../src/db/schema.js';
 import { siteForSend } from '../src/providers/site-for-send.js';
@@ -183,11 +183,10 @@ describe.skipIf(!(await databaseReachable()))('the send finds or creates the sit
       await rival.query('begin');
       await rival.query("insert into dive_site_external_id (site_id, source, external_id) values ($1, 'ssi', '4200')", [other]);
       const sending = send(diveId);
-      for (let waiting = false; !waiting;) {
-        await new Promise((resolve) => setTimeout(resolve, 20));
-        // Not through `rival`: inside its open transaction pg_stat_activity is one snapshot, taken at the first look.
-        waiting = (await t.pool.query("select 1 from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()")).rowCount === 1;
-      }
+      // Not through `rival`: inside its open transaction pg_stat_activity is one snapshot, taken at the first look.
+      await vi.waitFor(async () => {
+        expect((await t.pool.query("select 1 from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()")).rowCount).toBe(1);
+      }, { timeout: 10_000, interval: 20 });
       await rival.query('commit');
       expect((await sending).json()).toMatchObject({ outcome: 'created' });
     } finally {

@@ -32,6 +32,8 @@ jobs:
           --health-retries 30
     env:
       DATABASE_URL: postgres://divehub:divehub-dev@127.0.0.1:5432/divehub
+      # An unreachable database fails the server tests here instead of skipping them (test/support.ts).
+      REQUIRE_DATABASE: '1'
       # Playwright's own Chromium (cached below); on a laptop the tests use the installed Edge.
       PLAYWRIGHT_CHANNEL: chromium
     steps:

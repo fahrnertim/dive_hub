@@ -16,19 +16,6 @@ export interface Clock {
 
 export const realClock: Clock = { now: Date.now, sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)) };
 
-/** Real time, but sleeping skips ahead instead of waiting, and is recorded (tests and the browser tests' server). */
-export function skippingClock() {
-  let skipped = 0;
-  const slept: number[] = [];
-  return {
-    slept,
-    now: () => Date.now() + skipped,
-    async sleep(ms: number) { slept.push(ms); skipped += ms; },
-    /** Moves time on, as if that long had passed. */
-    skip(ms: number) { skipped += ms; },
-  };
-}
-
 /** How long a lease holds at most: longer than the slowest action (a few Provider calls of up to a minute each). */
 export const LEASE_MS = 5 * 60_000;
 /** How long a request waits for its Connection's turn before it is refused (`provider_busy`). */

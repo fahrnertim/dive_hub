@@ -1,5 +1,5 @@
 // Shared helpers for tests against PostgreSQL: a throwaway database per test file, the app with
-// real Better Auth, and signing in through the HTTP API. Skipped when PostgreSQL is unreachable.
+// real Better Auth, and signing in through the HTTP API. Skipped when PostgreSQL is unreachable (see databaseReachable).
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -26,13 +26,23 @@ export const BASE_URL = 'http://localhost:3000';
 /** A password that satisfies the length rule (ADR 0011). */
 export const PASSWORD = 'correct horse battery staple';
 
+let skipWarned = false;
+
+/**
+ * Whether the database tests can run. Without PostgreSQL they are skipped with a warning; with REQUIRE_DATABASE=1
+ * (CI) an unreachable database fails the file instead, so a broken DATABASE_URL never passes as skipped tests.
+ */
 export async function databaseReachable(): Promise<boolean> {
   const client = new pg.Client({ connectionString: baseDbUrl, connectionTimeoutMillis: 2000 });
   try {
     await client.connect();
     await client.end();
     return true;
-  } catch {
+  } catch (error) {
+    if (process.env.REQUIRE_DATABASE === '1') throw new Error(`REQUIRE_DATABASE is set but PostgreSQL is unreachable at ${new URL(baseDbUrl).host}`, { cause: error });
+    // Straight to stderr: Vitest doesn't print the console of a file whose tests were all skipped.
+    if (!skipWarned) process.stderr.write(`\nPostgreSQL is unreachable at ${new URL(baseDbUrl).host}: the database tests are SKIPPED, not passed.\n`);
+    skipWarned = true;
     return false;
   }
 }
@@ -78,13 +88,18 @@ export const unreachable = (source: ImportSource): SiteSourceAdapter => ({
 /** A key for DIVEHUB_ENCRYPTION_KEY in tests (32 bytes). */
 export const TEST_ENCRYPTION_KEY = Buffer.alloc(32, 7);
 
-/** A clock that only skips forward, until a test sets it back to real time with `reset`. */
-export function resettableClock() {
+/**
+ * The app's clock in tests and the browser tests' server: sleeping skips ahead instead of waiting and is recorded in
+ * `slept`. It runs with real time and only skips forward, until a test sets it back with `reset`; a `stopped` clock
+ * moves only by skips and sleeps, for a test that checks how long something waited.
+ */
+export function resettableClock({ stopped = false } = {}) {
+  const start = Date.now();
   let skipped = 0;
   const slept: number[] = [];
   return {
     slept,
-    now: () => Date.now() + skipped,
+    now: () => (stopped ? start : Date.now()) + skipped,
     async sleep(ms: number) { slept.push(ms); skipped += ms; },
     skip(ms: number) {
       if (ms < 0) throw new Error('the clock only skips forward; use reset() for real time');

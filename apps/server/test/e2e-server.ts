@@ -16,12 +16,12 @@ import { createSiteSources } from '../src/site-sources.js';
 import type { Fetch } from '../src/sites/import/polite-http.js';
 import { ssiSitesZip } from './zip.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
-import { skippingClock } from '../src/providers/leases.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { computerDive, createFakeSsi, fakeCard, handTypedDive, type FakeSsiSite } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
+import { resettableClock } from './support.js';
 import { createMerging } from '../src/dives/merging.js';
 import { createLogbookChecks } from '../src/dives/logbook-checks.js';
 import { createDiverService } from '../src/divers/diver-service.js';
@@ -113,7 +113,7 @@ const services = createServices({
   // SSI's pauses between Dives are for the real SSI (5 s in a run); the fake takes them as fast as the browser tests go.
   adapters: [quick(createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }) }))],
   // The fake needs no pause between actions; the browser tests would only wait, so the pauses are skipped.
-  clock: skippingClock(),
+  clock: resettableClock(),
 });
 const { imports } = services;
 const app = await buildApp({ ...services, baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist') });
