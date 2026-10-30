@@ -13,7 +13,7 @@ import { classify, failureOutcome, numberPlanOf, orderItems, planItem, type Plan
 import type { RemoteDive } from './provider.js';
 import type { PushService } from './push-service.js';
 import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
-import { consoleLog, type ProviderLog } from './waiting-push-queue.js';
+import type { ProviderLog } from './waiting-push-queue.js';
 
 export const PUSH_RUN_STEP_TASK = 'push_run_step';
 /** Runs kept per Connection; an older one is deleted when a new one starts. */
@@ -44,9 +44,9 @@ type Status = Awaited<ReturnType<PushService['status']>>;
 /** An item `step` took up, as the claiming update returns it. */
 type Claimed = { dive_id: string; action: string; attempts: number; position: number; shares_with_dive_id: string | null };
 
-export function createPushRunService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; conflicts: ConflictService; log?: ProviderLog }) {
+export function createPushRunService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; conflicts: ConflictService; log: ProviderLog }) {
   const { db, registry, pushes, conflicts } = deps;
-  const log = deps.log ?? consoleLog;
+  const { log } = deps;
 
   const error = (code: ConstructorParameters<typeof ProviderServiceError>[0], extra?: Record<string, unknown>) =>
     new ProviderServiceError(code, undefined, extra);

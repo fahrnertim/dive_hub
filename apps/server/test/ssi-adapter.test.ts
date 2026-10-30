@@ -176,7 +176,8 @@ describe('the SSI adapter and SSI\'s maintenance', () => {
     });
     const { account, access } = await adapter.signIn({ kind: 'password', login: 'erika@example.com', password: 'ssi-password' });
     fake.failWith = 503;
-    await expect(adapter.certifications!.find({ connectionId: 'c1', accountId: account.id, access })).rejects.toMatchObject({ reason: 'unavailable' });
+    await expect(adapter.certifications!.find({ connectionId: 'c1', accountId: account.id, access }))
+      .rejects.toMatchObject({ reason: 'unavailable', cause: { reason: 'maintenance' } });
     expect(logged.at(-1)).toMatchObject({ call: 'get_ccards', outcome: 'maintenance' });
   });
 });

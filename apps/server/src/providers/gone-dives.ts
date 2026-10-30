@@ -111,7 +111,7 @@ export function createGoneDiveService(deps: { db: Db; registry: ProviderRegistry
     try {
       return await leases.dive(first, [adapter.id], () => underLeases(rest, adapter, fn));
     } catch (error) {
-      throw error instanceof LeaseBusy ? new ProviderServiceError('provider_busy', named(adapter)) : error;
+      throw error instanceof LeaseBusy ? new ProviderServiceError('provider_busy', named(adapter), undefined, { cause: error }) : error;
     }
   }
 

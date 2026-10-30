@@ -50,7 +50,7 @@ export function createPoliteHttp(options: PoliteHttpOptions = {}): PoliteHttp {
           ...init, headers: { ...init.headers, 'User-Agent': agent }, signal: AbortSignal.timeout(timeoutMs),
         });
       } catch (error) {
-        throw new SiteSourceError(source, 'unavailable', errorMessage(error));
+        throw new SiteSourceError(source, 'unavailable', errorMessage(error), { cause: error });
       }
       if (response.status >= 200 && response.status < 300) return response;
       if (RETRY_STATUSES.has(response.status) && attempt === 1) {
@@ -66,7 +66,7 @@ export function createPoliteHttp(options: PoliteHttpOptions = {}): PoliteHttp {
       return await body();
     } catch (error) {
       // The connection broke or the timeout hit while the answer was arriving.
-      throw new SiteSourceError(source, 'unavailable', errorMessage(error));
+      throw new SiteSourceError(source, 'unavailable', errorMessage(error), { cause: error });
     }
   };
   return Object.assign(

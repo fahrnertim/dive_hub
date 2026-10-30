@@ -12,7 +12,7 @@ import { realClock, type Clock } from './leases.js';
 import type { PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { blocking } from './requirements.js';
-import { deletingItself, mark, newDivesConnection, queueNow, scheduleConnection, settle, upsertSend, type QueueMark, consoleLog, type ProviderLog } from './waiting-push-queue.js';
+import { deletingItself, mark, newDivesConnection, queueNow, scheduleConnection, settle, upsertSend, type QueueMark, type ProviderLog } from './waiting-push-queue.js';
 import { waitingOf } from './waiting-push-view.js';
 export type { ProviderLog };
 
@@ -34,9 +34,9 @@ export const OFFER_ABOVE = 20;
 
 type Entry = typeof waitingPush.$inferSelect;
 
-export function createWaitingPushService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; clock?: Clock; log?: ProviderLog }) {
+export function createWaitingPushService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; clock?: Clock; log: ProviderLog }) {
   const { db, registry, pushes } = deps;
-  const log = deps.log ?? consoleLog;
+  const { log } = deps;
   const clock = deps.clock ?? realClock;
   const now = () => new Date(clock.now());
   const the = (entry: Entry) => and(eq(waitingPush.diveId, entry.diveId), eq(waitingPush.provider, entry.provider));

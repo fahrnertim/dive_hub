@@ -117,8 +117,8 @@ export interface Capabilities {
 export type ProviderErrorReason = 'wrong_credentials' | 'signed_out' | 'refused' | 'not_stored' | 'unavailable' | 'bad_response' | 'not_found';
 
 export class ProviderError extends Error {
-  constructor(readonly reason: ProviderErrorReason, detail: string) {
-    super(`${reason}: ${detail}`);
+  constructor(readonly reason: ProviderErrorReason, detail: string, options?: ErrorOptions) {
+    super(`${reason}: ${detail}`, options);
   }
 }
 

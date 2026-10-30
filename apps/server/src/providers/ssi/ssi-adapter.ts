@@ -151,7 +151,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
     } catch (error) {
       if (error instanceof SsiError) report(error.reason, error.message.slice(0, 300));
       else report('error');
-      throw error instanceof SsiError ? new ProviderError(providerReason(error), error.message) : error;
+      throw error instanceof SsiError ? new ProviderError(providerReason(error), error.message, { cause: error }) : error;
     }
   }
   /** The last logbook read per Connection, kept briefly so the next action doesn't read it again. */
@@ -412,7 +412,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         try {
           return await client.cardImage(url);
         } catch (error) {
-          if (error instanceof SsiError) throw new ProviderError(providerReason(error), error.message.slice(0, 300));
+          if (error instanceof SsiError) throw new ProviderError(providerReason(error), error.message.slice(0, 300), { cause: error });
           throw error;
         }
       },

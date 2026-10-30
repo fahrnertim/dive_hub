@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, isNull, lt, lte, or } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, diveLease, type ConnectionRow } from '../db/schema.js';
-import { consoleLog, type ProviderLog } from './waiting-push-queue.js';
+import type { ProviderLog } from './waiting-push-queue.js';
 
 /** Where leases take their time from. Every app process on one database must agree on it (NTP is enough). */
 export interface Clock {
@@ -46,10 +46,10 @@ export class LeaseBusy extends Error {
 /** The Connection's turn didn't come within MAX_WAIT_MS. */
 export class TurnTimeout extends Error {}
 
-export function createLeases(deps: { db: Db; clock?: Clock; log?: ProviderLog }) {
+export function createLeases(deps: { db: Db; clock?: Clock; log: ProviderLog }) {
   const { db } = deps;
   const clock = deps.clock ?? realClock;
-  const log = deps.log ?? consoleLog;
+  const { log } = deps;
 
   /** Takes the lease of a Dive at a Provider unless another action holds it: one statement, so only one can win. */
   async function take(diveId: string, provider: string, holder: string): Promise<boolean> {

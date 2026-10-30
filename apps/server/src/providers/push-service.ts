@@ -24,7 +24,7 @@ import { currentRemote, type PushRow } from './remote-state.js';
 import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements } from './requirements.js';
 import { siteForSend } from './site-for-send.js';
 import { buddiesForSend, keepBuddies, type BuddiesForSend } from './buddies-for-send.js';
-import { deletingItself, mark as markWaitingPush, settle as settleWaitingPush, type QueueMark, consoleLog, type ProviderLog } from './waiting-push-queue.js';
+import { deletingItself, mark as markWaitingPush, settle as settleWaitingPush, type QueueMark, type ProviderLog } from './waiting-push-queue.js';
 import { waitingOf } from './waiting-push-view.js';
 import { comparableOf, planSend, same, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
 
@@ -113,9 +113,9 @@ export function numbersFor(conn: { followNumbers: boolean } | null, exports: Div
 }
 type NumbersFor = NonNullable<ReturnType<typeof numbersFor>>;
 
-export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases; conflicts: ConflictService; clock?: Clock; log?: ProviderLog }) {
+export function createPushService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; leases: Leases; conflicts: ConflictService; clock?: Clock; log: ProviderLog }) {
   const { db, registry, connections, leases, conflicts } = deps;
-  const log = deps.log ?? consoleLog;
+  const { log } = deps;
   const clock = deps.clock ?? realClock;
   const changes = createDiveChanges({ db, blobs: deps.blobs });
 
@@ -150,7 +150,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     try {
       return await leases.dive(diveId, adapters.map((a) => a.id), fn);
     } catch (error) {
-      throw error instanceof LeaseBusy ? new ProviderServiceError('provider_busy', named(registry.get(error.provider))) : error;
+      throw error instanceof LeaseBusy ? new ProviderServiceError('provider_busy', named(registry.get(error.provider)), undefined, { cause: error }) : error;
     }
   }
 

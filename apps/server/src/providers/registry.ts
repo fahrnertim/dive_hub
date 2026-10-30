@@ -69,8 +69,9 @@ export class ProviderServiceError extends Error {
     readonly provider?: { id: string; name: string },
     /** More for the client, such as what is unmet (`provider_requirements_unmet`). */
     readonly extra?: Record<string, unknown>,
+    options?: ErrorOptions,
   ) {
-    super(code);
+    super(code, options);
   }
 }
 
@@ -83,6 +84,6 @@ const PROBLEM_OF: Record<ProviderError['reason'], ProviderRefusal> = {
 
 /** An adapter's error as a refusal with a problem code; anything else (a bug) passes through as it is. */
 export const asProblem = (error: unknown, adapter: ProviderAdapter) =>
-  error instanceof ProviderError ? new ProviderServiceError(PROBLEM_OF[error.reason], named(adapter)) : error;
+  error instanceof ProviderError ? new ProviderServiceError(PROBLEM_OF[error.reason], named(adapter), undefined, { cause: error }) : error;
 
 export const named = (adapter: ProviderAdapter) => ({ id: adapter.id, name: adapter.capabilities.name });

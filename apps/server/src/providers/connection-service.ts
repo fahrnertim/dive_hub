@@ -75,7 +75,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
     try {
       return await leases.turn(connectionId, adapter.capabilities.limits.pauseMs, fn);
     } catch (error) {
-      throw error instanceof TurnTimeout ? new ProviderServiceError('provider_busy', named(adapter)) : error;
+      throw error instanceof TurnTimeout ? new ProviderServiceError('provider_busy', named(adapter), undefined, { cause: error }) : error;
     }
   }
 
@@ -219,7 +219,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
             await tx.delete(diverExternalId).where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, source)));
             await mergeExternalDiver(tx, held.id, diverId, { type: 'user', id: userId }).catch((error: unknown) => {
               // The two can't be merged (another account at a service each): the account stays the external Diver's.
-              throw error instanceof DiverError ? new ProviderServiceError('provider_account_taken', named(adapter)) : error;
+              throw error instanceof DiverError ? new ProviderServiceError('provider_account_taken', named(adapter), undefined, { cause: error }) : error;
             });
           } else if (!taken) {
             // A Diver has one account per Source: connecting another replaces the one it had.

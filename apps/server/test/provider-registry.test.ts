@@ -1,8 +1,8 @@
 // The registry refuses an adapter whose declared Capabilities its methods don't back (ADR 0027): the generic layer
 // trusts the declaration and calls the method.
 import { describe, expect, it } from 'vitest';
-import type { ProviderAdapter } from '../src/providers/provider.js';
-import { createProviderRegistry } from '../src/providers/registry.js';
+import { ProviderError, type ProviderAdapter } from '../src/providers/provider.js';
+import { asProblem, createProviderRegistry } from '../src/providers/registry.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import type { SsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createFakeHandover } from './fake-handover-provider.js';
@@ -38,5 +38,14 @@ describe('createProviderRegistry', () => {
     const ssi = createSsiAdapter({ client: {} as SsiClient });
     expect(() => createProviderRegistry([{ ...ssi, buddies: { find: ssi.buddies!.find } }])).toThrow('ssi: add');
     expect(() => createProviderRegistry([{ ...ssi, diveSites: { find: ssi.diveSites!.find } }])).toThrow('ssi: create');
+  });
+});
+
+describe('asProblem', () => {
+  it('answers an adapter error with its problem code and keeps the adapter error as the cause', () => {
+    const error = new ProviderError('signed_out', 'token expired');
+    const problem = asProblem(error, ledger());
+    expect(problem).toMatchObject({ code: 'provider_sign_in_needed', provider: { id: 'ledger' } });
+    expect((problem as Error).cause).toBe(error);
   });
 });
