@@ -89,6 +89,8 @@ interface Exchange {
 const SUGGESTIONS = 20;
 /** Left to `withAccess`, which signs in again and retries the action; not a failed Push. */
 const signedOut = (error: unknown) => error instanceof ProviderError && error.reason === 'signed_out';
+/** A Push as recorded; the Provider and its mode come from the adapter. */
+type PushValues = Omit<typeof push.$inferInsert, 'provider' | 'mode'>;
 /** What we send to find the dive again when an answer is lost. */
 const reference = referenceOf;
 
@@ -131,9 +133,26 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     return db.select().from(push).where(and(eq(push.diveId, diveId), eq(push.provider, provider))).orderBy(desc(push.createdAt), desc(push.id));
   }
 
-  async function record(adapter: ProviderAdapter, values: Omit<typeof push.$inferInsert, 'provider' | 'mode'>) {
+  async function record(adapter: ProviderAdapter, values: PushValues) {
     const [row] = await db.insert(push).values({ provider: adapter.id, mode: adapter.dives!.mode, ...values }).returning();
     return row!;
+  }
+
+  /**
+   * A Provider call that failed: recorded as a failed Push and thrown as its problem. A sign-out is thrown unrecorded,
+   * for `withAccess`, which signs in again and retries.
+   */
+  async function recordFailed(adapter: ProviderAdapter, values: Omit<PushValues, 'state' | 'errorCode'>, error: unknown): Promise<never> {
+    if (signedOut(error)) throw error;
+    const problem = asProblem(error, adapter);
+    await record(adapter, { ...values, state: 'failed', errorCode: problem instanceof ProviderServiceError ? problem.code : 'internal_error' });
+    throw problem;
+  }
+
+  /** The dive is gone at the Provider: recorded as a failed Push, and `provider_dive_gone` thrown. */
+  async function recordGone(adapter: ProviderAdapter, values: Omit<PushValues, 'state' | 'errorCode' | 'remoteGone'>): Promise<never> {
+    await record(adapter, { ...values, state: 'failed', errorCode: 'provider_dive_gone', remoteGone: true });
+    throw new ProviderServiceError('provider_dive_gone', named(adapter));
   }
 
   async function connectionOrThrow(userId: string, diverId: string, adapter: ProviderAdapter) {
@@ -180,15 +199,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     // Already deleted at the Provider: nothing was left to delete.
     if (knownGone) return record(adapter, { ...base, action: 'delete', state: 'confirmed', remoteGone: true });
     return connections.withAccess(conn, async (ctx) => {
-      let outcome: 'deleted' | 'gone';
-      try {
-        outcome = await dives.open(ctx).remove!(remoteId);
-      } catch (error) {
-        if (signedOut(error)) throw error;
-        const problem = asProblem(error, adapter);
-        await record(adapter, { ...base, action: 'delete', state: 'failed', errorCode: problem instanceof ProviderServiceError ? problem.code : 'internal_error' });
-        throw problem;
-      }
+      const outcome = await dives.open(ctx).remove!(remoteId).catch((error: unknown) => recordFailed(adapter, { ...base, action: 'delete' }, error));
       return record(adapter, { ...base, action: 'delete', state: 'confirmed', remoteGone: outcome === 'gone' });
     });
   }
@@ -274,18 +285,8 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       remoteId: d.remoteId, remoteNumber: d.remoteNumber, fingerprint: adapter.dives!.fingerprint(p.outgoing), payload: d.payload,
       differences: d.differences, leftOut: leftOut(d, p),
     });
-    const failed = async (action: 'create' | 'update', error: unknown, remoteId: string | null = null): Promise<never> => {
-      if (signedOut(error)) throw error;
-      const problem = asProblem(error, adapter);
-      await record(adapter, {
-        ...base, action, state: 'failed', remoteId, errorCode: problem instanceof ProviderServiceError ? problem.code : 'internal_error',
-      });
-      throw problem;
-    };
-    const gone = async (remoteId: string): Promise<never> => {
-      await record(adapter, { ...base, action: 'update', state: 'failed', remoteId, errorCode: 'provider_dive_gone', remoteGone: true });
-      throw new ProviderServiceError('provider_dive_gone', named(adapter));
-    };
+    const failed = (action: 'create' | 'update', error: unknown, remoteId: string | null = null) => recordFailed(adapter, { ...base, action, remoteId }, error);
+    const gone = (remoteId: string) => recordGone(adapter, { ...base, action: 'update', remoteId });
     return { base, delivered, failed, gone };
   }
 
@@ -581,22 +582,11 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
         if (!current) throw new ProviderServiceError('provider_not_sent', named(adapter));
         if (current.remoteNumber === row.number) throw new ProviderServiceError('provider_number_nothing_to_set', named(adapter));
         const base = { diveId, connectionId: conn.id, userId, diveVersion: current.diveVersion, remoteId: current.remoteId, remoteReference: current.remoteReference };
-        const failed = async (error: unknown): Promise<never> => {
-          if (signedOut(error)) throw error;
-          const problem = asProblem(error, adapter);
-          await record(adapter, {
-            ...base, action: 'number', state: 'failed',
-            errorCode: problem instanceof ProviderServiceError ? problem.code : 'internal_error',
-          });
-          throw problem;
-        };
         // A swap's first step (ADR 0052, from a run): the one dive whose number this takes for the length of the save.
         const sharesWith = options.sharesWithDiveId ? currentRemote(await pushesOf(options.sharesWithDiveId, adapter.id))?.remoteId ?? undefined : undefined;
-        const outcome = await dives.open(ctx).setNumber!(current.remoteId!, row.number!, sharesWith).catch((error: unknown) => failed(error));
-        if (!outcome) {
-          await record(adapter, { ...base, action: 'number', state: 'failed', errorCode: 'provider_dive_gone', remoteGone: true });
-          throw new ProviderServiceError('provider_dive_gone', named(adapter));
-        }
+        const outcome = await dives.open(ctx).setNumber!(current.remoteId!, row.number!, sharesWith)
+          .catch((error: unknown) => recordFailed(adapter, { ...base, action: 'number' }, error));
+        if (!outcome) return recordGone(adapter, { ...base, action: 'number' });
         if (outcome.result === 'taken') {
           await record(adapter, { ...base, action: 'number', state: 'failed', errorCode: 'provider_number_taken' });
           throw new ProviderServiceError('provider_number_taken', named(adapter), {
