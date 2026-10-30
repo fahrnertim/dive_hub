@@ -145,6 +145,17 @@ test('a baseline may not swap a fixed problem for a new one, even at the same si
   assert.deepEqual(baselineGrowth([['eslint-suppressions.json', suppressions([['a.ts', 'r', 3]]), suppressions([['a.ts', 'r', 2]])]]), []);
 });
 
+test('a renamed file keeps its suppressions, and only those it had', () => {
+  const suppressions = (entries) => JSON.stringify(Object.fromEntries(entries.map(([file, rule, count]) => [file, { [rule]: { count } }])));
+  const renames = new Map([['a.ts', 'dir/a.ts']]);
+
+  assert.deepEqual(baselineGrowth([['eslint-suppressions.json', suppressions([['a.ts', 'r', 2]]), suppressions([['dir/a.ts', 'r', 2]])]], renames), []);
+  assert.deepEqual(baselineGrowth([['eslint-suppressions.json', suppressions([['a.ts', 'r', 2]]), suppressions([['dir/a.ts', 'r', 3]])]], renames),
+    ['eslint-suppressions.json has new entries: dir/a.ts (r): fix the new problems instead of adding them to the baseline']);
+  // Without the rename the moved entry is new.
+  assert.equal(baselineGrowth([['eslint-suppressions.json', suppressions([['a.ts', 'r', 2]]), suppressions([['dir/a.ts', 'r', 2]])]]).length, 1);
+});
+
 test('a change to the edit hook runs the check script tests and lints everything', () => {
   const plan = planFor(['.claude/hooks/lint-file.mjs']);
   assert.deepEqual([plan.scripts, plan.lint, plan.server, plan.e2e], [true, 'all', 'none', 'none']);

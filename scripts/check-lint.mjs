@@ -61,6 +61,12 @@ function baselineRef(cwd) {
   }
 }
 
+/** The files moved since the commit to compare with, old path → new (git's rename detection). */
+function renamesSince(cwd) {
+  const out = gitText(cwd, ['-c', 'core.quotepath=off', 'diff', '-M', '--name-status', '--diff-filter=R', baselineRef(cwd)]);
+  return new Map(out.split('\n').filter(Boolean).map((line) => line.split('\t').slice(1, 3)));
+}
+
 /** Each baseline as it was at the commit to compare with, null when absent there. */
 function baselinesBefore(cwd) {
   const ref = baselineRef(cwd);
@@ -103,7 +109,7 @@ export function lint({ all = false, files = [], cwd = process.cwd() } = {}) {
     }
   }
 
-  problems.push(...baselineGrowth(baselinesBefore(cwd)));
+  problems.push(...baselineGrowth(baselinesBefore(cwd), renamesSince(cwd)));
   return problems.join('\n\n');
 }
 

@@ -233,8 +233,11 @@ export function baselineSize(text) {
   return Object.values(data).flatMap((rules) => Object.values(rules)).reduce((sum, rule) => sum + rule.count, 0);
 }
 
-/** A baseline's entries by key with their counts: ESLint's file and rule, dependency-cruiser's rule, from and to. */
-function baselineEntries(text) {
+/**
+ * A baseline's entries by key with their counts: ESLint's file and rule, dependency-cruiser's rule, from and to.
+ * A file in `renames` (old path → new) counts under its new path.
+ */
+function baselineEntries(text, renames = new Map()) {
   const entries = new Map();
   if (!text) return entries;
   const data = JSON.parse(text);
@@ -244,19 +247,20 @@ function baselineEntries(text) {
       entries.set(key, (entries.get(key) ?? 0) + 1);
     }
   } else {
-    for (const [file, rules] of Object.entries(data)) for (const [rule, { count }] of Object.entries(rules)) entries.set(`${file} (${rule})`, count);
+    for (const [file, rules] of Object.entries(data)) for (const [rule, { count }] of Object.entries(rules)) entries.set(`${renames.get(file) ?? file} (${rule})`, count);
   }
   return entries;
 }
 
 /**
  * `[path, before, now]` per baseline (texts, null when absent) → a message for each one with an entry that is new
- * or counts more than before. Comparing sizes alone would let a fixed problem be swapped for a new one.
+ * or counts more than before. Comparing sizes alone would let a fixed problem be swapped for a new one. A file moved
+ * since (`renames`, old path → new) keeps its suppressions under the new path.
  */
-export function baselineGrowth(baselines) {
+export function baselineGrowth(baselines, renames = new Map()) {
   return baselines.flatMap(([path, before, now]) => {
     if (before === null) return [];
-    const was = baselineEntries(before);
+    const was = baselineEntries(before, renames);
     const grown = [...baselineEntries(now)].filter(([key, count]) => count > (was.get(key) ?? 0)).map(([key]) => key);
     return grown.length > 0 ? [`${path} has new entries: ${grown.join(', ')}: fix the new problems instead of adding them to the baseline`] : [];
   });
