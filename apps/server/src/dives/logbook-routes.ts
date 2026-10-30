@@ -9,7 +9,7 @@ import { Problem, problem } from '../http/problems.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 import type { PushService } from '../providers/push/push-service.js';
 import type { WaitingPushService } from '../providers/waiting-push/waiting-push-service.js';
-import { WaitingPushViewSchema, type WaitingPushView } from './waiting-push-view.js';
+import { WaitingPushView } from './waiting-push-view.js';
 import { diveSummaryOf } from './dive-summary-view.js';
 import { downsampleMinMax } from './calc/downsample.js';
 import { asksFor, DIVE_ONLY_PATTERN } from './list-filter.js';
@@ -69,7 +69,7 @@ const DiveSummaryView = Type.Object({
   participants: Type.Array(Type.Object({
     diverId: Type.String(), name: Type.String(), role: Type.Enum([...PARTICIPANT_ROLES]),
   }), { description: 'The Divers on the Dive besides its own Diver: buddies first, then guides and instructors, each by name (ADR 0028)' }),
-  waiting: Type.Array(WaitingPushViewSchema, {
+  waiting: Type.Array(WaitingPushView, {
     description: 'The Dive\'s entries in the queue of Waiting pushes, one per Provider (ADR 0056): a small icon for waiting, a warning for held, an error with Retry for stopped (docs/spec/clients.md)',
   }),
   profile: Nullable(Type.Object({

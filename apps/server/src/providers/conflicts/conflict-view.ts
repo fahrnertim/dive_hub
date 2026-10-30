@@ -1,7 +1,7 @@
 // How a Conflict (ADR 0056) is shown and chosen over HTTP: in a Dive's status, a send, an import preview and "Needs your decision".
 import { Type, type TOptional } from 'typebox';
 import { CYLINDER_MATERIALS } from '../../db/schema.js';
-import { Nullable } from '../../http/schemas.js';
+import { Nullable, refTo } from '../../http/schemas.js';
 import { SYNCED_FIELDS, type SyncedField } from '../dive-import/three-way.js';
 
 const ConflictCylinder = Type.Object({
@@ -26,8 +26,9 @@ export const ConflictChoices = Type.Object(
 });
 
 /** One field changed on both sides, differently: both values as the import preview says them (ADR 0056). */
-export const ConflictFieldView = Type.Object({
+export const ConflictFieldViewSchema = Type.Object({
   field: Type.Enum([...SYNCED_FIELDS], { description: 'The field the two sides differ on' }),
   hub: Nullable(ConflictValue),
   provider: Nullable(ConflictValue),
-});
+}, { $id: 'ConflictFieldView' });
+export const ConflictFieldView = refTo(ConflictFieldViewSchema);

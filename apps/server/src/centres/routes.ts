@@ -1,14 +1,14 @@
 // Dive centres and their SSI verification codes (ADR 0043).
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { Type, type Static } from 'typebox';
+import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { callerOf } from '../http/caller.js';
 import { answerErrors, answers, Problem, problem } from '../http/problems.js';
 import type { DiverService } from '../divers/diver-service.js';
-import { CENTRE_SOURCE_NAME, CENTRE_SOURCES, CentreError, type CentreService } from './centre-service.js';
+import { CENTRE_SOURCES, CentreError, type CentreService } from './centre-service.js';
 import { IdParams, Nullable } from '../http/schemas.js';
-import { VerificationCodeView } from './verification-code-view.js';
+import { CentreView, Source, toCentreView } from './centre-view.js';
 
 export interface CentreRouteDeps {
   auth: Auth;
@@ -17,23 +17,7 @@ export interface CentreRouteDeps {
 }
 
 const Name = Type.String({ minLength: 1, maxLength: 200, pattern: '\\S', description: 'As the centre spells it; for an SSI code, exactly as SSI does' });
-const Source = Type.Enum([...CENTRE_SOURCES]);
 const TypedId = Type.String({ minLength: 1, maxLength: 300, description: 'As the User typed or pasted it: the bare number, or the centre\'s whole code' });
-
-const CentreView = Type.Object({
-  id: Type.String(),
-  name: Type.String({ description: 'The whole name, as its Source spells it (SSI: with the town). This is what is edited, and what the code holds' }),
-  displayName: Type.String({ description: 'The name to show: the whole name shortened by the rule of the Source the centre has an ID at (SSI: without the town)' }),
-  externalIds: Type.Array(Type.Object({
-    source: Source,
-    name: Type.String({ description: 'The Source\'s name, e.g. "SSI"' }),
-    externalId: Type.String({ description: 'e.g. the SSI centre number' }),
-  })),
-  sites: Type.Array(Type.Object({ id: Type.String(), name: Type.String() }), { description: 'The Dive sites the centre is responsible for, by name' }),
-  verificationCode: Nullable(VerificationCodeView),
-  version: Type.Integer({ description: 'Send it back with a rename; it changes with every rename' }),
-  canDelete: Type.Boolean({ description: 'Whether the signed-in User may delete it: its creator or an admin' }),
-});
 
 const ListQuery = Type.Object({
   q: Type.Optional(Type.String({ maxLength: 100, description: 'Words from the name' })),
@@ -71,13 +55,6 @@ const ReadCode = Type.Union([
   Type.Object({ kind: Type.Literal('professional'), ...Person, leaderNumber: Type.String() }),
 ]);
 
-type Row = Awaited<ReturnType<CentreService['get']>>;
-const toView = ({ centre: c, externalIds, sites, canDelete, displayName, verificationCode }: Row): Static<typeof CentreView> => ({
-  id: c.id, name: c.name, displayName,
-  externalIds: externalIds.map((e) => ({ source: e.source, name: CENTRE_SOURCE_NAME[e.source], externalId: e.externalId })),
-  sites, verificationCode, version: c.version, canDelete,
-});
-
 const STATUS: Record<CentreError['code'], number> = {
   centre_not_found: 404, centre_changed: 409, centre_not_deletable: 403, centre_external_id_taken: 409, site_not_found: 404, invalid_input: 400,
 };
@@ -96,12 +73,12 @@ export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (a
     },
   }, async (request) => {
     const page = await centres.list(callerOf(request), request.query);
-    return { centres: page.centres.map(toView), total: page.total };
+    return { centres: page.centres.map(toCentreView), total: page.total };
   });
 
   app.get('/dive-centres/:id', {
     schema: { summary: 'One Dive centre', params: IdParams, response: { 200: CentreView, 404: Problem } },
-  }, async (request) => toView(await centres.get(callerOf(request), request.params.id)));
+  }, async (request) => toCentreView(await centres.get(callerOf(request), request.params.id)));
 
   app.post('/dive-centres', {
     schema: {
@@ -112,7 +89,7 @@ export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (a
   }, async (request, reply) => {
     const { name, externalIds, siteIds } = request.body;
     const id = await centres.create(callerOf(request), { name: name.trim(), externalIds, siteIds });
-    return reply.code(201).send(toView(await centres.get(callerOf(request), id)));
+    return reply.code(201).send(toCentreView(await centres.get(callerOf(request), id)));
   });
 
   app.patch('/dive-centres/:id', {
@@ -124,7 +101,7 @@ export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (a
     },
   }, async (request) => {
     await centres.rename(callerOf(request), request.params.id, request.body.version, request.body.name.trim());
-    return toView(await centres.get(callerOf(request), request.params.id));
+    return toCentreView(await centres.get(callerOf(request), request.params.id));
   });
 
   app.put('/dive-centres/:id/external-ids/:source', {
@@ -138,7 +115,7 @@ export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (a
     },
   }, async (request) => {
     await centres.setExternalId(callerOf(request), request.params.id, request.params.source, request.body.externalId);
-    return toView(await centres.get(callerOf(request), request.params.id));
+    return toCentreView(await centres.get(callerOf(request), request.params.id));
   });
 
   const SiteParams = Type.Object({ id: Type.String({ format: 'uuid' }), siteId: Type.String({ format: 'uuid' }) });
@@ -151,7 +128,7 @@ export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (a
     },
   }, async (request) => {
     await centres.setSite(callerOf(request), request.params.id, request.params.siteId, true);
-    return toView(await centres.get(callerOf(request), request.params.id));
+    return toCentreView(await centres.get(callerOf(request), request.params.id));
   });
 
   app.delete('/dive-centres/:id/sites/:siteId', {
@@ -161,7 +138,7 @@ export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (a
     },
   }, async (request) => {
     await centres.setSite(callerOf(request), request.params.id, request.params.siteId, false);
-    return toView(await centres.get(callerOf(request), request.params.id));
+    return toCentreView(await centres.get(callerOf(request), request.params.id));
   });
 
   app.delete('/dive-centres/:id', {

@@ -1,8 +1,8 @@
 // Error responses (ADR 0014): every refusal carries a stable `code`, which clients translate,
 // and an English `error` text for logs, scripts and anything without a translation.
 import type { FastifyError, FastifyInstance, FastifyReply } from 'fastify';
-import { type Static, type TSchema, Type } from 'typebox';
-import { Nullable, oneOf } from './schemas.js';
+import { Type } from 'typebox';
+import { Nullable, oneOf, refTo } from './schemas.js';
 
 export const PROBLEMS = {
   sign_in_required: 'Sign in required',
@@ -149,13 +149,6 @@ export const ProblemSchema = Type.Object({
   diveId: Type.Optional(Nullable(Type.String({ description: 'With provider_number_taken: the Dive here that dive is, if Dive Hub knows it' }))),
   runId: Type.Optional(Type.String({ description: 'With push_run_active: the run that is going (ADR 0047)' })),
 }, { $id: 'Problem', description: 'A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types' });
-
-/** A reference to a schema registered with app.addSchema under its $id, typed as it: the OpenAPI document names it once. */
-export function refTo<T extends TSchema>(schema: T) {
-  const id = (schema as { $id?: unknown }).$id;
-  if (typeof id !== 'string') throw new Error('refTo needs a schema with an $id');
-  return Type.Unsafe<Static<T>>(Type.Ref(id));
-}
 
 /** What a route's response names for a refusal: a reference to ProblemSchema. */
 export const Problem = refTo(ProblemSchema);

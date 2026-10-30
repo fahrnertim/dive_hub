@@ -2,7 +2,8 @@
 // Provider is answered.
 import type { FastifyReply } from 'fastify';
 import { Type } from 'typebox';
-import { type ErrorAnswer, Problem, problem, PROBLEM_CODES, providerProblem, refTo } from '../http/problems.js';
+import { type ErrorAnswer, Problem, problem, PROBLEM_CODES, providerProblem } from '../http/problems.js';
+import { refTo } from '../http/schemas.js';
 import { UnmetView } from './unmet-view.js';
 import { ProviderServiceError, type ProviderRefusal } from './registry.js';
 

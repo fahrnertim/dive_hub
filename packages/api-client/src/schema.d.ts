@@ -62,17 +62,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            email: string;
-                            name: string;
-                            /** @enum {unknown} */
-                            role: "user" | "admin";
-                            /** @description Disabled Users can't sign in; their data stays */
-                            disabled: boolean;
-                            /** Format: date-time */
-                            createdAt: string;
-                        };
+                        "application/json": components["schemas"]["UserView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -190,17 +180,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            email: string;
-                            name: string;
-                            /** @enum {unknown} */
-                            role: "user" | "admin";
-                            /** @description Disabled Users can't sign in; their data stays */
-                            disabled: boolean;
-                            /** Format: date-time */
-                            createdAt: string;
-                        };
+                        "application/json": components["schemas"]["UserView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -253,17 +233,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            user: {
-                                id: string;
-                                email: string;
-                                name: string;
-                                /** @enum {unknown} */
-                                role: "user" | "admin";
-                                /** @description Disabled Users can't sign in; their data stays */
-                                disabled: boolean;
-                                /** Format: date-time */
-                                createdAt: string;
-                            };
+                            user: components["schemas"]["UserView"];
                             ownDiver: {
                                 id: string;
                                 name: string;
@@ -423,17 +393,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            email: string;
-                            name: string;
-                            /** @enum {unknown} */
-                            role: "user" | "admin";
-                            /** @description Disabled Users can't sign in; their data stays */
-                            disabled: boolean;
-                            /** Format: date-time */
-                            createdAt: string;
-                        };
+                        "application/json": components["schemas"]["UserView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -731,17 +691,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            email: string;
-                            name: string;
-                            /** @enum {unknown} */
-                            role: "user" | "admin";
-                            /** @description Disabled Users can't sign in; their data stays */
-                            disabled: boolean;
-                            /** Format: date-time */
-                            createdAt: string;
-                        }[];
+                        "application/json": components["schemas"]["UserView"][];
                     };
                 };
             };
@@ -849,17 +799,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            email: string;
-                            name: string;
-                            /** @enum {unknown} */
-                            role: "user" | "admin";
-                            /** @description Disabled Users can't sign in; their data stays */
-                            disabled: boolean;
-                            /** Format: date-time */
-                            createdAt: string;
-                        };
+                        "application/json": components["schemas"]["UserView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -920,17 +860,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            email: string;
-                            name: string;
-                            /** @enum {unknown} */
-                            role: "user" | "admin";
-                            /** @description Disabled Users can't sign in; their data stays */
-                            disabled: boolean;
-                            /** Format: date-time */
-                            createdAt: string;
-                        };
+                        "application/json": components["schemas"]["UserView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -995,17 +925,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            email: string;
-                            name: string;
-                            /** @enum {unknown} */
-                            role: "user" | "admin";
-                            /** @description Disabled Users can't sign in; their data stays */
-                            disabled: boolean;
-                            /** Format: date-time */
-                            createdAt: string;
-                        };
+                        "application/json": components["schemas"]["UserView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -1199,61 +1119,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /**
-                             * @description awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)
-                             * @enum {unknown}
-                             */
-                            status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
-                            /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
-                            uploadName: string;
-                            provider: null | string;
-                            /** Format: date-time */
-                            createdAt: string;
-                            finishedAt: null | string;
-                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
-                            found: null | {
-                                /** @description Dives with a gas: open circuit, rebreather, gauge */
-                                scuba: number;
-                                /** @description Apnea sessions */
-                                apnea: number;
-                                /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
-                                otherFiles: number;
-                            };
-                            kinds: null | ("scuba" | "apnea")[];
-                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
-                            unsentTo: {
-                                connectionId: string;
-                                provider: string;
-                                /** @description How many of the Import’s new Dives still have no remote dive there */
-                                count: number;
-                            }[];
-                            outcome: {
-                                fileName: string;
-                                /**
-                                 * @description linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)
-                                 * @enum {unknown}
-                                 */
-                                result: "created" | "attached" | "linked" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
-                                diveId?: string;
-                                recordingId?: string;
-                                /** @description A Provider's dive: its ID there */
-                                remoteId?: string;
-                                /** @description A Provider's dive: its own number there */
-                                remoteNumber?: number;
-                                /**
-                                 * @description Why; clients translate it. A failure’s detail stays in the server log
-                                 * @enum {unknown}
-                                 */
-                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out" | "no_computer_choice";
-                                /**
-                                 * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
-                                 * @enum {unknown}
-                                 */
-                                decision?: "open" | "attached" | "new_dive" | "discarded";
-                            }[];
-                        }[];
+                        "application/json": components["schemas"]["ImportView"][];
                     };
                 };
             };
@@ -1275,61 +1141,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /**
-                             * @description awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)
-                             * @enum {unknown}
-                             */
-                            status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
-                            /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
-                            uploadName: string;
-                            provider: null | string;
-                            /** Format: date-time */
-                            createdAt: string;
-                            finishedAt: null | string;
-                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
-                            found: null | {
-                                /** @description Dives with a gas: open circuit, rebreather, gauge */
-                                scuba: number;
-                                /** @description Apnea sessions */
-                                apnea: number;
-                                /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
-                                otherFiles: number;
-                            };
-                            kinds: null | ("scuba" | "apnea")[];
-                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
-                            unsentTo: {
-                                connectionId: string;
-                                provider: string;
-                                /** @description How many of the Import’s new Dives still have no remote dive there */
-                                count: number;
-                            }[];
-                            outcome: {
-                                fileName: string;
-                                /**
-                                 * @description linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)
-                                 * @enum {unknown}
-                                 */
-                                result: "created" | "attached" | "linked" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
-                                diveId?: string;
-                                recordingId?: string;
-                                /** @description A Provider's dive: its ID there */
-                                remoteId?: string;
-                                /** @description A Provider's dive: its own number there */
-                                remoteNumber?: number;
-                                /**
-                                 * @description Why; clients translate it. A failure’s detail stays in the server log
-                                 * @enum {unknown}
-                                 */
-                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out" | "no_computer_choice";
-                                /**
-                                 * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
-                                 * @enum {unknown}
-                                 */
-                                decision?: "open" | "attached" | "new_dive" | "discarded";
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ImportView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -1383,61 +1195,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /**
-                             * @description awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)
-                             * @enum {unknown}
-                             */
-                            status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
-                            /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
-                            uploadName: string;
-                            provider: null | string;
-                            /** Format: date-time */
-                            createdAt: string;
-                            finishedAt: null | string;
-                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
-                            found: null | {
-                                /** @description Dives with a gas: open circuit, rebreather, gauge */
-                                scuba: number;
-                                /** @description Apnea sessions */
-                                apnea: number;
-                                /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
-                                otherFiles: number;
-                            };
-                            kinds: null | ("scuba" | "apnea")[];
-                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
-                            unsentTo: {
-                                connectionId: string;
-                                provider: string;
-                                /** @description How many of the Import’s new Dives still have no remote dive there */
-                                count: number;
-                            }[];
-                            outcome: {
-                                fileName: string;
-                                /**
-                                 * @description linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)
-                                 * @enum {unknown}
-                                 */
-                                result: "created" | "attached" | "linked" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
-                                diveId?: string;
-                                recordingId?: string;
-                                /** @description A Provider's dive: its ID there */
-                                remoteId?: string;
-                                /** @description A Provider's dive: its own number there */
-                                remoteNumber?: number;
-                                /**
-                                 * @description Why; clients translate it. A failure’s detail stays in the server log
-                                 * @enum {unknown}
-                                 */
-                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out" | "no_computer_choice";
-                                /**
-                                 * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
-                                 * @enum {unknown}
-                                 */
-                                decision?: "open" | "attached" | "new_dive" | "discarded";
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ImportView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -1492,61 +1250,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /**
-                             * @description awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)
-                             * @enum {unknown}
-                             */
-                            status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
-                            /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
-                            uploadName: string;
-                            provider: null | string;
-                            /** Format: date-time */
-                            createdAt: string;
-                            finishedAt: null | string;
-                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
-                            found: null | {
-                                /** @description Dives with a gas: open circuit, rebreather, gauge */
-                                scuba: number;
-                                /** @description Apnea sessions */
-                                apnea: number;
-                                /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
-                                otherFiles: number;
-                            };
-                            kinds: null | ("scuba" | "apnea")[];
-                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
-                            unsentTo: {
-                                connectionId: string;
-                                provider: string;
-                                /** @description How many of the Import’s new Dives still have no remote dive there */
-                                count: number;
-                            }[];
-                            outcome: {
-                                fileName: string;
-                                /**
-                                 * @description linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)
-                                 * @enum {unknown}
-                                 */
-                                result: "created" | "attached" | "linked" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
-                                diveId?: string;
-                                recordingId?: string;
-                                /** @description A Provider's dive: its ID there */
-                                remoteId?: string;
-                                /** @description A Provider's dive: its own number there */
-                                remoteNumber?: number;
-                                /**
-                                 * @description Why; clients translate it. A failure’s detail stays in the server log
-                                 * @enum {unknown}
-                                 */
-                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out" | "no_computer_choice";
-                                /**
-                                 * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
-                                 * @enum {unknown}
-                                 */
-                                decision?: "open" | "attached" | "new_dive" | "discarded";
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ImportView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -1593,61 +1297,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /**
-                             * @description awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)
-                             * @enum {unknown}
-                             */
-                            status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
-                            /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
-                            uploadName: string;
-                            provider: null | string;
-                            /** Format: date-time */
-                            createdAt: string;
-                            finishedAt: null | string;
-                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
-                            found: null | {
-                                /** @description Dives with a gas: open circuit, rebreather, gauge */
-                                scuba: number;
-                                /** @description Apnea sessions */
-                                apnea: number;
-                                /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
-                                otherFiles: number;
-                            };
-                            kinds: null | ("scuba" | "apnea")[];
-                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
-                            unsentTo: {
-                                connectionId: string;
-                                provider: string;
-                                /** @description How many of the Import’s new Dives still have no remote dive there */
-                                count: number;
-                            }[];
-                            outcome: {
-                                fileName: string;
-                                /**
-                                 * @description linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)
-                                 * @enum {unknown}
-                                 */
-                                result: "created" | "attached" | "linked" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
-                                diveId?: string;
-                                recordingId?: string;
-                                /** @description A Provider's dive: its ID there */
-                                remoteId?: string;
-                                /** @description A Provider's dive: its own number there */
-                                remoteNumber?: number;
-                                /**
-                                 * @description Why; clients translate it. A failure’s detail stays in the server log
-                                 * @enum {unknown}
-                                 */
-                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out" | "no_computer_choice";
-                                /**
-                                 * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
-                                 * @enum {unknown}
-                                 */
-                                decision?: "open" | "attached" | "new_dive" | "discarded";
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ImportView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -1742,22 +1392,7 @@ export interface paths {
                                     role: "buddy" | "guide" | "instructor";
                                 }[];
                                 /** @description The Dive's entries in the queue of Waiting pushes, one per Provider (ADR 0056): a small icon for waiting, a warning for held, an error with Retry for stopped (docs/spec/clients.md) */
-                                waiting: {
-                                    provider: string;
-                                    /** @enum {unknown} */
-                                    action: "send" | "delete";
-                                    /**
-                                     * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
-                                     * @enum {unknown}
-                                     */
-                                    state: "waiting" | "held" | "stopped";
-                                    reason: null | string;
-                                    /**
-                                     * Format: date-time
-                                     * @description When it goes out, for a waiting entry
-                                     */
-                                    dueAt: string;
-                                }[];
+                                waiting: components["schemas"]["WaitingPushView"][];
                                 profile: null | {
                                     /** @description Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch */
                                     depthsM: number[];
@@ -1961,208 +1596,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The Diver whose logbook this Dive is in */
-                            diverId: string;
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            values: {
-                                number: null | number;
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            /** @description Values the User set by hand */
-                            overrides: ("startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
-                            /**
-                             * @description Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)
-                             * @enum {unknown}
-                             */
-                            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
-                            fromProvider: null | string;
-                            fromRecording: null | {
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            notes: null | string;
-                            site: null | {
-                                id: string;
-                                name: string;
-                            };
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            waterMismatch: null | {
-                                /**
-                                 * @description What the Primary recording's computer was set to
-                                 * @enum {unknown}
-                                 */
-                                computer: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                /** @enum {unknown} */
-                                site: "fresh" | "salt" | "brackish";
-                                depthPercent: null | number;
-                            };
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            recordings: {
-                                id: string;
-                                isPrimary: boolean;
-                                device: null | {
-                                    manufacturer: string;
-                                    product: null | string;
-                                    serialNumber: string;
-                                };
-                                /** Format: date-time */
-                                startsAt: string;
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                parser: string;
-                                summary: {
-                                    diveNumber?: number;
-                                    /** @enum {unknown} */
-                                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
-                                    /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
-                                    gfLow?: number;
-                                    gfHigh?: number;
-                                    /**
-                                     * @description The computer's salinity setting, not the water of the Dive (that is the site's)
-                                     * @enum {unknown}
-                                     */
-                                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                    /** @description Density the computer computed depths with, kg/m³ */
-                                    waterDensity?: number;
-                                    gases?: {
-                                        o2: number;
-                                        he: number;
-                                        /** @enum {unknown} */
-                                        circuit?: "open_circuit" | "diluent";
-                                        /** @description With a tank pod: the size of the tank, litres */
-                                        tankVolumeL?: number;
-                                        startPressureBar?: number;
-                                        endPressureBar?: number;
-                                    }[];
-                                    minTemperatureC?: number;
-                                    maxTemperatureC?: number;
-                                    avgHeartRate?: number;
-                                    surfaceIntervalSeconds?: number;
-                                    cnsStart?: number;
-                                    cnsEnd?: number;
-                                    /** @description Oxygen dose, OTU */
-                                    otuStart?: number;
-                                    otuEnd?: number;
-                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
-                                    sacLpm?: number;
-                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
-                                    conservatism?: number;
-                                    surfacePressureBar?: number;
-                                    /** @description Source values without a word in our vocabulary, by source field name */
-                                    extras?: {
-                                        [key: string]: string;
-                                    };
-                                };
-                                channels: string[];
-                            }[];
-                            /** @description The Dive's Cylinders in their order (ADR 0045) */
-                            cylinders: {
-                                volumeL: null | number;
-                                workingPressureBar: null | number;
-                                material: null | ("aluminium" | "steel" | "carbon");
-                                gas: null | {
-                                    o2: number;
-                                    he: number;
-                                };
-                                startPressureBar: null | number;
-                                endPressureBar: null | number;
-                                /** @description An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md) */
-                                fromPod: boolean;
-                                series: null | {
-                                    /** Format: uuid */
-                                    recordingId: string;
-                                    /** @description A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n> */
-                                    channel: string;
-                                };
-                            }[];
-                            /** @description The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown */
-                            lead: {
-                                /** @description In kilograms; 0 as the only entry means no lead */
-                                amountKg: number;
-                                placement: null | ("belt" | "integrated" | "trim" | "ankle" | "backplate" | "other");
-                            }[];
-                            leadTotalKg: null | number;
-                            weightingFeedback: null | {
-                                /**
-                                 * @description How the weighting felt
-                                 * @enum {unknown}
-                                 */
-                                felt: "right" | "too_heavy" | "too_light";
-                                amountKg: null | number;
-                            };
-                            suit: null | {
-                                /**
-                                 * @description `none` is a dive without a suit
-                                 * @enum {unknown}
-                                 */
-                                type: "none" | "skin" | "wetsuit" | "semidry" | "drysuit";
-                                thicknessMm: null | number;
-                                /** @description Whether a hood was worn; null when not said */
-                                hood: boolean | null;
-                                undergarment: null | ("light" | "medium" | "heavy");
-                            };
-                            sac: null | {
-                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
-                                litresPerMinute: number;
-                                barPerMinute: null | number;
-                            };
-                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
-                            /** @description Buddies first, then guides and instructors (ADR 0028) */
-                            participants: {
-                                diverId: string;
-                                /** @description The Diver's name, as every User sees it */
-                                name: string;
-                                /**
-                                 * @description buddy: dived together; guide: led the dive; instructor: taught on it
-                                 * @enum {unknown}
-                                 */
-                                role: "buddy" | "guide" | "instructor";
-                            }[];
-                            /** @description The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md) */
-                            verificationCodes: {
-                                /**
-                                 * @description Whose code it is: a Dive centre's (centre is set) or a professional's (diver is set)
-                                 * @enum {unknown}
-                                 */
-                                kind: "centre" | "professional";
-                                centre: null | {
-                                    id: string;
-                                    name: string;
-                                    /** @description The name to show */
-                                    displayName: string;
-                                };
-                                diver: null | {
-                                    id: string;
-                                    name: string;
-                                };
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiveView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -2347,208 +1781,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The Diver whose logbook this Dive is in */
-                            diverId: string;
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            values: {
-                                number: null | number;
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            /** @description Values the User set by hand */
-                            overrides: ("startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
-                            /**
-                             * @description Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)
-                             * @enum {unknown}
-                             */
-                            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
-                            fromProvider: null | string;
-                            fromRecording: null | {
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            notes: null | string;
-                            site: null | {
-                                id: string;
-                                name: string;
-                            };
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            waterMismatch: null | {
-                                /**
-                                 * @description What the Primary recording's computer was set to
-                                 * @enum {unknown}
-                                 */
-                                computer: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                /** @enum {unknown} */
-                                site: "fresh" | "salt" | "brackish";
-                                depthPercent: null | number;
-                            };
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            recordings: {
-                                id: string;
-                                isPrimary: boolean;
-                                device: null | {
-                                    manufacturer: string;
-                                    product: null | string;
-                                    serialNumber: string;
-                                };
-                                /** Format: date-time */
-                                startsAt: string;
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                parser: string;
-                                summary: {
-                                    diveNumber?: number;
-                                    /** @enum {unknown} */
-                                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
-                                    /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
-                                    gfLow?: number;
-                                    gfHigh?: number;
-                                    /**
-                                     * @description The computer's salinity setting, not the water of the Dive (that is the site's)
-                                     * @enum {unknown}
-                                     */
-                                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                    /** @description Density the computer computed depths with, kg/m³ */
-                                    waterDensity?: number;
-                                    gases?: {
-                                        o2: number;
-                                        he: number;
-                                        /** @enum {unknown} */
-                                        circuit?: "open_circuit" | "diluent";
-                                        /** @description With a tank pod: the size of the tank, litres */
-                                        tankVolumeL?: number;
-                                        startPressureBar?: number;
-                                        endPressureBar?: number;
-                                    }[];
-                                    minTemperatureC?: number;
-                                    maxTemperatureC?: number;
-                                    avgHeartRate?: number;
-                                    surfaceIntervalSeconds?: number;
-                                    cnsStart?: number;
-                                    cnsEnd?: number;
-                                    /** @description Oxygen dose, OTU */
-                                    otuStart?: number;
-                                    otuEnd?: number;
-                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
-                                    sacLpm?: number;
-                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
-                                    conservatism?: number;
-                                    surfacePressureBar?: number;
-                                    /** @description Source values without a word in our vocabulary, by source field name */
-                                    extras?: {
-                                        [key: string]: string;
-                                    };
-                                };
-                                channels: string[];
-                            }[];
-                            /** @description The Dive's Cylinders in their order (ADR 0045) */
-                            cylinders: {
-                                volumeL: null | number;
-                                workingPressureBar: null | number;
-                                material: null | ("aluminium" | "steel" | "carbon");
-                                gas: null | {
-                                    o2: number;
-                                    he: number;
-                                };
-                                startPressureBar: null | number;
-                                endPressureBar: null | number;
-                                /** @description An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md) */
-                                fromPod: boolean;
-                                series: null | {
-                                    /** Format: uuid */
-                                    recordingId: string;
-                                    /** @description A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n> */
-                                    channel: string;
-                                };
-                            }[];
-                            /** @description The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown */
-                            lead: {
-                                /** @description In kilograms; 0 as the only entry means no lead */
-                                amountKg: number;
-                                placement: null | ("belt" | "integrated" | "trim" | "ankle" | "backplate" | "other");
-                            }[];
-                            leadTotalKg: null | number;
-                            weightingFeedback: null | {
-                                /**
-                                 * @description How the weighting felt
-                                 * @enum {unknown}
-                                 */
-                                felt: "right" | "too_heavy" | "too_light";
-                                amountKg: null | number;
-                            };
-                            suit: null | {
-                                /**
-                                 * @description `none` is a dive without a suit
-                                 * @enum {unknown}
-                                 */
-                                type: "none" | "skin" | "wetsuit" | "semidry" | "drysuit";
-                                thicknessMm: null | number;
-                                /** @description Whether a hood was worn; null when not said */
-                                hood: boolean | null;
-                                undergarment: null | ("light" | "medium" | "heavy");
-                            };
-                            sac: null | {
-                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
-                                litresPerMinute: number;
-                                barPerMinute: null | number;
-                            };
-                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
-                            /** @description Buddies first, then guides and instructors (ADR 0028) */
-                            participants: {
-                                diverId: string;
-                                /** @description The Diver's name, as every User sees it */
-                                name: string;
-                                /**
-                                 * @description buddy: dived together; guide: led the dive; instructor: taught on it
-                                 * @enum {unknown}
-                                 */
-                                role: "buddy" | "guide" | "instructor";
-                            }[];
-                            /** @description The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md) */
-                            verificationCodes: {
-                                /**
-                                 * @description Whose code it is: a Dive centre's (centre is set) or a professional's (diver is set)
-                                 * @enum {unknown}
-                                 */
-                                kind: "centre" | "professional";
-                                centre: null | {
-                                    id: string;
-                                    name: string;
-                                    /** @description The name to show */
-                                    displayName: string;
-                                };
-                                diver: null | {
-                                    id: string;
-                                    name: string;
-                                };
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiveView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -2751,208 +1984,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The Diver whose logbook this Dive is in */
-                            diverId: string;
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            values: {
-                                number: null | number;
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            /** @description Values the User set by hand */
-                            overrides: ("startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
-                            /**
-                             * @description Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)
-                             * @enum {unknown}
-                             */
-                            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
-                            fromProvider: null | string;
-                            fromRecording: null | {
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            notes: null | string;
-                            site: null | {
-                                id: string;
-                                name: string;
-                            };
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            waterMismatch: null | {
-                                /**
-                                 * @description What the Primary recording's computer was set to
-                                 * @enum {unknown}
-                                 */
-                                computer: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                /** @enum {unknown} */
-                                site: "fresh" | "salt" | "brackish";
-                                depthPercent: null | number;
-                            };
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            recordings: {
-                                id: string;
-                                isPrimary: boolean;
-                                device: null | {
-                                    manufacturer: string;
-                                    product: null | string;
-                                    serialNumber: string;
-                                };
-                                /** Format: date-time */
-                                startsAt: string;
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                parser: string;
-                                summary: {
-                                    diveNumber?: number;
-                                    /** @enum {unknown} */
-                                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
-                                    /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
-                                    gfLow?: number;
-                                    gfHigh?: number;
-                                    /**
-                                     * @description The computer's salinity setting, not the water of the Dive (that is the site's)
-                                     * @enum {unknown}
-                                     */
-                                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                    /** @description Density the computer computed depths with, kg/m³ */
-                                    waterDensity?: number;
-                                    gases?: {
-                                        o2: number;
-                                        he: number;
-                                        /** @enum {unknown} */
-                                        circuit?: "open_circuit" | "diluent";
-                                        /** @description With a tank pod: the size of the tank, litres */
-                                        tankVolumeL?: number;
-                                        startPressureBar?: number;
-                                        endPressureBar?: number;
-                                    }[];
-                                    minTemperatureC?: number;
-                                    maxTemperatureC?: number;
-                                    avgHeartRate?: number;
-                                    surfaceIntervalSeconds?: number;
-                                    cnsStart?: number;
-                                    cnsEnd?: number;
-                                    /** @description Oxygen dose, OTU */
-                                    otuStart?: number;
-                                    otuEnd?: number;
-                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
-                                    sacLpm?: number;
-                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
-                                    conservatism?: number;
-                                    surfacePressureBar?: number;
-                                    /** @description Source values without a word in our vocabulary, by source field name */
-                                    extras?: {
-                                        [key: string]: string;
-                                    };
-                                };
-                                channels: string[];
-                            }[];
-                            /** @description The Dive's Cylinders in their order (ADR 0045) */
-                            cylinders: {
-                                volumeL: null | number;
-                                workingPressureBar: null | number;
-                                material: null | ("aluminium" | "steel" | "carbon");
-                                gas: null | {
-                                    o2: number;
-                                    he: number;
-                                };
-                                startPressureBar: null | number;
-                                endPressureBar: null | number;
-                                /** @description An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md) */
-                                fromPod: boolean;
-                                series: null | {
-                                    /** Format: uuid */
-                                    recordingId: string;
-                                    /** @description A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n> */
-                                    channel: string;
-                                };
-                            }[];
-                            /** @description The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown */
-                            lead: {
-                                /** @description In kilograms; 0 as the only entry means no lead */
-                                amountKg: number;
-                                placement: null | ("belt" | "integrated" | "trim" | "ankle" | "backplate" | "other");
-                            }[];
-                            leadTotalKg: null | number;
-                            weightingFeedback: null | {
-                                /**
-                                 * @description How the weighting felt
-                                 * @enum {unknown}
-                                 */
-                                felt: "right" | "too_heavy" | "too_light";
-                                amountKg: null | number;
-                            };
-                            suit: null | {
-                                /**
-                                 * @description `none` is a dive without a suit
-                                 * @enum {unknown}
-                                 */
-                                type: "none" | "skin" | "wetsuit" | "semidry" | "drysuit";
-                                thicknessMm: null | number;
-                                /** @description Whether a hood was worn; null when not said */
-                                hood: boolean | null;
-                                undergarment: null | ("light" | "medium" | "heavy");
-                            };
-                            sac: null | {
-                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
-                                litresPerMinute: number;
-                                barPerMinute: null | number;
-                            };
-                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
-                            /** @description Buddies first, then guides and instructors (ADR 0028) */
-                            participants: {
-                                diverId: string;
-                                /** @description The Diver's name, as every User sees it */
-                                name: string;
-                                /**
-                                 * @description buddy: dived together; guide: led the dive; instructor: taught on it
-                                 * @enum {unknown}
-                                 */
-                                role: "buddy" | "guide" | "instructor";
-                            }[];
-                            /** @description The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md) */
-                            verificationCodes: {
-                                /**
-                                 * @description Whose code it is: a Dive centre's (centre is set) or a professional's (diver is set)
-                                 * @enum {unknown}
-                                 */
-                                kind: "centre" | "professional";
-                                centre: null | {
-                                    id: string;
-                                    name: string;
-                                    /** @description The name to show */
-                                    displayName: string;
-                                };
-                                diver: null | {
-                                    id: string;
-                                    name: string;
-                                };
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiveView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -3025,208 +2057,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The Diver whose logbook this Dive is in */
-                            diverId: string;
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            values: {
-                                number: null | number;
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            /** @description Values the User set by hand */
-                            overrides: ("startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
-                            /**
-                             * @description Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)
-                             * @enum {unknown}
-                             */
-                            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
-                            fromProvider: null | string;
-                            fromRecording: null | {
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            notes: null | string;
-                            site: null | {
-                                id: string;
-                                name: string;
-                            };
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            waterMismatch: null | {
-                                /**
-                                 * @description What the Primary recording's computer was set to
-                                 * @enum {unknown}
-                                 */
-                                computer: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                /** @enum {unknown} */
-                                site: "fresh" | "salt" | "brackish";
-                                depthPercent: null | number;
-                            };
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            recordings: {
-                                id: string;
-                                isPrimary: boolean;
-                                device: null | {
-                                    manufacturer: string;
-                                    product: null | string;
-                                    serialNumber: string;
-                                };
-                                /** Format: date-time */
-                                startsAt: string;
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                parser: string;
-                                summary: {
-                                    diveNumber?: number;
-                                    /** @enum {unknown} */
-                                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
-                                    /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
-                                    gfLow?: number;
-                                    gfHigh?: number;
-                                    /**
-                                     * @description The computer's salinity setting, not the water of the Dive (that is the site's)
-                                     * @enum {unknown}
-                                     */
-                                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                    /** @description Density the computer computed depths with, kg/m³ */
-                                    waterDensity?: number;
-                                    gases?: {
-                                        o2: number;
-                                        he: number;
-                                        /** @enum {unknown} */
-                                        circuit?: "open_circuit" | "diluent";
-                                        /** @description With a tank pod: the size of the tank, litres */
-                                        tankVolumeL?: number;
-                                        startPressureBar?: number;
-                                        endPressureBar?: number;
-                                    }[];
-                                    minTemperatureC?: number;
-                                    maxTemperatureC?: number;
-                                    avgHeartRate?: number;
-                                    surfaceIntervalSeconds?: number;
-                                    cnsStart?: number;
-                                    cnsEnd?: number;
-                                    /** @description Oxygen dose, OTU */
-                                    otuStart?: number;
-                                    otuEnd?: number;
-                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
-                                    sacLpm?: number;
-                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
-                                    conservatism?: number;
-                                    surfacePressureBar?: number;
-                                    /** @description Source values without a word in our vocabulary, by source field name */
-                                    extras?: {
-                                        [key: string]: string;
-                                    };
-                                };
-                                channels: string[];
-                            }[];
-                            /** @description The Dive's Cylinders in their order (ADR 0045) */
-                            cylinders: {
-                                volumeL: null | number;
-                                workingPressureBar: null | number;
-                                material: null | ("aluminium" | "steel" | "carbon");
-                                gas: null | {
-                                    o2: number;
-                                    he: number;
-                                };
-                                startPressureBar: null | number;
-                                endPressureBar: null | number;
-                                /** @description An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md) */
-                                fromPod: boolean;
-                                series: null | {
-                                    /** Format: uuid */
-                                    recordingId: string;
-                                    /** @description A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n> */
-                                    channel: string;
-                                };
-                            }[];
-                            /** @description The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown */
-                            lead: {
-                                /** @description In kilograms; 0 as the only entry means no lead */
-                                amountKg: number;
-                                placement: null | ("belt" | "integrated" | "trim" | "ankle" | "backplate" | "other");
-                            }[];
-                            leadTotalKg: null | number;
-                            weightingFeedback: null | {
-                                /**
-                                 * @description How the weighting felt
-                                 * @enum {unknown}
-                                 */
-                                felt: "right" | "too_heavy" | "too_light";
-                                amountKg: null | number;
-                            };
-                            suit: null | {
-                                /**
-                                 * @description `none` is a dive without a suit
-                                 * @enum {unknown}
-                                 */
-                                type: "none" | "skin" | "wetsuit" | "semidry" | "drysuit";
-                                thicknessMm: null | number;
-                                /** @description Whether a hood was worn; null when not said */
-                                hood: boolean | null;
-                                undergarment: null | ("light" | "medium" | "heavy");
-                            };
-                            sac: null | {
-                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
-                                litresPerMinute: number;
-                                barPerMinute: null | number;
-                            };
-                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
-                            /** @description Buddies first, then guides and instructors (ADR 0028) */
-                            participants: {
-                                diverId: string;
-                                /** @description The Diver's name, as every User sees it */
-                                name: string;
-                                /**
-                                 * @description buddy: dived together; guide: led the dive; instructor: taught on it
-                                 * @enum {unknown}
-                                 */
-                                role: "buddy" | "guide" | "instructor";
-                            }[];
-                            /** @description The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md) */
-                            verificationCodes: {
-                                /**
-                                 * @description Whose code it is: a Dive centre's (centre is set) or a professional's (diver is set)
-                                 * @enum {unknown}
-                                 */
-                                kind: "centre" | "professional";
-                                centre: null | {
-                                    id: string;
-                                    name: string;
-                                    /** @description The name to show */
-                                    displayName: string;
-                                };
-                                diver: null | {
-                                    id: string;
-                                    name: string;
-                                };
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiveView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -3303,208 +2134,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The Diver whose logbook this Dive is in */
-                            diverId: string;
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            values: {
-                                number: null | number;
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            /** @description Values the User set by hand */
-                            overrides: ("startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
-                            /**
-                             * @description Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)
-                             * @enum {unknown}
-                             */
-                            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
-                            fromProvider: null | string;
-                            fromRecording: null | {
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            notes: null | string;
-                            site: null | {
-                                id: string;
-                                name: string;
-                            };
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            waterMismatch: null | {
-                                /**
-                                 * @description What the Primary recording's computer was set to
-                                 * @enum {unknown}
-                                 */
-                                computer: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                /** @enum {unknown} */
-                                site: "fresh" | "salt" | "brackish";
-                                depthPercent: null | number;
-                            };
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            recordings: {
-                                id: string;
-                                isPrimary: boolean;
-                                device: null | {
-                                    manufacturer: string;
-                                    product: null | string;
-                                    serialNumber: string;
-                                };
-                                /** Format: date-time */
-                                startsAt: string;
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                parser: string;
-                                summary: {
-                                    diveNumber?: number;
-                                    /** @enum {unknown} */
-                                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
-                                    /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
-                                    gfLow?: number;
-                                    gfHigh?: number;
-                                    /**
-                                     * @description The computer's salinity setting, not the water of the Dive (that is the site's)
-                                     * @enum {unknown}
-                                     */
-                                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                    /** @description Density the computer computed depths with, kg/m³ */
-                                    waterDensity?: number;
-                                    gases?: {
-                                        o2: number;
-                                        he: number;
-                                        /** @enum {unknown} */
-                                        circuit?: "open_circuit" | "diluent";
-                                        /** @description With a tank pod: the size of the tank, litres */
-                                        tankVolumeL?: number;
-                                        startPressureBar?: number;
-                                        endPressureBar?: number;
-                                    }[];
-                                    minTemperatureC?: number;
-                                    maxTemperatureC?: number;
-                                    avgHeartRate?: number;
-                                    surfaceIntervalSeconds?: number;
-                                    cnsStart?: number;
-                                    cnsEnd?: number;
-                                    /** @description Oxygen dose, OTU */
-                                    otuStart?: number;
-                                    otuEnd?: number;
-                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
-                                    sacLpm?: number;
-                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
-                                    conservatism?: number;
-                                    surfacePressureBar?: number;
-                                    /** @description Source values without a word in our vocabulary, by source field name */
-                                    extras?: {
-                                        [key: string]: string;
-                                    };
-                                };
-                                channels: string[];
-                            }[];
-                            /** @description The Dive's Cylinders in their order (ADR 0045) */
-                            cylinders: {
-                                volumeL: null | number;
-                                workingPressureBar: null | number;
-                                material: null | ("aluminium" | "steel" | "carbon");
-                                gas: null | {
-                                    o2: number;
-                                    he: number;
-                                };
-                                startPressureBar: null | number;
-                                endPressureBar: null | number;
-                                /** @description An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md) */
-                                fromPod: boolean;
-                                series: null | {
-                                    /** Format: uuid */
-                                    recordingId: string;
-                                    /** @description A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n> */
-                                    channel: string;
-                                };
-                            }[];
-                            /** @description The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown */
-                            lead: {
-                                /** @description In kilograms; 0 as the only entry means no lead */
-                                amountKg: number;
-                                placement: null | ("belt" | "integrated" | "trim" | "ankle" | "backplate" | "other");
-                            }[];
-                            leadTotalKg: null | number;
-                            weightingFeedback: null | {
-                                /**
-                                 * @description How the weighting felt
-                                 * @enum {unknown}
-                                 */
-                                felt: "right" | "too_heavy" | "too_light";
-                                amountKg: null | number;
-                            };
-                            suit: null | {
-                                /**
-                                 * @description `none` is a dive without a suit
-                                 * @enum {unknown}
-                                 */
-                                type: "none" | "skin" | "wetsuit" | "semidry" | "drysuit";
-                                thicknessMm: null | number;
-                                /** @description Whether a hood was worn; null when not said */
-                                hood: boolean | null;
-                                undergarment: null | ("light" | "medium" | "heavy");
-                            };
-                            sac: null | {
-                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
-                                litresPerMinute: number;
-                                barPerMinute: null | number;
-                            };
-                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
-                            /** @description Buddies first, then guides and instructors (ADR 0028) */
-                            participants: {
-                                diverId: string;
-                                /** @description The Diver's name, as every User sees it */
-                                name: string;
-                                /**
-                                 * @description buddy: dived together; guide: led the dive; instructor: taught on it
-                                 * @enum {unknown}
-                                 */
-                                role: "buddy" | "guide" | "instructor";
-                            }[];
-                            /** @description The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md) */
-                            verificationCodes: {
-                                /**
-                                 * @description Whose code it is: a Dive centre's (centre is set) or a professional's (diver is set)
-                                 * @enum {unknown}
-                                 */
-                                kind: "centre" | "professional";
-                                centre: null | {
-                                    id: string;
-                                    name: string;
-                                    /** @description The name to show */
-                                    displayName: string;
-                                };
-                                diver: null | {
-                                    id: string;
-                                    name: string;
-                                };
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiveView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -3833,208 +2463,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The Diver whose logbook this Dive is in */
-                            diverId: string;
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            values: {
-                                number: null | number;
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            /** @description Values the User set by hand */
-                            overrides: ("startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
-                            /**
-                             * @description Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)
-                             * @enum {unknown}
-                             */
-                            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
-                            fromProvider: null | string;
-                            fromRecording: null | {
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            notes: null | string;
-                            site: null | {
-                                id: string;
-                                name: string;
-                            };
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            waterMismatch: null | {
-                                /**
-                                 * @description What the Primary recording's computer was set to
-                                 * @enum {unknown}
-                                 */
-                                computer: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                /** @enum {unknown} */
-                                site: "fresh" | "salt" | "brackish";
-                                depthPercent: null | number;
-                            };
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            recordings: {
-                                id: string;
-                                isPrimary: boolean;
-                                device: null | {
-                                    manufacturer: string;
-                                    product: null | string;
-                                    serialNumber: string;
-                                };
-                                /** Format: date-time */
-                                startsAt: string;
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                parser: string;
-                                summary: {
-                                    diveNumber?: number;
-                                    /** @enum {unknown} */
-                                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
-                                    /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
-                                    gfLow?: number;
-                                    gfHigh?: number;
-                                    /**
-                                     * @description The computer's salinity setting, not the water of the Dive (that is the site's)
-                                     * @enum {unknown}
-                                     */
-                                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                    /** @description Density the computer computed depths with, kg/m³ */
-                                    waterDensity?: number;
-                                    gases?: {
-                                        o2: number;
-                                        he: number;
-                                        /** @enum {unknown} */
-                                        circuit?: "open_circuit" | "diluent";
-                                        /** @description With a tank pod: the size of the tank, litres */
-                                        tankVolumeL?: number;
-                                        startPressureBar?: number;
-                                        endPressureBar?: number;
-                                    }[];
-                                    minTemperatureC?: number;
-                                    maxTemperatureC?: number;
-                                    avgHeartRate?: number;
-                                    surfaceIntervalSeconds?: number;
-                                    cnsStart?: number;
-                                    cnsEnd?: number;
-                                    /** @description Oxygen dose, OTU */
-                                    otuStart?: number;
-                                    otuEnd?: number;
-                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
-                                    sacLpm?: number;
-                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
-                                    conservatism?: number;
-                                    surfacePressureBar?: number;
-                                    /** @description Source values without a word in our vocabulary, by source field name */
-                                    extras?: {
-                                        [key: string]: string;
-                                    };
-                                };
-                                channels: string[];
-                            }[];
-                            /** @description The Dive's Cylinders in their order (ADR 0045) */
-                            cylinders: {
-                                volumeL: null | number;
-                                workingPressureBar: null | number;
-                                material: null | ("aluminium" | "steel" | "carbon");
-                                gas: null | {
-                                    o2: number;
-                                    he: number;
-                                };
-                                startPressureBar: null | number;
-                                endPressureBar: null | number;
-                                /** @description An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md) */
-                                fromPod: boolean;
-                                series: null | {
-                                    /** Format: uuid */
-                                    recordingId: string;
-                                    /** @description A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n> */
-                                    channel: string;
-                                };
-                            }[];
-                            /** @description The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown */
-                            lead: {
-                                /** @description In kilograms; 0 as the only entry means no lead */
-                                amountKg: number;
-                                placement: null | ("belt" | "integrated" | "trim" | "ankle" | "backplate" | "other");
-                            }[];
-                            leadTotalKg: null | number;
-                            weightingFeedback: null | {
-                                /**
-                                 * @description How the weighting felt
-                                 * @enum {unknown}
-                                 */
-                                felt: "right" | "too_heavy" | "too_light";
-                                amountKg: null | number;
-                            };
-                            suit: null | {
-                                /**
-                                 * @description `none` is a dive without a suit
-                                 * @enum {unknown}
-                                 */
-                                type: "none" | "skin" | "wetsuit" | "semidry" | "drysuit";
-                                thicknessMm: null | number;
-                                /** @description Whether a hood was worn; null when not said */
-                                hood: boolean | null;
-                                undergarment: null | ("light" | "medium" | "heavy");
-                            };
-                            sac: null | {
-                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
-                                litresPerMinute: number;
-                                barPerMinute: null | number;
-                            };
-                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
-                            /** @description Buddies first, then guides and instructors (ADR 0028) */
-                            participants: {
-                                diverId: string;
-                                /** @description The Diver's name, as every User sees it */
-                                name: string;
-                                /**
-                                 * @description buddy: dived together; guide: led the dive; instructor: taught on it
-                                 * @enum {unknown}
-                                 */
-                                role: "buddy" | "guide" | "instructor";
-                            }[];
-                            /** @description The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md) */
-                            verificationCodes: {
-                                /**
-                                 * @description Whose code it is: a Dive centre's (centre is set) or a professional's (diver is set)
-                                 * @enum {unknown}
-                                 */
-                                kind: "centre" | "professional";
-                                centre: null | {
-                                    id: string;
-                                    name: string;
-                                    /** @description The name to show */
-                                    displayName: string;
-                                };
-                                diver: null | {
-                                    id: string;
-                                    name: string;
-                                };
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiveView"];
                     };
                 };
                 /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
@@ -4199,22 +2628,7 @@ export interface paths {
                                 remoteNumber: null | number;
                             }[];
                             /** @description The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason */
-                            waiting: {
-                                provider: string;
-                                /** @enum {unknown} */
-                                action: "send" | "delete";
-                                /**
-                                 * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
-                                 * @enum {unknown}
-                                 */
-                                state: "waiting" | "held" | "stopped";
-                                reason: null | string;
-                                /**
-                                 * Format: date-time
-                                 * @description When it goes out, for a waiting entry
-                                 */
-                                dueAt: string;
-                            }[];
+                            waiting: components["schemas"]["WaitingPushView"][];
                         }[];
                     };
                 };
@@ -4264,208 +2678,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The Diver whose logbook this Dive is in */
-                            diverId: string;
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            values: {
-                                number: null | number;
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            /** @description Values the User set by hand */
-                            overrides: ("startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
-                            /**
-                             * @description Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)
-                             * @enum {unknown}
-                             */
-                            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
-                            fromProvider: null | string;
-                            fromRecording: null | {
-                                startsAt: {
-                                    /** Format: date-time */
-                                    at: string;
-                                    utcOffsetSeconds: null | number;
-                                };
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                avgDepthM: null | number;
-                                waterTemperatureC: null | number;
-                            };
-                            notes: null | string;
-                            site: null | {
-                                id: string;
-                                name: string;
-                            };
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            waterMismatch: null | {
-                                /**
-                                 * @description What the Primary recording's computer was set to
-                                 * @enum {unknown}
-                                 */
-                                computer: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                /** @enum {unknown} */
-                                site: "fresh" | "salt" | "brackish";
-                                depthPercent: null | number;
-                            };
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            recordings: {
-                                id: string;
-                                isPrimary: boolean;
-                                device: null | {
-                                    manufacturer: string;
-                                    product: null | string;
-                                    serialNumber: string;
-                                };
-                                /** Format: date-time */
-                                startsAt: string;
-                                durationSeconds: number;
-                                maxDepthM: null | number;
-                                parser: string;
-                                summary: {
-                                    diveNumber?: number;
-                                    /** @enum {unknown} */
-                                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
-                                    /** @enum {unknown} */
-                                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
-                                    gfLow?: number;
-                                    gfHigh?: number;
-                                    /**
-                                     * @description The computer's salinity setting, not the water of the Dive (that is the site's)
-                                     * @enum {unknown}
-                                     */
-                                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
-                                    /** @description Density the computer computed depths with, kg/m³ */
-                                    waterDensity?: number;
-                                    gases?: {
-                                        o2: number;
-                                        he: number;
-                                        /** @enum {unknown} */
-                                        circuit?: "open_circuit" | "diluent";
-                                        /** @description With a tank pod: the size of the tank, litres */
-                                        tankVolumeL?: number;
-                                        startPressureBar?: number;
-                                        endPressureBar?: number;
-                                    }[];
-                                    minTemperatureC?: number;
-                                    maxTemperatureC?: number;
-                                    avgHeartRate?: number;
-                                    surfaceIntervalSeconds?: number;
-                                    cnsStart?: number;
-                                    cnsEnd?: number;
-                                    /** @description Oxygen dose, OTU */
-                                    otuStart?: number;
-                                    otuEnd?: number;
-                                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
-                                    sacLpm?: number;
-                                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
-                                    conservatism?: number;
-                                    surfacePressureBar?: number;
-                                    /** @description Source values without a word in our vocabulary, by source field name */
-                                    extras?: {
-                                        [key: string]: string;
-                                    };
-                                };
-                                channels: string[];
-                            }[];
-                            /** @description The Dive's Cylinders in their order (ADR 0045) */
-                            cylinders: {
-                                volumeL: null | number;
-                                workingPressureBar: null | number;
-                                material: null | ("aluminium" | "steel" | "carbon");
-                                gas: null | {
-                                    o2: number;
-                                    he: number;
-                                };
-                                startPressureBar: null | number;
-                                endPressureBar: null | number;
-                                /** @description An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md) */
-                                fromPod: boolean;
-                                series: null | {
-                                    /** Format: uuid */
-                                    recordingId: string;
-                                    /** @description A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n> */
-                                    channel: string;
-                                };
-                            }[];
-                            /** @description The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown */
-                            lead: {
-                                /** @description In kilograms; 0 as the only entry means no lead */
-                                amountKg: number;
-                                placement: null | ("belt" | "integrated" | "trim" | "ankle" | "backplate" | "other");
-                            }[];
-                            leadTotalKg: null | number;
-                            weightingFeedback: null | {
-                                /**
-                                 * @description How the weighting felt
-                                 * @enum {unknown}
-                                 */
-                                felt: "right" | "too_heavy" | "too_light";
-                                amountKg: null | number;
-                            };
-                            suit: null | {
-                                /**
-                                 * @description `none` is a dive without a suit
-                                 * @enum {unknown}
-                                 */
-                                type: "none" | "skin" | "wetsuit" | "semidry" | "drysuit";
-                                thicknessMm: null | number;
-                                /** @description Whether a hood was worn; null when not said */
-                                hood: boolean | null;
-                                undergarment: null | ("light" | "medium" | "heavy");
-                            };
-                            sac: null | {
-                                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
-                                litresPerMinute: number;
-                                barPerMinute: null | number;
-                            };
-                            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
-                            /** @description Buddies first, then guides and instructors (ADR 0028) */
-                            participants: {
-                                diverId: string;
-                                /** @description The Diver's name, as every User sees it */
-                                name: string;
-                                /**
-                                 * @description buddy: dived together; guide: led the dive; instructor: taught on it
-                                 * @enum {unknown}
-                                 */
-                                role: "buddy" | "guide" | "instructor";
-                            }[];
-                            /** @description The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md) */
-                            verificationCodes: {
-                                /**
-                                 * @description Whose code it is: a Dive centre's (centre is set) or a professional's (diver is set)
-                                 * @enum {unknown}
-                                 */
-                                kind: "centre" | "professional";
-                                centre: null | {
-                                    id: string;
-                                    name: string;
-                                    /** @description The name to show */
-                                    displayName: string;
-                                };
-                                diver: null | {
-                                    id: string;
-                                    name: string;
-                                };
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiveView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -5378,32 +3591,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            /** @description The User's own Diver */
-                            isOwn: boolean;
-                            /** @description The dives made before the first one in this logbook (ADR 0048): the first Dive here gets the next number */
-                            divesBefore: number;
-                            /** @description Whether apnea sessions count in the Dive numbers (ADR 0048) */
-                            apneaCounts: boolean;
-                            diveCount: number;
-                            deviceCount: number;
-                            /** @description Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule} */
-                            mutedRules: string[];
-                            /** @description What the Divers list shows of a Diver's certification cards (ADR 0050); the cards are GET /divers/{id}/certifications */
-                            certifications: {
-                                count: number;
-                                newest: null | {
-                                    agency: string;
-                                    level: string;
-                                };
-                                /** @description Cards whose expiry date has passed */
-                                expired: number;
-                                /** @description Cards expiring within 90 days (not yet expired) */
-                                expiringSoon: number;
-                            };
-                        }[];
+                        "application/json": components["schemas"]["DiverView"][];
                     };
                 };
             };
@@ -5431,32 +3619,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            /** @description The User's own Diver */
-                            isOwn: boolean;
-                            /** @description The dives made before the first one in this logbook (ADR 0048): the first Dive here gets the next number */
-                            divesBefore: number;
-                            /** @description Whether apnea sessions count in the Dive numbers (ADR 0048) */
-                            apneaCounts: boolean;
-                            diveCount: number;
-                            deviceCount: number;
-                            /** @description Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule} */
-                            mutedRules: string[];
-                            /** @description What the Divers list shows of a Diver's certification cards (ADR 0050); the cards are GET /divers/{id}/certifications */
-                            certifications: {
-                                count: number;
-                                newest: null | {
-                                    agency: string;
-                                    level: string;
-                                };
-                                /** @description Cards whose expiry date has passed */
-                                expired: number;
-                                /** @description Cards expiring within 90 days (not yet expired) */
-                                expiringSoon: number;
-                            };
-                        };
+                        "application/json": components["schemas"]["DiverView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -5651,32 +3814,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            /** @description The User's own Diver */
-                            isOwn: boolean;
-                            /** @description The dives made before the first one in this logbook (ADR 0048): the first Dive here gets the next number */
-                            divesBefore: number;
-                            /** @description Whether apnea sessions count in the Dive numbers (ADR 0048) */
-                            apneaCounts: boolean;
-                            diveCount: number;
-                            deviceCount: number;
-                            /** @description Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule} */
-                            mutedRules: string[];
-                            /** @description What the Divers list shows of a Diver's certification cards (ADR 0050); the cards are GET /divers/{id}/certifications */
-                            certifications: {
-                                count: number;
-                                newest: null | {
-                                    agency: string;
-                                    level: string;
-                                };
-                                /** @description Cards whose expiry date has passed */
-                                expired: number;
-                                /** @description Cards expiring within 90 days (not yet expired) */
-                                expiringSoon: number;
-                            };
-                        };
+                        "application/json": components["schemas"]["DiverView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -6052,39 +4190,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            /** @description No User keeps its logbook */
-                            external: boolean;
-                            /** @description Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep */
-                            canEdit: boolean;
-                            firstName: null | string;
-                            lastName: null | string;
-                            email: null | string;
-                            leaderNumber: null | string;
-                            accounts: {
-                                /**
-                                 * @description A service a person has an account at
-                                 * @enum {unknown}
-                                 */
-                                source: "ssi" | "padi";
-                                /** @description e.g. the SSI account, as the code holds it */
-                                externalId: string;
-                            }[];
-                            /** @description Empty while the account, a name or the e-mail is missing; the professional's only with a leader number */
-                            codes: {
-                                /**
-                                 * @description buddy: another diver scans it in the Provider's app to add the person to their buddy list. professional: a diver scans it on a logbook entry to verify the dive
-                                 * @enum {unknown}
-                                 */
-                                kind: "buddy" | "professional";
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiverDetailsView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -6161,39 +4267,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            /** @description No User keeps its logbook */
-                            external: boolean;
-                            /** @description Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep */
-                            canEdit: boolean;
-                            firstName: null | string;
-                            lastName: null | string;
-                            email: null | string;
-                            leaderNumber: null | string;
-                            accounts: {
-                                /**
-                                 * @description A service a person has an account at
-                                 * @enum {unknown}
-                                 */
-                                source: "ssi" | "padi";
-                                /** @description e.g. the SSI account, as the code holds it */
-                                externalId: string;
-                            }[];
-                            /** @description Empty while the account, a name or the e-mail is missing; the professional's only with a leader number */
-                            codes: {
-                                /**
-                                 * @description buddy: another diver scans it in the Provider's app to add the person to their buddy list. professional: a diver scans it on a logbook entry to verify the dive
-                                 * @enum {unknown}
-                                 */
-                                kind: "buddy" | "professional";
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiverDetailsView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -6278,39 +4352,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            /** @description No User keeps its logbook */
-                            external: boolean;
-                            /** @description Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep */
-                            canEdit: boolean;
-                            firstName: null | string;
-                            lastName: null | string;
-                            email: null | string;
-                            leaderNumber: null | string;
-                            accounts: {
-                                /**
-                                 * @description A service a person has an account at
-                                 * @enum {unknown}
-                                 */
-                                source: "ssi" | "padi";
-                                /** @description e.g. the SSI account, as the code holds it */
-                                externalId: string;
-                            }[];
-                            /** @description Empty while the account, a name or the e-mail is missing; the professional's only with a leader number */
-                            codes: {
-                                /**
-                                 * @description buddy: another diver scans it in the Provider's app to add the person to their buddy list. professional: a diver scans it on a logbook entry to verify the dive
-                                 * @enum {unknown}
-                                 */
-                                kind: "buddy" | "professional";
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiverDetailsView"];
                     };
                 };
                 /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028) */
@@ -6319,39 +4361,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            /** @description No User keeps its logbook */
-                            external: boolean;
-                            /** @description Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep */
-                            canEdit: boolean;
-                            firstName: null | string;
-                            lastName: null | string;
-                            email: null | string;
-                            leaderNumber: null | string;
-                            accounts: {
-                                /**
-                                 * @description A service a person has an account at
-                                 * @enum {unknown}
-                                 */
-                                source: "ssi" | "padi";
-                                /** @description e.g. the SSI account, as the code holds it */
-                                externalId: string;
-                            }[];
-                            /** @description Empty while the account, a name or the e-mail is missing; the professional's only with a leader number */
-                            codes: {
-                                /**
-                                 * @description buddy: another diver scans it in the Provider's app to add the person to their buddy list. professional: a diver scans it on a logbook entry to verify the dive
-                                 * @enum {unknown}
-                                 */
-                                kind: "buddy" | "professional";
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiverDetailsView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -6426,16 +4436,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            divers: {
-                                id: string;
-                                name: string;
-                                /** @description Services this person has an account at here (the account itself isn't shown) */
-                                accounts: ("ssi" | "padi")[];
-                                /** @description A Dive (of any User) lists this Diver; then it can't be deleted */
-                                inUse: boolean;
-                                /** @description Whether the signed-in User may delete it: whoever added it, or an admin */
-                                canDelete: boolean;
-                            }[];
+                            divers: components["schemas"]["ExternalDiverView"][];
                             total: number;
                         };
                     };
@@ -6465,16 +4466,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            /** @description Services this person has an account at here (the account itself isn't shown) */
-                            accounts: ("ssi" | "padi")[];
-                            /** @description A Dive (of any User) lists this Diver; then it can't be deleted */
-                            inUse: boolean;
-                            /** @description Whether the signed-in User may delete it: whoever added it, or an admin */
-                            canDelete: boolean;
-                        };
+                        "application/json": components["schemas"]["ExternalDiverView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -6614,16 +4606,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            /** @description Services this person has an account at here (the account itself isn't shown) */
-                            accounts: ("ssi" | "padi")[];
-                            /** @description A Dive (of any User) lists this Diver; then it can't be deleted */
-                            inUse: boolean;
-                            /** @description Whether the signed-in User may delete it: whoever added it, or an admin */
-                            canDelete: boolean;
-                        };
+                        "application/json": components["schemas"]["ExternalDiverView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -6905,49 +4888,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            diverId: string;
-                            /** @description Free text (SSI, PADI, CMAS, …) */
-                            agency: string;
-                            /** @description The course or level, free text; for an imported card as the agency names it */
-                            level: string;
-                            number: null | string;
-                            issuedOn: null | string;
-                            expiresOn: null | string;
-                            divesAtIssue: null | number;
-                            instructorName: null | string;
-                            instructorNumber: null | string;
-                            centreName: null | string;
-                            centreNumber: null | string;
-                            centreCity: null | string;
-                            centreCountry: null | string;
-                            /**
-                             * @description self_declared: typed by the User; card_seen: the User says they looked at the card; verified_with_agency: read from the agency's own record by an import (never settable by hand)
-                             * @enum {unknown}
-                             */
-                            verification: "self_declared" | "card_seen" | "verified_with_agency";
-                            /**
-                             * @description none: no expiry date; soon: expires within 90 days (the day itself is still valid); expired: the date has passed. Expired cards come last in the list
-                             * @enum {unknown}
-                             */
-                            expiry: "none" | "valid" | "soon" | "expired";
-                            notes: null | string;
-                            source: null | string;
-                            cardId: null | string;
-                            category: null | string;
-                            /**
-                             * @description pending: a job will fetch the picture; failed: show "Fetch again" (POST …/image)
-                             * @enum {unknown}
-                             */
-                            imageState: "none" | "pending" | "stored" | "failed";
-                            imageUrl: null | string;
-                            importedAt: null | string;
-                            /** @description Send it back with a change; 409 certification_changed when the card changed meanwhile */
-                            version: number;
-                            /** Format: date-time */
-                            createdAt: string;
-                        }[];
+                        "application/json": components["schemas"]["CertificationView"][];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -7021,49 +4962,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            diverId: string;
-                            /** @description Free text (SSI, PADI, CMAS, …) */
-                            agency: string;
-                            /** @description The course or level, free text; for an imported card as the agency names it */
-                            level: string;
-                            number: null | string;
-                            issuedOn: null | string;
-                            expiresOn: null | string;
-                            divesAtIssue: null | number;
-                            instructorName: null | string;
-                            instructorNumber: null | string;
-                            centreName: null | string;
-                            centreNumber: null | string;
-                            centreCity: null | string;
-                            centreCountry: null | string;
-                            /**
-                             * @description self_declared: typed by the User; card_seen: the User says they looked at the card; verified_with_agency: read from the agency's own record by an import (never settable by hand)
-                             * @enum {unknown}
-                             */
-                            verification: "self_declared" | "card_seen" | "verified_with_agency";
-                            /**
-                             * @description none: no expiry date; soon: expires within 90 days (the day itself is still valid); expired: the date has passed. Expired cards come last in the list
-                             * @enum {unknown}
-                             */
-                            expiry: "none" | "valid" | "soon" | "expired";
-                            notes: null | string;
-                            source: null | string;
-                            cardId: null | string;
-                            category: null | string;
-                            /**
-                             * @description pending: a job will fetch the picture; failed: show "Fetch again" (POST …/image)
-                             * @enum {unknown}
-                             */
-                            imageState: "none" | "pending" | "stored" | "failed";
-                            imageUrl: null | string;
-                            importedAt: null | string;
-                            /** @description Send it back with a change; 409 certification_changed when the card changed meanwhile */
-                            version: number;
-                            /** Format: date-time */
-                            createdAt: string;
-                        };
+                        "application/json": components["schemas"]["CertificationView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -7152,49 +5051,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            diverId: string;
-                            /** @description Free text (SSI, PADI, CMAS, …) */
-                            agency: string;
-                            /** @description The course or level, free text; for an imported card as the agency names it */
-                            level: string;
-                            number: null | string;
-                            issuedOn: null | string;
-                            expiresOn: null | string;
-                            divesAtIssue: null | number;
-                            instructorName: null | string;
-                            instructorNumber: null | string;
-                            centreName: null | string;
-                            centreNumber: null | string;
-                            centreCity: null | string;
-                            centreCountry: null | string;
-                            /**
-                             * @description self_declared: typed by the User; card_seen: the User says they looked at the card; verified_with_agency: read from the agency's own record by an import (never settable by hand)
-                             * @enum {unknown}
-                             */
-                            verification: "self_declared" | "card_seen" | "verified_with_agency";
-                            /**
-                             * @description none: no expiry date; soon: expires within 90 days (the day itself is still valid); expired: the date has passed. Expired cards come last in the list
-                             * @enum {unknown}
-                             */
-                            expiry: "none" | "valid" | "soon" | "expired";
-                            notes: null | string;
-                            source: null | string;
-                            cardId: null | string;
-                            category: null | string;
-                            /**
-                             * @description pending: a job will fetch the picture; failed: show "Fetch again" (POST …/image)
-                             * @enum {unknown}
-                             */
-                            imageState: "none" | "pending" | "stored" | "failed";
-                            imageUrl: null | string;
-                            importedAt: null | string;
-                            /** @description Send it back with a change; 409 certification_changed when the card changed meanwhile */
-                            version: number;
-                            /** Format: date-time */
-                            createdAt: string;
-                        };
+                        "application/json": components["schemas"]["CertificationView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -8132,60 +5989,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            sites: {
-                                id: string;
-                                name: string;
-                                position: null | {
-                                    latitude: number;
-                                    longitude: number;
-                                };
-                                country: null | string;
-                                waterBody: null | string;
-                                description: null | string;
-                                maxDepthM: null | number;
-                                waterType: null | ("fresh" | "salt" | "brackish");
-                                externalIds: {
-                                    /** @enum {unknown} */
-                                    source: "osm" | "wikidata" | "ssi";
-                                    /** @description The Source's name, e.g. "OpenStreetMap" */
-                                    name: string;
-                                    /** @description e.g. "node/123", "Q42", "3314" */
-                                    externalId: string;
-                                    url: null | string;
-                                    /** @description The site was created or filled from this Source ("From OpenStreetMap"); otherwise a reference only ("Also in …") */
-                                    providesData: boolean;
-                                    attribution: null | {
-                                        text: string;
-                                        url: string;
-                                    };
-                                    offered: null | {
-                                        name: null | string;
-                                        position: null | {
-                                            latitude: number;
-                                            longitude: number;
-                                        };
-                                        country: null | string;
-                                        waterBody: null | string;
-                                        description: null | string;
-                                        maxDepthM: null | number;
-                                        waterType: null | ("fresh" | "salt" | "brackish");
-                                    };
-                                    privateTo: null | {
-                                        diverId: string;
-                                    };
-                                }[];
-                                /** @description Send it back with an edit; it changes with every change */
-                                version: number;
-                                /** @description How many of the signed-in User's Dives are at the site */
-                                diveCount: number;
-                                /** @description Whether any Dive (of any User) is at the site; then it can't be deleted */
-                                inUse: boolean;
-                                /** @description Whether the signed-in User may delete it: its creator or an admin */
-                                canDelete: boolean;
-                                /** @description Metres from the position asked for (with latitude/longitude) */
-                                distanceM?: number;
-                                mergedInto: null | string;
-                            }[];
+                            sites: components["schemas"]["SiteView"][];
                             /** @description Sites matching, on all pages */
                             total: number;
                         };
@@ -8234,60 +6038,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            country: null | string;
-                            waterBody: null | string;
-                            description: null | string;
-                            maxDepthM: null | number;
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "osm" | "wikidata" | "ssi";
-                                /** @description The Source's name, e.g. "OpenStreetMap" */
-                                name: string;
-                                /** @description e.g. "node/123", "Q42", "3314" */
-                                externalId: string;
-                                url: null | string;
-                                /** @description The site was created or filled from this Source ("From OpenStreetMap"); otherwise a reference only ("Also in …") */
-                                providesData: boolean;
-                                attribution: null | {
-                                    text: string;
-                                    url: string;
-                                };
-                                offered: null | {
-                                    name: null | string;
-                                    position: null | {
-                                        latitude: number;
-                                        longitude: number;
-                                    };
-                                    country: null | string;
-                                    waterBody: null | string;
-                                    description: null | string;
-                                    maxDepthM: null | number;
-                                    waterType: null | ("fresh" | "salt" | "brackish");
-                                };
-                                privateTo: null | {
-                                    diverId: string;
-                                };
-                            }[];
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            /** @description How many of the signed-in User's Dives are at the site */
-                            diveCount: number;
-                            /** @description Whether any Dive (of any User) is at the site; then it can't be deleted */
-                            inUse: boolean;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                            /** @description Metres from the position asked for (with latitude/longitude) */
-                            distanceM?: number;
-                            mergedInto: null | string;
-                        };
+                        "application/json": components["schemas"]["SiteView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -8359,60 +6110,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            country: null | string;
-                            waterBody: null | string;
-                            description: null | string;
-                            maxDepthM: null | number;
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "osm" | "wikidata" | "ssi";
-                                /** @description The Source's name, e.g. "OpenStreetMap" */
-                                name: string;
-                                /** @description e.g. "node/123", "Q42", "3314" */
-                                externalId: string;
-                                url: null | string;
-                                /** @description The site was created or filled from this Source ("From OpenStreetMap"); otherwise a reference only ("Also in …") */
-                                providesData: boolean;
-                                attribution: null | {
-                                    text: string;
-                                    url: string;
-                                };
-                                offered: null | {
-                                    name: null | string;
-                                    position: null | {
-                                        latitude: number;
-                                        longitude: number;
-                                    };
-                                    country: null | string;
-                                    waterBody: null | string;
-                                    description: null | string;
-                                    maxDepthM: null | number;
-                                    waterType: null | ("fresh" | "salt" | "brackish");
-                                };
-                                privateTo: null | {
-                                    diverId: string;
-                                };
-                            }[];
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            /** @description How many of the signed-in User's Dives are at the site */
-                            diveCount: number;
-                            /** @description Whether any Dive (of any User) is at the site; then it can't be deleted */
-                            inUse: boolean;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                            /** @description Metres from the position asked for (with latitude/longitude) */
-                            distanceM?: number;
-                            mergedInto: null | string;
-                        };
+                        "application/json": components["schemas"]["SiteView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -8525,60 +6223,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            country: null | string;
-                            waterBody: null | string;
-                            description: null | string;
-                            maxDepthM: null | number;
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "osm" | "wikidata" | "ssi";
-                                /** @description The Source's name, e.g. "OpenStreetMap" */
-                                name: string;
-                                /** @description e.g. "node/123", "Q42", "3314" */
-                                externalId: string;
-                                url: null | string;
-                                /** @description The site was created or filled from this Source ("From OpenStreetMap"); otherwise a reference only ("Also in …") */
-                                providesData: boolean;
-                                attribution: null | {
-                                    text: string;
-                                    url: string;
-                                };
-                                offered: null | {
-                                    name: null | string;
-                                    position: null | {
-                                        latitude: number;
-                                        longitude: number;
-                                    };
-                                    country: null | string;
-                                    waterBody: null | string;
-                                    description: null | string;
-                                    maxDepthM: null | number;
-                                    waterType: null | ("fresh" | "salt" | "brackish");
-                                };
-                                privateTo: null | {
-                                    diverId: string;
-                                };
-                            }[];
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            /** @description How many of the signed-in User's Dives are at the site */
-                            diveCount: number;
-                            /** @description Whether any Dive (of any User) is at the site; then it can't be deleted */
-                            inUse: boolean;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                            /** @description Metres from the position asked for (with latitude/longitude) */
-                            distanceM?: number;
-                            mergedInto: null | string;
-                        };
+                        "application/json": components["schemas"]["SiteView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -8657,60 +6302,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            country: null | string;
-                            waterBody: null | string;
-                            description: null | string;
-                            maxDepthM: null | number;
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "osm" | "wikidata" | "ssi";
-                                /** @description The Source's name, e.g. "OpenStreetMap" */
-                                name: string;
-                                /** @description e.g. "node/123", "Q42", "3314" */
-                                externalId: string;
-                                url: null | string;
-                                /** @description The site was created or filled from this Source ("From OpenStreetMap"); otherwise a reference only ("Also in …") */
-                                providesData: boolean;
-                                attribution: null | {
-                                    text: string;
-                                    url: string;
-                                };
-                                offered: null | {
-                                    name: null | string;
-                                    position: null | {
-                                        latitude: number;
-                                        longitude: number;
-                                    };
-                                    country: null | string;
-                                    waterBody: null | string;
-                                    description: null | string;
-                                    maxDepthM: null | number;
-                                    waterType: null | ("fresh" | "salt" | "brackish");
-                                };
-                                privateTo: null | {
-                                    diverId: string;
-                                };
-                            }[];
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            /** @description How many of the signed-in User's Dives are at the site */
-                            diveCount: number;
-                            /** @description Whether any Dive (of any User) is at the site; then it can't be deleted */
-                            inUse: boolean;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                            /** @description Metres from the position asked for (with latitude/longitude) */
-                            distanceM?: number;
-                            mergedInto: null | string;
-                        };
+                        "application/json": components["schemas"]["SiteView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -8802,60 +6394,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            country: null | string;
-                            waterBody: null | string;
-                            description: null | string;
-                            maxDepthM: null | number;
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "osm" | "wikidata" | "ssi";
-                                /** @description The Source's name, e.g. "OpenStreetMap" */
-                                name: string;
-                                /** @description e.g. "node/123", "Q42", "3314" */
-                                externalId: string;
-                                url: null | string;
-                                /** @description The site was created or filled from this Source ("From OpenStreetMap"); otherwise a reference only ("Also in …") */
-                                providesData: boolean;
-                                attribution: null | {
-                                    text: string;
-                                    url: string;
-                                };
-                                offered: null | {
-                                    name: null | string;
-                                    position: null | {
-                                        latitude: number;
-                                        longitude: number;
-                                    };
-                                    country: null | string;
-                                    waterBody: null | string;
-                                    description: null | string;
-                                    maxDepthM: null | number;
-                                    waterType: null | ("fresh" | "salt" | "brackish");
-                                };
-                                privateTo: null | {
-                                    diverId: string;
-                                };
-                            }[];
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            /** @description How many of the signed-in User's Dives are at the site */
-                            diveCount: number;
-                            /** @description Whether any Dive (of any User) is at the site; then it can't be deleted */
-                            inUse: boolean;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                            /** @description Metres from the position asked for (with latitude/longitude) */
-                            distanceM?: number;
-                            mergedInto: null | string;
-                        };
+                        "application/json": components["schemas"]["SiteView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -8944,60 +6483,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            position: null | {
-                                latitude: number;
-                                longitude: number;
-                            };
-                            country: null | string;
-                            waterBody: null | string;
-                            description: null | string;
-                            maxDepthM: null | number;
-                            waterType: null | ("fresh" | "salt" | "brackish");
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "osm" | "wikidata" | "ssi";
-                                /** @description The Source's name, e.g. "OpenStreetMap" */
-                                name: string;
-                                /** @description e.g. "node/123", "Q42", "3314" */
-                                externalId: string;
-                                url: null | string;
-                                /** @description The site was created or filled from this Source ("From OpenStreetMap"); otherwise a reference only ("Also in …") */
-                                providesData: boolean;
-                                attribution: null | {
-                                    text: string;
-                                    url: string;
-                                };
-                                offered: null | {
-                                    name: null | string;
-                                    position: null | {
-                                        latitude: number;
-                                        longitude: number;
-                                    };
-                                    country: null | string;
-                                    waterBody: null | string;
-                                    description: null | string;
-                                    maxDepthM: null | number;
-                                    waterType: null | ("fresh" | "salt" | "brackish");
-                                };
-                                privateTo: null | {
-                                    diverId: string;
-                                };
-                            }[];
-                            /** @description Send it back with an edit; it changes with every change */
-                            version: number;
-                            /** @description How many of the signed-in User's Dives are at the site */
-                            diveCount: number;
-                            /** @description Whether any Dive (of any User) is at the site; then it can't be deleted */
-                            inUse: boolean;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                            /** @description Metres from the position asked for (with latitude/longitude) */
-                            distanceM?: number;
-                            mergedInto: null | string;
-                        };
+                        "application/json": components["schemas"]["SiteView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -9182,36 +6668,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            centres: {
-                                id: string;
-                                /** @description The whole name, as its Source spells it (SSI: with the town). This is what is edited, and what the code holds */
-                                name: string;
-                                /** @description The name to show: the whole name shortened by the rule of the Source the centre has an ID at (SSI: without the town) */
-                                displayName: string;
-                                externalIds: {
-                                    /** @enum {unknown} */
-                                    source: "ssi";
-                                    /** @description The Source's name, e.g. "SSI" */
-                                    name: string;
-                                    /** @description e.g. the SSI centre number */
-                                    externalId: string;
-                                }[];
-                                /** @description The Dive sites the centre is responsible for, by name */
-                                sites: {
-                                    id: string;
-                                    name: string;
-                                }[];
-                                verificationCode: null | {
-                                    /** @enum {unknown} */
-                                    provider: "ssi";
-                                    /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                    text: string;
-                                };
-                                /** @description Send it back with a rename; it changes with every rename */
-                                version: number;
-                                /** @description Whether the signed-in User may delete it: its creator or an admin */
-                                canDelete: boolean;
-                            }[];
+                            centres: components["schemas"]["CentreView"][];
                             /** @description Centres matching, on all pages */
                             total: number;
                         };
@@ -9263,36 +6720,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The whole name, as its Source spells it (SSI: with the town). This is what is edited, and what the code holds */
-                            name: string;
-                            /** @description The name to show: the whole name shortened by the rule of the Source the centre has an ID at (SSI: without the town) */
-                            displayName: string;
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "ssi";
-                                /** @description The Source's name, e.g. "SSI" */
-                                name: string;
-                                /** @description e.g. the SSI centre number */
-                                externalId: string;
-                            }[];
-                            /** @description The Dive sites the centre is responsible for, by name */
-                            sites: {
-                                id: string;
-                                name: string;
-                            }[];
-                            verificationCode: null | {
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            };
-                            /** @description Send it back with a rename; it changes with every rename */
-                            version: number;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                        };
+                        "application/json": components["schemas"]["CentreView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -9364,36 +6792,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The whole name, as its Source spells it (SSI: with the town). This is what is edited, and what the code holds */
-                            name: string;
-                            /** @description The name to show: the whole name shortened by the rule of the Source the centre has an ID at (SSI: without the town) */
-                            displayName: string;
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "ssi";
-                                /** @description The Source's name, e.g. "SSI" */
-                                name: string;
-                                /** @description e.g. the SSI centre number */
-                                externalId: string;
-                            }[];
-                            /** @description The Dive sites the centre is responsible for, by name */
-                            sites: {
-                                id: string;
-                                name: string;
-                            }[];
-                            verificationCode: null | {
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            };
-                            /** @description Send it back with a rename; it changes with every rename */
-                            version: number;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                        };
+                        "application/json": components["schemas"]["CentreView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -9500,36 +6899,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The whole name, as its Source spells it (SSI: with the town). This is what is edited, and what the code holds */
-                            name: string;
-                            /** @description The name to show: the whole name shortened by the rule of the Source the centre has an ID at (SSI: without the town) */
-                            displayName: string;
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "ssi";
-                                /** @description The Source's name, e.g. "SSI" */
-                                name: string;
-                                /** @description e.g. the SSI centre number */
-                                externalId: string;
-                            }[];
-                            /** @description The Dive sites the centre is responsible for, by name */
-                            sites: {
-                                id: string;
-                                name: string;
-                            }[];
-                            verificationCode: null | {
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            };
-                            /** @description Send it back with a rename; it changes with every rename */
-                            version: number;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                        };
+                        "application/json": components["schemas"]["CentreView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -9608,36 +6978,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The whole name, as its Source spells it (SSI: with the town). This is what is edited, and what the code holds */
-                            name: string;
-                            /** @description The name to show: the whole name shortened by the rule of the Source the centre has an ID at (SSI: without the town) */
-                            displayName: string;
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "ssi";
-                                /** @description The Source's name, e.g. "SSI" */
-                                name: string;
-                                /** @description e.g. the SSI centre number */
-                                externalId: string;
-                            }[];
-                            /** @description The Dive sites the centre is responsible for, by name */
-                            sites: {
-                                id: string;
-                                name: string;
-                            }[];
-                            verificationCode: null | {
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            };
-                            /** @description Send it back with a rename; it changes with every rename */
-                            version: number;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                        };
+                        "application/json": components["schemas"]["CentreView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -9715,36 +7056,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The whole name, as its Source spells it (SSI: with the town). This is what is edited, and what the code holds */
-                            name: string;
-                            /** @description The name to show: the whole name shortened by the rule of the Source the centre has an ID at (SSI: without the town) */
-                            displayName: string;
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "ssi";
-                                /** @description The Source's name, e.g. "SSI" */
-                                name: string;
-                                /** @description e.g. the SSI centre number */
-                                externalId: string;
-                            }[];
-                            /** @description The Dive sites the centre is responsible for, by name */
-                            sites: {
-                                id: string;
-                                name: string;
-                            }[];
-                            verificationCode: null | {
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            };
-                            /** @description Send it back with a rename; it changes with every rename */
-                            version: number;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                        };
+                        "application/json": components["schemas"]["CentreView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -9805,36 +7117,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @description The whole name, as its Source spells it (SSI: with the town). This is what is edited, and what the code holds */
-                            name: string;
-                            /** @description The name to show: the whole name shortened by the rule of the Source the centre has an ID at (SSI: without the town) */
-                            displayName: string;
-                            externalIds: {
-                                /** @enum {unknown} */
-                                source: "ssi";
-                                /** @description The Source's name, e.g. "SSI" */
-                                name: string;
-                                /** @description e.g. the SSI centre number */
-                                externalId: string;
-                            }[];
-                            /** @description The Dive sites the centre is responsible for, by name */
-                            sites: {
-                                id: string;
-                                name: string;
-                            }[];
-                            verificationCode: null | {
-                                /** @enum {unknown} */
-                                provider: "ssi";
-                                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
-                                text: string;
-                            };
-                            /** @description Send it back with a rename; it changes with every rename */
-                            version: number;
-                            /** @description Whether the signed-in User may delete it: its creator or an admin */
-                            canDelete: boolean;
-                        };
+                        "application/json": components["schemas"]["CentreView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -10020,72 +7303,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @enum {unknown} */
-                            status: "queued" | "running" | "done" | "failed";
-                            sources: ("osm" | "wikidata" | "ssi")[];
-                            /** @description Where to import: a country, a box, or everywhere */
-                            area: {
-                                /** @enum {string} */
-                                kind: "country";
-                                /** @description ISO 3166-1 alpha-2 */
-                                country: string;
-                            } | {
-                                /** @enum {string} */
-                                kind: "box";
-                                south: number;
-                                west: number;
-                                north: number;
-                                east: number;
-                            } | {
-                                /** @enum {string} */
-                                kind: "world";
-                            };
-                            language: string;
-                            /** @description false: the run only matched and filled sites already in the hub */
-                            createSites: boolean;
-                            progress: {
-                                /** @enum {unknown} */
-                                step: "waiting" | "osm" | "wikidata" | "ssi" | "saving";
-                                done: number;
-                                total: number;
-                            };
-                            counts: null | {
-                                created: number;
-                                updated: number;
-                                unchanged: number;
-                                kept: number;
-                                linked: number;
-                                skippedNoName: number;
-                                skippedDeleted: number;
-                                skippedMerged: number;
-                                skippedNew: number;
-                                offered: number;
-                                gone: number;
-                            };
-                            findings: ({
-                                /** @enum {string} */
-                                kind: "near";
-                                siteId: string;
-                                name: string;
-                                nearSiteId: string;
-                                nearName: string;
-                                distanceM: number;
-                            } | {
-                                /** @enum {string} */
-                                kind: "offer";
-                                siteId: string;
-                                name: string;
-                                /** @enum {unknown} */
-                                source: "osm" | "wikidata" | "ssi";
-                            })[];
-                            /** @description Why it failed (a problem code) */
-                            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                            /** Format: date-time */
-                            createdAt: string;
-                            finishedAt: null | string;
-                        }[];
+                        "application/json": components["schemas"]["SiteImportView"][];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -10153,72 +7371,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @enum {unknown} */
-                            status: "queued" | "running" | "done" | "failed";
-                            sources: ("osm" | "wikidata" | "ssi")[];
-                            /** @description Where to import: a country, a box, or everywhere */
-                            area: {
-                                /** @enum {string} */
-                                kind: "country";
-                                /** @description ISO 3166-1 alpha-2 */
-                                country: string;
-                            } | {
-                                /** @enum {string} */
-                                kind: "box";
-                                south: number;
-                                west: number;
-                                north: number;
-                                east: number;
-                            } | {
-                                /** @enum {string} */
-                                kind: "world";
-                            };
-                            language: string;
-                            /** @description false: the run only matched and filled sites already in the hub */
-                            createSites: boolean;
-                            progress: {
-                                /** @enum {unknown} */
-                                step: "waiting" | "osm" | "wikidata" | "ssi" | "saving";
-                                done: number;
-                                total: number;
-                            };
-                            counts: null | {
-                                created: number;
-                                updated: number;
-                                unchanged: number;
-                                kept: number;
-                                linked: number;
-                                skippedNoName: number;
-                                skippedDeleted: number;
-                                skippedMerged: number;
-                                skippedNew: number;
-                                offered: number;
-                                gone: number;
-                            };
-                            findings: ({
-                                /** @enum {string} */
-                                kind: "near";
-                                siteId: string;
-                                name: string;
-                                nearSiteId: string;
-                                nearName: string;
-                                distanceM: number;
-                            } | {
-                                /** @enum {string} */
-                                kind: "offer";
-                                siteId: string;
-                                name: string;
-                                /** @enum {unknown} */
-                                source: "osm" | "wikidata" | "ssi";
-                            })[];
-                            /** @description Why it failed (a problem code) */
-                            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                            /** Format: date-time */
-                            createdAt: string;
-                            finishedAt: null | string;
-                        };
+                        "application/json": components["schemas"]["SiteImportView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -10281,72 +7434,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /** @enum {unknown} */
-                            status: "queued" | "running" | "done" | "failed";
-                            sources: ("osm" | "wikidata" | "ssi")[];
-                            /** @description Where to import: a country, a box, or everywhere */
-                            area: {
-                                /** @enum {string} */
-                                kind: "country";
-                                /** @description ISO 3166-1 alpha-2 */
-                                country: string;
-                            } | {
-                                /** @enum {string} */
-                                kind: "box";
-                                south: number;
-                                west: number;
-                                north: number;
-                                east: number;
-                            } | {
-                                /** @enum {string} */
-                                kind: "world";
-                            };
-                            language: string;
-                            /** @description false: the run only matched and filled sites already in the hub */
-                            createSites: boolean;
-                            progress: {
-                                /** @enum {unknown} */
-                                step: "waiting" | "osm" | "wikidata" | "ssi" | "saving";
-                                done: number;
-                                total: number;
-                            };
-                            counts: null | {
-                                created: number;
-                                updated: number;
-                                unchanged: number;
-                                kept: number;
-                                linked: number;
-                                skippedNoName: number;
-                                skippedDeleted: number;
-                                skippedMerged: number;
-                                skippedNew: number;
-                                offered: number;
-                                gone: number;
-                            };
-                            findings: ({
-                                /** @enum {string} */
-                                kind: "near";
-                                siteId: string;
-                                name: string;
-                                nearSiteId: string;
-                                nearName: string;
-                                distanceM: number;
-                            } | {
-                                /** @enum {string} */
-                                kind: "offer";
-                                siteId: string;
-                                name: string;
-                                /** @enum {unknown} */
-                                source: "osm" | "wikidata" | "ssi";
-                            })[];
-                            /** @description Why it failed (a problem code) */
-                            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                            /** Format: date-time */
-                            createdAt: string;
-                            finishedAt: null | string;
-                        };
+                        "application/json": components["schemas"]["SiteImportView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -10506,23 +7594,7 @@ export interface paths {
                                     startsAt: string;
                                     siteId: null | string;
                                     siteName: null | string;
-                                    unmet: {
-                                        /** @description As in the Provider's requirements */
-                                        type: string;
-                                        /** @enum {unknown} */
-                                        severity: "blocking" | "advisory";
-                                        source: string;
-                                        siteId?: null | string;
-                                        /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                        bySend?: boolean;
-                                        /** @description diver_mapping: the Participant */
-                                        diverId?: string;
-                                        diverName?: string;
-                                        /** @enum {unknown} */
-                                        role?: "buddy" | "guide" | "instructor";
-                                        /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                        fixes?: string[];
-                                    }[];
+                                    unmet: components["schemas"]["UnmetView"][];
                                 }[];
                             };
                             /** @description How many Dives the request names (those of the list, or the ids found), whatever happens to them */
@@ -10675,53 +7747,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            connectionId: string;
-                            provider: string;
-                            diverId: string;
-                            /** @enum {unknown} */
-                            status: "queued" | "running" | "done" | "cancelled" | "stopped";
-                            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                            updates: boolean;
-                            updatesRemovingVerification: boolean;
-                            numbers: boolean;
-                            numbersRemovingVerification: boolean;
-                            /** @description Stop was asked for; the Dive being sent is finished first */
-                            cancelRequested: boolean;
-                            counts: {
-                                total: number;
-                                waiting: number;
-                                sent: number;
-                                skipped: number;
-                                failed: number;
-                            };
-                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run */
-                            conflicts: number;
-                            /** @description What the run left out when it was planned, as counts */
-                            leftOut: {
-                                upToDate: number;
-                                requirementsUnmet: number;
-                                updateNotChosen: number;
-                                removesVerification: number;
-                                updateUnsupported: number;
-                                beyondCeiling: number;
-                                notFound: number;
-                                /** @description Dives whose number differs and that a run with numbers would set */
-                                numberNotChosen: number;
-                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
-                                numberTaken: number;
-                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
-                                numberHeldAtProvider: number;
-                            };
-                            /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
-                            pauseMs: number;
-                            /** Format: date-time */
-                            createdAt: string;
-                            startedAt: null | string;
-                            finishedAt: null | string;
-                            dismissedAt: null | string;
-                        };
+                        "application/json": components["schemas"]["PushRunView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -10782,53 +7808,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            connectionId: string;
-                            provider: string;
-                            diverId: string;
-                            /** @enum {unknown} */
-                            status: "queued" | "running" | "done" | "cancelled" | "stopped";
-                            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                            updates: boolean;
-                            updatesRemovingVerification: boolean;
-                            numbers: boolean;
-                            numbersRemovingVerification: boolean;
-                            /** @description Stop was asked for; the Dive being sent is finished first */
-                            cancelRequested: boolean;
-                            counts: {
-                                total: number;
-                                waiting: number;
-                                sent: number;
-                                skipped: number;
-                                failed: number;
-                            };
-                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run */
-                            conflicts: number;
-                            /** @description What the run left out when it was planned, as counts */
-                            leftOut: {
-                                upToDate: number;
-                                requirementsUnmet: number;
-                                updateNotChosen: number;
-                                removesVerification: number;
-                                updateUnsupported: number;
-                                beyondCeiling: number;
-                                notFound: number;
-                                /** @description Dives whose number differs and that a run with numbers would set */
-                                numberNotChosen: number;
-                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
-                                numberTaken: number;
-                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
-                                numberHeldAtProvider: number;
-                            };
-                            /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
-                            pauseMs: number;
-                            /** Format: date-time */
-                            createdAt: string;
-                            startedAt: null | string;
-                            finishedAt: null | string;
-                            dismissedAt: null | string;
-                        }[];
+                        "application/json": components["schemas"]["PushRunView"][];
                     };
                 };
             };
@@ -10866,53 +7846,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            connectionId: string;
-                            provider: string;
-                            diverId: string;
-                            /** @enum {unknown} */
-                            status: "queued" | "running" | "done" | "cancelled" | "stopped";
-                            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                            updates: boolean;
-                            updatesRemovingVerification: boolean;
-                            numbers: boolean;
-                            numbersRemovingVerification: boolean;
-                            /** @description Stop was asked for; the Dive being sent is finished first */
-                            cancelRequested: boolean;
-                            counts: {
-                                total: number;
-                                waiting: number;
-                                sent: number;
-                                skipped: number;
-                                failed: number;
-                            };
-                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run */
-                            conflicts: number;
-                            /** @description What the run left out when it was planned, as counts */
-                            leftOut: {
-                                upToDate: number;
-                                requirementsUnmet: number;
-                                updateNotChosen: number;
-                                removesVerification: number;
-                                updateUnsupported: number;
-                                beyondCeiling: number;
-                                notFound: number;
-                                /** @description Dives whose number differs and that a run with numbers would set */
-                                numberNotChosen: number;
-                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
-                                numberTaken: number;
-                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
-                                numberHeldAtProvider: number;
-                            };
-                            /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
-                            pauseMs: number;
-                            /** Format: date-time */
-                            createdAt: string;
-                            startedAt: null | string;
-                            finishedAt: null | string;
-                            dismissedAt: null | string;
-                        } & {
+                        "application/json": components["schemas"]["PushRunView"] & {
                             withoutSomeone: {
                                 diveId: string;
                                 /** Format: date-time */
@@ -11005,53 +7939,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            connectionId: string;
-                            provider: string;
-                            diverId: string;
-                            /** @enum {unknown} */
-                            status: "queued" | "running" | "done" | "cancelled" | "stopped";
-                            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                            updates: boolean;
-                            updatesRemovingVerification: boolean;
-                            numbers: boolean;
-                            numbersRemovingVerification: boolean;
-                            /** @description Stop was asked for; the Dive being sent is finished first */
-                            cancelRequested: boolean;
-                            counts: {
-                                total: number;
-                                waiting: number;
-                                sent: number;
-                                skipped: number;
-                                failed: number;
-                            };
-                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run */
-                            conflicts: number;
-                            /** @description What the run left out when it was planned, as counts */
-                            leftOut: {
-                                upToDate: number;
-                                requirementsUnmet: number;
-                                updateNotChosen: number;
-                                removesVerification: number;
-                                updateUnsupported: number;
-                                beyondCeiling: number;
-                                notFound: number;
-                                /** @description Dives whose number differs and that a run with numbers would set */
-                                numberNotChosen: number;
-                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
-                                numberTaken: number;
-                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
-                                numberHeldAtProvider: number;
-                            };
-                            /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
-                            pauseMs: number;
-                            /** Format: date-time */
-                            createdAt: string;
-                            startedAt: null | string;
-                            finishedAt: null | string;
-                            dismissedAt: null | string;
-                        };
+                        "application/json": components["schemas"]["PushRunView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -11119,53 +8007,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            connectionId: string;
-                            provider: string;
-                            diverId: string;
-                            /** @enum {unknown} */
-                            status: "queued" | "running" | "done" | "cancelled" | "stopped";
-                            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                            updates: boolean;
-                            updatesRemovingVerification: boolean;
-                            numbers: boolean;
-                            numbersRemovingVerification: boolean;
-                            /** @description Stop was asked for; the Dive being sent is finished first */
-                            cancelRequested: boolean;
-                            counts: {
-                                total: number;
-                                waiting: number;
-                                sent: number;
-                                skipped: number;
-                                failed: number;
-                            };
-                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run */
-                            conflicts: number;
-                            /** @description What the run left out when it was planned, as counts */
-                            leftOut: {
-                                upToDate: number;
-                                requirementsUnmet: number;
-                                updateNotChosen: number;
-                                removesVerification: number;
-                                updateUnsupported: number;
-                                beyondCeiling: number;
-                                notFound: number;
-                                /** @description Dives whose number differs and that a run with numbers would set */
-                                numberNotChosen: number;
-                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
-                                numberTaken: number;
-                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
-                                numberHeldAtProvider: number;
-                            };
-                            /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
-                            pauseMs: number;
-                            /** Format: date-time */
-                            createdAt: string;
-                            startedAt: null | string;
-                            finishedAt: null | string;
-                            dismissedAt: null | string;
-                        };
+                        "application/json": components["schemas"]["PushRunView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -11230,53 +8072,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            connectionId: string;
-                            provider: string;
-                            diverId: string;
-                            /** @enum {unknown} */
-                            status: "queued" | "running" | "done" | "cancelled" | "stopped";
-                            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                            updates: boolean;
-                            updatesRemovingVerification: boolean;
-                            numbers: boolean;
-                            numbersRemovingVerification: boolean;
-                            /** @description Stop was asked for; the Dive being sent is finished first */
-                            cancelRequested: boolean;
-                            counts: {
-                                total: number;
-                                waiting: number;
-                                sent: number;
-                                skipped: number;
-                                failed: number;
-                            };
-                            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run */
-                            conflicts: number;
-                            /** @description What the run left out when it was planned, as counts */
-                            leftOut: {
-                                upToDate: number;
-                                requirementsUnmet: number;
-                                updateNotChosen: number;
-                                removesVerification: number;
-                                updateUnsupported: number;
-                                beyondCeiling: number;
-                                notFound: number;
-                                /** @description Dives whose number differs and that a run with numbers would set */
-                                numberNotChosen: number;
-                                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
-                                numberTaken: number;
-                                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
-                                numberHeldAtProvider: number;
-                            };
-                            /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
-                            pauseMs: number;
-                            /** Format: date-time */
-                            createdAt: string;
-                            startedAt: null | string;
-                            finishedAt: null | string;
-                            dismissedAt: null | string;
-                        };
+                        "application/json": components["schemas"]["PushRunView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -11470,75 +8266,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            provider: string;
-                            /** @description The Diver whose account at the Provider this is */
-                            diverId: string;
-                            diverName: string;
-                            /** @description The account at the Provider (SSI: user master ID) */
-                            accountId: string;
-                            /** @description What the User recognises the account by (SSI: the e-mail) */
-                            accountLabel: string;
-                            /** @description The password is kept (sealed); otherwise only the Provider's access, which can expire */
-                            keepSignedIn: boolean;
-                            /**
-                             * @description needs_sign_in: the Provider no longer accepts the sign-in; sign in again
-                             * @enum {unknown}
-                             */
-                            state: "active" | "needs_sign_in";
-                            lastUsedAt: null | string;
-                            /** Format: date-time */
-                            createdAt: string;
-                            diveNumbers: null | {
-                                /** @description Dives are numbered here as in Dive Hub (off until the User turns it on; it sends nothing by itself) */
-                                follow: boolean;
-                            };
-                            diveImport: null | {
-                                /**
-                                 * @description off; add: only link and fill Dives here, never create; create: also create Dives Dive Hub doesn't have
-                                 * @enum {unknown}
-                                 */
-                                mode: "off" | "add" | "create";
-                                /** @description How far apart in local time a logbook entry and a Dive here may start, on the same day */
-                                windowMinutes: number;
-                            };
-                            /** @description Send a changed Dive by itself, 30 seconds after its last change (ADR 0056) */
-                            sendChanges: boolean;
-                            /** @description Send a new Dive of the Diver by itself */
-                            sendNewDives: boolean;
-                            /** @description Delete the Dive's copy at the Provider by itself, 5 minutes after the Dive is deleted here (Undo cancels it) */
-                            deleteAtProvider: boolean;
-                            fetchEveryMinutes: null | (60 | 360 | 1440);
-                            /** @description Which settings to show: only what the Provider can */
-                            offers: {
-                                sendChanges: boolean;
-                                sendNewDives: boolean;
-                                deleteAtProvider: boolean;
-                                /** @description The intervals to offer, in minutes; none: the Provider has no scheduled fetch */
-                                fetchEvery: number[];
-                            };
-                            /** @description How many Waiting pushes of the Connection are in each state */
-                            waiting: {
-                                waiting: number;
-                                held: number;
-                                stopped: number;
-                            };
-                            lastFetch: null | {
-                                /** Format: date-time */
-                                at: string;
-                                /** @description New Dives */
-                                created: number;
-                                /** @description Dives changed or filled */
-                                updated: number;
-                                /** @description Ambiguous entries and dives of a computer with no choice yet: they wait for the User (a manual import asks about them) */
-                                waitingForYou: number;
-                                /** @description Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import */
-                                conflicts: number;
-                            };
-                            /** @description The new Dives of a large Import (more than 20) that were not sent by themselves: offer to send them (a Push run for these ids: POST /api/connections/{id}/push-runs/preview with dives.ids) or Dismiss (POST /api/connections/{id}/unsent-dives/dismiss). Empty: no offer */
-                            unsentDives: string[];
-                        }[];
+                        "application/json": components["schemas"]["ConnectionView"][];
                     };
                 };
             };
@@ -11597,75 +8325,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            provider: string;
-                            /** @description The Diver whose account at the Provider this is */
-                            diverId: string;
-                            diverName: string;
-                            /** @description The account at the Provider (SSI: user master ID) */
-                            accountId: string;
-                            /** @description What the User recognises the account by (SSI: the e-mail) */
-                            accountLabel: string;
-                            /** @description The password is kept (sealed); otherwise only the Provider's access, which can expire */
-                            keepSignedIn: boolean;
-                            /**
-                             * @description needs_sign_in: the Provider no longer accepts the sign-in; sign in again
-                             * @enum {unknown}
-                             */
-                            state: "active" | "needs_sign_in";
-                            lastUsedAt: null | string;
-                            /** Format: date-time */
-                            createdAt: string;
-                            diveNumbers: null | {
-                                /** @description Dives are numbered here as in Dive Hub (off until the User turns it on; it sends nothing by itself) */
-                                follow: boolean;
-                            };
-                            diveImport: null | {
-                                /**
-                                 * @description off; add: only link and fill Dives here, never create; create: also create Dives Dive Hub doesn't have
-                                 * @enum {unknown}
-                                 */
-                                mode: "off" | "add" | "create";
-                                /** @description How far apart in local time a logbook entry and a Dive here may start, on the same day */
-                                windowMinutes: number;
-                            };
-                            /** @description Send a changed Dive by itself, 30 seconds after its last change (ADR 0056) */
-                            sendChanges: boolean;
-                            /** @description Send a new Dive of the Diver by itself */
-                            sendNewDives: boolean;
-                            /** @description Delete the Dive's copy at the Provider by itself, 5 minutes after the Dive is deleted here (Undo cancels it) */
-                            deleteAtProvider: boolean;
-                            fetchEveryMinutes: null | (60 | 360 | 1440);
-                            /** @description Which settings to show: only what the Provider can */
-                            offers: {
-                                sendChanges: boolean;
-                                sendNewDives: boolean;
-                                deleteAtProvider: boolean;
-                                /** @description The intervals to offer, in minutes; none: the Provider has no scheduled fetch */
-                                fetchEvery: number[];
-                            };
-                            /** @description How many Waiting pushes of the Connection are in each state */
-                            waiting: {
-                                waiting: number;
-                                held: number;
-                                stopped: number;
-                            };
-                            lastFetch: null | {
-                                /** Format: date-time */
-                                at: string;
-                                /** @description New Dives */
-                                created: number;
-                                /** @description Dives changed or filled */
-                                updated: number;
-                                /** @description Ambiguous entries and dives of a computer with no choice yet: they wait for the User (a manual import asks about them) */
-                                waitingForYou: number;
-                                /** @description Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import */
-                                conflicts: number;
-                            };
-                            /** @description The new Dives of a large Import (more than 20) that were not sent by themselves: offer to send them (a Push run for these ids: POST /api/connections/{id}/push-runs/preview with dives.ids) or Dismiss (POST /api/connections/{id}/unsent-dives/dismiss). Empty: no offer */
-                            unsentDives: string[];
-                        };
+                        "application/json": components["schemas"]["ConnectionView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -11757,75 +8417,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            provider: string;
-                            /** @description The Diver whose account at the Provider this is */
-                            diverId: string;
-                            diverName: string;
-                            /** @description The account at the Provider (SSI: user master ID) */
-                            accountId: string;
-                            /** @description What the User recognises the account by (SSI: the e-mail) */
-                            accountLabel: string;
-                            /** @description The password is kept (sealed); otherwise only the Provider's access, which can expire */
-                            keepSignedIn: boolean;
-                            /**
-                             * @description needs_sign_in: the Provider no longer accepts the sign-in; sign in again
-                             * @enum {unknown}
-                             */
-                            state: "active" | "needs_sign_in";
-                            lastUsedAt: null | string;
-                            /** Format: date-time */
-                            createdAt: string;
-                            diveNumbers: null | {
-                                /** @description Dives are numbered here as in Dive Hub (off until the User turns it on; it sends nothing by itself) */
-                                follow: boolean;
-                            };
-                            diveImport: null | {
-                                /**
-                                 * @description off; add: only link and fill Dives here, never create; create: also create Dives Dive Hub doesn't have
-                                 * @enum {unknown}
-                                 */
-                                mode: "off" | "add" | "create";
-                                /** @description How far apart in local time a logbook entry and a Dive here may start, on the same day */
-                                windowMinutes: number;
-                            };
-                            /** @description Send a changed Dive by itself, 30 seconds after its last change (ADR 0056) */
-                            sendChanges: boolean;
-                            /** @description Send a new Dive of the Diver by itself */
-                            sendNewDives: boolean;
-                            /** @description Delete the Dive's copy at the Provider by itself, 5 minutes after the Dive is deleted here (Undo cancels it) */
-                            deleteAtProvider: boolean;
-                            fetchEveryMinutes: null | (60 | 360 | 1440);
-                            /** @description Which settings to show: only what the Provider can */
-                            offers: {
-                                sendChanges: boolean;
-                                sendNewDives: boolean;
-                                deleteAtProvider: boolean;
-                                /** @description The intervals to offer, in minutes; none: the Provider has no scheduled fetch */
-                                fetchEvery: number[];
-                            };
-                            /** @description How many Waiting pushes of the Connection are in each state */
-                            waiting: {
-                                waiting: number;
-                                held: number;
-                                stopped: number;
-                            };
-                            lastFetch: null | {
-                                /** Format: date-time */
-                                at: string;
-                                /** @description New Dives */
-                                created: number;
-                                /** @description Dives changed or filled */
-                                updated: number;
-                                /** @description Ambiguous entries and dives of a computer with no choice yet: they wait for the User (a manual import asks about them) */
-                                waitingForYou: number;
-                                /** @description Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import */
-                                conflicts: number;
-                            };
-                            /** @description The new Dives of a large Import (more than 20) that were not sent by themselves: offer to send them (a Push run for these ids: POST /api/connections/{id}/push-runs/preview with dives.ids) or Dismiss (POST /api/connections/{id}/unsent-dives/dismiss). Empty: no offer */
-                            unsentDives: string[];
-                        };
+                        "application/json": components["schemas"]["ConnectionView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -11971,75 +8563,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            provider: string;
-                            /** @description The Diver whose account at the Provider this is */
-                            diverId: string;
-                            diverName: string;
-                            /** @description The account at the Provider (SSI: user master ID) */
-                            accountId: string;
-                            /** @description What the User recognises the account by (SSI: the e-mail) */
-                            accountLabel: string;
-                            /** @description The password is kept (sealed); otherwise only the Provider's access, which can expire */
-                            keepSignedIn: boolean;
-                            /**
-                             * @description needs_sign_in: the Provider no longer accepts the sign-in; sign in again
-                             * @enum {unknown}
-                             */
-                            state: "active" | "needs_sign_in";
-                            lastUsedAt: null | string;
-                            /** Format: date-time */
-                            createdAt: string;
-                            diveNumbers: null | {
-                                /** @description Dives are numbered here as in Dive Hub (off until the User turns it on; it sends nothing by itself) */
-                                follow: boolean;
-                            };
-                            diveImport: null | {
-                                /**
-                                 * @description off; add: only link and fill Dives here, never create; create: also create Dives Dive Hub doesn't have
-                                 * @enum {unknown}
-                                 */
-                                mode: "off" | "add" | "create";
-                                /** @description How far apart in local time a logbook entry and a Dive here may start, on the same day */
-                                windowMinutes: number;
-                            };
-                            /** @description Send a changed Dive by itself, 30 seconds after its last change (ADR 0056) */
-                            sendChanges: boolean;
-                            /** @description Send a new Dive of the Diver by itself */
-                            sendNewDives: boolean;
-                            /** @description Delete the Dive's copy at the Provider by itself, 5 minutes after the Dive is deleted here (Undo cancels it) */
-                            deleteAtProvider: boolean;
-                            fetchEveryMinutes: null | (60 | 360 | 1440);
-                            /** @description Which settings to show: only what the Provider can */
-                            offers: {
-                                sendChanges: boolean;
-                                sendNewDives: boolean;
-                                deleteAtProvider: boolean;
-                                /** @description The intervals to offer, in minutes; none: the Provider has no scheduled fetch */
-                                fetchEvery: number[];
-                            };
-                            /** @description How many Waiting pushes of the Connection are in each state */
-                            waiting: {
-                                waiting: number;
-                                held: number;
-                                stopped: number;
-                            };
-                            lastFetch: null | {
-                                /** Format: date-time */
-                                at: string;
-                                /** @description New Dives */
-                                created: number;
-                                /** @description Dives changed or filled */
-                                updated: number;
-                                /** @description Ambiguous entries and dives of a computer with no choice yet: they wait for the User (a manual import asks about them) */
-                                waitingForYou: number;
-                                /** @description Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import */
-                                conflicts: number;
-                            };
-                            /** @description The new Dives of a large Import (more than 20) that were not sent by themselves: offer to send them (a Push run for these ids: POST /api/connections/{id}/push-runs/preview with dives.ids) or Dismiss (POST /api/connections/{id}/unsent-dives/dismiss). Empty: no offer */
-                            unsentDives: string[];
-                        };
+                        "application/json": components["schemas"]["ConnectionView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -13086,61 +9610,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            id: string;
-                            /**
-                             * @description awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)
-                             * @enum {unknown}
-                             */
-                            status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
-                            /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
-                            uploadName: string;
-                            provider: null | string;
-                            /** Format: date-time */
-                            createdAt: string;
-                            finishedAt: null | string;
-                            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
-                            found: null | {
-                                /** @description Dives with a gas: open circuit, rebreather, gauge */
-                                scuba: number;
-                                /** @description Apnea sessions */
-                                apnea: number;
-                                /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
-                                otherFiles: number;
-                            };
-                            kinds: null | ("scuba" | "apnea")[];
-                            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
-                            unsentTo: {
-                                connectionId: string;
-                                provider: string;
-                                /** @description How many of the Import’s new Dives still have no remote dive there */
-                                count: number;
-                            }[];
-                            outcome: {
-                                fileName: string;
-                                /**
-                                 * @description linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)
-                                 * @enum {unknown}
-                                 */
-                                result: "created" | "attached" | "linked" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
-                                diveId?: string;
-                                recordingId?: string;
-                                /** @description A Provider's dive: its ID there */
-                                remoteId?: string;
-                                /** @description A Provider's dive: its own number there */
-                                remoteNumber?: number;
-                                /**
-                                 * @description Why; clients translate it. A failure’s detail stays in the server log
-                                 * @enum {unknown}
-                                 */
-                                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out" | "no_computer_choice";
-                                /**
-                                 * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
-                                 * @enum {unknown}
-                                 */
-                                decision?: "open" | "attached" | "new_dive" | "discarded";
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ImportView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -13485,33 +9955,7 @@ export interface paths {
                                 /** @description conflict: the remote dive the Conflict is about. exists: the dive at the Provider */
                                 remoteId: string;
                                 /** @description `hub` is the Dive's value now, `provider` the Provider's as the run found it; a field whose two values became equal is left out. An entry with no field left is not listed (nor counted in the Connection's or a run's conflicts) */
-                                fields: {
-                                    /**
-                                     * @description The field the two sides differ on
-                                     * @enum {unknown}
-                                     */
-                                    field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
-                                    hub: null | (string | number | string[] | {
-                                        volumeL: null | number;
-                                        material: null | ("aluminium" | "steel" | "carbon");
-                                        startPressureBar: null | number;
-                                        endPressureBar: null | number;
-                                        gas: null | {
-                                            o2: number;
-                                            he: number;
-                                        };
-                                    });
-                                    provider: null | (string | number | string[] | {
-                                        volumeL: null | number;
-                                        material: null | ("aluminium" | "steel" | "carbon");
-                                        startPressureBar: null | number;
-                                        endPressureBar: null | number;
-                                        gas: null | {
-                                            o2: number;
-                                            he: number;
-                                        };
-                                    });
-                                }[];
+                                fields: components["schemas"]["ConflictFieldView"][];
                                 existing: null | {
                                     remoteId: string;
                                     remoteNumber: null | number;
@@ -13942,136 +10386,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            provider: string;
-                            /** @description The Dive's Connection deletes at the Provider by itself (5 minutes after the Dive is deleted here; Undo cancels it): don't ask about deleting the copy there, and don't send `alsoAt` for it (docs/spec/clients.md) */
-                            deletesItself: boolean;
-                            /** @description The Dive's entry in the queue of Waiting pushes for this Provider (ADR 0056); null when none */
-                            waiting: null | {
-                                provider: string;
-                                /** @enum {unknown} */
-                                action: "send" | "delete";
-                                /**
-                                 * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
-                                 * @enum {unknown}
-                                 */
-                                state: "waiting" | "held" | "stopped";
-                                reason: null | string;
-                                /**
-                                 * Format: date-time
-                                 * @description When it goes out, for a waiting entry
-                                 */
-                                dueAt: string;
-                            };
-                            connection: null | {
-                                id: string;
-                                /** @enum {unknown} */
-                                state: "active" | "needs_sign_in";
-                                accountLabel: string;
-                            };
-                            siteId: null | string;
-                            /** @description What the Provider's requirements need and the Dive lacks; never asks the Provider */
-                            unmet: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                            current: null | {
-                                remoteId: string;
-                                remoteNumber: null | number;
-                                /** Format: date-time */
-                                sentAt: string;
-                                /** @description false: the Dive changed since it was sent (outdated), or it was linked and never sent */
-                                upToDate: boolean;
-                                /** @description An update now would remove the dive centre's verification of the dive at the Provider (SSI: it changes the start time there, or the dive was linked and never sent, so the start time there isn't known). Say so before sending (docs/spec/clients.md, ADR 0043) */
-                                updateRemovesVerification: boolean;
-                                number: null | {
-                                    /** @description The Dive's number here */
-                                    wanted: number;
-                                    /** @description The Provider's number (remoteNumber) is another. Not "changed since sent": don't offer an update for it */
-                                    differs: boolean;
-                                    /** @description The Provider sets numbers on an update: offer "Set number" (POST /api/dives/{id}/providers/{provider}/number) */
-                                    canSet: boolean;
-                                    /** @description Setting it can remove a verification the dive has there: warn before */
-                                    removesVerification: boolean;
-                                };
-                            };
-                            conflicts: null | {
-                                /**
-                                 * @description The field the two sides differ on
-                                 * @enum {unknown}
-                                 */
-                                field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
-                                hub: null | (string | number | string[] | {
-                                    volumeL: null | number;
-                                    material: null | ("aluminium" | "steel" | "carbon");
-                                    startPressureBar: null | number;
-                                    endPressureBar: null | number;
-                                    gas: null | {
-                                        o2: number;
-                                        he: number;
-                                    };
-                                });
-                                provider: null | (string | number | string[] | {
-                                    volumeL: null | number;
-                                    material: null | ("aluminium" | "steel" | "carbon");
-                                    startPressureBar: null | number;
-                                    endPressureBar: null | number;
-                                    gas: null | {
-                                        o2: number;
-                                        he: number;
-                                    };
-                                });
-                            }[];
-                            /** @description Newest first */
-                            pushes: {
-                                id: string;
-                                /**
-                                 * @description link: tied to a dive already there, nothing sent. number: only its number there was changed (ADR 0048)
-                                 * @enum {unknown}
-                                 */
-                                action: "create" | "update" | "link" | "delete" | "number";
-                                /**
-                                 * @description confirmed: the Provider accepted it and gave its ID (not SSI's dive-center confirmation); handed_over: delivered without an ID
-                                 * @enum {unknown}
-                                 */
-                                state: "pending" | "handed_over" | "confirmed" | "failed";
-                                remoteId: null | string;
-                                remoteNumber: null | number;
-                                /** @description The remote dive was found deleted at the Provider */
-                                remoteGone: boolean;
-                                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                                leftOut: null | {
-                                    diverId: string;
-                                    name: string;
-                                    /**
-                                     * @description no_reference: nothing tells the Provider who they are (give the Diver an account there). not_at_provider: the Provider doesn't have them (SSI: add them to your buddy list in SSI's app, then update)
-                                     * @enum {unknown}
-                                     */
-                                    reason: "no_reference" | "not_at_provider";
-                                }[];
-                                differences: null | {
-                                    /** @description One of the Provider's readBackFields */
-                                    field: string;
-                                    sent: null | (string | number);
-                                    stored: null | (string | number);
-                                }[];
-                                /** Format: date-time */
-                                createdAt: string;
-                            }[];
-                        }[];
+                        "application/json": components["schemas"]["DiveProviderStatus"][];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -14120,136 +10435,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            provider: string;
-                            /** @description The Dive's Connection deletes at the Provider by itself (5 minutes after the Dive is deleted here; Undo cancels it): don't ask about deleting the copy there, and don't send `alsoAt` for it (docs/spec/clients.md) */
-                            deletesItself: boolean;
-                            /** @description The Dive's entry in the queue of Waiting pushes for this Provider (ADR 0056); null when none */
-                            waiting: null | {
-                                provider: string;
-                                /** @enum {unknown} */
-                                action: "send" | "delete";
-                                /**
-                                 * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
-                                 * @enum {unknown}
-                                 */
-                                state: "waiting" | "held" | "stopped";
-                                reason: null | string;
-                                /**
-                                 * Format: date-time
-                                 * @description When it goes out, for a waiting entry
-                                 */
-                                dueAt: string;
-                            };
-                            connection: null | {
-                                id: string;
-                                /** @enum {unknown} */
-                                state: "active" | "needs_sign_in";
-                                accountLabel: string;
-                            };
-                            siteId: null | string;
-                            /** @description What the Provider's requirements need and the Dive lacks; never asks the Provider */
-                            unmet: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                            current: null | {
-                                remoteId: string;
-                                remoteNumber: null | number;
-                                /** Format: date-time */
-                                sentAt: string;
-                                /** @description false: the Dive changed since it was sent (outdated), or it was linked and never sent */
-                                upToDate: boolean;
-                                /** @description An update now would remove the dive centre's verification of the dive at the Provider (SSI: it changes the start time there, or the dive was linked and never sent, so the start time there isn't known). Say so before sending (docs/spec/clients.md, ADR 0043) */
-                                updateRemovesVerification: boolean;
-                                number: null | {
-                                    /** @description The Dive's number here */
-                                    wanted: number;
-                                    /** @description The Provider's number (remoteNumber) is another. Not "changed since sent": don't offer an update for it */
-                                    differs: boolean;
-                                    /** @description The Provider sets numbers on an update: offer "Set number" (POST /api/dives/{id}/providers/{provider}/number) */
-                                    canSet: boolean;
-                                    /** @description Setting it can remove a verification the dive has there: warn before */
-                                    removesVerification: boolean;
-                                };
-                            };
-                            conflicts: null | {
-                                /**
-                                 * @description The field the two sides differ on
-                                 * @enum {unknown}
-                                 */
-                                field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
-                                hub: null | (string | number | string[] | {
-                                    volumeL: null | number;
-                                    material: null | ("aluminium" | "steel" | "carbon");
-                                    startPressureBar: null | number;
-                                    endPressureBar: null | number;
-                                    gas: null | {
-                                        o2: number;
-                                        he: number;
-                                    };
-                                });
-                                provider: null | (string | number | string[] | {
-                                    volumeL: null | number;
-                                    material: null | ("aluminium" | "steel" | "carbon");
-                                    startPressureBar: null | number;
-                                    endPressureBar: null | number;
-                                    gas: null | {
-                                        o2: number;
-                                        he: number;
-                                    };
-                                });
-                            }[];
-                            /** @description Newest first */
-                            pushes: {
-                                id: string;
-                                /**
-                                 * @description link: tied to a dive already there, nothing sent. number: only its number there was changed (ADR 0048)
-                                 * @enum {unknown}
-                                 */
-                                action: "create" | "update" | "link" | "delete" | "number";
-                                /**
-                                 * @description confirmed: the Provider accepted it and gave its ID (not SSI's dive-center confirmation); handed_over: delivered without an ID
-                                 * @enum {unknown}
-                                 */
-                                state: "pending" | "handed_over" | "confirmed" | "failed";
-                                remoteId: null | string;
-                                remoteNumber: null | number;
-                                /** @description The remote dive was found deleted at the Provider */
-                                remoteGone: boolean;
-                                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                                leftOut: null | {
-                                    diverId: string;
-                                    name: string;
-                                    /**
-                                     * @description no_reference: nothing tells the Provider who they are (give the Diver an account there). not_at_provider: the Provider doesn't have them (SSI: add them to your buddy list in SSI's app, then update)
-                                     * @enum {unknown}
-                                     */
-                                    reason: "no_reference" | "not_at_provider";
-                                }[];
-                                differences: null | {
-                                    /** @description One of the Provider's readBackFields */
-                                    field: string;
-                                    sent: null | (string | number);
-                                    stored: null | (string | number);
-                                }[];
-                                /** Format: date-time */
-                                createdAt: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiveProviderStatus"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -14339,33 +10525,7 @@ export interface paths {
                                 maxDepthM: null | number;
                                 durationMinutes: null | number;
                             };
-                            conflicts: null | {
-                                /**
-                                 * @description The field the two sides differ on
-                                 * @enum {unknown}
-                                 */
-                                field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
-                                hub: null | (string | number | string[] | {
-                                    volumeL: null | number;
-                                    material: null | ("aluminium" | "steel" | "carbon");
-                                    startPressureBar: null | number;
-                                    endPressureBar: null | number;
-                                    gas: null | {
-                                        o2: number;
-                                        he: number;
-                                    };
-                                });
-                                provider: null | (string | number | string[] | {
-                                    volumeL: null | number;
-                                    material: null | ("aluminium" | "steel" | "carbon");
-                                    startPressureBar: null | number;
-                                    endPressureBar: null | number;
-                                    gas: null | {
-                                        o2: number;
-                                        he: number;
-                                    };
-                                });
-                            }[];
+                            conflicts: null | components["schemas"]["ConflictFieldView"][];
                             taken: null | ("site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
                             deferred: null | ("site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
                             buddies: null | {
@@ -14382,136 +10542,7 @@ export interface paths {
                                     name: string;
                                 }[];
                             };
-                            status: {
-                                provider: string;
-                                /** @description The Dive's Connection deletes at the Provider by itself (5 minutes after the Dive is deleted here; Undo cancels it): don't ask about deleting the copy there, and don't send `alsoAt` for it (docs/spec/clients.md) */
-                                deletesItself: boolean;
-                                /** @description The Dive's entry in the queue of Waiting pushes for this Provider (ADR 0056); null when none */
-                                waiting: null | {
-                                    provider: string;
-                                    /** @enum {unknown} */
-                                    action: "send" | "delete";
-                                    /**
-                                     * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
-                                     * @enum {unknown}
-                                     */
-                                    state: "waiting" | "held" | "stopped";
-                                    reason: null | string;
-                                    /**
-                                     * Format: date-time
-                                     * @description When it goes out, for a waiting entry
-                                     */
-                                    dueAt: string;
-                                };
-                                connection: null | {
-                                    id: string;
-                                    /** @enum {unknown} */
-                                    state: "active" | "needs_sign_in";
-                                    accountLabel: string;
-                                };
-                                siteId: null | string;
-                                /** @description What the Provider's requirements need and the Dive lacks; never asks the Provider */
-                                unmet: {
-                                    /** @description As in the Provider's requirements */
-                                    type: string;
-                                    /** @enum {unknown} */
-                                    severity: "blocking" | "advisory";
-                                    source: string;
-                                    siteId?: null | string;
-                                    /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                    bySend?: boolean;
-                                    /** @description diver_mapping: the Participant */
-                                    diverId?: string;
-                                    diverName?: string;
-                                    /** @enum {unknown} */
-                                    role?: "buddy" | "guide" | "instructor";
-                                    /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                    fixes?: string[];
-                                }[];
-                                current: null | {
-                                    remoteId: string;
-                                    remoteNumber: null | number;
-                                    /** Format: date-time */
-                                    sentAt: string;
-                                    /** @description false: the Dive changed since it was sent (outdated), or it was linked and never sent */
-                                    upToDate: boolean;
-                                    /** @description An update now would remove the dive centre's verification of the dive at the Provider (SSI: it changes the start time there, or the dive was linked and never sent, so the start time there isn't known). Say so before sending (docs/spec/clients.md, ADR 0043) */
-                                    updateRemovesVerification: boolean;
-                                    number: null | {
-                                        /** @description The Dive's number here */
-                                        wanted: number;
-                                        /** @description The Provider's number (remoteNumber) is another. Not "changed since sent": don't offer an update for it */
-                                        differs: boolean;
-                                        /** @description The Provider sets numbers on an update: offer "Set number" (POST /api/dives/{id}/providers/{provider}/number) */
-                                        canSet: boolean;
-                                        /** @description Setting it can remove a verification the dive has there: warn before */
-                                        removesVerification: boolean;
-                                    };
-                                };
-                                conflicts: null | {
-                                    /**
-                                     * @description The field the two sides differ on
-                                     * @enum {unknown}
-                                     */
-                                    field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
-                                    hub: null | (string | number | string[] | {
-                                        volumeL: null | number;
-                                        material: null | ("aluminium" | "steel" | "carbon");
-                                        startPressureBar: null | number;
-                                        endPressureBar: null | number;
-                                        gas: null | {
-                                            o2: number;
-                                            he: number;
-                                        };
-                                    });
-                                    provider: null | (string | number | string[] | {
-                                        volumeL: null | number;
-                                        material: null | ("aluminium" | "steel" | "carbon");
-                                        startPressureBar: null | number;
-                                        endPressureBar: null | number;
-                                        gas: null | {
-                                            o2: number;
-                                            he: number;
-                                        };
-                                    });
-                                }[];
-                                /** @description Newest first */
-                                pushes: {
-                                    id: string;
-                                    /**
-                                     * @description link: tied to a dive already there, nothing sent. number: only its number there was changed (ADR 0048)
-                                     * @enum {unknown}
-                                     */
-                                    action: "create" | "update" | "link" | "delete" | "number";
-                                    /**
-                                     * @description confirmed: the Provider accepted it and gave its ID (not SSI's dive-center confirmation); handed_over: delivered without an ID
-                                     * @enum {unknown}
-                                     */
-                                    state: "pending" | "handed_over" | "confirmed" | "failed";
-                                    remoteId: null | string;
-                                    remoteNumber: null | number;
-                                    /** @description The remote dive was found deleted at the Provider */
-                                    remoteGone: boolean;
-                                    failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                                    leftOut: null | {
-                                        diverId: string;
-                                        name: string;
-                                        /**
-                                         * @description no_reference: nothing tells the Provider who they are (give the Diver an account there). not_at_provider: the Provider doesn't have them (SSI: add them to your buddy list in SSI's app, then update)
-                                         * @enum {unknown}
-                                         */
-                                        reason: "no_reference" | "not_at_provider";
-                                    }[];
-                                    differences: null | {
-                                        /** @description One of the Provider's readBackFields */
-                                        field: string;
-                                        sent: null | (string | number);
-                                        stored: null | (string | number);
-                                    }[];
-                                    /** Format: date-time */
-                                    createdAt: string;
-                                }[];
-                            };
+                            status: components["schemas"]["DiveProviderStatus"];
                         };
                     };
                 };
@@ -14582,136 +10613,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            provider: string;
-                            /** @description The Dive's Connection deletes at the Provider by itself (5 minutes after the Dive is deleted here; Undo cancels it): don't ask about deleting the copy there, and don't send `alsoAt` for it (docs/spec/clients.md) */
-                            deletesItself: boolean;
-                            /** @description The Dive's entry in the queue of Waiting pushes for this Provider (ADR 0056); null when none */
-                            waiting: null | {
-                                provider: string;
-                                /** @enum {unknown} */
-                                action: "send" | "delete";
-                                /**
-                                 * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
-                                 * @enum {unknown}
-                                 */
-                                state: "waiting" | "held" | "stopped";
-                                reason: null | string;
-                                /**
-                                 * Format: date-time
-                                 * @description When it goes out, for a waiting entry
-                                 */
-                                dueAt: string;
-                            };
-                            connection: null | {
-                                id: string;
-                                /** @enum {unknown} */
-                                state: "active" | "needs_sign_in";
-                                accountLabel: string;
-                            };
-                            siteId: null | string;
-                            /** @description What the Provider's requirements need and the Dive lacks; never asks the Provider */
-                            unmet: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                            current: null | {
-                                remoteId: string;
-                                remoteNumber: null | number;
-                                /** Format: date-time */
-                                sentAt: string;
-                                /** @description false: the Dive changed since it was sent (outdated), or it was linked and never sent */
-                                upToDate: boolean;
-                                /** @description An update now would remove the dive centre's verification of the dive at the Provider (SSI: it changes the start time there, or the dive was linked and never sent, so the start time there isn't known). Say so before sending (docs/spec/clients.md, ADR 0043) */
-                                updateRemovesVerification: boolean;
-                                number: null | {
-                                    /** @description The Dive's number here */
-                                    wanted: number;
-                                    /** @description The Provider's number (remoteNumber) is another. Not "changed since sent": don't offer an update for it */
-                                    differs: boolean;
-                                    /** @description The Provider sets numbers on an update: offer "Set number" (POST /api/dives/{id}/providers/{provider}/number) */
-                                    canSet: boolean;
-                                    /** @description Setting it can remove a verification the dive has there: warn before */
-                                    removesVerification: boolean;
-                                };
-                            };
-                            conflicts: null | {
-                                /**
-                                 * @description The field the two sides differ on
-                                 * @enum {unknown}
-                                 */
-                                field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
-                                hub: null | (string | number | string[] | {
-                                    volumeL: null | number;
-                                    material: null | ("aluminium" | "steel" | "carbon");
-                                    startPressureBar: null | number;
-                                    endPressureBar: null | number;
-                                    gas: null | {
-                                        o2: number;
-                                        he: number;
-                                    };
-                                });
-                                provider: null | (string | number | string[] | {
-                                    volumeL: null | number;
-                                    material: null | ("aluminium" | "steel" | "carbon");
-                                    startPressureBar: null | number;
-                                    endPressureBar: null | number;
-                                    gas: null | {
-                                        o2: number;
-                                        he: number;
-                                    };
-                                });
-                            }[];
-                            /** @description Newest first */
-                            pushes: {
-                                id: string;
-                                /**
-                                 * @description link: tied to a dive already there, nothing sent. number: only its number there was changed (ADR 0048)
-                                 * @enum {unknown}
-                                 */
-                                action: "create" | "update" | "link" | "delete" | "number";
-                                /**
-                                 * @description confirmed: the Provider accepted it and gave its ID (not SSI's dive-center confirmation); handed_over: delivered without an ID
-                                 * @enum {unknown}
-                                 */
-                                state: "pending" | "handed_over" | "confirmed" | "failed";
-                                remoteId: null | string;
-                                remoteNumber: null | number;
-                                /** @description The remote dive was found deleted at the Provider */
-                                remoteGone: boolean;
-                                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                                leftOut: null | {
-                                    diverId: string;
-                                    name: string;
-                                    /**
-                                     * @description no_reference: nothing tells the Provider who they are (give the Diver an account there). not_at_provider: the Provider doesn't have them (SSI: add them to your buddy list in SSI's app, then update)
-                                     * @enum {unknown}
-                                     */
-                                    reason: "no_reference" | "not_at_provider";
-                                }[];
-                                differences: null | {
-                                    /** @description One of the Provider's readBackFields */
-                                    field: string;
-                                    sent: null | (string | number);
-                                    stored: null | (string | number);
-                                }[];
-                                /** Format: date-time */
-                                createdAt: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiveProviderStatus"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -14994,136 +10896,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            provider: string;
-                            /** @description The Dive's Connection deletes at the Provider by itself (5 minutes after the Dive is deleted here; Undo cancels it): don't ask about deleting the copy there, and don't send `alsoAt` for it (docs/spec/clients.md) */
-                            deletesItself: boolean;
-                            /** @description The Dive's entry in the queue of Waiting pushes for this Provider (ADR 0056); null when none */
-                            waiting: null | {
-                                provider: string;
-                                /** @enum {unknown} */
-                                action: "send" | "delete";
-                                /**
-                                 * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
-                                 * @enum {unknown}
-                                 */
-                                state: "waiting" | "held" | "stopped";
-                                reason: null | string;
-                                /**
-                                 * Format: date-time
-                                 * @description When it goes out, for a waiting entry
-                                 */
-                                dueAt: string;
-                            };
-                            connection: null | {
-                                id: string;
-                                /** @enum {unknown} */
-                                state: "active" | "needs_sign_in";
-                                accountLabel: string;
-                            };
-                            siteId: null | string;
-                            /** @description What the Provider's requirements need and the Dive lacks; never asks the Provider */
-                            unmet: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                            current: null | {
-                                remoteId: string;
-                                remoteNumber: null | number;
-                                /** Format: date-time */
-                                sentAt: string;
-                                /** @description false: the Dive changed since it was sent (outdated), or it was linked and never sent */
-                                upToDate: boolean;
-                                /** @description An update now would remove the dive centre's verification of the dive at the Provider (SSI: it changes the start time there, or the dive was linked and never sent, so the start time there isn't known). Say so before sending (docs/spec/clients.md, ADR 0043) */
-                                updateRemovesVerification: boolean;
-                                number: null | {
-                                    /** @description The Dive's number here */
-                                    wanted: number;
-                                    /** @description The Provider's number (remoteNumber) is another. Not "changed since sent": don't offer an update for it */
-                                    differs: boolean;
-                                    /** @description The Provider sets numbers on an update: offer "Set number" (POST /api/dives/{id}/providers/{provider}/number) */
-                                    canSet: boolean;
-                                    /** @description Setting it can remove a verification the dive has there: warn before */
-                                    removesVerification: boolean;
-                                };
-                            };
-                            conflicts: null | {
-                                /**
-                                 * @description The field the two sides differ on
-                                 * @enum {unknown}
-                                 */
-                                field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
-                                hub: null | (string | number | string[] | {
-                                    volumeL: null | number;
-                                    material: null | ("aluminium" | "steel" | "carbon");
-                                    startPressureBar: null | number;
-                                    endPressureBar: null | number;
-                                    gas: null | {
-                                        o2: number;
-                                        he: number;
-                                    };
-                                });
-                                provider: null | (string | number | string[] | {
-                                    volumeL: null | number;
-                                    material: null | ("aluminium" | "steel" | "carbon");
-                                    startPressureBar: null | number;
-                                    endPressureBar: null | number;
-                                    gas: null | {
-                                        o2: number;
-                                        he: number;
-                                    };
-                                });
-                            }[];
-                            /** @description Newest first */
-                            pushes: {
-                                id: string;
-                                /**
-                                 * @description link: tied to a dive already there, nothing sent. number: only its number there was changed (ADR 0048)
-                                 * @enum {unknown}
-                                 */
-                                action: "create" | "update" | "link" | "delete" | "number";
-                                /**
-                                 * @description confirmed: the Provider accepted it and gave its ID (not SSI's dive-center confirmation); handed_over: delivered without an ID
-                                 * @enum {unknown}
-                                 */
-                                state: "pending" | "handed_over" | "confirmed" | "failed";
-                                remoteId: null | string;
-                                remoteNumber: null | number;
-                                /** @description The remote dive was found deleted at the Provider */
-                                remoteGone: boolean;
-                                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
-                                leftOut: null | {
-                                    diverId: string;
-                                    name: string;
-                                    /**
-                                     * @description no_reference: nothing tells the Provider who they are (give the Diver an account there). not_at_provider: the Provider doesn't have them (SSI: add them to your buddy list in SSI's app, then update)
-                                     * @enum {unknown}
-                                     */
-                                    reason: "no_reference" | "not_at_provider";
-                                }[];
-                                differences: null | {
-                                    /** @description One of the Provider's readBackFields */
-                                    field: string;
-                                    sent: null | (string | number);
-                                    stored: null | (string | number);
-                                }[];
-                                /** Format: date-time */
-                                createdAt: string;
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DiveProviderStatus"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -15634,6 +11407,67 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description A requirement this Dive doesn't meet, from Dive Hub's own data */
+        UnmetView: {
+            /** @description As in the Provider's requirements */
+            type: string;
+            /** @enum {unknown} */
+            severity: "blocking" | "advisory";
+            source: string;
+            siteId?: null | string;
+            /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+            bySend?: boolean;
+            /** @description diver_mapping: the Participant */
+            diverId?: string;
+            diverName?: string;
+            /** @enum {unknown} */
+            role?: "buddy" | "guide" | "instructor";
+            /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
+            fixes?: string[];
+        };
+        ConflictFieldView: {
+            /**
+             * @description The field the two sides differ on
+             * @enum {unknown}
+             */
+            field: "site" | "notes" | "buddies" | "cylinder" | "lead" | "startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC";
+            hub: null | (string | number | string[] | {
+                volumeL: null | number;
+                material: null | ("aluminium" | "steel" | "carbon");
+                startPressureBar: null | number;
+                endPressureBar: null | number;
+                gas: null | {
+                    o2: number;
+                    he: number;
+                };
+            });
+            provider: null | (string | number | string[] | {
+                volumeL: null | number;
+                material: null | ("aluminium" | "steel" | "carbon");
+                startPressureBar: null | number;
+                endPressureBar: null | number;
+                gas: null | {
+                    o2: number;
+                    he: number;
+                };
+            });
+        };
+        WaitingPushView: {
+            provider: string;
+            /** @enum {unknown} */
+            action: "send" | "delete";
+            /**
+             * @description waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)
+             * @enum {unknown}
+             */
+            state: "waiting" | "held" | "stopped";
+            reason: null | string;
+            /**
+             * Format: date-time
+             * @description When it goes out, for a waiting entry
+             */
+            dueAt: string;
+        };
         /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
         Problem: {
             /**
@@ -15674,23 +11508,7 @@ export interface components {
         /** @description A refusal about a Provider: a Problem, with what is unmet */
         ProviderProblem: components["schemas"]["Problem"] & {
             /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-            unmet?: {
-                /** @description As in the Provider's requirements */
-                type: string;
-                /** @enum {unknown} */
-                severity: "blocking" | "advisory";
-                source: string;
-                siteId?: null | string;
-                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                bySend?: boolean;
-                /** @description diver_mapping: the Participant */
-                diverId?: string;
-                diverName?: string;
-                /** @enum {unknown} */
-                role?: "buddy" | "guide" | "instructor";
-                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                fixes?: string[];
-            }[];
+            unmet?: components["schemas"]["UnmetView"][];
         };
         /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
         DeleteProblem: components["schemas"]["Problem"] & {
@@ -15702,6 +11520,727 @@ export interface components {
                  * @enum {unknown}
                  */
                 copy: "deleted" | "kept";
+            }[];
+        };
+        UserView: {
+            id: string;
+            email: string;
+            name: string;
+            /** @enum {unknown} */
+            role: "user" | "admin";
+            /** @description Disabled Users can't sign in; their data stays */
+            disabled: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ImportView: {
+            id: string;
+            /**
+             * @description awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds to import (ADR 0044); cancelled: the User ended that wait, or nobody answered for seven days (errorCode choice_expired)
+             * @enum {unknown}
+             */
+            status: "pending" | "processing" | "done" | "failed" | "awaiting_choice" | "cancelled";
+            /** @description The uploaded file's name; for an import from a Provider, the Provider's name */
+            uploadName: string;
+            provider: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            finishedAt: null | string;
+            errorCode: null | ("unsupported_file" | "processing_failed" | "choice_expired");
+            found: null | {
+                /** @description Dives with a gas: open circuit, rebreather, gauge */
+                scuba: number;
+                /** @description Apnea sessions */
+                apnea: number;
+                /** @description Files that are no dive (other sports, health data, anything else); they are not kept */
+                otherFiles: number;
+            };
+            kinds: null | ("scuba" | "apnea")[];
+            /** @description The User’s Connections that send new dives by themselves but left this Import’s out (more than 20 at once, ADR 0056) and offer them instead (the Connection’s unsentDives); link to that Connection’s settings. Empty: none */
+            unsentTo: {
+                connectionId: string;
+                provider: string;
+                /** @description How many of the Import’s new Dives still have no remote dive there */
+                count: number;
+            }[];
+            outcome: {
+                fileName: string;
+                /**
+                 * @description linked: a Provider's logbook entry tied to a Dive here and filled where it was empty (ADR 0030)
+                 * @enum {unknown}
+                 */
+                result: "created" | "attached" | "linked" | "updated" | "unchanged" | "duplicate-candidate" | "skipped" | "failed";
+                diveId?: string;
+                recordingId?: string;
+                /** @description A Provider's dive: its ID there */
+                remoteId?: string;
+                /** @description A Provider's dive: its own number there */
+                remoteNumber?: number;
+                /**
+                 * @description Why; clients translate it. A failure’s detail stays in the server log
+                 * @enum {unknown}
+                 */
+                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out" | "no_computer_choice";
+                /**
+                 * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
+                 * @enum {unknown}
+                 */
+                decision?: "open" | "attached" | "new_dive" | "discarded";
+            }[];
+        };
+        DiveView: {
+            id: string;
+            /** @description The Diver whose logbook this Dive is in */
+            diverId: string;
+            /** @description Send it back with an edit; it changes with every change */
+            version: number;
+            values: {
+                number: null | number;
+                startsAt: {
+                    /** Format: date-time */
+                    at: string;
+                    utcOffsetSeconds: null | number;
+                };
+                durationSeconds: number;
+                maxDepthM: null | number;
+                avgDepthM: null | number;
+                waterTemperatureC: null | number;
+            };
+            /** @description Values the User set by hand */
+            overrides: ("startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
+            /**
+             * @description Where the start's UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the Diver's Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an offset). Clients say where it came from when it isn't the device (docs/spec/clients.md)
+             * @enum {unknown}
+             */
+            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
+            fromProvider: null | string;
+            fromRecording: null | {
+                startsAt: {
+                    /** Format: date-time */
+                    at: string;
+                    utcOffsetSeconds: null | number;
+                };
+                durationSeconds: number;
+                maxDepthM: null | number;
+                avgDepthM: null | number;
+                waterTemperatureC: null | number;
+            };
+            notes: null | string;
+            site: null | {
+                id: string;
+                name: string;
+            };
+            waterType: null | ("fresh" | "salt" | "brackish");
+            waterMismatch: null | {
+                /**
+                 * @description What the Primary recording's computer was set to
+                 * @enum {unknown}
+                 */
+                computer: "fresh" | "salt" | "brackish" | "en13319" | "custom";
+                /** @enum {unknown} */
+                site: "fresh" | "salt" | "brackish";
+                depthPercent: null | number;
+            };
+            position: null | {
+                latitude: number;
+                longitude: number;
+            };
+            recordings: {
+                id: string;
+                isPrimary: boolean;
+                device: null | {
+                    manufacturer: string;
+                    product: null | string;
+                    serialNumber: string;
+                };
+                /** Format: date-time */
+                startsAt: string;
+                durationSeconds: number;
+                maxDepthM: null | number;
+                parser: string;
+                summary: {
+                    diveNumber?: number;
+                    /** @enum {unknown} */
+                    diveMode?: "open_circuit" | "ccr" | "scr" | "gauge" | "apnea";
+                    /** @enum {unknown} */
+                    decoModel?: "buhlmann_zhl16c" | "suunto_fused_rgbm" | "suunto_fused2_rgbm";
+                    gfLow?: number;
+                    gfHigh?: number;
+                    /**
+                     * @description The computer's salinity setting, not the water of the Dive (that is the site's)
+                     * @enum {unknown}
+                     */
+                    waterType?: "fresh" | "salt" | "brackish" | "en13319" | "custom";
+                    /** @description Density the computer computed depths with, kg/m³ */
+                    waterDensity?: number;
+                    gases?: {
+                        o2: number;
+                        he: number;
+                        /** @enum {unknown} */
+                        circuit?: "open_circuit" | "diluent";
+                        /** @description With a tank pod: the size of the tank, litres */
+                        tankVolumeL?: number;
+                        startPressureBar?: number;
+                        endPressureBar?: number;
+                    }[];
+                    minTemperatureC?: number;
+                    maxTemperatureC?: number;
+                    avgHeartRate?: number;
+                    surfaceIntervalSeconds?: number;
+                    cnsStart?: number;
+                    cnsEnd?: number;
+                    /** @description Oxygen dose, OTU */
+                    otuStart?: number;
+                    otuEnd?: number;
+                    /** @description Gas consumption at the surface as a tank pod measured it, L/min */
+                    sacLpm?: number;
+                    /** @description The personal setting of the computer where its model has one (Suunto: -2 to +2) */
+                    conservatism?: number;
+                    surfacePressureBar?: number;
+                    /** @description Source values without a word in our vocabulary, by source field name */
+                    extras?: {
+                        [key: string]: string;
+                    };
+                };
+                channels: string[];
+            }[];
+            /** @description The Dive's Cylinders in their order (ADR 0045) */
+            cylinders: {
+                volumeL: null | number;
+                workingPressureBar: null | number;
+                material: null | ("aluminium" | "steel" | "carbon");
+                gas: null | {
+                    o2: number;
+                    he: number;
+                };
+                startPressureBar: null | number;
+                endPressureBar: null | number;
+                /** @description An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md) */
+                fromPod: boolean;
+                series: null | {
+                    /** Format: uuid */
+                    recordingId: string;
+                    /** @description A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n> */
+                    channel: string;
+                };
+            }[];
+            /** @description The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown */
+            lead: {
+                /** @description In kilograms; 0 as the only entry means no lead */
+                amountKg: number;
+                placement: null | ("belt" | "integrated" | "trim" | "ankle" | "backplate" | "other");
+            }[];
+            leadTotalKg: null | number;
+            weightingFeedback: null | {
+                /**
+                 * @description How the weighting felt
+                 * @enum {unknown}
+                 */
+                felt: "right" | "too_heavy" | "too_light";
+                amountKg: null | number;
+            };
+            suit: null | {
+                /**
+                 * @description `none` is a dive without a suit
+                 * @enum {unknown}
+                 */
+                type: "none" | "skin" | "wetsuit" | "semidry" | "drysuit";
+                thicknessMm: null | number;
+                /** @description Whether a hood was worn; null when not said */
+                hood: boolean | null;
+                undergarment: null | ("light" | "medium" | "heavy");
+            };
+            sac: null | {
+                /** @description Litres per minute at the surface, summed over all the Dive's Cylinders, with real gas */
+                litresPerMinute: number;
+                barPerMinute: null | number;
+            };
+            sacMissing: null | ("too_short" | "no_average_depth" | "cylinder_incomplete");
+            /** @description Buddies first, then guides and instructors (ADR 0028) */
+            participants: {
+                diverId: string;
+                /** @description The Diver's name, as every User sees it */
+                name: string;
+                /**
+                 * @description buddy: dived together; guide: led the dive; instructor: taught on it
+                 * @enum {unknown}
+                 */
+                role: "buddy" | "guide" | "instructor";
+            }[];
+            /** @description The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md) */
+            verificationCodes: {
+                /**
+                 * @description Whose code it is: a Dive centre's (centre is set) or a professional's (diver is set)
+                 * @enum {unknown}
+                 */
+                kind: "centre" | "professional";
+                centre: null | {
+                    id: string;
+                    name: string;
+                    /** @description The name to show */
+                    displayName: string;
+                };
+                diver: null | {
+                    id: string;
+                    name: string;
+                };
+                /** @enum {unknown} */
+                provider: "ssi";
+                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
+                text: string;
+            }[];
+        };
+        DiverView: {
+            id: string;
+            name: string;
+            /** @description The User's own Diver */
+            isOwn: boolean;
+            /** @description The dives made before the first one in this logbook (ADR 0048): the first Dive here gets the next number */
+            divesBefore: number;
+            /** @description Whether apnea sessions count in the Dive numbers (ADR 0048) */
+            apneaCounts: boolean;
+            diveCount: number;
+            deviceCount: number;
+            /** @description Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule} */
+            mutedRules: string[];
+            /** @description What the Divers list shows of a Diver's certification cards (ADR 0050); the cards are GET /divers/{id}/certifications */
+            certifications: {
+                count: number;
+                newest: null | {
+                    agency: string;
+                    level: string;
+                };
+                /** @description Cards whose expiry date has passed */
+                expired: number;
+                /** @description Cards expiring within 90 days (not yet expired) */
+                expiringSoon: number;
+            };
+        };
+        /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028) */
+        DiverDetailsView: {
+            id: string;
+            name: string;
+            /** @description No User keeps its logbook */
+            external: boolean;
+            /** @description Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep */
+            canEdit: boolean;
+            firstName: null | string;
+            lastName: null | string;
+            email: null | string;
+            leaderNumber: null | string;
+            accounts: {
+                /**
+                 * @description A service a person has an account at
+                 * @enum {unknown}
+                 */
+                source: "ssi" | "padi";
+                /** @description e.g. the SSI account, as the code holds it */
+                externalId: string;
+            }[];
+            /** @description Empty while the account, a name or the e-mail is missing; the professional's only with a leader number */
+            codes: {
+                /**
+                 * @description buddy: another diver scans it in the Provider's app to add the person to their buddy list. professional: a diver scans it on a logbook entry to verify the dive
+                 * @enum {unknown}
+                 */
+                kind: "buddy" | "professional";
+                /** @enum {unknown} */
+                provider: "ssi";
+                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
+                text: string;
+            }[];
+        };
+        ExternalDiverView: {
+            id: string;
+            name: string;
+            /** @description Services this person has an account at here (the account itself isn't shown) */
+            accounts: ("ssi" | "padi")[];
+            /** @description A Dive (of any User) lists this Diver; then it can't be deleted */
+            inUse: boolean;
+            /** @description Whether the signed-in User may delete it: whoever added it, or an admin */
+            canDelete: boolean;
+        };
+        /** @description A certification card of a Diver (ADR 0050) */
+        CertificationView: {
+            id: string;
+            diverId: string;
+            /** @description Free text (SSI, PADI, CMAS, …) */
+            agency: string;
+            /** @description The course or level, free text; for an imported card as the agency names it */
+            level: string;
+            number: null | string;
+            issuedOn: null | string;
+            expiresOn: null | string;
+            divesAtIssue: null | number;
+            instructorName: null | string;
+            instructorNumber: null | string;
+            centreName: null | string;
+            centreNumber: null | string;
+            centreCity: null | string;
+            centreCountry: null | string;
+            /**
+             * @description self_declared: typed by the User; card_seen: the User says they looked at the card; verified_with_agency: read from the agency's own record by an import (never settable by hand)
+             * @enum {unknown}
+             */
+            verification: "self_declared" | "card_seen" | "verified_with_agency";
+            /**
+             * @description none: no expiry date; soon: expires within 90 days (the day itself is still valid); expired: the date has passed. Expired cards come last in the list
+             * @enum {unknown}
+             */
+            expiry: "none" | "valid" | "soon" | "expired";
+            notes: null | string;
+            source: null | string;
+            cardId: null | string;
+            category: null | string;
+            /**
+             * @description pending: a job will fetch the picture; failed: show "Fetch again" (POST …/image)
+             * @enum {unknown}
+             */
+            imageState: "none" | "pending" | "stored" | "failed";
+            imageUrl: null | string;
+            importedAt: null | string;
+            /** @description Send it back with a change; 409 certification_changed when the card changed meanwhile */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        SiteView: {
+            id: string;
+            name: string;
+            position: null | {
+                latitude: number;
+                longitude: number;
+            };
+            country: null | string;
+            waterBody: null | string;
+            description: null | string;
+            maxDepthM: null | number;
+            waterType: null | ("fresh" | "salt" | "brackish");
+            externalIds: {
+                /** @enum {unknown} */
+                source: "osm" | "wikidata" | "ssi";
+                /** @description The Source's name, e.g. "OpenStreetMap" */
+                name: string;
+                /** @description e.g. "node/123", "Q42", "3314" */
+                externalId: string;
+                url: null | string;
+                /** @description The site was created or filled from this Source ("From OpenStreetMap"); otherwise a reference only ("Also in …") */
+                providesData: boolean;
+                attribution: null | {
+                    text: string;
+                    url: string;
+                };
+                offered: null | {
+                    name: null | string;
+                    position: null | {
+                        latitude: number;
+                        longitude: number;
+                    };
+                    country: null | string;
+                    waterBody: null | string;
+                    description: null | string;
+                    maxDepthM: null | number;
+                    waterType: null | ("fresh" | "salt" | "brackish");
+                };
+                privateTo: null | {
+                    diverId: string;
+                };
+            }[];
+            /** @description Send it back with an edit; it changes with every change */
+            version: number;
+            /** @description How many of the signed-in User's Dives are at the site */
+            diveCount: number;
+            /** @description Whether any Dive (of any User) is at the site; then it can't be deleted */
+            inUse: boolean;
+            /** @description Whether the signed-in User may delete it: its creator or an admin */
+            canDelete: boolean;
+            /** @description Metres from the position asked for (with latitude/longitude) */
+            distanceM?: number;
+            mergedInto: null | string;
+        };
+        CentreView: {
+            id: string;
+            /** @description The whole name, as its Source spells it (SSI: with the town). This is what is edited, and what the code holds */
+            name: string;
+            /** @description The name to show: the whole name shortened by the rule of the Source the centre has an ID at (SSI: without the town) */
+            displayName: string;
+            externalIds: {
+                /** @enum {unknown} */
+                source: "ssi";
+                /** @description The Source's name, e.g. "SSI" */
+                name: string;
+                /** @description e.g. the SSI centre number */
+                externalId: string;
+            }[];
+            /** @description The Dive sites the centre is responsible for, by name */
+            sites: {
+                id: string;
+                name: string;
+            }[];
+            verificationCode: null | {
+                /** @enum {unknown} */
+                provider: "ssi";
+                /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
+                text: string;
+            };
+            /** @description Send it back with a rename; it changes with every rename */
+            version: number;
+            /** @description Whether the signed-in User may delete it: its creator or an admin */
+            canDelete: boolean;
+        };
+        SiteImportView: {
+            id: string;
+            /** @enum {unknown} */
+            status: "queued" | "running" | "done" | "failed";
+            sources: ("osm" | "wikidata" | "ssi")[];
+            /** @description Where to import: a country, a box, or everywhere */
+            area: {
+                /** @enum {string} */
+                kind: "country";
+                /** @description ISO 3166-1 alpha-2 */
+                country: string;
+            } | {
+                /** @enum {string} */
+                kind: "box";
+                south: number;
+                west: number;
+                north: number;
+                east: number;
+            } | {
+                /** @enum {string} */
+                kind: "world";
+            };
+            language: string;
+            /** @description false: the run only matched and filled sites already in the hub */
+            createSites: boolean;
+            progress: {
+                /** @enum {unknown} */
+                step: "waiting" | "osm" | "wikidata" | "ssi" | "saving";
+                done: number;
+                total: number;
+            };
+            counts: null | {
+                created: number;
+                updated: number;
+                unchanged: number;
+                kept: number;
+                linked: number;
+                skippedNoName: number;
+                skippedDeleted: number;
+                skippedMerged: number;
+                skippedNew: number;
+                offered: number;
+                gone: number;
+            };
+            findings: ({
+                /** @enum {string} */
+                kind: "near";
+                siteId: string;
+                name: string;
+                nearSiteId: string;
+                nearName: string;
+                distanceM: number;
+            } | {
+                /** @enum {string} */
+                kind: "offer";
+                siteId: string;
+                name: string;
+                /** @enum {unknown} */
+                source: "osm" | "wikidata" | "ssi";
+            })[];
+            /** @description Why it failed (a problem code) */
+            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            /** Format: date-time */
+            createdAt: string;
+            finishedAt: null | string;
+        };
+        PushRunView: {
+            id: string;
+            connectionId: string;
+            provider: string;
+            diverId: string;
+            /** @enum {unknown} */
+            status: "queued" | "running" | "done" | "cancelled" | "stopped";
+            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            updates: boolean;
+            updatesRemovingVerification: boolean;
+            numbers: boolean;
+            numbersRemovingVerification: boolean;
+            /** @description Stop was asked for; the Dive being sent is finished first */
+            cancelRequested: boolean;
+            counts: {
+                total: number;
+                waiting: number;
+                sent: number;
+                skipped: number;
+                failed: number;
+            };
+            /** @description Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run */
+            conflicts: number;
+            /** @description What the run left out when it was planned, as counts */
+            leftOut: {
+                upToDate: number;
+                requirementsUnmet: number;
+                updateNotChosen: number;
+                removesVerification: number;
+                updateUnsupported: number;
+                beyondCeiling: number;
+                notFound: number;
+                /** @description Dives whose number differs and that a run with numbers would set */
+                numberNotChosen: number;
+                /** @description Number changes that wait for a dive the run doesn't move (a Dive here left out, or one with no number); set them from their own pages */
+                numberTaken: number;
+                /** @description Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052) */
+                numberHeldAtProvider: number;
+            };
+            /** @description Pause between two Dives; 0 when this instance no longer has the Provider */
+            pauseMs: number;
+            /** Format: date-time */
+            createdAt: string;
+            startedAt: null | string;
+            finishedAt: null | string;
+            dismissedAt: null | string;
+        };
+        ConnectionView: {
+            id: string;
+            provider: string;
+            /** @description The Diver whose account at the Provider this is */
+            diverId: string;
+            diverName: string;
+            /** @description The account at the Provider (SSI: user master ID) */
+            accountId: string;
+            /** @description What the User recognises the account by (SSI: the e-mail) */
+            accountLabel: string;
+            /** @description The password is kept (sealed); otherwise only the Provider's access, which can expire */
+            keepSignedIn: boolean;
+            /**
+             * @description needs_sign_in: the Provider no longer accepts the sign-in; sign in again
+             * @enum {unknown}
+             */
+            state: "active" | "needs_sign_in";
+            lastUsedAt: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            diveNumbers: null | {
+                /** @description Dives are numbered here as in Dive Hub (off until the User turns it on; it sends nothing by itself) */
+                follow: boolean;
+            };
+            diveImport: null | {
+                /**
+                 * @description off; add: only link and fill Dives here, never create; create: also create Dives Dive Hub doesn't have
+                 * @enum {unknown}
+                 */
+                mode: "off" | "add" | "create";
+                /** @description How far apart in local time a logbook entry and a Dive here may start, on the same day */
+                windowMinutes: number;
+            };
+            /** @description Send a changed Dive by itself, 30 seconds after its last change (ADR 0056) */
+            sendChanges: boolean;
+            /** @description Send a new Dive of the Diver by itself */
+            sendNewDives: boolean;
+            /** @description Delete the Dive's copy at the Provider by itself, 5 minutes after the Dive is deleted here (Undo cancels it) */
+            deleteAtProvider: boolean;
+            fetchEveryMinutes: null | (60 | 360 | 1440);
+            /** @description Which settings to show: only what the Provider can */
+            offers: {
+                sendChanges: boolean;
+                sendNewDives: boolean;
+                deleteAtProvider: boolean;
+                /** @description The intervals to offer, in minutes; none: the Provider has no scheduled fetch */
+                fetchEvery: number[];
+            };
+            /** @description How many Waiting pushes of the Connection are in each state */
+            waiting: {
+                waiting: number;
+                held: number;
+                stopped: number;
+            };
+            lastFetch: null | {
+                /** Format: date-time */
+                at: string;
+                /** @description New Dives */
+                created: number;
+                /** @description Dives changed or filled */
+                updated: number;
+                /** @description Ambiguous entries and dives of a computer with no choice yet: they wait for the User (a manual import asks about them) */
+                waitingForYou: number;
+                /** @description Conflicts of the Connection that wait, whenever they were found: decided under "Needs your decision" (GET /api/provider-conflicts), not by an import */
+                conflicts: number;
+            };
+            /** @description The new Dives of a large Import (more than 20) that were not sent by themselves: offer to send them (a Push run for these ids: POST /api/connections/{id}/push-runs/preview with dives.ids) or Dismiss (POST /api/connections/{id}/unsent-dives/dismiss). Empty: no offer */
+            unsentDives: string[];
+        };
+        DiveProviderStatus: {
+            provider: string;
+            /** @description The Dive's Connection deletes at the Provider by itself (5 minutes after the Dive is deleted here; Undo cancels it): don't ask about deleting the copy there, and don't send `alsoAt` for it (docs/spec/clients.md) */
+            deletesItself: boolean;
+            /** @description The Dive's entry in the queue of Waiting pushes for this Provider (ADR 0056); null when none */
+            waiting: null | components["schemas"]["WaitingPushView"];
+            connection: null | {
+                id: string;
+                /** @enum {unknown} */
+                state: "active" | "needs_sign_in";
+                accountLabel: string;
+            };
+            siteId: null | string;
+            /** @description What the Provider's requirements need and the Dive lacks; never asks the Provider */
+            unmet: components["schemas"]["UnmetView"][];
+            current: null | {
+                remoteId: string;
+                remoteNumber: null | number;
+                /** Format: date-time */
+                sentAt: string;
+                /** @description false: the Dive changed since it was sent (outdated), or it was linked and never sent */
+                upToDate: boolean;
+                /** @description An update now would remove the dive centre's verification of the dive at the Provider (SSI: it changes the start time there, or the dive was linked and never sent, so the start time there isn't known). Say so before sending (docs/spec/clients.md, ADR 0043) */
+                updateRemovesVerification: boolean;
+                number: null | {
+                    /** @description The Dive's number here */
+                    wanted: number;
+                    /** @description The Provider's number (remoteNumber) is another. Not "changed since sent": don't offer an update for it */
+                    differs: boolean;
+                    /** @description The Provider sets numbers on an update: offer "Set number" (POST /api/dives/{id}/providers/{provider}/number) */
+                    canSet: boolean;
+                    /** @description Setting it can remove a verification the dive has there: warn before */
+                    removesVerification: boolean;
+                };
+            };
+            conflicts: null | components["schemas"]["ConflictFieldView"][];
+            /** @description Newest first */
+            pushes: {
+                id: string;
+                /**
+                 * @description link: tied to a dive already there, nothing sent. number: only its number there was changed (ADR 0048)
+                 * @enum {unknown}
+                 */
+                action: "create" | "update" | "link" | "delete" | "number";
+                /**
+                 * @description confirmed: the Provider accepted it and gave its ID (not SSI's dive-center confirmation); handed_over: delivered without an ID
+                 * @enum {unknown}
+                 */
+                state: "pending" | "handed_over" | "confirmed" | "failed";
+                remoteId: null | string;
+                remoteNumber: null | number;
+                /** @description The remote dive was found deleted at the Provider */
+                remoteGone: boolean;
+                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+                leftOut: null | {
+                    diverId: string;
+                    name: string;
+                    /**
+                     * @description no_reference: nothing tells the Provider who they are (give the Diver an account there). not_at_provider: the Provider doesn't have them (SSI: add them to your buddy list in SSI's app, then update)
+                     * @enum {unknown}
+                     */
+                    reason: "no_reference" | "not_at_provider";
+                }[];
+                differences: null | {
+                    /** @description One of the Provider's readBackFields */
+                    field: string;
+                    sent: null | (string | number);
+                    stored: null | (string | number);
+                }[];
+                /** Format: date-time */
+                createdAt: string;
             }[];
         };
         User: {

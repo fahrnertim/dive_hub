@@ -1,9 +1,10 @@
 // An Import over HTTP: an upload's and a Provider's (ADR 0030, 0044).
 import { Type, type Static } from 'typebox';
 import { DIVE_KINDS, IMPORT_ERROR_CODES, OUTCOME_REASONS, importJob } from '../db/schema.js';
-import { DateTime, Nullable } from '../http/schemas.js';
+import { DateTime, Nullable, refTo } from '../http/schemas.js';
 
-export const ImportView = Type.Object({
+/** Registered with app.addSchema; routes answer ImportView, the reference. */
+export const ImportViewSchema = Type.Object({
   id: Type.String(),
   status: Type.Enum(['pending', 'processing', 'done', 'failed', 'awaiting_choice', 'cancelled'], {
     description: 'awaiting_choice: the upload holds several kinds of dive and nothing is imported until the User starts it with the kinds '
@@ -42,7 +43,8 @@ export const ImportView = Type.Object({
       description: 'For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to',
     })),
   })),
-});
+}, { $id: 'ImportView' });
+export const ImportView = refTo(ImportViewSchema);
 
 export const toImportView = (j: typeof importJob.$inferSelect): Static<typeof ImportView> => ({
   id: j.id, status: j.status, uploadName: j.uploadName, provider: j.provider, createdAt: j.createdAt.toISOString(),

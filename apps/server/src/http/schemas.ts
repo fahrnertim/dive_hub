@@ -1,5 +1,5 @@
 // Schema fragments every route module uses, defined once.
-import { Type, type TSchema, type TSchemaOptions } from 'typebox';
+import { Type, type Static, type TSchema, type TSchemaOptions } from 'typebox';
 
 export const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
 export const DateTime = Type.String({ format: 'date-time' });
@@ -8,6 +8,16 @@ export const DateTime = Type.String({ format: 'date-time' });
  * value type first a null in a request would become 0 or "" (caught by the dive editing tests).
  */
 export const Nullable = <T extends TSchema>(t: T, options?: TSchemaOptions) => Type.Union([Type.Null(), t], options);
+
+/**
+ * A reference to a schema registered with app.addSchema (app.ts) under its $id, typed as it: the OpenAPI document names
+ * it once, as a component, and the generated client has one type for it (openapi-shared-schemas.test.ts).
+ */
+export function refTo<T extends TSchema>(schema: T) {
+  const id = (schema as { $id?: unknown }).$id;
+  if (typeof id !== 'string') throw new Error('refTo needs a schema with an $id');
+  return Type.Unsafe<Static<T>>(Type.Ref(id));
+}
 
 /** A Revision's change of one field: the value it had and the one it got. */
 export const Change = <T extends TSchema>(t: T) => Type.Object({ from: t, to: t });

@@ -19,27 +19,6 @@ const MAX_BYTES = 500;
 /** Inlined in this many places is fine (a request and its answer); one more and it needs a name. */
 const MAX_PLACES = 2;
 
-/**
- * Shapes shared before this test, by their first five property names: each is one resource's view, answered by that
- * resource's own routes (list, create, read, change), so the generated client already has one type per route for it.
- * Naming them is a change of its own (thirteen schemas across nine modules); an entry goes when its shape is named.
- */
-const ALLOWED = new Set([
-  'id, email, name, role, disabled', // UserView
-  'id, status, uploadName, provider, createdAt', // ImportView
-  'id, diverId, version, values, overrides', // DiveView
-  'id, name, isOwn, divesBefore, apneaCounts', // DiverView
-  'id, name, external, canEdit, firstName', // DiverDetails
-  'id, name, accounts, inUse, canDelete', // ExternalDiverView
-  'id, diverId, agency, level, number', // CertificationView
-  'id, name, position, country, waterBody', // SiteView
-  'id, name, displayName, externalIds, sites', // CentreView
-  'id, status, sources, area, language', // SiteImportView
-  'id, connectionId, provider, diverId, status', // PushRunView
-  'id, provider, diverId, diverName, accountId', // ConnectionView
-  'provider, deletesItself, waiting, connection, siteId', // a Dive's status at a Provider
-]);
-
 type Schema = { [key: string]: unknown };
 const isObjectSchema = (s: Schema) => typeof s.properties === 'object' && s.properties !== null;
 const sizable = (s: Schema) => Object.keys(s.properties as Schema).length > MAX_PROPERTIES || JSON.stringify(s).length > MAX_BYTES;
@@ -100,7 +79,7 @@ function sharedInlineSchemas(doc: Doc) {
     .map(([key, where]) => ({ properties: Object.keys((JSON.parse(key) as Schema).properties as Schema), where: [...where] }));
 }
 
-/** A shape's name in the allowance and the failure: its first five property names. */
+/** A shape's name in the failure: its first five property names. */
 const shapeOf = (properties: string[]) => properties.slice(0, 5).join(', ');
 
 describe('the OpenAPI document', () => {
@@ -120,12 +99,10 @@ describe('the OpenAPI document', () => {
   it('names every sizable object schema that more than two places share', async () => {
     const doc = (await app.inject({ method: 'GET', url: '/api/openapi.json' })).json();
     const shared = sharedInlineSchemas(doc);
-    const offenders = shared.filter(({ properties }) => !ALLOWED.has(shapeOf(properties))).map(({ properties, where }) =>
+    const offenders = shared.map(({ properties, where }) =>
       `{ ${shapeOf(properties)}${properties.length > 5 ? ', …' : ''} } inlined in ${where.length} places `
       + `(${where.slice(0, 3).join('; ')}${where.length > 3 ? '; …' : ''})`);
-    expect(offenders, 'Give each a $id, register it with app.addSchema and refer to it with Type.Ref, as http/problems.ts does for Problem')
+    expect(offenders, 'Give each a $id, register it with app.addSchema in app.ts and refer to it with refTo (http/schemas.ts), as users/views.ts does for UserView')
       .toEqual([]);
-    const named = [...ALLOWED].filter((shape) => !shared.some(({ properties }) => shapeOf(properties) === shape));
-    expect(named, 'Named or gone now: take them off ALLOWED').toEqual([]);
   });
 });

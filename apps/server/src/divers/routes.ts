@@ -9,6 +9,7 @@ import { answerErrors, Problem } from '../http/problems.js';
 import { NO_CERTIFICATIONS, type CertificationService } from '../certifications/certification-service.js';
 import { replyDiverError } from './diver-answers.js';
 import type { DiverService } from './diver-service.js';
+import { DiverDetailsView, DiverSource, DiverView, ExternalDiverView } from './diver-view.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface DiverRouteDeps {
@@ -19,29 +20,9 @@ export interface DiverRouteDeps {
 }
 
 const Name = Type.String({ minLength: 1, maxLength: 100, pattern: '\\S' });
-const DiverSource = Type.Enum(['ssi', 'padi'], { description: 'A service a person has an account at' });
 
 const DateParam = Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'YYYY-MM-DD' });
 const BodyWeightView = Type.Object({ date: Type.String({ description: 'YYYY-MM-DD' }), kg: Type.Number() });
-
-const CertificationSummary = Type.Object({
-  count: Type.Integer(),
-  newest: Nullable(Type.Object({ agency: Type.String(), level: Type.String() })),
-  expired: Type.Integer({ description: 'Cards whose expiry date has passed' }),
-  expiringSoon: Type.Integer({ description: 'Cards expiring within 90 days (not yet expired)' }),
-}, { description: 'What the Divers list shows of a Diver\'s certification cards (ADR 0050); the cards are GET /divers/{id}/certifications' });
-
-const DiverView = Type.Object({
-  id: Type.String(), name: Type.String(),
-  isOwn: Type.Boolean({ description: 'The User\'s own Diver' }),
-  divesBefore: Type.Integer({ description: 'The dives made before the first one in this logbook (ADR 0048): the first Dive here gets the next number' }),
-  apneaCounts: Type.Boolean({ description: 'Whether apnea sessions count in the Dive numbers (ADR 0048)' }),
-  diveCount: Type.Integer(), deviceCount: Type.Integer(),
-  mutedRules: Type.Array(Type.String(), {
-    description: 'Rules of the dive assessment not shown for this Diver (ADR 0036); show them again with PUT /divers/{id}/muted-rules/{rule}',
-  }),
-  certifications: CertificationSummary,
-});
 
 const FoundDiver = Type.Object({
   id: Type.String(),
@@ -49,14 +30,6 @@ const FoundDiver = Type.Object({
   managed: Type.Boolean({ description: 'The signed-in User keeps this Diver\'s logbook' }),
   external: Type.Boolean({ description: 'No User keeps its logbook: someone Users dived with (ADR 0028)' }),
 }, { description: 'A Diver of the instance as every User sees it: by name, nothing else' });
-
-const ExternalDiverView = Type.Object({
-  id: Type.String(),
-  name: Type.String(),
-  accounts: Type.Array(DiverSource, { description: 'Services this person has an account at here (the account itself isn\'t shown)' }),
-  inUse: Type.Boolean({ description: 'A Dive (of any User) lists this Diver; then it can\'t be deleted' }),
-  canDelete: Type.Boolean({ description: 'Whether the signed-in User may delete it: whoever added it, or an admin' }),
-});
 
 const DeviceView = Type.Object({
   id: Type.String(), manufacturer: Type.String(), product: Nullable(Type.String()), serialNumber: Type.String(),
@@ -71,24 +44,6 @@ const DetailsBody = Type.Object({
   email: Type.Optional(CodePart('The address the person\'s SSI account has. Every User sees it, inside the code', 254)),
   leaderNumber: Type.Optional(CodePart('The person\'s SSI leader number: what makes them a professional whose code verifies a dive', 20)),
 }, { additionalProperties: false, description: 'Only the fields sent change; null or an empty text clears one' });
-
-const DiverDetailsView = Type.Object({
-  id: Type.String(),
-  name: Type.String(),
-  external: Type.Boolean({ description: 'No User keeps its logbook' }),
-  canEdit: Type.Boolean({ description: 'Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep' }),
-  firstName: Nullable(Type.String()), lastName: Nullable(Type.String()),
-  email: Nullable(Type.String({ description: 'Personal data every User of the instance sees (ADR 0043)' })),
-  leaderNumber: Nullable(Type.String()),
-  accounts: Type.Array(Type.Object({ source: DiverSource, externalId: Type.String({ description: 'e.g. the SSI account, as the code holds it' }) })),
-  codes: Type.Array(Type.Object({
-    kind: Type.Enum(['buddy', 'professional'], {
-      description: 'buddy: another diver scans it in the Provider\'s app to add the person to their buddy list. professional: a diver scans it on a logbook entry to verify the dive',
-    }),
-    provider: Type.Enum(['ssi']),
-    text: Type.String({ description: 'Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md)' }),
-  }), { description: 'Empty while the account, a name or the e-mail is missing; the professional\'s only with a leader number' }),
-}, { description: 'What a Diver\'s SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028)' });
 
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 

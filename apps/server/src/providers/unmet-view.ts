@@ -2,9 +2,10 @@
 // and in a push run's preview.
 import { Type } from 'typebox';
 import { PARTICIPANT_ROLES } from '../db/schema.js';
-import { Nullable } from '../http/schemas.js';
+import { Nullable, refTo } from '../http/schemas.js';
 
-export const UnmetView = Type.Object({
+/** Registered with app.addSchema; routes and other views answer UnmetView, the reference. */
+export const UnmetViewSchema = Type.Object({
   type: Type.String({ description: 'As in the Provider\'s requirements' }),
   severity: Type.Enum(['blocking', 'advisory']),
   source: Type.String(),
@@ -20,4 +21,5 @@ export const UnmetView = Type.Object({
     description: 'diver_mapping: ways to fix it. diver_external_id: set the Diver\'s account at source (PUT /api/divers/{id}/external-ids/{source}). '
       + 'list_entry: link or add an entry in the account\'s own list at the Provider (SSI: the buddy list)',
   })),
-}, { description: 'A requirement this Dive doesn\'t meet, from Dive Hub\'s own data' });
+}, { $id: 'UnmetView', description: 'A requirement this Dive doesn\'t meet, from Dive Hub\'s own data' });
+export const UnmetView = refTo(UnmetViewSchema);

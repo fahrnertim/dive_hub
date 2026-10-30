@@ -10,6 +10,20 @@ import type { Services } from './compose.js';
 import { withAuthEndpoints } from './auth/openapi.js';
 import { problem, ProblemSchema, useProblemErrors } from './http/problems.js';
 import { DeleteProblemSchema } from './dives/deletion-view.js';
+import { DiveViewSchema } from './dives/dive-view.js';
+import { WaitingPushViewSchema } from './dives/waiting-push-view.js';
+import { UnmetViewSchema } from './providers/unmet-view.js';
+import { ConflictFieldViewSchema } from './providers/conflicts/conflict-view.js';
+import { ImportViewSchema } from './imports/import-view.js';
+import { CertificationViewSchema } from './certifications/certification-view.js';
+import { DiverDetailsViewSchema, DiverViewSchema, ExternalDiverViewSchema } from './divers/diver-view.js';
+import { SiteViewSchema } from './sites/site-view.js';
+import { CentreViewSchema } from './centres/centre-view.js';
+import { SiteImportViewSchema } from './sites/import/site-import-view.js';
+import { ConnectionViewSchema } from './providers/connection-view.js';
+import { DiveProviderStatusSchema } from './providers/dive-provider-view.js';
+import { PushRunViewSchema } from './providers/push/push-run-view.js';
+import { UserViewSchema } from './users/views.js';
 import { logbookRoutes } from './dives/logbook-routes.js';
 import { importRoutes } from './imports/routes.js';
 import { candidateRoutes } from './dives/candidates/candidate-routes.js';
@@ -61,8 +75,15 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
     // A schema added with app.addSchema becomes the component named by its $id (Problem), which routes $ref.
     refResolver: { buildLocalReference: (json, _baseUri, _fragment, i) => (typeof json.$id === 'string' ? json.$id : `def-${i}`) },
   });
-  // Every refusal's shape, named once for clients (ADR 0014), and the two that add extras of their own; the routes refer to them.
-  for (const schema of [ProblemSchema, ProviderProblemSchema, DeleteProblemSchema]) app.addSchema(schema);
+  // Every refusal's shape, named once for clients (ADR 0014), the two that add extras of their own, each resource view
+  // several routes answer, and the parts several of them share (first, as the others refer to them); the routes refer to
+  // them (refTo, http/schemas.ts).
+  for (const schema of [
+    UnmetViewSchema, ConflictFieldViewSchema, WaitingPushViewSchema,
+    ProblemSchema, ProviderProblemSchema, DeleteProblemSchema,
+    UserViewSchema, ImportViewSchema, DiveViewSchema, DiverViewSchema, DiverDetailsViewSchema, ExternalDiverViewSchema, CertificationViewSchema,
+    SiteViewSchema, CentreViewSchema, SiteImportViewSchema, PushRunViewSchema, ConnectionViewSchema, DiveProviderStatusSchema,
+  ]) app.addSchema(schema);
   await app.register(multipart, { limits: { files: 1, fileSize: deps.maxUploadBytes } });
 
   app.get('/api/health/live', { schema: { hide: true } }, async () => ({ status: 'ok' }));

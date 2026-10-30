@@ -1,10 +1,11 @@
 // What the API says about a Dive's Waiting pushes (ADR 0056): the entries of the queue as a client shows them.
 // Here, not in providers/, because the Dive views show it too (ADR 0053: providers/ imports dives/, not the other way);
-// like the queue, it imports only the database layer.
+// like the queue, it imports only the database layer (and the schema helper refTo).
 import { and, asc, inArray } from 'drizzle-orm';
 import { Type, type Static } from 'typebox';
 import type { Queryable } from '../db/client.js';
 import { waitingPush } from '../db/schema.js';
+import { refTo } from '../http/schemas.js';
 
 export const WaitingPushViewSchema = Type.Object({
   provider: Type.String(),
@@ -14,7 +15,9 @@ export const WaitingPushViewSchema = Type.Object({
     description: 'Why it is held (sign_in, requirements, exists, removes_verification) or the problem code of why it stopped',
   })]),
   dueAt: Type.String({ format: 'date-time', description: 'When it goes out, for a waiting entry' }),
-});
+}, { $id: 'WaitingPushView' });
+/** What routes and other views answer: a reference to WaitingPushViewSchema, registered with app.addSchema. */
+export const WaitingPushView = refTo(WaitingPushViewSchema);
 export type WaitingPushView = Static<typeof WaitingPushViewSchema>;
 
 /**

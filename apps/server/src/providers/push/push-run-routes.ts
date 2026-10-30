@@ -7,42 +7,12 @@ import { Problem, problem, storedProblemCode } from '../../http/problems.js';
 import { DIVE_ONLY_PATTERN } from '../../dives/list-filter.js';
 import { MAX_IDS, type PushRunService } from './push-run-service.js';
 import { DateTime, IdParams, Nullable, oneOf } from '../../http/schemas.js';
-import { Code } from '../route-parts.js';
 import { UnmetView } from '../unmet-view.js';
+import { LeftOut, PushRunView } from './push-run-view.js';
 
 // A run item's action and outcome are text columns; the views check them against these.
 const ACTIONS = ['create', 'update', 'number'] as const;
 const OUTCOMES = ['created', 'updated', 'linked', 'numbered'] as const;
-
-const LeftOut = Type.Object({
-  upToDate: Type.Integer(), requirementsUnmet: Type.Integer(), updateNotChosen: Type.Integer(), removesVerification: Type.Integer(),
-  updateUnsupported: Type.Integer(), beyondCeiling: Type.Integer(), notFound: Type.Integer(),
-  numberNotChosen: Type.Integer({ description: 'Dives whose number differs and that a run with numbers would set' }),
-  numberTaken: Type.Integer({ description: 'Number changes that wait for a dive the run doesn\'t move (a Dive here left out, or one with no number); set them from their own pages' }),
-  numberHeldAtProvider: Type.Integer({ description: 'Number changes whose number a dive only at the Provider holds; import that dive (ADR 0052)' }),
-}, { description: 'What the run left out when it was planned, as counts' });
-
-const RunView = Type.Object({
-  id: Type.String(),
-  connectionId: Type.String(),
-  provider: Type.String(),
-  diverId: Type.String(),
-  status: Type.Enum(['queued', 'running', 'done', 'cancelled', 'stopped']),
-  stopCode: Nullable(Code),
-  updates: Type.Boolean(),
-  updatesRemovingVerification: Type.Boolean(),
-  numbers: Type.Boolean(),
-  numbersRemovingVerification: Type.Boolean(),
-  cancelRequested: Type.Boolean({ description: 'Stop was asked for; the Dive being sent is finished first' }),
-  counts: Type.Object({ total: Type.Integer(), waiting: Type.Integer(), sent: Type.Integer(), skipped: Type.Integer(), failed: Type.Integer() }),
-  conflicts: Type.Integer({ description: 'Conflicts of this run that still wait in Needs your decision (GET /api/provider-conflicts); an entry a later send closed is not counted, one a later run found again counts in that run' }),
-  leftOut: LeftOut,
-  pauseMs: Type.Integer({ description: 'Pause between two Dives; 0 when this instance no longer has the Provider' }),
-  createdAt: DateTime,
-  startedAt: Nullable(DateTime),
-  finishedAt: Nullable(DateTime),
-  dismissedAt: Nullable(DateTime),
-});
 
 const ItemView = Type.Object({
   diveId: Type.String(),
@@ -159,7 +129,7 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
     schema: {
       summary: 'Start sending many Dives of the Connection\'s Diver to the Provider: the worker sends one Dive at a time, paced for the Provider',
       description: 'The same body as the preview. 409 push_run_active names the run that is going (runId); poll GET /api/push-runs/{id}.',
-      params: IdParams, body: StartBody, response: { 202: RunView, ...errors },
+      params: IdParams, body: StartBody, response: { 202: PushRunView, ...errors },
     },
   }, async (request, reply) => {
     if (!oneOfListAndIds(request.body)) return reply.code(400).send(invalid);
@@ -167,13 +137,13 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
   });
 
   app.get('/push-runs', {
-    schema: { summary: 'The signed-in User\'s Push runs, newest first, without items', response: { 200: Type.Array(RunView) } },
+    schema: { summary: 'The signed-in User\'s Push runs, newest first, without items', response: { 200: Type.Array(PushRunView) } },
   }, async (request) => (await pushRuns.list(userOf(request).id)).map(runView));
 
   app.get('/push-runs/:id', {
     schema: {
       summary: 'One Push run with its items, in the order they are sent', params: IdParams,
-      response: { 200: Type.Intersect([RunView, Type.Object({ withoutSomeone: Type.Array(WithoutSomeone), items: Type.Array(ItemView) })]), ...errors },
+      response: { 200: Type.Intersect([PushRunView, Type.Object({ withoutSomeone: Type.Array(WithoutSomeone), items: Type.Array(ItemView) })]), ...errors },
     },
   }, async (request) => {
     const run = await pushRuns.get(userOf(request).id, request.params.id);
@@ -183,7 +153,7 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
   app.post('/push-runs/:id/cancel', {
     schema: {
       summary: 'Ask a run to stop: the Dive being sent is finished, the rest stay unsent',
-      params: IdParams, response: { 200: RunView, ...errors },
+      params: IdParams, response: { 200: PushRunView, ...errors },
     },
   }, async (request) => runView(await pushRuns.cancel(userOf(request).id, request.params.id)));
 
@@ -191,14 +161,14 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
     schema: {
       summary: 'Put an ended run away from the logbook\'s strip, for every browser and client of the User',
       description: 'Stored with the run (dismissedAt). Only an ended run: 409 push_run_going while it goes. Taking a stopped run up again clears it.',
-      params: IdParams, response: { 200: RunView, ...errors },
+      params: IdParams, response: { 200: PushRunView, ...errors },
     },
   }, async (request) => runView(await pushRuns.dismiss(userOf(request).id, request.params.id)));
 
   app.post('/push-runs/:id/continue', {
     schema: {
       summary: 'Take up a stopped run: the failed Dives that are worth another try go first, then the waiting ones',
-      params: IdParams, response: { 202: RunView, ...errors },
+      params: IdParams, response: { 202: PushRunView, ...errors },
     },
   }, async (request, reply) => reply.code(202).send(runView(await pushRuns.continue(userOf(request).id, request.params.id))));
 };
