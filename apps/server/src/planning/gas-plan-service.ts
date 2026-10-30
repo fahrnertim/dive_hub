@@ -4,8 +4,11 @@
 import type { Queryable } from '../db/client.js';
 import { ASCENT_RATE_M_PER_MIN, planGas, type GasRule } from './gas-plan.js';
 import { DESCENT_RATE_M_PER_MIN } from './ndl.js';
+import { DEFAULT_PPO2 } from './gas-numbers.js';
+import type { PlanningWater } from './gas.js';
+import { diveSacs, recentDiveEnd, siteWaterOf } from './logbook-inputs.js';
+import { PlanningError } from './planning-error.js';
 import { DEFAULT_PLANNING_SAC_LPM, planningSac } from './planning-sac.js';
-import { DEFAULT_PPO2, PlanningError, diveSacs, recentDiveEnd, siteWaterOf, type PlanningWaterName } from './service.js';
 
 export const PLAN_RULES = ['rock_bottom', 'reserve', 'ascent_pressure', 'halves', 'thirds', 'sixths'] as const;
 export type PlanRuleName = (typeof PLAN_RULES)[number];
@@ -17,7 +20,7 @@ export interface GasPlanQuery {
   divers: { name: string; volume: number; pressure: number; sac?: number | undefined; diverId?: string | undefined }[];
   rule?: PlanRuleName | undefined;
   bar?: number | undefined;
-  water?: PlanningWaterName | undefined;
+  water?: PlanningWater | undefined;
   altitude?: number | undefined;
   ppo2Contingency?: number | undefined;
   siteId?: string | undefined;
@@ -28,6 +31,26 @@ export interface GasPlanQuery {
 
 const round = (n: number, places: number) => Math.round(n * 10 ** places) / 10 ** places;
 
+function ruleOf(q: GasPlanQuery): GasRule {
+  if (q.rule === undefined || q.rule === 'rock_bottom') return { kind: 'rock_bottom' };
+  return q.rule === 'reserve' || q.rule === 'ascent_pressure' ? { kind: q.rule, bar: q.bar! } : { kind: q.rule };
+}
+
+type Sac = { value: number; source: 'request' | 'logbook' | 'default'; basedOn?: number };
+
+/** A Diver's SAC: typed, else the planning SAC of a Diver the User manages, else the default. */
+async function diverOf(reader: Queryable, managedDiverIds: readonly string[], d: GasPlanQuery['divers'][number]) {
+  if (d.diverId === undefined || !managedDiverIds.includes(d.diverId)) {
+    const sac: Sac = d.sac !== undefined ? { value: d.sac, source: 'request' } : { value: DEFAULT_PLANNING_SAC_LPM, source: 'default' };
+    return { input: d, sac, recentDiveEndedAt: null };
+  }
+  const logbook = planningSac(await diveSacs(reader, d.diverId));
+  const sac: Sac = d.sac !== undefined ? { value: d.sac, source: 'request' }
+    : logbook.source === 'logbook' ? { value: logbook.lpm, source: 'logbook', basedOn: logbook.basedOn }
+    : { value: DEFAULT_PLANNING_SAC_LPM, source: 'default', basedOn: logbook.basedOn };
+  return { input: d, sac, recentDiveEndedAt: (await recentDiveEnd(reader, d.diverId))?.toISOString() ?? null };
+}
+
 export async function planGasPlan(reader: Queryable, managedDiverIds: readonly string[], q: GasPlanQuery) {
   const gas = { o2: q.o2, he: q.he ?? 0 };
   if (gas.o2 + gas.he > 100) throw new PlanningError('invalid_input');
@@ -35,10 +58,8 @@ export async function planGasPlan(reader: Queryable, managedDiverIds: readonly s
 
   const siteWater = await siteWaterOf(reader, q.siteId);
 
-  const rule: GasRule = q.rule === undefined || q.rule === 'rock_bottom' ? { kind: 'rock_bottom' }
-    : q.rule === 'reserve' || q.rule === 'ascent_pressure' ? { kind: q.rule, bar: q.bar! }
-    : { kind: q.rule };
-  const water: { value: PlanningWaterName; source: 'request' | 'site' | 'default' } =
+  const rule = ruleOf(q);
+  const water: { value: PlanningWater; source: 'request' | 'site' | 'default' } =
     q.water !== undefined ? { value: q.water, source: 'request' } : siteWater ? { value: siteWater, source: 'site' } : { value: 'salt', source: 'default' };
   const given = (value: number | undefined, fallback: number) =>
     value !== undefined ? { value, source: 'request' as const } : { value: fallback, source: 'default' as const };
@@ -50,22 +71,8 @@ export async function planGasPlan(reader: Queryable, managedDiverIds: readonly s
     ascentRateMPerMin: given(q.ascentRate, ASCENT_RATE_M_PER_MIN),
   };
 
-  // Each Diver's SAC: typed, else the planning SAC of a Diver the User manages, else the default.
-  const divers: { input: GasPlanQuery['divers'][number]; sac: { value: number; source: 'request' | 'logbook' | 'default'; basedOn?: number }; recentDiveEndedAt: string | null }[] = [];
-  for (const d of q.divers) {
-    let sac: { value: number; source: 'request' | 'logbook' | 'default'; basedOn?: number };
-    let recentDiveEndedAt: string | null = null;
-    if (d.diverId !== undefined && managedDiverIds.includes(d.diverId)) {
-      const logbook = planningSac(await diveSacs(reader, d.diverId));
-      sac = d.sac !== undefined ? { value: d.sac, source: 'request' }
-        : logbook.source === 'logbook' ? { value: logbook.lpm, source: 'logbook', basedOn: logbook.basedOn }
-        : { value: DEFAULT_PLANNING_SAC_LPM, source: 'default', basedOn: logbook.basedOn };
-      recentDiveEndedAt = (await recentDiveEnd(reader, d.diverId))?.toISOString() ?? null;
-    } else {
-      sac = d.sac !== undefined ? { value: d.sac, source: 'request' } : { value: DEFAULT_PLANNING_SAC_LPM, source: 'default' };
-    }
-    divers.push({ input: d, sac, recentDiveEndedAt });
-  }
+  const divers: Awaited<ReturnType<typeof diverOf>>[] = [];
+  for (const d of q.divers) divers.push(await diverOf(reader, managedDiverIds, d));
 
   const result = planGas({
     gas, conditions: { water: water.value, altitudeM: used.altitudeM.value }, levels: q.levels.map((l) => ({ depthM: l.depth, minutes: l.minutes })),

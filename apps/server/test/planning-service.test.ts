@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { user } from '../src/db/schema.js';
 import { createPlanningService } from '../src/planning/planning-service.js';
-import { PlanningError } from '../src/planning/service.js';
+import { PlanningError } from '../src/planning/planning-error.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';
 
 describe.skipIf(!(await databaseReachable()))('planning service', () => {

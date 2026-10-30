@@ -1,7 +1,10 @@
 // MCP tool for the Tools page's gas numbers and bottom time (ADR 0032, ADR 0035). The same answer as the routes
-// (planning/service.ts), with the assumptions and the notice in every result: never a bare number.
+// (planning/gas-numbers.ts, planning/bottom-time-service.ts), with the assumptions and the notice in every result: never a bare number.
 import { Type } from 'typebox';
-import { BOTTOM_TIME_RULES, PLANNING_WATERS, PlanningError, gasNumbers, planBottomTime } from '../planning/service.js';
+import { BOTTOM_TIME_RULES, planBottomTime } from '../planning/bottom-time-service.js';
+import { gasNumbers } from '../planning/gas-numbers.js';
+import { PLANNING_WATERS } from '../planning/gas.js';
+import { PlanningError } from '../planning/planning-error.js';
 import { Id, Nullable, ToolError, defineTool } from './tool.js';
 
 /** Fixed text in every answer (ADR 0032: always visible; the limits are the Diver's own input, not advice). */

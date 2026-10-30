@@ -2,8 +2,8 @@
 // they manage, so a route holds no query.
 import type { Db } from '../db/client.js';
 import { managedDiverIds } from '../divers/management.js';
-import { planGasPlan, type GasPlanQuery } from './plan-service.js';
-import { planBottomTime, type BottomTimeQuery } from './service.js';
+import { planBottomTime, type BottomTimeQuery } from './bottom-time-service.js';
+import { planGasPlan, type GasPlanQuery } from './gas-plan-service.js';
 
 export function createPlanningService(db: Db) {
   const managedBy = async (userId: string) => [...(await managedDiverIds(db, userId))];

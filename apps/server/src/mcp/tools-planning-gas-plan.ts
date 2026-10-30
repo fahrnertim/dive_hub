@@ -1,8 +1,8 @@
-// MCP tool for gas plans (ADR 0033, ADR 0035): the same answer as POST /tools/gas-plan (planning/plan-service.ts), with the
+// MCP tool for gas plans (ADR 0033, ADR 0035): the same answer as POST /tools/gas-plan (planning/gas-plan-service.ts), with the
 // assumptions and the notice in every result: never a bare number.
 import { Type } from 'typebox';
-import { PLAN_RULES, planGasPlan } from '../planning/plan-service.js';
-import { PLANNING_WATERS } from '../planning/service.js';
+import { PLAN_RULES, planGasPlan } from '../planning/gas-plan-service.js';
+import { PLANNING_WATERS } from '../planning/gas.js';
 import { NOTICE, planning } from './tools-planning.js';
 import { Id, Nullable, defineTool } from './tool.js';
 

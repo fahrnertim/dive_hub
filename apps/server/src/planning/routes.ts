@@ -7,8 +7,11 @@ import { requireUser, userOf } from '../auth/fastify.js';
 import { Problem, problem } from '../http/problems.js';
 import { Nullable } from '../http/schemas.js';
 import type { PlanningService } from './planning-service.js';
-import { PLAN_RULES } from './plan-service.js';
-import { BOTTOM_TIME_RULES, PLANNING_WATERS, PlanningError, gasNumbers } from './service.js';
+import { BOTTOM_TIME_RULES } from './bottom-time-service.js';
+import { gasNumbers } from './gas-numbers.js';
+import { PLAN_RULES } from './gas-plan-service.js';
+import { PLANNING_WATERS } from './gas.js';
+import { PlanningError } from './planning-error.js';
 
 export interface PlanningRouteDeps {
   auth: Auth;

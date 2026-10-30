@@ -77,16 +77,6 @@
       "count": 1
     }
   },
-  "apps/server/src/planning/plan-service.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/planning/service.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "apps/server/src/providers/connection-service.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
