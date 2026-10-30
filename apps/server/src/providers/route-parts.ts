@@ -2,7 +2,7 @@
 // Provider is answered.
 import type { FastifyReply } from 'fastify';
 import { Type } from 'typebox';
-import { type ErrorAnswer, Problem, problem, PROBLEM_CODES, ProblemSchema, providerProblem } from '../http/problems.js';
+import { type ErrorAnswer, Problem, problem, PROBLEM_CODES, providerProblem, refTo } from '../http/problems.js';
 import { UnmetView } from './unmet-view.js';
 import { ProviderServiceError, type ProviderRefusal } from './registry.js';
 
@@ -22,11 +22,11 @@ export const PROVIDER_STATUS: Record<ProviderRefusal, number> = {
   site_not_found: 404, external_id_taken: 409, provider_site_unknown: 422, provider_buddy_not_found: 404,
   provider_unavailable: 502, provider_refused: 502, provider_not_stored: 502, provider_import_off: 409, provider_account_held: 409,
 };
-/** A refusal about a Provider; with provider_requirements_unmet, what is unmet. */
-const ProviderProblem = Type.Object({
-  ...ProblemSchema.properties,
+/** A refusal about a Provider; with provider_requirements_unmet, what is unmet. Registered with app.addSchema, like Problem. */
+export const ProviderProblemSchema = Type.Intersect([Problem, Type.Object({
   unmet: Type.Optional(Type.Array(UnmetView, { description: 'With provider_requirements_unmet: every requirement unmet, blocking ones among them' })),
-});
+})], { $id: 'ProviderProblem', description: 'A refusal about a Provider: a Problem, with what is unmet' });
+const ProviderProblem = refTo(ProviderProblemSchema);
 export const Choice = Type.Enum(['recordings', 'entries'], {
   description: 'recordings: its dives become Recordings, like a file\'s; entries: only logbook entries that fill Dives here',
 });

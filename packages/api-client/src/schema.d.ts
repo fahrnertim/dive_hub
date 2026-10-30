@@ -2220,57 +2220,13 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
                 400: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here) */
-                            providers?: {
-                                provider: string;
-                                /**
-                                 * @description What happened to the copy there
-                                 * @enum {unknown}
-                                 */
-                                copy: "deleted" | "kept";
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DeleteProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -2282,110 +2238,22 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here) */
-                            providers?: {
-                                provider: string;
-                                /**
-                                 * @description What happened to the copy there
-                                 * @enum {unknown}
-                                 */
-                                copy: "deleted" | "kept";
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DeleteProblem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
                 502: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here) */
-                            providers?: {
-                                provider: string;
-                                /**
-                                 * @description What happened to the copy there
-                                 * @enum {unknown}
-                                 */
-                                copy: "deleted" | "kept";
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DeleteProblem"];
                     };
                 };
             };
@@ -4169,57 +4037,13 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
                 400: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here) */
-                            providers?: {
-                                provider: string;
-                                /**
-                                 * @description What happened to the copy there
-                                 * @enum {unknown}
-                                 */
-                                copy: "deleted" | "kept";
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DeleteProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -4231,110 +4055,22 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here) */
-                            providers?: {
-                                provider: string;
-                                /**
-                                 * @description What happened to the copy there
-                                 * @enum {unknown}
-                                 */
-                                copy: "deleted" | "kept";
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DeleteProblem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
                 502: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here) */
-                            providers?: {
-                                provider: string;
-                                /**
-                                 * @description What happened to the copy there
-                                 * @enum {unknown}
-                                 */
-                                copy: "deleted" | "kept";
-                            }[];
-                        };
+                        "application/json": components["schemas"]["DeleteProblem"];
                     };
                 };
             };
@@ -11950,66 +11686,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -12163,66 +11846,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -12430,66 +12060,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -12676,66 +12253,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -12836,66 +12360,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -13001,66 +12472,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -13165,66 +12583,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -13315,66 +12680,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -13470,66 +12782,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -13747,66 +13006,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -13955,66 +13161,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -14243,66 +13396,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -14444,66 +13544,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -14594,66 +13641,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -14746,66 +13740,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -15592,66 +14533,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -15844,66 +14732,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -15993,66 +14828,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -16144,66 +14926,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -16415,66 +15144,13 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Default Response */
+                /** @description A refusal about a Provider: a Problem, with what is unmet */
                 409: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /**
-                             * @description Stable, machine-readable reason; clients translate it
-                             * @enum {unknown}
-                             */
-                            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
-                            /** @description English description, for logs and scripts */
-                            error: string;
-                            /** @description The Provider a provider_* code is about (ADR 0027) */
-                            provider?: string;
-                            /** @description Its name, to put into the translated text */
-                            providerName?: string;
-                            /** @description The Diver that already has the account: with diver_external_id_taken, to offer it instead (ADR 0028); with provider_account_held, the external Diver here; connect again with claim to make it yours */
-                            diver?: {
-                                id: string;
-                                name: string;
-                                /** @description With provider_account_held: the Dives it is a Participant on */
-                                dives?: number;
-                            };
-                            /** @description With centre_external_id_taken: the Dive centre that already has the number, to open it instead (ADR 0043) */
-                            centre?: {
-                                id: string;
-                                name: string;
-                            };
-                            /** @description With provider_number_taken: the dive at the Provider that has the number (ADR 0048) */
-                            existing?: {
-                                remoteId: string;
-                                number: null | number;
-                                startsAt: null | string;
-                                maxDepthM: null | number;
-                                durationMinutes: null | number;
-                            };
-                            diveId?: null | string;
-                            /** @description With push_run_active: the run that is going (ADR 0047) */
-                            runId?: string;
-                            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
-                            unmet?: {
-                                /** @description As in the Provider's requirements */
-                                type: string;
-                                /** @enum {unknown} */
-                                severity: "blocking" | "advisory";
-                                source: string;
-                                siteId?: null | string;
-                                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
-                                bySend?: boolean;
-                                /** @description diver_mapping: the Participant */
-                                diverId?: string;
-                                diverName?: string;
-                                /** @enum {unknown} */
-                                role?: "buddy" | "guide" | "instructor";
-                                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
-                                fixes?: string[];
-                            }[];
-                        };
+                        "application/json": components["schemas"]["ProviderProblem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -16994,6 +15670,39 @@ export interface components {
             diveId?: null | string;
             /** @description With push_run_active: the run that is going (ADR 0047) */
             runId?: string;
+        };
+        /** @description A refusal about a Provider: a Problem, with what is unmet */
+        ProviderProblem: components["schemas"]["Problem"] & {
+            /** @description With provider_requirements_unmet: every requirement unmet, blocking ones among them */
+            unmet?: {
+                /** @description As in the Provider's requirements */
+                type: string;
+                /** @enum {unknown} */
+                severity: "blocking" | "advisory";
+                source: string;
+                siteId?: null | string;
+                /** @description site_external_id: sending finds the site at the Provider or creates it there as a private site (the site has a position), so it does not stop a send; offering the pick stays */
+                bySend?: boolean;
+                /** @description diver_mapping: the Participant */
+                diverId?: string;
+                diverName?: string;
+                /** @enum {unknown} */
+                role?: "buddy" | "guide" | "instructor";
+                /** @description diver_mapping: ways to fix it. diver_external_id: set the Diver's account at source (PUT /api/divers/{id}/external-ids/{source}). list_entry: link or add an entry in the account's own list at the Provider (SSI: the buddy list) */
+                fixes?: string[];
+            }[];
+        };
+        /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
+        DeleteProblem: components["schemas"]["Problem"] & {
+            /** @description With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here) */
+            providers?: {
+                provider: string;
+                /**
+                 * @description What happened to the copy there
+                 * @enum {unknown}
+                 */
+                copy: "deleted" | "kept";
+            }[];
         };
         User: {
             readonly id: string;

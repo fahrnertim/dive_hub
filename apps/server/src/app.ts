@@ -13,6 +13,7 @@ import type { ImportService } from './imports/import-service.js';
 import { problem, ProblemSchema, useProblemErrors } from './http/problems.js';
 import { createDiveService } from './dives/dive-service.js';
 import { createDeletionService } from './dives/deletion-service.js';
+import { DeleteProblemSchema } from './dives/deletion-view.js';
 import { createLogbookService } from './dives/logbook-service.js';
 import { logbookRoutes } from './dives/logbook-routes.js';
 import { importRoutes } from './imports/routes.js';
@@ -37,7 +38,7 @@ import type { SiteImportService } from './sites/import/site-import-service.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
 import type { ProviderLayer } from './providers/layer.js';
 import { currentRemote } from './providers/remote-state.js';
-import { providerAnswers } from './providers/route-parts.js';
+import { providerAnswers, ProviderProblemSchema } from './providers/route-parts.js';
 import { providerRoutes } from './providers/routes.js';
 import { ssiCentreDisplayName } from './providers/ssi/ssi-centre.js';
 import { assessmentRoutes } from './assessment/routes.js';
@@ -100,8 +101,8 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
     // A schema added with app.addSchema becomes the component named by its $id (Problem), which routes $ref.
     refResolver: { buildLocalReference: (json, _baseUri, _fragment, i) => (typeof json.$id === 'string' ? json.$id : `def-${i}`) },
   });
-  // Every refusal's shape, named once for clients (ADR 0014); the routes refer to it.
-  app.addSchema(ProblemSchema);
+  // Every refusal's shape, named once for clients (ADR 0014), and the two that add extras of their own; the routes refer to them.
+  for (const schema of [ProblemSchema, ProviderProblemSchema, DeleteProblemSchema]) app.addSchema(schema);
   await app.register(multipart, { limits: { files: 1, fileSize: deps.maxUploadBytes } });
 
   app.get('/api/health/live', { schema: { hide: true } }, async () => ({ status: 'ok' }));

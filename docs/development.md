@@ -111,6 +111,9 @@ Garmin's official SDK automatically when present ([samples](../samples/README.md
 - **TypeBox 1.x** (`typebox` package) is used with `@fastify/type-provider-typebox` 6. `drizzle-typebox`
   still targets `@sinclair/typebox` 0.34, so API schemas are written by hand for now (ADR 0009).
 - **Drizzle 0.45** (stable 0.x API, `relations()` style); 1.0 is in beta.
+- **A shared object schema is named once**: one that more than two routes would inline (over 3 properties or 500 bytes)
+  gets an `$id`, is registered with `app.addSchema` in `app.ts` and is referred to with `refTo` (`http/problems.ts`), as
+  `Problem` is; a variant extends it with `Type.Intersect([Problem, …])`. `test/openapi-shared-schemas.test.ts` enforces it.
 - **Nullable request fields: `null` first** (`Type.Union([Type.Null(), T])`). Fastify's validator coerces
   types in union order, so `[T, Null]` turns `null` into `0` or `""` (ADR 0015).
 - **Playwright** comes from `@playwright/test`; `@playwright/cli` (for the `playwright-cli` skill) pins its

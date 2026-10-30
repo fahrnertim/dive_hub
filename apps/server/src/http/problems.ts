@@ -1,7 +1,7 @@
 // Error responses (ADR 0014): every refusal carries a stable `code`, which clients translate,
 // and an English `error` text for logs, scripts and anything without a translation.
 import type { FastifyError, FastifyInstance, FastifyReply } from 'fastify';
-import { type Static, Type } from 'typebox';
+import { type Static, type TSchema, Type } from 'typebox';
 import { Nullable, oneOf } from './schemas.js';
 
 export const PROBLEMS = {
@@ -150,8 +150,15 @@ export const ProblemSchema = Type.Object({
   runId: Type.Optional(Type.String({ description: 'With push_run_active: the run that is going (ADR 0047)' })),
 }, { $id: 'Problem', description: 'A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types' });
 
-/** What a route's response names for a refusal: a reference to ProblemSchema, typed as it. */
-export const Problem = Type.Unsafe<Static<typeof ProblemSchema>>(Type.Ref('Problem'));
+/** A reference to a schema registered with app.addSchema under its $id, typed as it: the OpenAPI document names it once. */
+export function refTo<T extends TSchema>(schema: T) {
+  const id = (schema as { $id?: unknown }).$id;
+  if (typeof id !== 'string') throw new Error('refTo needs a schema with an $id');
+  return Type.Unsafe<Static<T>>(Type.Ref(id));
+}
+
+/** What a route's response names for a refusal: a reference to ProblemSchema. */
+export const Problem = refTo(ProblemSchema);
 
 /** A response body for `code`; `detail` replaces the default English text where it says more. */
 export const problem = (code: ProblemCode, detail?: string) => ({ code, error: detail ?? PROBLEMS[code] });

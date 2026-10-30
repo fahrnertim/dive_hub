@@ -9,7 +9,8 @@ import {
   CYLINDER_MATERIALS, LEAD_PLACEMENTS, OVERRIDABLE_FIELDS, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive,
   type RecordingSummary,
 } from '../db/schema.js';
-import { answerErrors, answers, Problem, problem, ProblemSchema } from '../http/problems.js';
+import { answerErrors, answers, Problem, problem, refTo } from '../http/problems.js';
+import { Copies, DeleteProblemSchema } from './deletion-view.js';
 import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, SITE_WATER_TYPES, WATER_TYPES } from '../vocabulary.js';
 import { CYLINDER_CATALOGUE } from './cylinder-catalogue.js';
 import { CylinderError, withoutPressures } from './cylinders.js';
@@ -388,18 +389,7 @@ const CheckView = Type.Object({
   })),
 });
 
-const Copies = Type.Array(Type.Object({
-  provider: Type.String(),
-  copy: Type.Enum(['deleted', 'kept'], { description: 'What happened to the copy there' }),
-}), { description: 'Each Provider the Dive was at' });
-
-/** A refusal while deleting; after a provider_* code, which copies at Providers are gone already. */
-const DeleteProblem = Type.Object({
-  ...ProblemSchema.properties,
-  providers: Type.Optional(Type.Array(Copies.items, {
-    description: 'With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here)',
-  })),
-});
+const DeleteProblem = refTo(DeleteProblemSchema);
 
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
