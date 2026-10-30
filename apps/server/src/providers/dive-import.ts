@@ -10,7 +10,7 @@ import {
   recording, type ComputerChoice, type DiveImportMode, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
 } from '../db/schema.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
-import { wallClockMs, type PlacedTime } from '../dives/time-zone.js';
+import type { PlacedTime } from '../dives/time-zone.js';
 import { errorMessage } from '../errors.js';
 import type { ParsedRecording } from '../imports/parsed-recording.js';
 import { PROCESS_IMPORT_TASK } from '../imports/import-service.js';
@@ -23,7 +23,7 @@ import { siteOutlook } from '../sites/provider-sites.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import type { ConnectionService } from './connection-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
-import { REFERENCE_PREFIX, type DiveField, type ImportContext, type ImportedDive, type ProviderCylinder } from './provider.js';
+import { REFERENCE_PREFIX, localStartOf, type DiveField, type ImportContext, type ImportedDive, type ProviderCylinder } from './provider.js';
 import { createDiveChanges, importsField, type ProviderRun } from './dive-changes.js';
 import { currentRemote, fingerprintNow } from './remote-state.js';
 import { same, type SyncedField } from './three-way.js';
@@ -244,7 +244,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       }
     }
     if (linked) return { kind: 'linked', diveId: linked.diveId };
-    const local = wallClockMs(d.localStart)!;
+    const local = localStartOf(d);
     const rows = await q.select({
       id: dive.id, number: dive.number, startsAt: dive.startsAt, utcOffsetSeconds: dive.utcOffsetSeconds,
       utcOffsetSource: dive.utcOffsetSource, durationSeconds: dive.durationSeconds, maxDepthM: dive.maxDepthM,

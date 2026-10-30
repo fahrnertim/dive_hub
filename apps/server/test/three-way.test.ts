@@ -2,7 +2,9 @@
 // both did, nothing when only Dive Hub did; compared as the Provider keeps values (minutes, 0.1 m).
 import { describe, expect, it } from 'vitest';
 import { DIVE_FIELDS } from '../src/providers/provider.js';
-import { SYNCED_FIELDS, planSend, threeWay, type Comparable, type SyncedField } from '../src/providers/three-way.js';
+import { contextOf, parseSsiDive } from '../src/providers/ssi/ssi-import.js';
+import { SYNCED_FIELDS, comparableOf, planSend, threeWay, type Comparable, type SyncedField } from '../src/providers/three-way.js';
+import { handTypedDive } from './fake-ssi.js';
 
 const base: Comparable = {
   site: '3314', notes: 'Turtle', buddies: ['4989164'], startsAt: 29_000_000, durationSeconds: 2700, maxDepthM: 18, avgDepthM: null,
@@ -185,5 +187,17 @@ describe('planSend', () => {
   it('an open site is never taken as a removal nor cleared', () => {
     expect(plan({ provider: { site: null }, open: ['site'], choices: { site: 'provider' } })).toEqual(empty);
     expect(plan({ provider: { site: '77' }, hub: { site: null }, open: ['site'], choices: { site: 'hub' } })).toEqual(empty);
+  });
+});
+
+describe('a Provider\'s dive as compared', () => {
+  const dive = parseSsiDive({ ...handTypedDive({ at: '2025-08-10 10:00', depthM: 18, minutes: 45 }), odin_user_log_id: 1 }, contextOf({ dives: [], sites: [], buddies: [] }))!;
+
+  it('takes the local start in whole minutes', () => {
+    expect(comparableOf(dive).startsAt).toBe(Date.UTC(2025, 7, 10, 10, 0) / 60_000);
+  });
+
+  it('has a readable local start: an adapter drops a dive without one, so an unreadable one is a broken invariant', () => {
+    expect(() => comparableOf({ ...dive, localStart: 'yesterday' })).toThrow(/local start/);
   });
 });

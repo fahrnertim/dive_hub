@@ -6,6 +6,7 @@
 import type { CylinderMaterial, ParticipantRole, ProviderImportPlan } from '../db/schema.js';
 import type { DiveMode, Position, SiteWaterType } from '../vocabulary.js';
 import type { SiteSource } from '../sites/sources.js';
+import { wallClockMs } from '../dives/time-zone.js';
 
 export type DiverSource = 'ssi' | 'padi';
 
@@ -386,6 +387,16 @@ export interface ImportedDive extends ProviderDive {
   people: string[];
   /** Divers found through a remembered entry without an account; they become Participants like `people`. Never the dive's own Diver. */
   diverIds?: string[];
+}
+
+/**
+ * The dive's local start as milliseconds since 1970, read as if UTC. An adapter returns only dives with a readable
+ * start (parseSsiDive drops the rest), so an unreadable one is a broken invariant.
+ */
+export function localStartOf(d: ImportedDive): number {
+  const ms = wallClockMs(d.localStart);
+  if (ms === null) throw new Error(`Provider dive ${d.remoteId} has an unreadable local start: ${d.localStart}`);
+  return ms;
 }
 
 /** A Provider's single tank: what it keeps of a Cylinder. A value it doesn't have is null. */

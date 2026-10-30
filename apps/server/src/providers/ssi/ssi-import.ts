@@ -3,6 +3,7 @@
 import { REFERENCE_PREFIX, type DiveOrigin, type ImportContext, type ImportedDive, type ProviderCylinder, type Series } from '../provider.js';
 import type { SsiBuddy, SsiLogbook, SsiRecord } from './ssi-client.js';
 import { alpha2Of } from '../../sites/countries.js';
+import { wallClockMs } from '../../dives/time-zone.js';
 import { buddyIdsOf, SAMPLE_INTERVAL_MS } from './ssi-record.js';
 import { asBool } from './ssi-dive-row.js';
 import { diveModeOfSsi } from './ssi-dive-type.js';
@@ -171,7 +172,8 @@ function cylinderOf(r: SsiRecord, gas: ProviderCylinder['gas']): ProviderCylinde
 export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: string): ImportedDive | null {
   const remoteId = text(r.odin_user_log_id) ?? givenId ?? null;
   const start = text(r.odin_user_log_datetime)?.replace('T', ' ').replace('+', ' ');
-  if (!remoteId || !start || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(start)) return null;
+  // The local start must be readable (localStartOf relies on it).
+  if (!remoteId || !start || wallClockMs(start) === null) return null;
   const reference = text(r.odin_user_log_divecomputer_dive_ref);
   const samples = samplesOf(r);
   const device = deviceOf(r);

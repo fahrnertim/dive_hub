@@ -11,14 +11,14 @@ import { participantsOf } from '../dives/dive-service.js';
 import { managedDiverIds } from '../divers/management.js';
 import { columnsOf } from '../dives/dive-values.js';
 import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
-import { placeLocalTime, wallClockMs, type PlacedTime } from '../dives/time-zone.js';
+import { placeLocalTime, type PlacedTime } from '../dives/time-zone.js';
 import { siteRef } from '../sites/dive-site-link.js';
 import { siteDataAllowed, siteForProvider, type ProviderSite } from '../sites/provider-sites.js';
 import { accountOf, idsOf, pickId, settleVisibility } from '../sites/site-ids.js';
 import type { SiteSource } from '../sites/sources.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
-import type { DiveField, DiverSource, ImportContext, ImportedDive, ProviderAdapter, ProviderCylinder } from './provider.js';
+import { localStartOf, type DiveField, type DiverSource, type ImportContext, type ImportedDive, type ProviderAdapter, type ProviderCylinder } from './provider.js';
 import { currentRemote, fingerprintNow } from './remote-state.js';
 import { comparableOf, SYNCED_FIELDS, threeWay, VALUE_FIELDS, type Comparable, type SyncedField } from './three-way.js';
 import { cylindersOf, mergeProviderCylinder, providerCylinderOf } from '../dives/cylinders.js';
@@ -87,7 +87,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
 
   /** The start's instant: from the dive's position, else its site's at the Provider, else nearby Dives, else unknown. */
   const placeTime = (q: Queryable, run: ProviderRun, d: ImportedDive): Promise<PlacedTime> =>
-    placeLocalTime(q, run.diverId, wallClockMs(d.localStart)!, [d.exit, d.entry, d.sitePosition]);
+    placeLocalTime(q, run.diverId, localStartOf(d), [d.exit, d.entry, d.sitePosition]);
 
   /** The Dive's site from the first of the Provider's sites that is here (or may be created): its ID, or null. */
   async function fillSite(tx: Tx, run: ProviderRun, d: ImportedDive, actor: Actor): Promise<string | null> {
