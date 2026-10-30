@@ -24,7 +24,7 @@ import { useNames, useProviders } from './lib/providers.ts';
 import { SitePicker } from './SitePicker.tsx';
 import { Participants } from './Participants.tsx';
 import { ProviderPanels } from './ProviderPanel.tsx';
-import { DiveCodes } from './CentresPage.tsx';
+import { DiveCodes } from './DiveCodes.tsx';
 import { ActionMenu, BackLink, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, PageHeader, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */

@@ -6,7 +6,7 @@ import {
   type ConflictChoices, type ConflictFieldView, type DiveView, type ProviderStatusView, type ProviderView, type PushView, type RequirementView,
   type UnmetView,
 } from './api.ts';
-import { showDiveCodes } from './CentresPage.tsx';
+import { showDiveCodes } from './DiveCodes.tsx';
 import { announce } from './lib/announce.ts';
 import { LinkOrAddDialog, ListChangeNotice, type ListChange } from './LinkOrAdd.tsx';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
@@ -15,7 +15,7 @@ import { accountHref } from './lib/account-tabs.ts';
 import { NumberChainDialog } from './NumberChain.tsx';
 import { ProviderConflicts } from './ProviderConflicts.tsx';
 import { WaitingPushState } from './WaitingPush.tsx';
-import { Badge, Button, ConfirmButton, Dialog, Disclosure, Muted, Notice, SearchList, type SearchListItem } from './ui/index.ts';
+import { Badge, Button, ConfirmButton, Dialog, Disclosure, Muted, Notice, SEARCH_SHOWN, SearchList, type SearchListItem } from './ui/index.ts';
 
 type Existing = { remoteId: string; number: number | null; startsAt: string | null; maxDepthM: number | null; durationMinutes: number | null };
 /** What a send asks for: link to or create beside a dive at the same time, and the choice per Conflict (ADR 0056). */
@@ -55,31 +55,20 @@ export function ProviderPanels({ dive, diverName }: { dive: DiveView; diverName:
 }
 
 /**
- * The Dive at one Provider (ADR 0024, 0027): send it, update it when it changed, delete it there, as far as the
- * Provider offers. What it needs first comes from its requirements (ADR 0029), each with its own way to fix it.
- * Shown only when the Dive's Diver is connected; otherwise it says where to connect.
- * One line that says where the Dive is at the Provider, and opens for the rest (UI redesign, slice A). It opens by
- * itself when something waits for the User: the Dive changed since it was sent, or the last sending failed.
+ * What the User does with the Dive at one Provider (ADR 0024, 0056): send it, set its number there, delete it there;
+ * and what the answers leave on the line until put away. Every done action refreshes the line and the logbook's row.
  */
-function ProviderPanel({ provider: p, dive: d, diverName }: { provider: ProviderView; dive: DiveView; diverName: string | undefined }) {
-  const { t } = useTranslation();
+function useProviderActions(d: DiveView, p: ProviderView, s: ProviderStatusView | undefined) {
   const pt = useProviderText(p);
-  const errorText = useErrorText();
-  const problemText = useProblemText();
-  const display = useDisplay();
   const queryClient = useQueryClient();
   const exports = p.data.dives!.export!;
-  const status = useQuery(providerStatusQuery(d.id, p.id));
   const [existing, setExisting] = useState<Existing | null>(null);
   const [verificationRemoved, setVerificationRemoved] = useState(false);
-  const [chainOpen, setChainOpen] = useState(false);
   // Fields changed on both sides, asked by the last send: the choice stands where the send button was until sent or cancelled.
   const [asked, setAsked] = useState<ConflictFieldView[] | null>(null);
   const [exchanged, setExchanged] = useState<Exchanged | null>(null);
-  // What the list of people at the Provider got (a send's `buddies`, or Link or add), and the Participant being linked or added.
+  // What the list of people at the Provider got (a send's `buddies`, or Link or add).
   const [listChange, setListChange] = useState<ListChange | null>(null);
-  const [finding, setFinding] = useState<{ id: string; name: string } | null>(null);
-  const can = (op: (typeof exports.operations)[number]) => exports.operations.includes(op);
   // `next` is a done send, number or remove: the logbook's row shows the Dive's state at the Provider, so it asks again.
   const refresh = async (next?: ProviderStatusView) => {
     if (next) queryClient.setQueryData(keys.providerStatus(d.id, p.id), next);
@@ -88,7 +77,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
     if (next) await queryClient.invalidateQueries(diveListPages);
   };
   // The worker settled a Waiting push while the page was open (a Retry, a decision, its due time): the row follows.
-  const waitingState = status.data?.waiting?.state ?? null;
+  const waitingState = s?.waiting?.state ?? null;
   const wasWaiting = useRef(waitingState);
   useEffect(() => {
     if (wasWaiting.current !== null && wasWaiting.current !== waitingState) void queryClient.invalidateQueries(diveListPages);
@@ -98,7 +87,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
     mutationFn: (request: SendRequest) => sendDive(d.id, p.id, request),
     onSuccess: async (sent) => {
       // Said again after the update, with the way to the code (ADR 0043).
-      setVerificationRemoved(sent.outcome === 'updated' && !!status.data?.current?.updateRemovesVerification);
+      setVerificationRemoved(sent.outcome === 'updated' && !!s?.current?.updateRemovesVerification);
       await refresh(sent.status);
       // A send settles or leaves the Conflicts the Review page lists.
       await queryClient.invalidateQueries({ queryKey: keys.providerConflicts });
@@ -106,13 +95,15 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       setAsked(after.asked);
       setExchanged(after.exchanged);
       setListChange(sent.buddies ?? null);
-      // Nothing was sent: the User chooses per field first.
-      if (sent.outcome === 'conflicts') return announce(pt('result.conflicts'));
-      setExisting(sent.outcome === 'exists' ? sent.existing : null);
-      if (sent.outcome === 'exists') return;
+      // A send that found Conflicts sent nothing (the User chooses per field first): the question about a dive there stays.
+      if (sent.outcome !== 'conflicts') setExisting(sent.outcome === 'exists' ? sent.existing : null);
       // Values came back from the Provider: the Dive and the logbook show them; the notice under the line names them.
       if (after.exchanged?.taken.length) await queryClient.invalidateQueries({ queryKey: keys.dives });
-      announce(exports.delivery === 'handed_over' ? pt('handedOverResult') : pt(`result.${sent.outcome}`, { number: sent.status.current?.remoteNumber ?? '' }));
+      // A dive there already: the dialog asks, nothing is said.
+      if (sent.outcome === 'exists') return;
+      announce(sent.outcome === 'conflicts' ? pt('result.conflicts')
+        : exports.delivery === 'handed_over' ? pt('handedOverResult')
+        : pt(`result.${sent.outcome}`, { number: sent.status.current?.remoteNumber ?? '' }));
     },
     onError: () => refresh(),
   });
@@ -125,6 +116,37 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
     mutationFn: async () => unwrap(await api.DELETE('/api/dives/{id}/providers/{provider}', { params: { path: { id: d.id, provider: p.id } } })),
     onSuccess: async (next) => { await refresh(next); announce(pt('deleted')); },
   });
+  return {
+    send, setNumber, remove,
+    existing, closeExisting: () => setExisting(null), verificationRemoved,
+    asked, putAwayAsked: () => setAsked(null), exchanged, closeExchanged: () => setExchanged(null),
+    listChange, setListChange,
+  };
+}
+
+/**
+ * The Dive at one Provider (ADR 0024, 0027): send it, update it when it changed, delete it there, as far as the
+ * Provider offers. What it needs first comes from its requirements (ADR 0029), each with its own way to fix it.
+ * Shown only when the Dive's Diver is connected; otherwise it says where to connect.
+ * One line that says where the Dive is at the Provider, and opens for the rest (UI redesign, slice A). It opens by
+ * itself when something waits for the User: the Dive changed since it was sent, or the last sending failed.
+ */
+function ProviderPanel({ provider: p, dive: d, diverName }: { provider: ProviderView; dive: DiveView; diverName: string | undefined }) {
+  const { t } = useTranslation();
+  const pt = useProviderText(p);
+  const errorText = useErrorText();
+  const problemText = useProblemText();
+  const display = useDisplay();
+  const exports = p.data.dives!.export!;
+  const status = useQuery(providerStatusQuery(d.id, p.id));
+  const {
+    send, setNumber, remove, existing, closeExisting, verificationRemoved, asked, putAwayAsked, exchanged, closeExchanged,
+    listChange, setListChange,
+  } = useProviderActions(d, p, status.data);
+  const [chainOpen, setChainOpen] = useState(false);
+  // The Participant being linked or added.
+  const [finding, setFinding] = useState<{ id: string; name: string } | null>(null);
+  const can = (op: (typeof exports.operations)[number]) => exports.operations.includes(op);
 
   const s = status.data;
   const waiting = !!s && waitsForUser(s);
@@ -172,7 +194,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       {last?.state === 'failed' && !send.error && <Notice tone="danger">{pt('lastFailed', { error: failure(last) })}</Notice>}
       {last?.leftOut && last.leftOut.length > 0 && last.state !== 'failed' && <LeftOut provider={p} push={last} canFind={!!p.data.buddies?.import?.operations.includes('find')} onFind={setFinding} />}
       {last?.differences && last.differences.length > 0 && <Differences provider={p} push={last} />}
-      {exchanged && <ExchangedNotice provider={p} exchanged={exchanged} onClose={() => setExchanged(null)} />}
+      {exchanged && <ExchangedNotice provider={p} exchanged={exchanged} onClose={closeExchanged} />}
 
       {s.current?.number?.differs && (
         <div className="provider-number">
@@ -223,7 +245,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
         <ProviderConflicts
           key={choosing.map((c) => c.field).join()} conflicts={choosing} providerName={p.name} waiting={!asked}
           isPending={sendsChoices(send)} onSend={(conflicts) => send.mutate({ conflicts })}
-          onCancel={cancelAsked(asked, () => setAsked(null))}
+          onCancel={cancelAsked(asked, putAwayAsked)}
         />
       )}
       {ready && !signInNeeded && !asked && (
@@ -265,7 +287,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       {finding && s.connection && (
         <LinkOrAddDialog provider={p} diver={finding} connectionId={s.connection.id} diveId={d.id} onClose={() => setFinding(null)} onChanged={setListChange} />
       )}
-      <Dialog title={pt('existsTitle')} isOpen={existing !== null} onOpenChange={(open) => !open && setExisting(null)}>
+      <Dialog title={pt('existsTitle')} isOpen={existing !== null} onOpenChange={(open) => !open && closeExisting()}>
         {existing && (
           <>
             <p>{pt('existsBody', {
@@ -279,7 +301,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
                 onPress={() => send.mutate({ onExisting: 'link' })}>{pt('linkExisting')}</Button>
               <Button icon="send" isPending={send.isPending && send.variables.onExisting === 'create'} isDisabled={send.isPending}
                 onPress={() => send.mutate({ onExisting: 'create' })}>{pt('sendAnyway')}</Button>
-              <Button onPress={() => setExisting(null)}>{t('common.cancel')}</Button>
+              <Button onPress={closeExisting}>{t('common.cancel')}</Button>
             </div>
           </>
         )}
@@ -358,7 +380,7 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
         <Muted key={`${u.type}-${u.source}`}>{requirementOf(p, u)?.description ?? u.type} {pt('cannotFixHere')}</Muted>
       ))}
       {picking && d.site && (
-        <SitePicker provider={p} requirement={picking} connectionId={s.connection!.id} diveId={d.id} diveSiteId={d.site.id} siteName={d.site.name} onClose={() => setPicking(null)} />
+        <ProviderSitePicker provider={p} requirement={picking} connectionId={s.connection!.id} diveId={d.id} diveSiteId={d.site.id} siteName={d.site.name} onClose={() => setPicking(null)} />
       )}
     </div>
   );
@@ -439,8 +461,6 @@ function Differences({ provider: p, push }: { provider: ProviderView; push: Push
   );
 }
 
-/** Results shown at most, without scrolling (ux-search). */
-const SHOWN = 10;
 /** The row that saves a site ID typed into the search field. */
 const TYPED = '__typed__';
 
@@ -449,7 +469,7 @@ const TYPED = '__typed__';
  * logbook), nearest first, narrowed while typing a name or an ID; or use an ID typed in. Picking saves at once on the
  * Dive site (ux-search).
  */
-function SitePicker({ provider: p, requirement: r, connectionId, diveId, diveSiteId, siteName, onClose }: {
+function ProviderSitePicker({ provider: p, requirement: r, connectionId, diveId, diveSiteId, siteName, onClose }: {
   provider: ProviderView; requirement: RequirementView; connectionId: string; diveId: string; diveSiteId: string; siteName: string; onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -478,7 +498,7 @@ function SitePicker({ provider: p, requirement: r, connectionId, diveId, diveSit
   const fold = (v: string) => v.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
   const all = suggestions.data ?? [];
   const matching = query ? all.filter((s) => fold(s.name).includes(fold(query)) || s.id === typedId) : all;
-  const items: SearchListItem[] = matching.slice(0, SHOWN).map((s) => ({
+  const items: SearchListItem[] = matching.slice(0, SEARCH_SHOWN).map((s) => ({
     id: s.id, name: s.name,
     detail: [s.country, s.visibility === 'private' ? pt('privateSite') : null, s.distanceM !== null ? pt('away', { distance: display.distance(s.distanceM) }) : null, pt('idIs', { id: s.id })]
       .filter(Boolean).join(' · '),
@@ -489,7 +509,7 @@ function SitePicker({ provider: p, requirement: r, connectionId, diveId, diveSit
   const status = suggestions.isPending ? t('common.loading')
     : !query ? (all.length === 0 ? pt('noSuggestions') : pt('fromLogbook'))
     : items.length === 0 ? pt('noLogbookMatch', { q: query })
-    : matching.length > SHOWN ? t('sites.showingFirst', { shown: SHOWN }) : null;
+    : matching.length > SEARCH_SHOWN ? t('sites.showingFirst', { shown: SEARCH_SHOWN }) : null;
 
   return (
     <Dialog title={pt('pickTitle', { site: siteName })} isOpen onOpenChange={(open) => !open && onClose()}>

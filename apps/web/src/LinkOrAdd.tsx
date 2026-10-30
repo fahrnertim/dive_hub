@@ -6,10 +6,7 @@ import { CodeScanner } from './CodeScanner.tsx';
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
 import { useProviderText } from './lib/providers.ts';
-import { Button, Dialog, Form, Muted, Notice, SearchList, TextField, type SearchListItem } from './ui/index.ts';
-
-/** Results shown at most, without scrolling (ux-search). */
-const SHOWN = 10;
+import { Button, Dialog, Form, Muted, Notice, SEARCH_SHOWN, SearchList, TextField, type SearchListItem } from './ui/index.ts';
 
 /** What a send or an add did to the account's list of people at the Provider (the send's `buddies`). */
 export type ListChange = {
@@ -84,13 +81,13 @@ export function LinkOrAddDialog({ provider: p, diver, connectionId, diveId, onCl
   // Every entry not yet a Diver's: with an account or without (a matching entry only comes first, the server's sort).
   const free = (buddies.data ?? []).filter((b) => !b.diver);
   const matching = query ? free.filter((b) => fold(b.name).includes(fold(query))) : free;
-  const items: SearchListItem[] = matching.slice(0, SHOWN).map((b) => ({
+  const items: SearchListItem[] = matching.slice(0, SEARCH_SHOWN).map((b) => ({
     id: b.entryId,
     name: b.name || pt('noNameYet'),
     // An entry without a name is told apart by its account; one without an account says so.
     detail: !b.account ? pt('noAccountYet') : b.name ? undefined : pt('entryAccount', { account: b.account }),
   }));
-  const status = buddies.isPending ? t('common.loading') : matching.length > SHOWN ? t('sites.showingFirst', { shown: SHOWN }) : null;
+  const status = buddies.isPending ? t('common.loading') : matching.length > SEARCH_SHOWN ? t('sites.showingFirst', { shown: SEARCH_SHOWN }) : null;
   const empty = buddies.isPending ? t('common.loading') : (buddies.data ?? []).length === 0 ? pt('noBuddies') : query ? pt('noBuddyMatch', { q: query }) : pt('allHere');
   const taken = link.error instanceof ApiError && link.error.code === 'diver_external_id_taken' ? link.error.details.diver : undefined;
 

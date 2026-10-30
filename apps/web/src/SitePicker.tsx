@@ -5,10 +5,8 @@ import { api, keys, sitesQuery, unwrap, type DiveView, type SiteView } from './a
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { SiteForm } from './SiteForm.tsx';
-import { Badge, Button, Dialog, Notice, SearchList, type SearchListItem } from './ui/index.ts';
+import { Badge, Button, Dialog, Notice, SEARCH_SHOWN, SearchList, type SearchListItem } from './ui/index.ts';
 
-/** Results shown at most, without scrolling (ux-search); typing narrows them down. */
-const SHOWN = 10;
 /** The row that makes a new site from what was typed, where nothing matches (no dead end). */
 const NEW = '__new__';
 /** Sites within this distance of the dive's position are offered first (ADR 0020). */
@@ -55,7 +53,7 @@ export function SitePicker({ dive: d, onClose }: { dive: DiveView; onClose: () =
     s.country ? display.country(s.country) : null,
     s.waterBody,
   ].filter(Boolean).join(' · ');
-  const items: SearchListItem[] = sites.slice(0, SHOWN).map((s) => ({
+  const items: SearchListItem[] = sites.slice(0, SEARCH_SHOWN).map((s) => ({
     id: s.id, name: s.name, detail: detail(s) || undefined,
     ...(s.id === d.site?.id && { badge: <Badge>{t('sites.current')}</Badge> }),
   }));
@@ -70,10 +68,10 @@ export function SitePicker({ dive: d, onClose }: { dive: DiveView; onClose: () =
   const status = (q || !d.position) && !results.data ? t('sites.searching')
     : q ? [
       total === 0 ? t('sites.noMatch', { q }) : t('sites.matchCount', { count: total, q }),
-      total > SHOWN ? t('sites.showingFirst', { shown: SHOWN }) : null,
+      total > SEARCH_SHOWN ? t('sites.showingFirst', { shown: SEARCH_SHOWN }) : null,
     ].filter(Boolean).join(' ')
     : d.position ? (total === 0 ? t('sites.noneNearby', { distance: display.distance(NEARBY_M) }) : t('sites.nearbyFirst'))
-    : total > SHOWN ? `${t('sites.allByName')} ${t('sites.showingFirst', { shown: SHOWN })}` : t('sites.allByName');
+    : total > SEARCH_SHOWN ? `${t('sites.allByName')} ${t('sites.showingFirst', { shown: SEARCH_SHOWN })}` : t('sites.allByName');
 
   const pick = (id: string) => {
     if (id === NEW) { setCreating(true); return; }
