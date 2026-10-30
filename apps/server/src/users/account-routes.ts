@@ -3,7 +3,7 @@
 import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { authHeaders, forwardCookies, requireUser, userOf } from '../auth/fastify.js';
+import { authHeaders, forwardCookies, requireUser, sessionIdOf, userOf } from '../auth/fastify.js';
 import { problem } from '../http/problems.js';
 import type { PasswordResetService } from './password-reset-service.js';
 import type { SessionService } from './session-service.js';
@@ -64,7 +64,7 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
 
     signedIn.get('/me/sessions', {
       schema: { summary: 'Where the signed-in User is signed in', response: { 200: Type.Array(SessionView) } },
-    }, async (request) => sessions.list(userOf(request).id, request.sessionId));
+    }, async (request) => sessions.list(userOf(request).id, sessionIdOf(request)));
 
     signedIn.delete('/me/sessions/:id', {
       schema: { summary: 'Sign out one session (the current one too)', params: IdParams, response: { 204: Type.Null(), 404: Problem } },
@@ -76,7 +76,7 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
     signedIn.delete('/me/sessions', {
       schema: { summary: 'Sign out every other session', response: { 204: Type.Null() } },
     }, async (request, reply) => {
-      await sessions.endOthers(userOf(request).id, request.sessionId!);
+      await sessions.endOthers(userOf(request).id, sessionIdOf(request));
       return reply.code(204).send(null);
     });
   });

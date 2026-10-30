@@ -78,6 +78,12 @@ export function userOf(request: FastifyRequest): SessionUser {
   return request.user;
 }
 
+/** The signed-in session's id of a route behind requireUser; like userOf, it throws without the hook. */
+export function sessionIdOf(request: FastifyRequest): string {
+  if (!request.sessionId) throw new Error('no session: the route has no requireUser hook');
+  return request.sessionId;
+}
+
 /** Whether the User has the admin role: the one place that rule is written. */
 export const isAdmin = (user: SessionUser | null): boolean => user?.role === 'admin';
 
