@@ -13,7 +13,7 @@ import { IMPORT_SOURCES, revisionKey, type ImportSource } from '../sources.js';
 import { planSiteImport, type ExistingSite, type Field, type PlannedCreate, type PlannedUpdate } from './import-plan.js';
 import { IMPORTED_FIELDS, SiteSourceError, type ImportArea, type ImportedValues, type SiteSourceAdapter, type SourceSite } from './site-source.js';
 
-export const IMPORT_SITES_TASK = 'import_dive_sites';
+export const IMPORT_DIVE_SITES_TASK = 'import_dive_sites';
 
 export class SiteImportError extends Error {
   constructor(readonly code: 'odbl_not_confirmed' | 'ssi_not_confirmed' | 'site_import_running' | 'site_import_not_found') {
@@ -135,7 +135,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
             createSites: request.createSites,
           }).returning();
           // One attempt: a failed import says why and is started again by the admin, not retried behind their back.
-          await tx.execute(sql`select graphile_worker.add_job(${IMPORT_SITES_TASK}, json_build_object('siteImportId', ${row!.id}::text), max_attempts => 1)`);
+          await tx.execute(sql`select graphile_worker.add_job(${IMPORT_DIVE_SITES_TASK}, json_build_object('siteImportId', ${row!.id}::text), max_attempts => 1)`);
           return row!;
         });
       } catch (error) {

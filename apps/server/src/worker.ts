@@ -2,14 +2,16 @@ import { run, type Runner } from 'graphile-worker';
 import type pg from 'pg';
 import type { FastifyBaseLogger } from 'fastify';
 import { BACKFILL_GAS_FIGURES_TASK, BACKFILL_POSITIONS_TASK, EXPIRE_WAITING_IMPORTS_TASK, FILL_CYLINDERS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
-import { IMPORT_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
+import { IMPORT_DIVE_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
 import { PUSH_RUN_STEP_TASK, type PushRunService } from './providers/push-run-service.js';
 import { WAITING_PUSHES_TASK, waitingPushesKey } from './providers/waiting-push-queue.js';
 import { AUTOMATION_TICK_TASK, type WaitingPushService } from './providers/waiting-push-service.js';
-import { FETCH_TASK, type ScheduledFetch } from './providers/scheduled-fetch.js';
+import { SCHEDULED_FETCH_TASK, type ScheduledFetch } from './providers/scheduled-fetch.js';
 import { CERTIFICATION_IMAGE_TASK, type CertificationService } from './certifications/certification-service.js';
 import type { AiAccessService } from './mcp/access-service.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
+
+// These two values stay kebab-case, unlike the snake_case of the others: queued jobs and the crontab's record carry them.
 
 /** Assesses every Dive not yet assessed with the current rules (ADR 0036): after a first start with them, or a new engine version. */
 const ASSESS_DIVES_TASK = 'assess-dives';
@@ -87,7 +89,7 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
     crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}\n47 * * * * ${EXPIRE_WAITING_IMPORTS_TASK}\n* * * * * ${AUTOMATION_TICK_TASK}`,
     taskList: {
       [PROCESS_IMPORT_TASK]: processImportTask(imports, waitingPushes, scheduledFetch, log),
-      [IMPORT_SITES_TASK]: async (payload) => {
+      [IMPORT_DIVE_SITES_TASK]: async (payload) => {
         const siteImportId = idOf(payload, 'siteImportId');
         log.info({ siteImportId }, 'importing dive sites');
         await siteImports.run(siteImportId);
@@ -116,7 +118,7 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
         await scheduledFetch.tick();
       },
       // One Connection's scheduled fetch: an unattended Import, which PROCESS_IMPORT_TASK then runs.
-      [FETCH_TASK]: async (payload) => {
+      [SCHEDULED_FETCH_TASK]: async (payload) => {
         const connectionId = idOf(payload, 'connectionId');
         await scheduledFetch.fetch(connectionId);
       },

@@ -12,7 +12,7 @@ import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import type { ProviderLog } from './waiting-push-queue.js';
 
 /** One fetch of a Connection (job key `fetch:<connection>`). */
-export const FETCH_TASK = 'scheduled_fetch';
+export const SCHEDULED_FETCH_TASK = 'scheduled_fetch';
 /** The fetch on opening reads only when the last fetch is older than this (and than the Provider's minimum). */
 export const OPENING_AFTER_MINUTES = 60;
 
@@ -52,7 +52,7 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
     return !(await blocked(conn, running));
   }
 
-  const queue = (connectionId: string) => db.execute(sql`select graphile_worker.add_job(${FETCH_TASK},
+  const queue = (connectionId: string) => db.execute(sql`select graphile_worker.add_job(${SCHEDULED_FETCH_TASK},
     json_build_object('connectionId', ${connectionId}::text), job_key => ${'fetch:' + connectionId}, max_attempts => 1)`);
 
   return {
