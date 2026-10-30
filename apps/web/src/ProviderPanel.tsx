@@ -10,7 +10,7 @@ import { showDiveCodes } from './DiveCodes.tsx';
 import { announce } from './lib/announce.ts';
 import { LinkOrAddDialog, ListChangeNotice, type ListChange } from './LinkOrAdd.tsx';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
-import { exporting, typedSiteId, useFieldNames, useNames, useProviders, useProviderText, waitsForUser, type SyncedField } from './lib/providers.ts';
+import { diveTargets, typedSiteId, useFieldNames, useJoinNames, useProviders, useProviderText, waitsForUser, type SyncedField } from './lib/providers.ts';
 import { accountHref } from './lib/account-tabs.ts';
 import { NumberChainDialog } from './NumberChain.tsx';
 import { ProviderConflicts } from './ProviderConflicts.tsx';
@@ -51,7 +51,7 @@ const requirementOf = (p: ProviderView, u: UnmetView): RequirementView | undefin
 /** The Dive at every Provider that takes dives (ADR 0027): one line each, rendered from what the Provider offers. */
 export function ProviderPanels({ dive, diverName }: { dive: DiveView; diverName: string | undefined }) {
   const providers = useProviders();
-  return <>{exporting(providers.data).map((p) => <ProviderPanel key={p.id} provider={p} dive={dive} diverName={diverName} />)}</>;
+  return <>{diveTargets(providers.data).map((p) => <ProviderPanel key={p.id} provider={p} dive={dive} diverName={diverName} />)}</>;
 }
 
 /**
@@ -337,7 +337,7 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
   provider: ProviderView; dive: DiveView; status: ProviderStatusView; onFind: (diver: { id: string; name: string }) => void;
 }) {
   const pt = useProviderText(p);
-  const names = useNames();
+  const joinNames = useJoinNames();
   const [picking, setPicking] = useState<RequirementView | null>(null);
   if (s.unmet.length === 0) return null;
   const sites = s.unmet.filter((u) => u.type === 'site_external_id');
@@ -363,7 +363,7 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
       {people.length > 0 && (
         <div className="form">
           <Muted>{pt(people.some((u) => u.severity === 'blocking') ? 'peopleUnknownBlocking' : 'peopleUnknown', {
-            names: names(people.map((u) => u.diverName ?? '')),
+            names: joinNames(people.map((u) => u.diverName ?? '')),
           })}</Muted>
           {canFindPeople && (
             <ul className="provider-people">
@@ -391,13 +391,13 @@ function LeftOut({ provider: p, push, canFind, onFind }: {
   provider: ProviderView; push: PushView; canFind: boolean; onFind: (diver: { id: string; name: string }) => void;
 }) {
   const pt = useProviderText(p);
-  const names = useNames();
+  const joinNames = useJoinNames();
   const left = (reason: 'no_reference' | 'not_at_provider') => push.leftOut!.filter((l) => l.reason === reason);
   const of = (reason: 'no_reference' | 'not_at_provider') => left(reason).map((l) => l.name);
   return (
     <Notice tone="info">
-      {of('no_reference').length > 0 && <p>{pt('leftOut.no_reference', { names: names(of('no_reference')) })}</p>}
-      {of('not_at_provider').length > 0 && <p>{pt('leftOut.not_at_provider', { names: names(of('not_at_provider')) })}</p>}
+      {of('no_reference').length > 0 && <p>{pt('leftOut.no_reference', { names: joinNames(of('no_reference')) })}</p>}
+      {of('not_at_provider').length > 0 && <p>{pt('leftOut.not_at_provider', { names: joinNames(of('not_at_provider')) })}</p>}
       {canFind && left('not_at_provider').length > 0 && (
         <ul className="provider-people">
           {left('not_at_provider').map((l) => (

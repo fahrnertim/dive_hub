@@ -20,7 +20,7 @@ export function reviewHref(tab: ReviewTab): string {
  * Dives that are probably no dive (ADR 0038), Dives gone at a Provider (ADR 0051), counted per Provider, and Dives a run
  * left with values changed in both places, or that the Provider already has a dive for (ADR 0056).
  */
-export function useWaiting() {
+export function useToDecideCounts() {
   const recordings = useQuery(candidatesQuery('open')).data?.length ?? 0;
   const checks = useQuery(logbookChecksQuery('open')).data ?? [];
   const pairs = checks.filter(isPairCheck).length;

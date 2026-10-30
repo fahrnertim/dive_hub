@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, deletedDivesQuery, diversQuery, keys, unwrap, type DeletedDiveView, type ProviderView } from './api.ts';
+import { api, deletedDivesQuery, diversQuery, keys, unwrap, type DeletedDiveView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { deletedNotice, updateDeletion, useDeletion, type JustDeleted } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading, refocusAfterRemoval } from './lib/focus.ts';
 import { reviewHref } from './lib/review.ts';
-import { exporting, useNames, useProviders, useProviderText } from './lib/providers.ts';
+import { diveTargets, useJoinNames, useProviderOf, useProviders, useProviderText, type ProviderRef } from './lib/providers.ts';
 import { WaitingPushState } from './WaitingPush.tsx';
 import { Button, ConfirmButton, LinkButton, Muted, Notice, Panel } from './ui/index.ts';
 
@@ -36,12 +36,6 @@ function useRestore(d: DeletedDiveView, onRestored: () => void) {
   });
 }
 
-/** A Provider by its id, from what the server says it has; a name it no longer lists stays the id. */
-function useProviderOf() {
-  const providers = useProviders();
-  return (id: string) => providers.data?.find((p) => p.id === id) ?? { id, name: id } as ProviderView;
-}
-
 /**
  * At the top of the logbook (ADR 0026): the Dive just deleted, with "Undo"; otherwise a reminder while deleted dives are
  * still at a Provider. Both can be dismissed; the reminder comes back on the next visit, as long as the dive is there.
@@ -50,7 +44,7 @@ export function DeletedNotices() {
   const { t } = useTranslation();
   const { justDeleted, reminderDismissed } = useDeletion();
   const deleted = useQuery(deletedDivesQuery());
-  const names = useNames();
+  const joinNames = useJoinNames();
   const providerOf = useProviderOf();
   // Offered only while that Dive is still deleted (it may have been restored from the list).
   const entry = justDeleted && deleted.data?.find((d) => d.id === justDeleted.id);
@@ -60,7 +54,7 @@ export function DeletedNotices() {
   const where = [...new Set(still.flatMap((d) => d.stillAt.map((s) => providerOf(s.provider).name)))];
   return (
     <Notice tone="info">
-      <p>{t('deleted.reminder', { count: still.length, name: names(where) })}</p>
+      <p>{t('deleted.reminder', { count: still.length, name: joinNames(where) })}</p>
       <div className="form-actions">
         <LinkButton href={reviewHref('deleted')}>{t('deleted.showList')}</LinkButton>
         <Button variant="quiet" onPress={() => { updateDeletion({ reminderDismissed: true }); focusHeading(); }}>{t('common.dismiss')}</Button>
@@ -72,13 +66,13 @@ export function DeletedNotices() {
 function JustDeletedNotice({ just, dive: d }: { just: JustDeleted; dive: DeletedDiveView }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
-  const names = useNames();
+  const joinNames = useJoinNames();
   const restore = useRestore(d, () => focusHeading());
   const notice = deletedNotice(just.copies);
   return (
     <Notice tone="success">
-      <p>{t(notice.key, { name: just.name, provider: names(notice.copies.map((c) => c.name)), number: notice.copies[0]?.remoteNumber ?? '' })}</p>
-      {just.byThemselves.length > 0 && <p>{t('deleted.noticeItself', { provider: names(just.byThemselves) })}</p>}
+      <p>{t(notice.key, { name: just.name, provider: joinNames(notice.copies.map((c) => c.name)), number: notice.copies[0]?.remoteNumber ?? '' })}</p>
+      {just.byThemselves.length > 0 && <p>{t('deleted.noticeItself', { provider: joinNames(just.byThemselves) })}</p>}
       {restore.error && <p>{errorText(restore.error)}</p>}
       <div className="form-actions">
         <Button icon="undo" isPending={restore.isPending} onPress={() => restore.mutate()}>{t('common.undo')}</Button>
@@ -98,14 +92,14 @@ export function DeletedDives() {
   const { t } = useTranslation();
   const deleted = useQuery(deletedDivesQuery());
   const providers = useProviders();
-  const names = useNames();
+  const joinNames = useJoinNames();
   const list = useRef<HTMLUListElement>(null);
   const dives = deleted.data ?? [];
   const count = dives.length;
   if (count === 0) return null;
   return (
     <Panel title={t('deleted.title')}>
-      <Muted>{t('deleted.intro', { name: names(exporting(providers.data).map((p) => p.name)) })}</Muted>
+      <Muted>{t('deleted.intro', { name: joinNames(diveTargets(providers.data).map((p) => p.name)) })}</Muted>
       <ul className="decisions" ref={list}>
         {dives.map((d, index) => <DeletedRow key={d.id} dive={d} list={list} index={index} count={count} />)}
       </ul>
@@ -168,7 +162,7 @@ function DeletedRow({ dive: d, list, index, count }: {
 
 /** "Delete in SSI" for a deleted Dive still there: asks first, since the Provider may not bring it back. */
 function DeleteThere({ provider: p, diveId, name, remoteNumber, onDone }: {
-  provider: ProviderView; diveId: string; name: string; remoteNumber: number | null; onDone: () => void;
+  provider: ProviderRef; diveId: string; name: string; remoteNumber: number | null; onDone: () => void;
 }) {
   const { t } = useTranslation();
   const pt = useProviderText(p);

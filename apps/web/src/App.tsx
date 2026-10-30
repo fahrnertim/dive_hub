@@ -17,7 +17,7 @@ import { mayLeave } from './lib/leave-guard.ts';
 import { navSection, type NavSection } from './lib/nav.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
 import { accountHref, accountTab } from './lib/account-tabs.ts';
-import { reviewTab, useWaiting } from './lib/review.ts';
+import { reviewTab, useToDecideCounts } from './lib/review.ts';
 import { ActionMenu, BrandMark, ErrorBoundary, Icon, Muted, Notice, PageHeader } from './ui/index.ts';
 
 // Pages most visits don't need load on demand: the chart library, account settings, admin.
@@ -115,14 +115,14 @@ function Navigation({ route, me }: { route: string; me: Me }) {
   const section = navSection(route);
   const current = (tab: NavSection) => (tab === section ? { 'aria-current': 'page' as const } : {});
   // What waits for a decision is counted beside the logbook, visible from every page (UI redesign 4.3).
-  const { total: waiting } = useWaiting();
+  const { total: toDecide } = useToDecideCounts();
   return (
     <>
       <nav className="app-nav" aria-label={t('nav.main')}>
         <a href="#/" {...current('logbook')}>
           <Icon name="logbook" />{t('nav.logbook')}
           <RunMark />
-          {waiting > 0 && <span className="count"><span aria-hidden="true">{waiting}</span><span className="visually-hidden">{t('nav.toDecide', { count: waiting })}</span></span>}
+          {toDecide > 0 && <span className="count"><span aria-hidden="true">{toDecide}</span><span className="visually-hidden">{t('nav.toDecide', { count: toDecide })}</span></span>}
         </a>
         <a href="#/divers" {...current('divers')}><Icon name="divers" />{t('nav.divers')}</a>
         <a href="#/sites" {...current('sites')}><Icon name="site" />{t('nav.sites')}</a>

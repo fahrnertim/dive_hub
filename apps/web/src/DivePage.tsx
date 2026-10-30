@@ -20,7 +20,7 @@ import { focusFirstIn, focusHeading, useFocusBackWhenClosed } from './lib/focus.
 import { mapsUrl } from './lib/geo.ts';
 import { diveHref, listQuery, logbookHrefOf, logbookParams, mixName, neighbourParams } from './lib/logbook.ts';
 import { usePageTitle } from './lib/page.ts';
-import { useNames, useProviders } from './lib/providers.ts';
+import { useJoinNames, useProviders } from './lib/providers.ts';
 import { SitePicker } from './SitePicker.tsx';
 import { Participants } from './Participants.tsx';
 import { ProviderPanels } from './ProviderPanel.tsx';
@@ -179,7 +179,7 @@ function MoveDialog({ dive: d, onClose }: { dive: DiveView; onClose: () => void 
   const others = (divers.data ?? []).filter((v) => v.id !== d.diverId);
   const [target, setTarget] = useState<string | null>(others[0]?.id ?? null);
   // A Dive linked to a Provider moves as a copy (ADR 0038): the dialog says so before it happens.
-  const names = useNames();
+  const joinNames = useJoinNames();
   const providers = useProviders();
   const statuses = useQuery(diveProvidersQuery(d.id));
   const linkedAt = (statuses.data ?? []).filter((s) => s.current).map((s) => providers.data?.find((p) => p.id === s.provider)?.name ?? s.provider);
@@ -202,7 +202,7 @@ function MoveDialog({ dive: d, onClose }: { dive: DiveView; onClose: () => void 
   return (
     <Dialog title={t('dive.moveTitle')} isOpen onOpenChange={(open) => !open && onClose()}>
       <p>{t('dive.moveIntro')}</p>
-      {linkedAt.length > 0 && <p>{t('dive.moveLinked', { name: names(linkedAt) })}</p>}
+      {linkedAt.length > 0 && <p>{t('dive.moveLinked', { name: joinNames(linkedAt) })}</p>}
       <div className="form">
         <Select label={t('dive.diver')} value={target} onChange={setTarget} options={others.map((v) => ({ id: v.id, label: v.name }))} />
         {move.error && <Notice tone="danger">{errorText(move.error)}</Notice>}

@@ -7,10 +7,11 @@ import {
   api, ApiError, connectionsQuery, keys, pushRunActive, pushRunPreviewQuery, pushRunQuery, pushRunsQuery,
   siteQuery, startPushRun, unwrap, type ConnectionView, type ProviderView, type PushRunChoices, type PushRunDetail, type PushRunPreview, type PushRunView,
 } from './api.ts';
+import type en from './i18n/locales/en.json';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { logbookHref, toggled, type LogbookFilter, type LogbookParams } from './lib/logbook.ts';
-import { useNames, useProviders } from './lib/providers.ts';
+import { useJoinNames, useProviders } from './lib/providers.ts';
 import { reviewHref } from './lib/review.ts';
 import { accountHref } from './lib/account-tabs.ts';
 import { HeldAtProvider, NumberPlanList } from './NumberChain.tsx';
@@ -430,8 +431,7 @@ function EarlierRuns({ runs, nameOf }: { runs: PushRunView[]; nameOf: (provider:
   );
 }
 
-function runSummary(translate: TFunction, run: PushRunView, name: string) {
-  const t = translate as unknown as (key: string, options: Record<string, unknown>) => string;
+function runSummary(t: TFunction, run: PushRunView, name: string) {
   const values = { sent: run.counts.sent, total: run.counts.total, name };
   return run.status === 'cancelled' ? t('pushRun.cancelled', values) : run.status === 'stopped' ? t('pushRun.stopped', values) : t('pushRun.done', values);
 }
@@ -521,7 +521,7 @@ const WITHOUT_SHOWN = 10;
 function WithoutSomeone({ id }: { id: string }) {
   const { t } = useTranslation();
   const display = useDisplay();
-  const names = useNames();
+  const joinNames = useJoinNames();
   const heading = useId();
   const run = useQuery(pushRunQuery(id));
   const left = run.data?.withoutSomeone ?? [];
@@ -532,7 +532,7 @@ function WithoutSomeone({ id }: { id: string }) {
       <Muted>{t('pushRun.withoutSomeoneHint')}</Muted>
       <ul aria-labelledby={heading}>
         {left.slice(0, WITHOUT_SHOWN).map((d) => (
-          <li key={d.diveId}><a href={`#/dives/${d.diveId}`}>{display.dateTime(d.startsAt)}</a>: {names(d.names)}</li>
+          <li key={d.diveId}><a href={`#/dives/${d.diveId}`}>{display.dateTime(d.startsAt)}</a>: {joinNames(d.names)}</li>
         ))}
         {left.length > WITHOUT_SHOWN && <li>{t('pushRun.withoutMore', { count: left.length - WITHOUT_SHOWN })}</li>}
       </ul>
@@ -551,7 +551,7 @@ function RunItems({ id, name, provider }: { id: string; name: string; provider: 
     if (!i.reason) return '';
     return i.state === 'failed'
       ? `${t('pushRun.failed')}: ${problemText(i.reason as Parameters<typeof problemText>[0], provider)}`
-      : (t as unknown as (key: string, options: Record<string, unknown>) => string)(`pushRun.reason.${i.reason}`, { name });
+      : t(`pushRun.reason.${i.reason}` as `pushRun.reason.${keyof (typeof en)['pushRun']['reason']}`, { name });
   };
   if (!run.data) return <Muted>{t('pushRun.loading')}</Muted>;
   return (

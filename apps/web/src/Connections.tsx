@@ -5,7 +5,7 @@ import { formValues } from './lib/form.ts';
 import { api, ApiError, connectionsQuery, diversQuery, keys, unwrap, type ConnectionView, type ProviderView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
-import { connectable, useProviders, useProviderText } from './lib/providers.ts';
+import { connectableProviders, useProviders, useProviderText } from './lib/providers.ts';
 import { ProviderAutomation } from './ProviderAutomation.tsx';
 import { ProviderBuddies } from './ProviderBuddies.tsx';
 import { ProviderDiveImport } from './ProviderDiveImport.tsx';
@@ -60,7 +60,7 @@ const signInBody = (p: ProviderView, values: Record<string, string | undefined>,
 /** The account's Connections (ADR 0024, 0027): a panel per Provider the User can connect to, one Connection per Diver. */
 export function Connections({ focus }: { focus?: string | undefined }) {
   const providers = useProviders();
-  return <>{connectable(providers.data).map((p) => <ProviderConnections key={p.id} provider={p} focus={focus} />)}</>;
+  return <>{connectableProviders(providers.data).map((p) => <ProviderConnections key={p.id} provider={p} focus={focus} />)}</>;
 }
 
 function ProviderConnections({ provider: p, focus }: { provider: ProviderView; focus?: string | undefined }) {

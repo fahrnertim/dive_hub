@@ -20,8 +20,8 @@ type Overrides = (typeof en)['providers'];
 /** The keys under `providers.<id>` in en.json that override nothing: `never` while every one does (test/translations.test.ts). */
 export type StrayOverride = { [Id in keyof Overrides]: Exclude<Paths<Overrides[Id]>, ProviderOverrideKey> }[keyof Overrides];
 
-/** The Providers that take dives, in the server's order. */
-export const exporting = (providers: ProviderView[] | undefined) => (providers ?? []).filter((p) => p.data.dives?.export);
+/** The Providers that take dives (Targets of dives), in the server's order. */
+export const diveTargets = (providers: ProviderView[] | undefined) => (providers ?? []).filter((p) => p.data.dives?.export);
 /**
  * Whether the Dive at a Provider has something that waits for the User: it changed since it was sent, the last
  * sending failed, the connection needs a new sign-in, a run left Conflicts to decide, or an entry of the queue waits (ADR 0056). Its line on the dive
@@ -40,19 +40,27 @@ export function useFieldNames() {
     .format(fields.map((f) => t(`provider.importField.${f}`)));
 }
 /** The Providers a User connects to (any sign-in but none). */
-export const connectable = (providers: ProviderView[] | undefined) => (providers ?? []).filter((p) => p.signIn.kind !== 'none');
+export const connectableProviders = (providers: ProviderView[] | undefined) => (providers ?? []).filter((p) => p.signIn.kind !== 'none');
 
 export function useProviders() {
   return useQuery(providersQuery());
 }
 
+/** A Provider by what names it: all a dive's copy or a deleted dive needs, also of a Provider the server no longer lists. */
+export type ProviderRef = Pick<ProviderView, 'id' | 'name'>;
+
+/** A Provider by its id, from what the server says it has; a name it no longer lists stays the id. */
+export function useProviderOf() {
+  const providers = useProviders();
+  return (id: string): ProviderRef => providers.data?.find((p) => p.id === id) ?? { id, name: id };
+}
+
 /** Texts about one Provider: `providers.<id>.<key>` where it words them itself, else `provider.<key>` with its name. */
-export function useProviderText(p: Pick<ProviderView, 'id' | 'name'>) {
+export function useProviderText(p: ProviderRef) {
   const { t, i18n } = useTranslation();
-  const translate = t as unknown as (key: string, options: Record<string, unknown>) => string;
   return (key: ProviderTextKey, options: Record<string, unknown> = {}): string => {
     const own = `providers.${p.id}.${key}`;
-    return translate(i18n.exists(own) ? own : `provider.${key}`, { name: p.name, ...options });
+    return t((i18n.exists(own) ? own : `provider.${key}`) as `provider.${ProviderTextKey}`, { name: p.name, ...options });
   };
 }
 
@@ -68,7 +76,7 @@ export function typedSiteId(r: Pick<RequirementView, 'pattern' | 'prefixes'>, te
 }
 
 /** "SSI", "SSI and PADI": names joined the way the UI language does. */
-export function useNames() {
+export function useJoinNames() {
   const { i18n } = useTranslation();
   return (names: string[]) => new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(names);
 }

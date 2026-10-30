@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useProviders } from './lib/providers.ts';
-import { reviewHref, useReviewCounts, useWaiting } from './lib/review.ts';
+import { reviewHref, useReviewCounts, useToDecideCounts } from './lib/review.ts';
 import { LinkButton } from './ui/index.ts';
 
 /**
@@ -9,7 +9,7 @@ import { LinkButton } from './ui/index.ts';
  */
 export function ReviewStrip() {
   const { t, i18n } = useTranslation();
-  const { recordings, pairs, shortDives, goneAt, conflicts, exists, total } = useWaiting();
+  const { recordings, pairs, shortDives, goneAt, conflicts, exists, total } = useToDecideCounts();
   const providers = useProviders();
   if (total === 0) return null;
   const parts = [

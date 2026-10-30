@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, diveProvidersQuery, keys, mergeCandidatesQuery, nearbyDivesQuery, unwrap, type DiveView, type LogbookCheckView, type MergeCandidateView, type ProviderView } from './api.ts';
+import { api, ApiError, diveProvidersQuery, keys, mergeCandidatesQuery, nearbyDivesQuery, unwrap, type DiveView, type LogbookCheckView, type MergeCandidateView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { deleteChoice, type CopyAt } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
-import { useNames, useProviders, useProviderText } from './lib/providers.ts';
+import { useJoinNames, useProviderOf, useProviderText, type ProviderRef } from './lib/providers.ts';
 import { Button, Dialog, Muted, Notice } from './ui/index.ts';
 
 /** One of the two Dives of a merge, with what tells it from the other. */
@@ -101,7 +101,7 @@ export function MergePicker({ dive: d, onClose }: { dive: DiveView; onClose: () 
 }
 
 /** What the dialog says about the copy at a Provider of the Dive that isn't kept, in the Provider's words. */
-function CopySentence({ provider: p, number, how }: { provider: ProviderView; number: number | null; how: 'ask' | 'cannot' | 'itself' }) {
+function CopySentence({ provider: p, number, how }: { provider: ProviderRef; number: number | null; how: 'ask' | 'cannot' | 'itself' }) {
   const pt = useProviderText(p);
   const key = { ask: 'deleteAsk', cannot: 'deleteCannot', itself: 'deletesItself' } as const;
   return <p>{pt(key[how], { number: number ?? '' })}</p>;
@@ -121,11 +121,10 @@ export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
-  const names = useNames();
+  const joinNames = useJoinNames();
   const sideText = useSideText();
   const queryClient = useQueryClient();
-  const providers = useProviders();
-  const providerOf = (id: string) => providers.data?.find((p) => p.id === id) ?? { id, name: id } as ProviderView;
+  const providerOf = useProviderOf();
   const keepsThis = other.keeps === d.id;
   const leaving = keepsThis ? other.id : d.id;
   // Only where both Dives are at a Provider is there a dive left over at it.
@@ -157,7 +156,7 @@ export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
       <p><strong>{t('merge.stays')}</strong> {sideText(keepsThis ? d : other)}</p>
       <p><strong>{t('merge.goes')}</strong> {sideText(keepsThis ? other : d)}</p>
       <p>{(d.recordings === 0) !== (other.recordings === 0) && `${t('merge.whyRecording')} `}{t('merge.takes')}</p>
-      {keepsThis && moves.length > 0 && <p>{t('merge.linkMoves', { name: names(moves.map((c) => providerOf(c.provider).name)) })}</p>}
+      {keepsThis && moves.length > 0 && <p>{t('merge.linkMoves', { name: joinNames(moves.map((c) => providerOf(c.provider).name)) })}</p>}
       <p>{t('merge.other')}</p>
       {choice?.ask.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} how="ask" />)}
       {choice?.cannot.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} how="cannot" />)}
@@ -172,7 +171,7 @@ export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
       <div className="form-actions">
         {asking && (
           <Button variant="primary" icon="merge" isPending={merge.isPending && merge.variables} isDisabled={merge.isPending && !merge.variables} onPress={() => merge.mutate(true)}>
-            {t('merge.confirmBoth', { name: names(choice!.ask.map((c) => providerOf(c.provider).name)) })}
+            {t('merge.confirmBoth', { name: joinNames(choice!.ask.map((c) => providerOf(c.provider).name)) })}
           </Button>
         )}
         {choice && (
