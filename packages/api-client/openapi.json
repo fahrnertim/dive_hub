@@ -28942,6 +28942,858 @@
                       },
                       "changes": {
                         "type": "object",
+                        "properties": {
+                          "overrides": {
+                            "type": "object",
+                            "required": [
+                              "from",
+                              "to"
+                            ],
+                            "properties": {
+                              "from": {
+                                "type": "array",
+                                "items": {
+                                  "enum": [
+                                    "startsAt",
+                                    "durationSeconds",
+                                    "maxDepthM",
+                                    "avgDepthM",
+                                    "waterTemperatureC"
+                                  ],
+                                  "description": "A Dive value that can be overridden"
+                                }
+                              },
+                              "to": {
+                                "type": "array",
+                                "items": {
+                                  "enum": [
+                                    "startsAt",
+                                    "durationSeconds",
+                                    "maxDepthM",
+                                    "avgDepthM",
+                                    "waterTemperatureC"
+                                  ],
+                                  "description": "A Dive value that can be overridden"
+                                }
+                              }
+                            }
+                          },
+                          "site": {
+                            "type": "object",
+                            "required": [
+                              "from",
+                              "to"
+                            ],
+                            "properties": {
+                              "from": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "id",
+                                      "name"
+                                    ],
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "name": {
+                                        "type": "string",
+                                        "description": "The name it had then"
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "to": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "id",
+                                      "name"
+                                    ],
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "name": {
+                                        "type": "string",
+                                        "description": "The name it had then"
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "utcOffsetSource": {
+                            "type": "object",
+                            "required": [
+                              "from",
+                              "to"
+                            ],
+                            "properties": {
+                              "from": {
+                                "enum": [
+                                  "device",
+                                  "position",
+                                  "nearby",
+                                  "unknown"
+                                ]
+                              },
+                              "to": {
+                                "enum": [
+                                  "device",
+                                  "position",
+                                  "nearby",
+                                  "unknown"
+                                ]
+                              }
+                            }
+                          },
+                          "fromProvider": {
+                            "type": "object",
+                            "required": [
+                              "to"
+                            ],
+                            "properties": {
+                              "to": {
+                                "type": "string",
+                                "description": "The Provider the Dive was made from (ADR 0030)"
+                              }
+                            },
+                            "description": "from is always null"
+                          },
+                          "providers": {
+                            "type": "object",
+                            "required": [
+                              "from",
+                              "to"
+                            ],
+                            "properties": {
+                              "from": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "provider",
+                                    "remoteId",
+                                    "remoteNumber"
+                                  ],
+                                  "properties": {
+                                    "provider": {
+                                      "type": "string"
+                                    },
+                                    "remoteId": {
+                                      "type": "string"
+                                    },
+                                    "remoteNumber": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "integer"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                "description": "Links to Providers a merge moved onto this Dive (ADR 0038)"
+                              },
+                              "to": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "provider",
+                                    "remoteId",
+                                    "remoteNumber"
+                                  ],
+                                  "properties": {
+                                    "provider": {
+                                      "type": "string"
+                                    },
+                                    "remoteId": {
+                                      "type": "string"
+                                    },
+                                    "remoteNumber": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "integer"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                "description": "Links to Providers a merge moved onto this Dive (ADR 0038)"
+                              }
+                            }
+                          },
+                          "cylinders": {
+                            "type": "object",
+                            "required": [
+                              "from",
+                              "to"
+                            ],
+                            "properties": {
+                              "from": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "volumeL",
+                                    "workingPressureBar",
+                                    "material",
+                                    "gas",
+                                    "startPressureBar",
+                                    "endPressureBar",
+                                    "fromPod",
+                                    "series"
+                                  ],
+                                  "properties": {
+                                    "volumeL": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "number",
+                                          "exclusiveMinimum": 0,
+                                          "maximum": 100,
+                                          "description": "Water volume in litres"
+                                        }
+                                      ]
+                                    },
+                                    "workingPressureBar": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "number",
+                                          "exclusiveMinimum": 0,
+                                          "maximum": 500
+                                        }
+                                      ]
+                                    },
+                                    "material": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "enum": [
+                                            "aluminium",
+                                            "steel",
+                                            "carbon"
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    "gas": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "object",
+                                          "required": [
+                                            "o2",
+                                            "he"
+                                          ],
+                                          "properties": {
+                                            "o2": {
+                                              "type": "number",
+                                              "minimum": 1,
+                                              "maximum": 100
+                                            },
+                                            "he": {
+                                              "type": "number",
+                                              "minimum": 0,
+                                              "maximum": 99
+                                            }
+                                          },
+                                          "additionalProperties": false,
+                                          "description": "Oxygen and helium in percent"
+                                        }
+                                      ]
+                                    },
+                                    "startPressureBar": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "number",
+                                          "minimum": 0,
+                                          "maximum": 500
+                                        }
+                                      ]
+                                    },
+                                    "endPressureBar": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "number",
+                                          "minimum": 0,
+                                          "maximum": 500,
+                                          "description": "Not above the start pressure"
+                                        }
+                                      ]
+                                    },
+                                    "fromPod": {
+                                      "type": "boolean",
+                                      "description": "An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md)"
+                                    },
+                                    "series": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "object",
+                                          "required": [
+                                            "recordingId",
+                                            "channel"
+                                          ],
+                                          "properties": {
+                                            "recordingId": {
+                                              "type": "string",
+                                              "format": "uuid"
+                                            },
+                                            "channel": {
+                                              "type": "string",
+                                              "maxLength": 40,
+                                              "description": "A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n>"
+                                            }
+                                          },
+                                          "additionalProperties": false,
+                                          "description": "The pressure series of one of the Dive's Recordings that measured this Cylinder"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "to": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "volumeL",
+                                    "workingPressureBar",
+                                    "material",
+                                    "gas",
+                                    "startPressureBar",
+                                    "endPressureBar",
+                                    "fromPod",
+                                    "series"
+                                  ],
+                                  "properties": {
+                                    "volumeL": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "number",
+                                          "exclusiveMinimum": 0,
+                                          "maximum": 100,
+                                          "description": "Water volume in litres"
+                                        }
+                                      ]
+                                    },
+                                    "workingPressureBar": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "number",
+                                          "exclusiveMinimum": 0,
+                                          "maximum": 500
+                                        }
+                                      ]
+                                    },
+                                    "material": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "enum": [
+                                            "aluminium",
+                                            "steel",
+                                            "carbon"
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    "gas": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "object",
+                                          "required": [
+                                            "o2",
+                                            "he"
+                                          ],
+                                          "properties": {
+                                            "o2": {
+                                              "type": "number",
+                                              "minimum": 1,
+                                              "maximum": 100
+                                            },
+                                            "he": {
+                                              "type": "number",
+                                              "minimum": 0,
+                                              "maximum": 99
+                                            }
+                                          },
+                                          "additionalProperties": false,
+                                          "description": "Oxygen and helium in percent"
+                                        }
+                                      ]
+                                    },
+                                    "startPressureBar": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "number",
+                                          "minimum": 0,
+                                          "maximum": 500
+                                        }
+                                      ]
+                                    },
+                                    "endPressureBar": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "number",
+                                          "minimum": 0,
+                                          "maximum": 500,
+                                          "description": "Not above the start pressure"
+                                        }
+                                      ]
+                                    },
+                                    "fromPod": {
+                                      "type": "boolean",
+                                      "description": "An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md)"
+                                    },
+                                    "series": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "object",
+                                          "required": [
+                                            "recordingId",
+                                            "channel"
+                                          ],
+                                          "properties": {
+                                            "recordingId": {
+                                              "type": "string",
+                                              "format": "uuid"
+                                            },
+                                            "channel": {
+                                              "type": "string",
+                                              "maxLength": 40,
+                                              "description": "A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n>"
+                                            }
+                                          },
+                                          "additionalProperties": false,
+                                          "description": "The pressure series of one of the Dive's Recordings that measured this Cylinder"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "lead": {
+                            "type": "object",
+                            "required": [
+                              "from",
+                              "to"
+                            ],
+                            "properties": {
+                              "from": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "amountKg",
+                                    "placement"
+                                  ],
+                                  "properties": {
+                                    "amountKg": {
+                                      "type": "number",
+                                      "minimum": 0,
+                                      "maximum": 60,
+                                      "description": "In kilograms; 0 as the only entry means no lead"
+                                    },
+                                    "placement": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "enum": [
+                                            "belt",
+                                            "integrated",
+                                            "trim",
+                                            "ankle",
+                                            "backplate",
+                                            "other"
+                                          ],
+                                          "description": "Where it was carried; null when not given"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "to": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "amountKg",
+                                    "placement"
+                                  ],
+                                  "properties": {
+                                    "amountKg": {
+                                      "type": "number",
+                                      "minimum": 0,
+                                      "maximum": 60,
+                                      "description": "In kilograms; 0 as the only entry means no lead"
+                                    },
+                                    "placement": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "enum": [
+                                            "belt",
+                                            "integrated",
+                                            "trim",
+                                            "ankle",
+                                            "backplate",
+                                            "other"
+                                          ],
+                                          "description": "Where it was carried; null when not given"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "weightingFeedback": {
+                            "type": "object",
+                            "required": [
+                              "from",
+                              "to"
+                            ],
+                            "properties": {
+                              "from": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "felt",
+                                      "amountKg"
+                                    ],
+                                    "properties": {
+                                      "felt": {
+                                        "enum": [
+                                          "right",
+                                          "too_heavy",
+                                          "too_light"
+                                        ],
+                                        "description": "How the weighting felt"
+                                      },
+                                      "amountKg": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "number",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 30,
+                                            "description": "By how many kilograms it was too heavy or too light, where the User said"
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "to": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "felt",
+                                      "amountKg"
+                                    ],
+                                    "properties": {
+                                      "felt": {
+                                        "enum": [
+                                          "right",
+                                          "too_heavy",
+                                          "too_light"
+                                        ],
+                                        "description": "How the weighting felt"
+                                      },
+                                      "amountKg": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "number",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 30,
+                                            "description": "By how many kilograms it was too heavy or too light, where the User said"
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "suit": {
+                            "type": "object",
+                            "required": [
+                              "from",
+                              "to"
+                            ],
+                            "properties": {
+                              "from": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "type",
+                                      "thicknessMm",
+                                      "hood",
+                                      "undergarment"
+                                    ],
+                                    "properties": {
+                                      "type": {
+                                        "enum": [
+                                          "none",
+                                          "skin",
+                                          "wetsuit",
+                                          "semidry",
+                                          "drysuit"
+                                        ],
+                                        "description": "`none` is a dive without a suit"
+                                      },
+                                      "thicknessMm": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "number",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 20,
+                                            "description": "For a wetsuit or a semidry suit"
+                                          }
+                                        ]
+                                      },
+                                      "hood": {
+                                        "type": [
+                                          "boolean",
+                                          "null"
+                                        ],
+                                        "description": "Whether a hood was worn; null when not said"
+                                      },
+                                      "undergarment": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "enum": [
+                                              "light",
+                                              "medium",
+                                              "heavy"
+                                            ],
+                                            "description": "Under a drysuit"
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "to": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "type",
+                                      "thicknessMm",
+                                      "hood",
+                                      "undergarment"
+                                    ],
+                                    "properties": {
+                                      "type": {
+                                        "enum": [
+                                          "none",
+                                          "skin",
+                                          "wetsuit",
+                                          "semidry",
+                                          "drysuit"
+                                        ],
+                                        "description": "`none` is a dive without a suit"
+                                      },
+                                      "thicknessMm": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "type": "number",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 20,
+                                            "description": "For a wetsuit or a semidry suit"
+                                          }
+                                        ]
+                                      },
+                                      "hood": {
+                                        "type": [
+                                          "boolean",
+                                          "null"
+                                        ],
+                                        "description": "Whether a hood was worn; null when not said"
+                                      },
+                                      "undergarment": {
+                                        "anyOf": [
+                                          {
+                                            "type": "null"
+                                          },
+                                          {
+                                            "enum": [
+                                              "light",
+                                              "medium",
+                                              "heavy"
+                                            ],
+                                            "description": "Under a drysuit"
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "participants": {
+                            "type": "object",
+                            "required": [
+                              "from",
+                              "to"
+                            ],
+                            "properties": {
+                              "from": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "diverId",
+                                    "name",
+                                    "role"
+                                  ],
+                                  "properties": {
+                                    "diverId": {
+                                      "type": "string"
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "description": "The name the Diver had then"
+                                    },
+                                    "role": {
+                                      "enum": [
+                                        "buddy",
+                                        "guide",
+                                        "instructor"
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "to": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "diverId",
+                                    "name",
+                                    "role"
+                                  ],
+                                  "properties": {
+                                    "diverId": {
+                                      "type": "string"
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "description": "The name the Diver had then"
+                                    },
+                                    "role": {
+                                      "enum": [
+                                        "buddy",
+                                        "guide",
+                                        "instructor"
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
                         "additionalProperties": {
                           "type": "object",
                           "required": [
@@ -28952,7 +29804,8 @@
                             "from": {},
                             "to": {}
                           }
-                        }
+                        },
+                        "description": "Field → { from, to }; a field not named here has a value of any shape"
                       }
                     }
                   }
@@ -70319,6 +71172,152 @@
                       },
                       "changes": {
                         "type": "object",
+                        "properties": {
+                          "position": {
+                            "type": "object",
+                            "required": [
+                              "from",
+                              "to"
+                            ],
+                            "properties": {
+                              "from": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "latitude",
+                                      "longitude"
+                                    ],
+                                    "properties": {
+                                      "latitude": {
+                                        "type": "number",
+                                        "minimum": -90,
+                                        "maximum": 90
+                                      },
+                                      "longitude": {
+                                        "type": "number",
+                                        "minimum": -180,
+                                        "maximum": 180
+                                      }
+                                    },
+                                    "additionalProperties": false,
+                                    "description": "WGS84 degrees"
+                                  }
+                                ]
+                              },
+                              "to": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "latitude",
+                                      "longitude"
+                                    ],
+                                    "properties": {
+                                      "latitude": {
+                                        "type": "number",
+                                        "minimum": -90,
+                                        "maximum": 90
+                                      },
+                                      "longitude": {
+                                        "type": "number",
+                                        "minimum": -180,
+                                        "maximum": 180
+                                      }
+                                    },
+                                    "additionalProperties": false,
+                                    "description": "WGS84 degrees"
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "mergedSite": {
+                            "type": "object",
+                            "required": [
+                              "to"
+                            ],
+                            "properties": {
+                              "to": {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "description": "The name it had then"
+                                  }
+                                }
+                              }
+                            },
+                            "description": "from is always null"
+                          },
+                          "mergedInto": {
+                            "type": "object",
+                            "required": [
+                              "to"
+                            ],
+                            "properties": {
+                              "to": {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "description": "The name it had then"
+                                  }
+                                }
+                              }
+                            },
+                            "description": "from is always null"
+                          },
+                          "adopted": {
+                            "type": "object",
+                            "required": [
+                              "to"
+                            ],
+                            "properties": {
+                              "to": {
+                                "type": "object",
+                                "required": [
+                                  "source",
+                                  "externalId"
+                                ],
+                                "properties": {
+                                  "source": {
+                                    "enum": [
+                                      "osm",
+                                      "wikidata",
+                                      "ssi"
+                                    ]
+                                  },
+                                  "externalId": {
+                                    "type": "string"
+                                  }
+                                },
+                                "description": "The Source offer taken up (ADR 0025)"
+                              }
+                            },
+                            "description": "from is always null"
+                          }
+                        },
                         "additionalProperties": {
                           "type": "object",
                           "required": [
@@ -70329,7 +71328,8 @@
                             "from": {},
                             "to": {}
                           }
-                        }
+                        },
+                        "description": "Field → { from, to }; a field not named here has a value of any shape"
                       }
                     }
                   }

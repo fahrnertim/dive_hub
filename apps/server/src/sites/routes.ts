@@ -10,7 +10,7 @@ import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { NEARBY_M, SITE_SORTS, SiteError, type ExternalIdRow, type SiteService } from './site-service.js';
 import { PositionSchema } from './position-view.js';
 import { IMPORT_SOURCES, SITE_SOURCES, SOURCE_INFO } from './sources.js';
-import { DateTime, IdParams, Nullable } from '../http/schemas.js';
+import { Change, Changes, DateTime, historyRoute, IdParams, Made, Nullable } from '../http/schemas.js';
 
 export interface SiteRouteDeps {
   auth: Auth;
@@ -117,6 +117,16 @@ const AdoptBody = Type.Object({
   version: Type.Integer({ description: 'The version the User saw' }),
 }, { additionalProperties: false });
 
+const SiteRef = Type.Object({ id: Type.String(), name: Type.String({ description: 'The name it had then' }) });
+/** The fields a site's history names with their shapes. */
+const SiteChanges = Changes({
+  position: Change(Nullable(PositionSchema)),
+  mergedSite: Made(SiteRef),
+  mergedInto: Made(SiteRef),
+  adopted: Made(Type.Object({ source: Type.Enum([...IMPORT_SOURCES]), externalId: Type.String() }, { description: 'The Source offer taken up (ADR 0025)' })),
+}, 'Field → { from, to }; a field not named here has a value of any shape');
+type StoredSiteChanges = Static<typeof SiteChanges>;
+
 const SiteRevisionView = Type.Object({
   id: Type.String(),
   at: DateTime,
@@ -127,7 +137,7 @@ const SiteRevisionView = Type.Object({
     name: Nullable(Type.String()),
   }),
   cause: Type.Enum([...REVISION_CAUSES]),
-  changes: Type.Record(Type.String(), Type.Object({ from: Type.Unknown(), to: Type.Unknown() })),
+  changes: SiteChanges,
 });
 
 export const externalIdView = (e: ExternalIdRow) => {
@@ -259,13 +269,15 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
   });
 
   app.get('/dive-sites/:id/revisions', {
+    ...historyRoute,
     schema: {
       summary: 'The Dive site\'s history, newest first',
       description: 'Every User may read it. Other Users are never named; a Site import is named by its Sources.',
       params: IdParams, response: { 200: Type.Array(SiteRevisionView), 404: Problem },
     },
   }, async (request) => (await sites.revisions(callerOf(request), request.params.id)).map((r) => ({
-    ...r, cause: r.cause as (typeof REVISION_CAUSES)[number],
+    // Stored as written: today's shapes for the named fields, older Revisions as they were (see Changes).
+    ...r, cause: r.cause as (typeof REVISION_CAUSES)[number], changes: r.changes as StoredSiteChanges,
   })));
 
   app.delete('/dive-sites/:id', {

@@ -37,7 +37,7 @@ import type { AssessmentService } from '../assessment/assessment-service.js';
 import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
 import { WaitingPushViewSchema } from '../providers/waiting-push-view.js';
 import { answerProviderError, replyProviderError } from '../providers/route-parts.js';
-import { DateTime, IdParams, Nullable } from '../http/schemas.js';
+import { Change, Changes, DateTime, historyRoute, IdParams, Made, Nullable } from '../http/schemas.js';
 
 export interface DiveRouteDeps {
   auth: Auth;
@@ -266,6 +266,25 @@ const EditBody = Type.Object({
   suit: Type.Optional(Nullable(SuitInput)),
 });
 
+const SiteRef = Type.Object({ id: Type.String(), name: Type.String({ description: 'The name it had then' }) });
+/** The fields a Dive's history names with their shapes; the overridable values have the same shape as in `values`. */
+const DiveChanges = Changes({
+  overrides: Change(Type.Array(Field)),
+  site: Change(Nullable(SiteRef)),
+  utcOffsetSource: Change(Type.Enum([...UTC_OFFSET_SOURCES])),
+  fromProvider: Made(Type.String({ description: 'The Provider the Dive was made from (ADR 0030)' })),
+  providers: Change(Type.Array(Type.Object({ provider: Type.String(), remoteId: Type.String(), remoteNumber: Nullable(Type.Integer()) }), {
+    description: 'Links to Providers a merge moved onto this Dive (ADR 0038)',
+  })),
+  cylinders: Change(Type.Array(CylinderView)),
+  lead: Change(Type.Array(LeadEntry)),
+  weightingFeedback: Change(Nullable(Type.Object(WeightingFeedbackValues))),
+  suit: Change(Nullable(Type.Object(SuitValues))),
+  participants: Change(Type.Array(Type.Object({
+    diverId: Type.String(), name: Type.String({ description: 'The name the Diver had then' }), role: Type.Enum([...PARTICIPANT_ROLES]),
+  }))),
+}, 'Field → { from, to }; a field not named here has a value of any shape');
+
 const RevisionView = Type.Object({
   id: Type.String(),
   at: DateTime,
@@ -276,9 +295,9 @@ const RevisionView = Type.Object({
     name: Nullable(Type.String({ description: 'User name or uploaded file name' })),
   }),
   cause: Type.Enum([...REVISION_CAUSES]),
-  /** Field → { from, to }. Values of overridable fields have the same shape as in `values`. */
-  changes: Type.Record(Type.String(), Type.Object({ from: Type.Unknown(), to: Type.Unknown() })),
+  changes: DiveChanges,
 });
+type StoredDiveChanges = Static<typeof DiveChanges>;
 
 const toValues = (v: DiveValues): Static<typeof ValuesSchema> => ({
   ...v, startsAt: { at: v.startsAt.at.toISOString(), utcOffsetSeconds: v.startsAt.utcOffsetSeconds },
@@ -720,6 +739,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   });
 
   app.get('/dives/:id/revisions', {
+    ...historyRoute,
     schema: {
       summary: 'The Dive\'s history, newest first: its own Revisions and those of its Recordings',
       params: IdParams, response: { 200: Type.Array(RevisionView), 404: Problem },
@@ -732,7 +752,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       id: r.id, at: r.at.toISOString(),
       actor: { type: r.actorType, id: r.actorId, name: r.actorType === 'user' ? userName : r.actorType === 'import' ? uploadName : null },
       cause: r.cause as (typeof REVISION_CAUSES)[number],
-      changes: r.changes,
+      // Stored as written: today's shapes for the named fields, older Revisions as they were (see Changes).
+      changes: r.changes as StoredDiveChanges,
     }));
   });
 };

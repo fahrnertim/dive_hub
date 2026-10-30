@@ -6791,7 +6791,160 @@ export interface paths {
                             };
                             /** @enum {unknown} */
                             cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore" | "fill";
+                            /** @description Field → { from, to }; a field not named here has a value of any shape */
                             changes: {
+                                overrides?: {
+                                    from: ("startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
+                                    to: ("startsAt" | "durationSeconds" | "maxDepthM" | "avgDepthM" | "waterTemperatureC")[];
+                                };
+                                site?: {
+                                    from: null | {
+                                        id: string;
+                                        /** @description The name it had then */
+                                        name: string;
+                                    };
+                                    to: null | {
+                                        id: string;
+                                        /** @description The name it had then */
+                                        name: string;
+                                    };
+                                };
+                                utcOffsetSource?: {
+                                    /** @enum {unknown} */
+                                    from: "device" | "position" | "nearby" | "unknown";
+                                    /** @enum {unknown} */
+                                    to: "device" | "position" | "nearby" | "unknown";
+                                };
+                                /** @description from is always null */
+                                fromProvider?: {
+                                    /** @description The Provider the Dive was made from (ADR 0030) */
+                                    to: string;
+                                };
+                                providers?: {
+                                    /** @description Links to Providers a merge moved onto this Dive (ADR 0038) */
+                                    from: {
+                                        provider: string;
+                                        remoteId: string;
+                                        remoteNumber: null | number;
+                                    }[];
+                                    /** @description Links to Providers a merge moved onto this Dive (ADR 0038) */
+                                    to: {
+                                        provider: string;
+                                        remoteId: string;
+                                        remoteNumber: null | number;
+                                    }[];
+                                };
+                                cylinders?: {
+                                    from: {
+                                        volumeL: null | number;
+                                        workingPressureBar: null | number;
+                                        material: null | ("aluminium" | "steel" | "carbon");
+                                        gas: null | {
+                                            o2: number;
+                                            he: number;
+                                        };
+                                        startPressureBar: null | number;
+                                        endPressureBar: null | number;
+                                        /** @description An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md) */
+                                        fromPod: boolean;
+                                        series: null | {
+                                            /** Format: uuid */
+                                            recordingId: string;
+                                            /** @description A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n> */
+                                            channel: string;
+                                        };
+                                    }[];
+                                    to: {
+                                        volumeL: null | number;
+                                        workingPressureBar: null | number;
+                                        material: null | ("aluminium" | "steel" | "carbon");
+                                        gas: null | {
+                                            o2: number;
+                                            he: number;
+                                        };
+                                        startPressureBar: null | number;
+                                        endPressureBar: null | number;
+                                        /** @description An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md) */
+                                        fromPod: boolean;
+                                        series: null | {
+                                            /** Format: uuid */
+                                            recordingId: string;
+                                            /** @description A tank pod's pressure channel of that Recording: tankPressure, further pods tankPressure:<n> */
+                                            channel: string;
+                                        };
+                                    }[];
+                                };
+                                lead?: {
+                                    from: {
+                                        /** @description In kilograms; 0 as the only entry means no lead */
+                                        amountKg: number;
+                                        placement: null | ("belt" | "integrated" | "trim" | "ankle" | "backplate" | "other");
+                                    }[];
+                                    to: {
+                                        /** @description In kilograms; 0 as the only entry means no lead */
+                                        amountKg: number;
+                                        placement: null | ("belt" | "integrated" | "trim" | "ankle" | "backplate" | "other");
+                                    }[];
+                                };
+                                weightingFeedback?: {
+                                    from: null | {
+                                        /**
+                                         * @description How the weighting felt
+                                         * @enum {unknown}
+                                         */
+                                        felt: "right" | "too_heavy" | "too_light";
+                                        amountKg: null | number;
+                                    };
+                                    to: null | {
+                                        /**
+                                         * @description How the weighting felt
+                                         * @enum {unknown}
+                                         */
+                                        felt: "right" | "too_heavy" | "too_light";
+                                        amountKg: null | number;
+                                    };
+                                };
+                                suit?: {
+                                    from: null | {
+                                        /**
+                                         * @description `none` is a dive without a suit
+                                         * @enum {unknown}
+                                         */
+                                        type: "none" | "skin" | "wetsuit" | "semidry" | "drysuit";
+                                        thicknessMm: null | number;
+                                        /** @description Whether a hood was worn; null when not said */
+                                        hood: boolean | null;
+                                        undergarment: null | ("light" | "medium" | "heavy");
+                                    };
+                                    to: null | {
+                                        /**
+                                         * @description `none` is a dive without a suit
+                                         * @enum {unknown}
+                                         */
+                                        type: "none" | "skin" | "wetsuit" | "semidry" | "drysuit";
+                                        thicknessMm: null | number;
+                                        /** @description Whether a hood was worn; null when not said */
+                                        hood: boolean | null;
+                                        undergarment: null | ("light" | "medium" | "heavy");
+                                    };
+                                };
+                                participants?: {
+                                    from: {
+                                        diverId: string;
+                                        /** @description The name the Diver had then */
+                                        name: string;
+                                        /** @enum {unknown} */
+                                        role: "buddy" | "guide" | "instructor";
+                                    }[];
+                                    to: {
+                                        diverId: string;
+                                        /** @description The name the Diver had then */
+                                        name: string;
+                                        /** @enum {unknown} */
+                                        role: "buddy" | "guide" | "instructor";
+                                    }[];
+                                };
+                            } & {
                                 [key: string]: {
                                     from: unknown;
                                     to: unknown;
@@ -15637,7 +15790,44 @@ export interface paths {
                             };
                             /** @enum {unknown} */
                             cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore" | "fill";
+                            /** @description Field → { from, to }; a field not named here has a value of any shape */
                             changes: {
+                                position?: {
+                                    from: null | {
+                                        latitude: number;
+                                        longitude: number;
+                                    };
+                                    to: null | {
+                                        latitude: number;
+                                        longitude: number;
+                                    };
+                                };
+                                /** @description from is always null */
+                                mergedSite?: {
+                                    to: {
+                                        id: string;
+                                        /** @description The name it had then */
+                                        name: string;
+                                    };
+                                };
+                                /** @description from is always null */
+                                mergedInto?: {
+                                    to: {
+                                        id: string;
+                                        /** @description The name it had then */
+                                        name: string;
+                                    };
+                                };
+                                /** @description from is always null */
+                                adopted?: {
+                                    /** @description The Source offer taken up (ADR 0025) */
+                                    to: {
+                                        /** @enum {unknown} */
+                                        source: "osm" | "wikidata" | "ssi";
+                                        externalId: string;
+                                    };
+                                };
+                            } & {
                                 [key: string]: {
                                     from: unknown;
                                     to: unknown;

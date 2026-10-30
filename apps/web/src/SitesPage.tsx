@@ -333,7 +333,7 @@ function SiteOrigin({ site }: { site: SiteView }) {
   const [adopting, setAdopting] = useState<ExternalIdView | null>(null);
   const adopt = useMutation({
     mutationFn: async (e: ExternalIdView) => unwrap(await api.POST('/api/dive-sites/{id}/adopt', {
-      params: { path: { id: site.id } }, body: { source: e.source as 'osm' | 'wikidata' | 'ssi', version: site.version },
+      params: { path: { id: site.id } }, body: { source: e.source, version: site.version },
     })),
     onSuccess: async (saved) => {
       queryClient.setQueryData(keys.site(saved.id), saved);
