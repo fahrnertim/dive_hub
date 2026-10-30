@@ -129,7 +129,7 @@ const label = (r: { agency: string; level: string }) => `${r.agency} ${r.level}`
 export function createCertificationService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService }) {
   const { db, blobs, registry, connections } = deps;
 
-  async function managedOrThrow(userId: string, diverId: string) {
+  async function requireManagedDiver(userId: string, diverId: string) {
     if (!(await managementOf(db, userId, diverId))) throw new CertificationError('diver_not_found');
   }
 
@@ -208,7 +208,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
   return {
     /** A Diver's cards, the newest issue first. Only for a User who manages the Diver. */
     async list(userId: string, diverId: string): Promise<CertificationView[]> {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       const rows = await db.select().from(certification)
         .where(and(eq(certification.diverId, diverId), isNull(certification.deletedAt)))
         .orderBy(listOrder(), sql`${certification.issuedOn} desc nulls last`, desc(certification.createdAt));
@@ -236,7 +236,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
     },
 
     async create(userId: string, diverId: string, input: CertificationInput): Promise<CertificationView> {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       const values = cleaned(input);
       return db.transaction(async (tx) => {
         const [row] = await tx.insert(certification).values({
@@ -252,7 +252,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
      * for anything else). `version` is checked in the update itself.
      */
     async update(userId: string, diverId: string, id: string, version: number, input: CertificationInput): Promise<CertificationView> {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       const current = await rowOrThrow(diverId, id);
       const imported = current.source !== null;
       const values = cleaned(imported ? { ...input, agency: current.agency, level: current.level } : input);
@@ -283,7 +283,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
 
     /** Deletes a card (soft: a re-import leaves it deleted) and its picture. */
     async remove(userId: string, diverId: string, id: string): Promise<void> {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       const current = await rowOrThrow(diverId, id);
       // Only the request that deletes it records the deletion and lets the picture go; one at the same time finds it gone.
       const deleted = await db.transaction(async (tx) => {
@@ -312,7 +312,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
 
     /** The card's picture; `certification_image_not_found` until it is stored. */
     async image(userId: string, diverId: string, id: string): Promise<{ bytes: Buffer; mediaType: string; sha256: string }> {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       const row = await rowOrThrow(diverId, id);
       if (row.imageState !== 'stored' || !row.imageKey) throw new CertificationError('certification_image_not_found');
       return { bytes: await blobs.read(row.imageKey), mediaType: 'image/png', sha256: row.imageSha256! };
@@ -320,7 +320,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
 
     /** "Fetch again": a card of a Provider whose picture failed (or any imported card's) is queued afresh. */
     async refetchImage(userId: string, diverId: string, id: string): Promise<void> {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       const row = await rowOrThrow(diverId, id);
       if (!row.imageUrl) throw new CertificationError('certification_image_not_found');
       await db.transaction(async (tx) => {
@@ -338,7 +338,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
       const conn = await connections.own(userId, connectionId);
       const adapter = registry.get(conn.provider);
       if (!adapter.certifications) throw new ProviderServiceError('provider_unsupported', named(adapter));
-      await managedOrThrow(userId, conn.diverId);
+      await requireManagedDiver(userId, conn.diverId);
       const remote = await connections.withAccess(conn, (ctx) => adapter.certifications!.find(ctx));
       const existing = await db.select().from(certification)
         .where(and(eq(certification.diverId, conn.diverId), eq(certification.source, conn.provider)));

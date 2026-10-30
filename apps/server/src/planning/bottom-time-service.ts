@@ -40,8 +40,8 @@ export interface BottomTimeQuery {
 export type Source = 'request' | 'recording' | 'logbook' | 'site' | 'default';
 
 /** What the Diver's own computer and logbook say; a Diver the User doesn't manage is "not found". */
-async function diverLogbook(reader: Queryable, managedDiverIds: readonly string[], diverId: string) {
-  if (!managedDiverIds.includes(diverId)) throw new PlanningError('diver_not_found');
+async function diverLogbook(reader: Queryable, managedIds: readonly string[], diverId: string) {
+  if (!managedIds.includes(diverId)) throw new PlanningError('diver_not_found');
   const recent = await reader.select({ summary: recording.summary }).from(recording)
     .innerJoin(dive, eq(dive.id, recording.diveId))
     .where(and(eq(dive.diverId, diverId), isNull(recording.deletedAt), isNull(dive.deletedAt)))
@@ -53,7 +53,7 @@ async function diverLogbook(reader: Queryable, managedDiverIds: readonly string[
   };
 }
 
-export async function planBottomTime(reader: Queryable, managedDiverIds: readonly string[], q: BottomTimeQuery) {
+export async function planBottomTime(reader: Queryable, managedIds: readonly string[], q: BottomTimeQuery) {
   const gas = { o2: q.o2, he: q.he ?? 0 };
   if (gas.o2 + gas.he > 100) throw new PlanningError('invalid_input');
   if ((q.volume === undefined) !== (q.pressure === undefined)) throw new PlanningError('invalid_input');
@@ -61,7 +61,7 @@ export async function planBottomTime(reader: Queryable, managedDiverIds: readonl
   if ((q.rule === 'reserve' || q.rule === 'ascent_pressure') && q.bar === undefined) throw new PlanningError('invalid_input');
 
   // What the Diver's own computer and logbook say, where the User manages the Diver.
-  const logbook = q.diverId ? await diverLogbook(reader, managedDiverIds, q.diverId) : undefined;
+  const logbook = q.diverId ? await diverLogbook(reader, managedIds, q.diverId) : undefined;
   const logbookSac = logbook?.logbookSac;
 
   const siteWater = await siteWaterOf(reader, q.siteId);

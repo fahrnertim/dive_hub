@@ -125,7 +125,7 @@ export function createAssessmentService(db: Db) {
   }
 
   /** The Dive if the User manages its Diver and it isn't deleted; not managed and not found look the same. */
-  async function managedDive(userId: string, diveId: string) {
+  async function requireManagedDive(userId: string, diveId: string) {
     const [row] = await db.select({ id: dive.id, diverId: dive.diverId, primaryRecordingId: dive.primaryRecordingId }).from(dive)
       .innerJoin(diverManagement, managesDiveDiver(userId))
       .where(and(eq(dive.id, diveId), isNull(dive.deletedAt)));
@@ -150,7 +150,7 @@ export function createAssessmentService(db: Db) {
 
     /** A Dive's assessment as its User sees it: the findings with what the User did about them, and the computer's own events. */
     async of(userId: string, diveId: string) {
-      const d = await managedDive(userId, diveId);
+      const d = await requireManagedDive(userId, diveId);
       // Whatever changed the logbook should have refreshed it; this covers anything that didn't.
       await refreshDiver(d.diverId);
       return read(db, d);
@@ -158,7 +158,7 @@ export function createAssessmentService(db: Db) {
 
     /** Puts a finding on this Dive aside, or brings it back. */
     async dismiss(userId: string, diveId: string, rule: string, dismissed: boolean): Promise<void> {
-      await managedDive(userId, diveId);
+      await requireManagedDive(userId, diveId);
       const [found] = await db.select({ id: diveFinding.id }).from(diveFinding).where(and(eq(diveFinding.diveId, diveId), eq(diveFinding.rule, rule)));
       if (!found) throw new AssessmentError('finding_not_found');
       if (dismissed) await db.insert(findingDismissal).values({ diveId, rule, dismissedBy: userId }).onConflictDoNothing();

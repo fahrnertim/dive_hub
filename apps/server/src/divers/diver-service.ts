@@ -72,7 +72,7 @@ const diverId = sql.raw('"diver"."id"');
 const unmanaged = sql`not exists (select 1 from ${diverManagement} m where m.diver_id = ${diverId})`;
 
 export function createDiverService(db: Db) {
-  async function managedOrThrow(userId: string, diverId: string) {
+  async function requireManagedDiver(userId: string, diverId: string) {
     const row = await managementOf(db, userId, diverId);
     if (!row) throw new DiverError('diver_not_found');
     return row;
@@ -324,7 +324,7 @@ export function createDiverService(db: Db) {
      * Diver's Dives again, in the same transaction.
      */
     async update(userId: string, diverId: string, change: { name?: string; divesBefore?: number; apneaCounts?: boolean }) {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       await db.transaction(async (tx) => {
         await tx.update(diver).set({ ...change, updatedAt: new Date() }).where(eq(diver.id, diverId));
         if (change.divesBefore !== undefined || change.apneaCounts !== undefined) await renumber(tx, [diverId]);
@@ -333,21 +333,21 @@ export function createDiverService(db: Db) {
 
     /** A Diver's body weights, newest first; only for a User who manages the Diver (ADR 0031). */
     async bodyWeights(userId: string, diverId: string) {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       return db.select({ date: diverBodyWeight.date, kg: diverBodyWeight.kg }).from(diverBodyWeight)
         .where(eq(diverBodyWeight.diverId, diverId)).orderBy(sql`${diverBodyWeight.date} desc`);
     },
 
     /** Sets the weight on a date, replacing the one there. */
     async setBodyWeight(userId: string, diverId: string, date: string, kg: number) {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       if (!isCalendarDate(date)) throw new DiverError('invalid_input');
       await db.insert(diverBodyWeight).values({ diverId, date, kg })
         .onConflictDoUpdate({ target: [diverBodyWeight.diverId, diverBodyWeight.date], set: { kg } });
     },
 
     async removeBodyWeight(userId: string, diverId: string, date: string) {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       const gone = await db.delete(diverBodyWeight).where(and(eq(diverBodyWeight.diverId, diverId), eq(diverBodyWeight.date, date)))
         .returning({ date: diverBodyWeight.date });
       if (gone.length === 0) throw new DiverError('body_weight_not_found');
@@ -355,7 +355,7 @@ export function createDiverService(db: Db) {
 
     /** Only empty Divers go: no Dives, no Devices, on no Dive. The User's own Diver stays. */
     async remove(userId: string, diverId: string) {
-      const { isOwn } = await managedOrThrow(userId, diverId);
+      const { isOwn } = await requireManagedDiver(userId, diverId);
       if (isOwn) throw new DiverError('own_diver');
       await db.transaction(async (tx) => {
         const [used] = await tx.select({ n: sql<number>`count(*)::int` }).from(dive).where(eq(dive.diverId, diverId));

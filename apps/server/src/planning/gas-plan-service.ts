@@ -39,8 +39,8 @@ function ruleOf(q: GasPlanQuery): GasRule {
 type Sac = { value: number; source: 'request' | 'logbook' | 'default'; basedOn?: number };
 
 /** A Diver's SAC: typed, else the planning SAC of a Diver the User manages, else the default. */
-async function diverOf(reader: Queryable, managedDiverIds: readonly string[], d: GasPlanQuery['divers'][number]) {
-  if (d.diverId === undefined || !managedDiverIds.includes(d.diverId)) {
+async function diverOf(reader: Queryable, managedIds: readonly string[], d: GasPlanQuery['divers'][number]) {
+  if (d.diverId === undefined || !managedIds.includes(d.diverId)) {
     const sac: Sac = d.sac !== undefined ? { value: d.sac, source: 'request' } : { value: DEFAULT_PLANNING_SAC_LPM, source: 'default' };
     return { input: d, sac, recentDiveEndedAt: null };
   }
@@ -51,7 +51,7 @@ async function diverOf(reader: Queryable, managedDiverIds: readonly string[], d:
   return { input: d, sac, recentDiveEndedAt: (await recentDiveEnd(reader, d.diverId))?.toISOString() ?? null };
 }
 
-export async function planGasPlan(reader: Queryable, managedDiverIds: readonly string[], q: GasPlanQuery) {
+export async function planGasPlan(reader: Queryable, managedIds: readonly string[], q: GasPlanQuery) {
   const gas = { o2: q.o2, he: q.he ?? 0 };
   if (gas.o2 + gas.he > 100) throw new PlanningError('invalid_input');
   if ((q.rule === 'reserve' || q.rule === 'ascent_pressure') && q.bar === undefined) throw new PlanningError('invalid_input');
@@ -72,7 +72,7 @@ export async function planGasPlan(reader: Queryable, managedDiverIds: readonly s
   };
 
   const divers: Awaited<ReturnType<typeof diverOf>>[] = [];
-  for (const d of q.divers) divers.push(await diverOf(reader, managedDiverIds, d));
+  for (const d of q.divers) divers.push(await diverOf(reader, managedIds, d));
 
   const result = planGas({
     gas, conditions: { water: water.value, altitudeM: used.altitudeM.value }, levels: q.levels.map((l) => ({ depthM: l.depth, minutes: l.minutes })),
