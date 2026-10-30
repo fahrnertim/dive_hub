@@ -148,3 +148,11 @@ strict **75.5** (mechanical 81.2 at 25 %, subjective average about 75.8 at 75 %)
 Findings named by several reviewers: TypeBox helpers (`IdParams`, `Nullable`, `DateTime`) copied into about
 11 route files with differing union order; `apps/web/src/api.ts` as a 700-line hub; `providers/routes.ts`
 hosting unrelated features; three overlapping service files in `planning/`; error mapping repeated per module.
+
+## Working the queue
+
+From 2026-10-30, by the owner's decision: one fresh subagent per queue item, with typecheck, lint and only the
+tests the item wrote or changed. `pnpm check` runs once per batch of up to 10 items or 1000 changed lines; when it
+is green, each item is committed on its own (items sharing a file share a commit). Every commit still follows a green
+check. The reason: a slice changed about 50 lines (median of 18; 9 to 490), and its own check took about 15 minutes.
+Deferred for the owner: `public_token_endpoints_unthrottled` (ADR 0012 and 0013 decided the token endpoints need no limiter).
