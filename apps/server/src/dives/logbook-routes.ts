@@ -11,7 +11,7 @@ import type { PushService } from '../providers/push-service.js';
 import type { WaitingPushService } from '../providers/waiting-push-service.js';
 import { WaitingPushViewSchema, type WaitingPushView } from './waiting-push-view.js';
 import { diveSummaryOf } from './dive-summary-view.js';
-import { downsampleMinMax } from './downsample.js';
+import { downsampleMinMax } from './calc/downsample.js';
 import { asksFor, DIVE_ONLY_PATTERN } from './list-filter.js';
 import { DIVE_SORTS, type LogbookService, type RowExtras } from './logbook-service.js';
 

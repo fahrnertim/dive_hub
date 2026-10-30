@@ -3,7 +3,7 @@
 import { and, desc, eq, gte, inArray, isNull } from 'drizzle-orm';
 import type { Queryable } from '../db/client.js';
 import { cylinder, dive, diveSite, recording } from '../db/schema.js';
-import { sacOfDive } from '../dives/sac.js';
+import { sacOfDive } from '../dives/calc/sac.js';
 import { PlanningError } from './planning-error.js';
 
 /** How many of a Diver's latest Dives are looked through for the 20 that have a SAC. */

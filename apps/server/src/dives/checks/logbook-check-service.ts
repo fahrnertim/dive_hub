@@ -3,10 +3,10 @@
 // while neither Dive's time changes, and "keep it" for a Dive that is probably no dive, while its duration and depth
 // stay. The pair rules use the import's own matching, so a check never disagrees with what a fresh import would have done.
 import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
-import { dive, diveSite, logbookCheckAnswer, logbookCheckDiveAnswer, recording } from '../db/schema.js';
-import { DiveError } from './dive-service.js';
-import { managedDiverIds } from '../divers/management.js';
+import type { Db } from '../../db/client.js';
+import { dive, diveSite, logbookCheckAnswer, logbookCheckDiveAnswer, recording } from '../../db/schema.js';
+import { DiveError } from '../dive-service.js';
+import { managedDiverIds } from '../../divers/management.js';
 import { keepDive } from './logbook-check-answers.js';
 import { findChecks, ordered, ruleFor, suggestsDeleting, type CheckedDive, type LogbookCheck } from './logbook-check-rules.js';
 

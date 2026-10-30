@@ -1,7 +1,7 @@
 // SAC on a Dive (ADR 0045, slice 3; ADR 0033): litres per minute at the surface from the Dive's Cylinders, its
 // average depth and its duration. The expected figures are worked by hand in the comments, not taken from the code.
 import { describe, expect, it } from 'vitest';
-import { sacOfDive } from '../src/dives/sac.js';
+import { sacOfDive } from '../src/dives/calc/sac.js';
 
 const cylinder = (c: { volumeL?: number | null; startPressureBar?: number | null; endPressureBar?: number | null; gas?: { o2: number; he: number } | null }) => ({
   volumeL: 12, startPressureBar: 200, endPressureBar: 50, gas: null, ...c,

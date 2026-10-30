@@ -3,8 +3,8 @@
 // given on the logbook, so the pair isn't asked about right after the decision. Restoring a Dive that is probably no dive
 // says "keep it" the same way.
 import { and, eq, inArray, isNull } from 'drizzle-orm';
-import type { Queryable, Tx } from '../db/client.js';
-import { dive, logbookCheckAnswer, logbookCheckDiveAnswer, recording } from '../db/schema.js';
+import type { Queryable, Tx } from '../../db/client.js';
+import { dive, logbookCheckAnswer, logbookCheckDiveAnswer, recording } from '../../db/schema.js';
 import { ordered, probablyNoDive, ruleFor } from './logbook-check-rules.js';
 
 /** Records that the Dive and each of the others it breaks a rule with are two dives. */

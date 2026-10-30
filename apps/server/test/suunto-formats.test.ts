@@ -5,7 +5,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { assessProfile } from '../src/assessment/profile-rules.js';
-import { probablyNoDive } from '../src/dives/logbook-check-rules.js';
+import { probablyNoDive } from '../src/dives/checks/logbook-check-rules.js';
 import { createFitAdapter } from '../src/fit/fit-adapter.js';
 import { computerEventOf } from '../src/imports/computer-events.js';
 import { createFileFormats, formatOf } from '../src/imports/formats.js';

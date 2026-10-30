@@ -12,7 +12,7 @@ import { fillCylindersFromRecording, setCylinders, untieRecording, type Cylinder
 import { setLead, setSuit, setWeightingFeedback, type LeadInput, type SuitInput, type WeightingFeedbackInput } from './weighting.js';
 import { userActor, writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
 import { liveSite, siteRef } from '../sites/dive-site-link.js';
-import { keepApart, keepRestored } from './logbook-check-answers.js';
+import { keepApart, keepRestored } from './checks/logbook-check-answers.js';
 import { renumber } from './dive-numbers.js';
 import { managesDiveDiver } from '../divers/management.js';
 

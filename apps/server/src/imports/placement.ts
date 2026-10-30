@@ -10,7 +10,7 @@ import {
 import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '../dives/dive-service.js';
 import { managedDiverIds } from '../divers/management.js';
 import { reviseDive, untieLostSeries } from '../dives/cylinders.js';
-import { probablyNoDive } from '../dives/logbook-check-rules.js';
+import { probablyNoDive } from '../dives/checks/logbook-check-rules.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
 import type { ParsedRecording } from './parsed-recording.js';
 import { linkNearbySite, positionColumns } from '../sites/dive-site-link.js';

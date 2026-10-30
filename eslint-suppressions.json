@@ -9,12 +9,12 @@
       "count": 1
     }
   },
-  "apps/server/src/dives/downsample.ts": {
+  "apps/server/src/dives/calc/downsample.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
-  "apps/server/src/dives/logbook-check-rules.ts": {
+  "apps/server/src/dives/checks/logbook-check-rules.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }

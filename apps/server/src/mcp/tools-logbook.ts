@@ -3,9 +3,9 @@
 import { Type, type Static } from 'typebox';
 import { LEAD_PLACEMENTS, PARTICIPANT_ROLES, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, type RecordingSummary } from '../db/schema.js';
 import { cylindersOf } from '../dives/cylinders.js';
-import { SAC_MISSING, sacOfDive } from '../dives/sac.js';
+import { SAC_MISSING, sacOfDive } from '../dives/calc/sac.js';
 import { leadOf, leadTotalKg, suitOf, weightingFeedbackOf } from '../dives/weighting.js';
-import { downsampleMinMax } from '../dives/downsample.js';
+import { downsampleMinMax } from '../dives/calc/downsample.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { ProfileSummary, summariseProfile } from './profile.js';
 import { GROUPS, diveOf, findDives, ownDive, participantsOf, recordingsOf, seriesOf as readSeries, statsOf, type DiveRow } from './read-service.js';

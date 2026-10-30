@@ -14,7 +14,7 @@ import {
 } from './dive-service.js';
 import { managedDiverIds } from '../divers/management.js';
 import { valuesOfDive, type DiveValues } from './dive-values.js';
-import type { LogbookCheckService } from './logbook-check-service.js';
+import type { LogbookCheckService } from './checks/logbook-check-service.js';
 import { takeCylinders } from './cylinders.js';
 import { takeWeighting } from './weighting.js';
 import { changeListener, userActor, writeRevision, type Actor, type Changes } from './revisions.js';

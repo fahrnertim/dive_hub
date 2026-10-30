@@ -1,7 +1,7 @@
 // The rules of the logbook checks (ADR 0038), pure: which pairs of Dives can't both be right as they stand, and which
 // Dive is probably no dive. The pair rules use the import's own matching, so a check never disagrees with what a fresh
 // import would have done.
-import { MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, alignedForMatching, depthsDisagree, localDay, localStartMs, overlaps } from '../imports/matching.js';
+import { MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, alignedForMatching, depthsDisagree, localDay, localStartMs, overlaps } from '../../imports/matching.js';
 
 /** Changes when a rule changes what it finds. */
 export const LOGBOOK_CHECKS_VERSION = 4;

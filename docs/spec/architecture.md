@@ -405,7 +405,7 @@ Implemented:
 - **Water type on the Dive site:** column `dive_site.water_type` (the `water_type` enum, limited to fresh, salt, brackish
   by `dive_site_water_type_ck`), in the site API, form (with its note), page, merge and Revisions. The Dive's column is
   gone (migration 0011) and its Overrides too (custom migration 0012). The Dive's API has `waterType` (the site's) and
-  `waterMismatch` (`src/dives/water.ts`); the dive page shows both, and the device data shows "Water setting on the
+  `waterMismatch` (`src/dives/calc/water.ts`); the dive page shows both, and the device data shows "Water setting on the
   computer". SSI sending reads the site's water type.
 
 Found in the browser tests and fixed:
@@ -780,7 +780,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   `texts.ts` (English sentences and the fixed note, for MCP).
 - Migration `0020_dive_assessment.sql`: `dive_assessment`, `dive_finding`, `finding_dismissal`, `muted_rule`.
 - Refreshed after every Import (`afterImport`), after every change through `dives/routes.ts` and
-  `dives/candidate-routes.ts` (an `onSend` hook), when read, and by the worker at start (`assess-dives`).
+  `dives/candidates/candidate-routes.ts` (an `onSend` hook), when read, and by the worker at start (`assess-dives`).
 - Routes: `GET /api/dives/{id}/assessment`, `PUT /api/dives/{id}/findings/{rule}/dismissal`,
   `PUT /api/divers/{id}/muted-rules/{rule}`; `GET /api/dives` carries `findings` per Dive. Code `finding_not_found`.
 - Computer events: `COMPUTER_EVENTS` in `vocabulary.ts`, Garmin's `dive_alert` codes in `fit/fit-vocabulary.ts`.
@@ -851,7 +851,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - Not yet: finding such pairs unasked, in "Needs your decision" (slice 18c, below).
 
 **Slice 18c (2026-10-07): logbook checks** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)).
-- `apps/server/src/dives/logbook-check-rules.ts` (pure, `LOGBOOK_CHECKS_VERSION` 2; the third rule `entry_apart_from_recording` is in the ADR's last amendment): `ruleFor` two Dives
+- `apps/server/src/dives/checks/logbook-check-rules.ts` (pure, `LOGBOOK_CHECKS_VERSION` 2; the third rule `entry_apart_from_recording` is in the ADR's last amendment): `ruleFor` two Dives
   (`recording_beside_entry` with the import's tolerance when exactly one has a Recording, `overlapping_dives` on a real
   overlap otherwise; local times where an offset is unknown) and `findChecks` over a logbook (each pair once; `obvious`
   when an import would have attached them: one partner each, depths agreeing).

@@ -23,7 +23,7 @@ import { computerDive, createFakeSsi, fakeCard, handTypedDive, type FakeSsiSite 
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { resettableClock } from './support.js';
 import { createMergingService } from '../src/dives/merging-service.js';
-import { createLogbookCheckService } from '../src/dives/logbook-check-service.js';
+import { createLogbookCheckService } from '../src/dives/checks/logbook-check-service.js';
 import { currentRemote } from '../src/providers/remote-state.js';
 import { deletingItself } from '../src/providers/waiting-push-queue.js';
 import { createDiverService } from '../src/divers/diver-service.js';

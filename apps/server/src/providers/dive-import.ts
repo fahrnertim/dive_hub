@@ -17,7 +17,7 @@ import { PROCESS_IMPORT_TASK } from '../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../imports/placement.js';
 import { DAY_MS, MAX_OFFSET_MS, entryMatches } from '../imports/matching.js';
 import { recordFindings } from './gone-dives.js';
-import { probablyNoDive } from '../dives/logbook-check-rules.js';
+import { probablyNoDive } from '../dives/checks/logbook-check-rules.js';
 import { siteRef } from '../dives/dive-summary-view.js';
 import { siteOutlook } from '../sites/provider-sites.js';
 import type { BlobStore } from '../storage/blob-store.js';

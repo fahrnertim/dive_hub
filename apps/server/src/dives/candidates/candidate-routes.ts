@@ -1,15 +1,15 @@
 // Duplicate candidates: what waits for the User's decision, and the decisions (ADR 0016).
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
-import type { AssessmentService } from '../assessment/assessment-service.js';
-import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
-import type { Auth } from '../auth/auth.js';
-import { requireUser, userOf } from '../auth/fastify.js';
-import { UTC_OFFSET_SOURCES } from '../db/schema.js';
-import { answerErrors, answers, Problem } from '../http/problems.js';
-import type { DuplicateReason } from '../imports/matching.js';
+import type { AssessmentService } from '../../assessment/assessment-service.js';
+import { refreshAssessmentsAfterChange } from '../assessment-refresh.js';
+import type { Auth } from '../../auth/auth.js';
+import { requireUser, userOf } from '../../auth/fastify.js';
+import { UTC_OFFSET_SOURCES } from '../../db/schema.js';
+import { answerErrors, answers, Problem } from '../../http/problems.js';
+import type { DuplicateReason } from '../../imports/matching.js';
 import { CandidateError, type CandidateService } from './candidate-service.js';
-import { DateTime, IdParams, Nullable } from '../http/schemas.js';
+import { DateTime, IdParams, Nullable } from '../../http/schemas.js';
 
 export interface CandidateRouteDeps {
   auth: Auth;

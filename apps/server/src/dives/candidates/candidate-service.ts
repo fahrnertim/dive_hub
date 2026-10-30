@@ -1,12 +1,12 @@
 // Deciding about Duplicate candidates (ADR 0016): add to one of the candidate Dives, make a new Dive,
 // or discard (the Recording stays, detached, so a re-import doesn't ask again), and reopen.
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
-import { device, dive, diverManagement, duplicateCandidate, original, recording } from '../db/schema.js';
-import { attachRecording, createDiveFromRecording } from './dive-service.js';
-import { managedDiverIds, managesDiveDiver } from '../divers/management.js';
-import { keepApart } from './logbook-check-answers.js';
-import type { Actor } from './revisions.js';
+import type { Db, Tx } from '../../db/client.js';
+import { device, dive, diverManagement, duplicateCandidate, original, recording } from '../../db/schema.js';
+import { attachRecording, createDiveFromRecording } from '../dive-service.js';
+import { managedDiverIds, managesDiveDiver } from '../../divers/management.js';
+import { keepApart } from '../checks/logbook-check-answers.js';
+import type { Actor } from '../revisions.js';
 
 export class CandidateError extends Error {
   constructor(readonly code: 'candidate_not_found' | 'candidate_resolved' | 'not_a_candidate' | 'dive_not_found') {

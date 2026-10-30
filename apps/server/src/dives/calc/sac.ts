@@ -1,5 +1,5 @@
 // SAC on a Dive (ADR 0045, slice 3; ADR 0033): computed from the Dive's Cylinders, never stored.
-import type { Cylinder } from './cylinders.js';
+import type { Cylinder } from '../cylinders.js';
 import { surfaceLitres } from './real-gas.js';
 
 /** Below this a Dive is too short for its SAC to say anything (ADR 0033). */

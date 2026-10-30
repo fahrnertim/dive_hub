@@ -1,7 +1,7 @@
 // A Dive's water is its site's (ADR 0025). The computer computed depths for the water it was set to, so when
 // the two differ the dive page says so, with how far off the depths read where the densities tell.
-import type { RecordingSummary } from '../db/schema.js';
-import { WATER_DENSITY, type SiteWaterType, type WaterType } from '../vocabulary.js';
+import type { RecordingSummary } from '../../db/schema.js';
+import { WATER_DENSITY, type SiteWaterType, type WaterType } from '../../vocabulary.js';
 
 export interface WaterMismatch {
   /** What the Primary recording's computer was set to. */
