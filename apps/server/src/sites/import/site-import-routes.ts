@@ -4,7 +4,7 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from '../../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../../auth/fastify.js';
 import type { siteImport } from '../../db/schema.js';
-import { answerErrors, answers, Problem, problem, PROBLEMS, type ProblemCode } from '../../http/problems.js';
+import { answerErrors, answers, Problem, problem, PROBLEM_CODES, storedProblemCode } from '../../http/problems.js';
 import { DateTime, IdParams, Nullable } from '../../http/schemas.js';
 import { IMPORT_SOURCES } from '../sources.js';
 import { SiteImportError, type SiteImportService } from './site-import-service.js';
@@ -64,14 +64,14 @@ export const SiteImportView = Type.Object({
       kind: Type.Literal('offer'), siteId: Type.String(), name: Type.String(), source: Source,
     }, { description: 'A hand-made site the Source describes: its page offers the Source\'s data' }),
   ])),
-  failureCode: Nullable(Type.Enum(Object.keys(PROBLEMS) as ProblemCode[]), { description: 'Why it failed (a problem code)' }),
+  failureCode: Nullable(Type.Enum(PROBLEM_CODES), { description: 'Why it failed (a problem code)' }),
   createdAt: DateTime,
   finishedAt: Nullable(DateTime),
 });
 
 const toView = (r: typeof siteImport.$inferSelect): Static<typeof SiteImportView> => ({
   id: r.id, status: r.status, sources: r.sources, area: r.area, language: r.language, createSites: r.createSites, progress: r.progress,
-  counts: r.counts, findings: r.findings, failureCode: (r.errorCode as ProblemCode | null) ?? null,
+  counts: r.counts, findings: r.findings, failureCode: storedProblemCode(r.errorCode),
   createdAt: r.createdAt.toISOString(), finishedAt: r.finishedAt?.toISOString() ?? null,
 });
 

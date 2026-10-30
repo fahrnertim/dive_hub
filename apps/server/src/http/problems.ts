@@ -2,7 +2,7 @@
 // and an English `error` text for logs, scripts and anything without a translation.
 import type { FastifyError, FastifyInstance, FastifyReply } from 'fastify';
 import { Type } from 'typebox';
-import { Nullable } from './schemas.js';
+import { Nullable, oneOf } from './schemas.js';
 
 export const PROBLEMS = {
   sign_in_required: 'Sign in required',
@@ -119,9 +119,13 @@ export const PROBLEMS = {
 } as const;
 
 export type ProblemCode = keyof typeof PROBLEMS;
+export const PROBLEM_CODES = Object.keys(PROBLEMS) as ProblemCode[];
+
+/** A problem code kept in a text column, read back as one (it throws on a value that isn't). */
+export const storedProblemCode = (code: string | null): ProblemCode | null => (code === null ? null : oneOf(PROBLEM_CODES, code));
 
 export const Problem = Type.Object({
-  code: Type.Enum(Object.keys(PROBLEMS) as ProblemCode[], {
+  code: Type.Enum(PROBLEM_CODES, {
     description: 'Stable, machine-readable reason; clients translate it',
   }),
   error: Type.String({ description: 'English description, for logs and scripts' }),

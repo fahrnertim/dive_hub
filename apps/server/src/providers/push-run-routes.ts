@@ -3,14 +3,13 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import { userOf } from '../auth/fastify.js';
-import { Problem, PROBLEMS, problem, type ProblemCode } from '../http/problems.js';
+import { Problem, problem, storedProblemCode } from '../http/problems.js';
 import { DIVE_ONLY_PATTERN } from '../dives/list-filter.js';
 import { MAX_IDS, type PushRunService } from './push-run-service.js';
 import { DateTime, IdParams, Nullable, oneOf } from '../http/schemas.js';
+import { Code } from './route-parts.js';
 import { UnmetView } from './unmet-view.js';
 
-const CODES = Object.keys(PROBLEMS) as ProblemCode[];
-const Code = Type.Enum(CODES);
 // A run item's action and outcome are text columns; the views check them against these.
 const ACTIONS = ['create', 'update', 'number'] as const;
 const OUTCOMES = ['created', 'updated', 'linked', 'numbered'] as const;
@@ -129,7 +128,7 @@ const StartBody = Type.Object({
 
 const time = (d: Date | null) => d?.toISOString() ?? null;
 const runView = <T extends { stopCode: string | null; createdAt: Date; startedAt: Date | null; finishedAt: Date | null; dismissedAt: Date | null }>(r: T) =>
-  ({ ...r, stopCode: r.stopCode === null ? null : oneOf(CODES, r.stopCode), createdAt: r.createdAt.toISOString(), startedAt: time(r.startedAt), finishedAt: time(r.finishedAt), dismissedAt: time(r.dismissedAt) });
+  ({ ...r, stopCode: storedProblemCode(r.stopCode), createdAt: r.createdAt.toISOString(), startedAt: time(r.startedAt), finishedAt: time(r.finishedAt), dismissedAt: time(r.dismissedAt) });
 
 const errors = { 400: Problem, 404: Problem, 409: Problem };
 

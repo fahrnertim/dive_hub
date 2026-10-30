@@ -3,7 +3,8 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import { userOf } from '../auth/fastify.js';
-import { Problem, type ProblemCode } from '../http/problems.js';
+import { refreshAssessmentsAfterChange, type AssessmentRefresh } from '../dives/assessment-refresh.js';
+import { Problem, storedProblemCode } from '../http/problems.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { ConflictChoices, ConflictFieldView } from './conflict-view.js';
@@ -89,7 +90,7 @@ const Existing = Type.Object({
 
 const pushView = (p: PushRow): Static<typeof PushView> => ({
   id: p.id, action: p.action, state: p.state, remoteId: p.remoteId, remoteNumber: p.remoteNumber, remoteGone: p.remoteGone,
-  failureCode: p.errorCode as ProblemCode | null,
+  failureCode: storedProblemCode(p.errorCode),
   leftOut: p.leftOut, differences: p.differences, createdAt: p.createdAt.toISOString(),
 });
 
@@ -100,9 +101,13 @@ const statusView = (s: Status): Static<typeof StatusView> =>
 export interface DiveProviderRouteDeps {
   pushes: PushService;
   sitePicks: SitePickService;
+  assessments: AssessmentRefresh;
 }
 
-export const diveProviderRoutes: FastifyPluginAsyncTypebox<DiveProviderRouteDeps> = async (app, { pushes, sitePicks }) => {
+export const diveProviderRoutes: FastifyPluginAsyncTypebox<DiveProviderRouteDeps> = async (app, { pushes, sitePicks, assessments }) => {
+  // A send can take the Provider's values into the Dive.
+  refreshAssessmentsAfterChange(app, assessments);
+
   app.get('/dives/:id/providers', {
     schema: {
       summary: 'The Dive at every Provider that takes dives: the Connection of its Diver, what is unmet, the remote dive it has now, every Push',

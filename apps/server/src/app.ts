@@ -138,7 +138,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(siteRoutes, { prefix: '/api', auth, sites: createSiteService(db) });
   await app.register(centreRoutes, { prefix: '/api', auth, centres, divers });
   await app.register(siteImportRoutes, { prefix: '/api', auth, siteImports: deps.siteImports });
-  await app.register(providerRoutes, { prefix: '/api', auth, ...deps.providers });
+  await app.register(providerRoutes, { prefix: '/api', auth, ...deps.providers, assessments });
   await app.register(aiAccessRoutes, { prefix: '/api', auth, accesses: deps.aiAccesses, baseUrl });
   // The MCP endpoint (ADR 0035): not under /api, authenticated by an AI access's key instead of a session.
   await app.register(mcpEndpoint, { db, accesses: deps.aiAccesses, baseUrl });

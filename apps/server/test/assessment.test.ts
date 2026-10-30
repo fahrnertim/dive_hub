@@ -4,6 +4,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ENGINE_VERSION } from '../src/assessment/rules.js';
 import { dive, diveAssessment, diveFinding, recording, recordingEvent } from '../src/db/schema.js';
+import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
@@ -27,6 +28,7 @@ describe.skipIf(!(await databaseReachable()))('the dive assessment', () => {
   let timDiver: string;
   let morning: string;
   let deep: string;
+  const ledger = createFakeLedger();
 
   const call = (method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, cookie: string, payload?: object) =>
     ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
@@ -46,7 +48,7 @@ describe.skipIf(!(await databaseReachable()))('the dive assessment', () => {
 
   beforeAll(async () => {
     t = await createTestDatabase();
-    ctx = await createTestApp(t);
+    ctx = await createTestApp(t, { extraProviders: [ledger.adapter] });
     await createUser(ctx.auth, 'tim@example.com');
     await createUser(ctx.auth, 'bob@example.com');
     tim = await signIn(ctx.app, 'tim@example.com');
@@ -226,5 +228,16 @@ describe.skipIf(!(await databaseReachable()))('the dive assessment', () => {
     expect(stored.map((f) => f.rule).sort()).toEqual(['ascent_rate', 'descent_rate', 'ppo2', 'safety_stop']);
     expect((await assessment(deep)).noFly).toMatchObject({ hours: 12 });
     expect((await assessment(morning)).noFly).toMatchObject({ hours: 12 });
+  });
+
+  it('follows a send to a Provider, which can take the Provider\'s values into the Dive', async () => {
+    ledger.tokens.set('ledger-token-1', { accountId: 'l-5', label: 'Ledger of Tim' });
+    expect((await call('POST', '/api/connections/ledger', tim, { diverId: timDiver, token: 'ledger-token-1', keepSignedIn: false })).statusCode).toBeLessThan(300);
+    await t.db.update(diveAssessment).set({ engineVersion: ENGINE_VERSION - 1 }).where(eq(diveAssessment.diveId, morning));
+    const sent = await call('POST', `/api/dives/${morning}/providers/ledger`, tim, {});
+    expect(sent.statusCode, sent.body).toBe(200);
+    // Read from the table: reading the assessment through the API would refresh it itself.
+    const [stored] = await t.db.select().from(diveAssessment).where(eq(diveAssessment.diveId, morning));
+    expect(stored!.engineVersion).toBe(ENGINE_VERSION);
   });
 });

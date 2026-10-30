@@ -2,11 +2,11 @@
 // Provider is answered.
 import type { FastifyReply } from 'fastify';
 import { Type } from 'typebox';
-import { type ErrorAnswer, Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
+import { type ErrorAnswer, Problem, problem, PROBLEM_CODES, providerProblem } from '../http/problems.js';
 import { UnmetView } from './unmet-view.js';
 import { ProviderServiceError, type ProviderRefusal } from './registry.js';
 
-export const Code = Type.Enum(Object.keys(PROBLEMS) as ProblemCode[]);
+export const Code = Type.Enum(PROBLEM_CODES);
 
 // A string, not an enum: clients take the Providers from GET /api/providers, and the registry refuses others.
 export const ProviderParam = Type.String({ pattern: '^[a-z][a-z0-9_]*$', description: 'A Provider\'s id (GET /api/providers); others answer provider_unsupported' });

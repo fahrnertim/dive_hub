@@ -6,6 +6,7 @@ import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db, Queryable } from '../db/client.js';
 import { connection, dive, diveSite, push, pushRun, pushRunItem, type PushRunLeftOut, type ConnectionRow } from '../db/schema.js';
 import { asksFor, diveListFilter } from '../dives/list-filter.js';
+import type { ProblemCode } from '../http/problems.js';
 import { managedDiverIds } from '../divers/management.js';
 import { isUniqueViolation } from '../sites/site-service.js';
 import type { ConflictService } from './conflicts.js';
@@ -217,7 +218,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
   async function finish(runId: string, status: 'done' | 'cancelled') {
     await db.update(pushRun).set({ status, finishedAt: new Date() }).where(and(eq(pushRun.id, runId), inArray(pushRun.status, ['queued', 'running'])));
   }
-  async function stop(runId: string, code: string) {
+  async function stop(runId: string, code: ProblemCode) {
     await db.update(pushRun).set({ status: 'stopped', stopCode: code, finishedAt: new Date() }).where(and(eq(pushRun.id, runId), inArray(pushRun.status, ['queued', 'running'])));
   }
 
@@ -260,7 +261,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
    * One claimed Dive sent and its item settled, a failure as `failureOutcome` says: `stopped` when the run stopped at
    * once, else the failure that counts towards the ones in a row (null for none). It never throws for a Dive's sake.
    */
-  async function sendItem(run: RunRow, item: Claimed, canUpdate: boolean): Promise<{ stopped: true } | { stopped: false; failure: string | null }> {
+  async function sendItem(run: RunRow, item: Claimed, canUpdate: boolean): Promise<{ stopped: true } | { stopped: false; failure: ProblemCode | null }> {
     const diveId = item.dive_id;
     const settle = (values: Partial<ItemRow>) => db.update(pushRunItem).set({ finishedAt: new Date(), ...values }).where(itemOf(run.id, diveId));
     try {

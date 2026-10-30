@@ -1,5 +1,6 @@
 // What a Push run does with one Dive, and in which order (ADR 0047, 0048). Pure: it works from a Dive's status at the
 // Provider (what Dive Hub knows, no call) and the run's options.
+import type { ProblemCode } from '../http/problems.js';
 import { blocking } from './requirements.js';
 
 export type LeftOutReason = 'up_to_date' | 'requirements_unmet' | 'update_not_chosen' | 'removes_verification' | 'update_unsupported';
@@ -141,9 +142,9 @@ function numberOnlyPlan(status: PlanStatus, options: PlanOptions) {
  */
 const BUSY_TRIES = 3;
 /** What stops a run at once: the account needs the User, not another try. */
-const STOPS_AT_ONCE: ReadonlySet<string> = new Set(['provider_sign_in_needed', 'provider_wrong_credentials', 'provider_not_connected']);
+const STOPS_AT_ONCE: ReadonlySet<ProblemCode> = new Set(['provider_sign_in_needed', 'provider_wrong_credentials', 'provider_not_connected']);
 /** Refusals that skip the Dive, and the reason the item shows. */
-const SKIPPED_AS: Readonly<Record<string, string>> = {
+const SKIPPED_AS: Readonly<Partial<Record<ProblemCode, string>>> = {
   provider_requirements_unmet: 'requirements_unmet', provider_number_taken: 'number_taken', provider_number_nothing_to_set: 'up_to_date',
 };
 
@@ -154,7 +155,7 @@ const SKIPPED_AS: Readonly<Record<string, string>> = {
  */
 export type FailureOutcome = { then: 'later' } | { then: 'stop' } | { then: 'skip'; reason: string } | { then: 'fail'; inARow: boolean };
 
-export function failureOutcome(code: string, attempts: number): FailureOutcome {
+export function failureOutcome(code: ProblemCode, attempts: number): FailureOutcome {
   if (code === 'provider_busy') return attempts < BUSY_TRIES ? { then: 'later' } : { then: 'fail', inARow: false };
   if (STOPS_AT_ONCE.has(code)) return { then: 'stop' };
   const reason = SKIPPED_AS[code];
