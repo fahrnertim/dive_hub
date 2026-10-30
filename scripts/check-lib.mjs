@@ -14,7 +14,7 @@ const AREAS = [
   [/^apps\/web\/src\/(SitesPage|SiteForm|SiteHistory)\.tsx$|^apps\/web\/src\/lib\/(site-origin|sites-list|geo)\.ts$/, ['@sites']],
   [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
   // Dive centres and their verification codes (ADR 0043): their own pages, a panel on a Dive site, a line on a Dive.
-  [/^apps\/web\/src\/CentresPage\.tsx$|^apps\/web\/src\/ui\/QrCode\.tsx$/, ['@sites', '@dives']],
+  [/^apps\/web\/src\/(CentresPage|NewCentre|SiteCentres)\.tsx$|^apps\/web\/src\/lib\/centres\.ts$|^apps\/web\/src\/ui\/QrCode\.tsx$/, ['@sites', '@dives']],
   // The codes drawn for scanning (ADR 0043): on a centre, a Diver's codes and a Dive's line of codes.
   [/^apps\/web\/src\/DiveCodes\.tsx$/, ['@sites', '@divers', '@dives']],
   // The scanner for verification codes (ADR 0043): on the new centre form, where a centre's number is set, and where a diver's code is taken.
