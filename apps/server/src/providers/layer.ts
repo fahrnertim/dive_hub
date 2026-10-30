@@ -19,12 +19,16 @@ import { createProviderRegistry } from './registry.js';
 import { createScheduledFetch } from './scheduled-fetch.js';
 import { createSitePickService } from './site-pick.js';
 import { createWaitingPushService, type ProviderLog } from './waiting-push-service.js';
+import { noteDiveChange, noteSiteChange } from './waiting-push-queue.js';
+import { listenToChanges } from '../dives/revisions.js';
 
 export function createProviderLayer(deps: {
   db: Db; secrets: SecretBox; blobs: BlobStore; adapters: ProviderAdapter[]; clock?: Clock;
   /** Where the worker's own faults go (the app's logger). */
   log?: ProviderLog;
 }) {
+  // Changes to Dives and sites reach the Waiting push queue (ADR 0056) through the listener dives/ owns.
+  listenToChanges({ diveChanged: noteDiveChange, siteChanged: noteSiteChange });
   const providers = createProviderRegistry(deps.adapters);
   const clock = deps.clock && { clock: deps.clock };
   const leases = createLeases({ db: deps.db, ...clock, ...(deps.log && { log: deps.log }) });

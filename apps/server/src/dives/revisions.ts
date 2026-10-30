@@ -1,6 +1,5 @@
 import type { Tx } from '../db/client.js';
 import { revision } from '../db/schema.js';
-import { noteDiveChange } from '../providers/waiting-push-queue.js';
 
 /** Who or what changed logbook data: a User, an Import, a Site import (ADR 0021), or the hub itself. */
 export type Actor = { type: 'user' | 'import' | 'system' | 'site_import'; id: string };
@@ -27,11 +26,36 @@ export type RevisionCause = (typeof REVISION_CAUSES)[number];
 
 export type Changes = Record<string, { from: unknown; to: unknown }>;
 
+/**
+ * Who hears, inside the change's transaction, that a Dive or a dive site changed: the Waiting push queue (ADR 0056).
+ * dives/ owns this interface and providers/ implements it, so writing a Revision doesn't call the providers' queue
+ * (ADR 0053's seam for dives and providers). createProviderLayer sets it; every process that writes Revisions builds one.
+ */
+export interface ChangeListener {
+  /** A Dive changed, at its Revision's time and for its cause (a merge tells it `delete` for the merged Dive). */
+  diveChanged(tx: Tx, diveId: string, cause: RevisionCause, at: Date, actor?: Actor): Promise<void>;
+  /** A dive site's name or position changed: it reaches the Dives there. */
+  siteChanged(tx: Tx, siteId: string, at: Date): Promise<void>;
+}
+
+let listener: ChangeListener | null = null;
+
+/** Sets the process's one listener (the same stateless one each time a provider layer is built). */
+export function listenToChanges(given: ChangeListener): void {
+  listener = given;
+}
+
+/** The listener; without one a change would silently not reach the Providers, so it fails instead. */
+export function changeListener(): ChangeListener {
+  if (!listener) throw new Error('No change listener: build the provider layer (createProviderLayer) before writing Revisions');
+  return listener;
+}
+
 export async function writeRevision(
   tx: Tx, entityType: 'dive' | 'recording' | 'device' | 'dive_site' | 'diver' | 'dive_centre', entityId: string, actor: Actor, cause: RevisionCause, changes: Changes,
 ): Promise<{ at: Date }> {
   const [written] = await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes }).returning({ at: revision.at });
-  // Every change to a Dive may need to go to a Provider by itself (ADR 0056): the queue notes it, at the Revision's time.
-  if (entityType === 'dive') await noteDiveChange(tx, entityId, cause, written!.at, actor);
+  // Every change to a Dive may need to go to a Provider by itself (ADR 0056): the listener hears it, at the Revision's time.
+  if (entityType === 'dive') await changeListener().diveChanged(tx, entityId, cause, written!.at, actor);
   return { at: written!.at };
 }

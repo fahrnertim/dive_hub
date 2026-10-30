@@ -7,7 +7,7 @@ import type { Db, Queryable, Tx } from '../db/client.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
 import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localStartMs } from '../imports/matching.js';
 import { currentRemote, type PushRow } from '../providers/remote-state.js';
-import { deletingItself, noteDiveChange } from '../providers/waiting-push-queue.js';
+import { deletingItself } from '../providers/waiting-push-queue.js';
 import { liveSite } from '../sites/dive-site-link.js';
 import {
   DiveError, applyToDive, attachRecording, lockManagedDive, participantsOf,
@@ -17,7 +17,7 @@ import { valuesOfDive, type DiveValues } from './dive-values.js';
 import { createLogbookChecks } from './logbook-checks.js';
 import { takeCylinders } from './cylinders.js';
 import { takeWeighting } from './weighting.js';
-import { writeRevision, type Actor, type Changes } from './revisions.js';
+import { changeListener, writeRevision, type Actor, type Changes } from './revisions.js';
 import { renumber } from './dive-numbers.js';
 
 type DiveRow = typeof dive.$inferSelect;
@@ -163,7 +163,7 @@ export function createMerging(db: Db) {
         });
         // The Revision's cause is `merge`, which the queue doesn't read as a delete: told so, the copy at a Provider whose
         // Connection deletes by itself goes after the quiet period, and restoring the Dive cancels it.
-        await noteDiveChange(tx, other.id, 'delete', at, actor);
+        await changeListener().diveChanged(tx, other.id, 'delete', at, actor);
         await renumber(tx, [kept.diverId]);
         return { kept: kept.id, merged: other.id };
       });
