@@ -9,7 +9,7 @@ const SERVER = '^apps/server/src/';
 // commit, with the reason in the commit message; no new ADR needed. Removing an entry is always welcome.
 const MODULE_IMPORTS = {
   assessment: ['divers', 'imports'],
-  centres: ['divers:type', 'dives', 'providers', 'sites'],
+  centres: ['divers:type', 'dives', 'sites'],
   certifications: ['divers', 'dives', 'providers'],
   divers: ['centres', 'certifications', 'dives', 'providers'],
   dives: ['assessment:type', 'centres', 'divers', 'imports', 'providers', 'sites'],
@@ -19,7 +19,7 @@ const MODULE_IMPORTS = {
   mcp: ['assessment', 'divers', 'dives', 'planning', 'sites'],
   planning: ['divers', 'dives'],
   providers: ['certifications', 'divers', 'dives', 'imports', 'sites', 'routes'],
-  sites: ['dives', 'providers'],
+  sites: ['dives'],
   suunto: ['imports'],
   users: ['dives'],
 };

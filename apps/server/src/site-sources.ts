@@ -1,10 +1,11 @@
-// The real Sources of a Site import, configured for this instance (ADR 0021, 0025).
-import type { ImportSource } from '../sources.js';
-import { DEFAULT_OVERPASS_URL, createOverpassSource } from './overpass.js';
-import { createPoliteHttp, type Fetch } from './polite-http.js';
-import type { SiteSourceAdapter } from './site-source.js';
-import { DEFAULT_SSI_SITES_URL, createSsiSiteSource } from '../../providers/ssi/ssi-sites.js';
-import { DEFAULT_WIKIDATA_SPARQL_URL, createWikidataSource } from './wikidata.js';
+// The real Sources of a Site import, configured for this instance (ADR 0021, 0025). It sits beside main.ts because it
+// wires SSI's site list from providers/ssi/ (ADR 0027) into sites/, which doesn't import providers/ itself.
+import type { ImportSource } from './sites/sources.js';
+import { DEFAULT_OVERPASS_URL, createOverpassSource } from './sites/import/overpass.js';
+import { createPoliteHttp, type Fetch } from './sites/import/polite-http.js';
+import type { SiteSourceAdapter } from './sites/import/site-source.js';
+import { DEFAULT_SSI_SITES_URL, createSsiSiteSource } from './providers/ssi/ssi-sites.js';
+import { DEFAULT_WIKIDATA_SPARQL_URL, createWikidataSource } from './sites/import/wikidata.js';
 
 export function createSiteSources(options: {
   overpassUrl?: string | undefined;

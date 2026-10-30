@@ -12,7 +12,7 @@ import { buildApp } from '../src/app.js';
 import { createDb } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
 import { createImportService } from '../src/imports/import-service.js';
-import { createSiteSources } from '../src/sites/import/create-site-sources.js';
+import { createSiteSources } from '../src/site-sources.js';
 import type { Fetch } from '../src/sites/import/polite-http.js';
 import { createSiteImportService } from '../src/sites/import/site-import-service.js';
 import { ssiSitesZip } from './zip.js';

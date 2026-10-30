@@ -43,7 +43,7 @@ const AREAS = [
   // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
   [/^apps\/web\/src\/AiAccess\.tsx$|^apps\/web\/src\/lib\/ai-access\.ts$/, ['@account', '@admin']],
   [/^apps\/server\/src\/mcp\//, ['@account', '@admin']],
-  [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/providers\/ssi\/ssi-sites\.ts$/, ['@admin', '@sites']],
+  [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/(site-sources|providers\/ssi\/ssi-sites)\.ts$/, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/centres\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/(dives|imports|fit|suunto|assessment)\/|^apps\/server\/src\/(routes|vocabulary)\.ts$/, ['@dives']],

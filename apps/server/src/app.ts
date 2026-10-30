@@ -35,6 +35,7 @@ import type { SiteImportService } from './sites/import/site-import-service.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
 import type { ProviderLayer } from './providers/layer.js';
 import { providerRoutes } from './providers/routes.js';
+import { ssiCentreDisplayName } from './providers/ssi/ssi-centre.js';
 import { assessmentRoutes } from './assessment/routes.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
 import { aiAccessRoutes } from './mcp/access-routes.js';
@@ -114,7 +115,7 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   });
   const logbook = createLogbookService(db);
   const divers = createDiverService(db);
-  const centres = createCentreService(db);
+  const centres = createCentreService(db, { ssi: ssiCentreDisplayName });
   await app.register(apiRoutes, { prefix: '/api', auth, imports: deps.imports, logbook, pushes, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
   const dives = createDiveService(db);
   const checks = createLogbookChecks(db);

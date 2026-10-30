@@ -7,7 +7,6 @@ import type { Caller } from '../http/caller.js';
 import { dive, diveCentre, diveCentreExternalId, diveCentreSite, diveSite } from '../db/schema.js';
 import { writeRevision, type Changes } from '../dives/revisions.js';
 import { isUniqueViolation } from '../sites/site-service.js';
-import { ssiCentreDisplayName } from '../providers/ssi/ssi-centre.js';
 import { centreCodeText, readVerificationCode, typedCentreNumber } from './verification-code.js';
 
 export const CENTRE_SOURCES = ['ssi'] as const;
@@ -43,19 +42,22 @@ const revisionKey = (source: CentreSource) => (source === 'ssi' ? 'ssiCentreNumb
 /** What a User typed for a Source, as the bare ID; null when it isn't one. */
 const typedId = (_source: CentreSource, typed: string) => typedCentreNumber(typed);
 
-/** The centre's code, when it has what the code is built from. */
-/** How each Source names a centre for showing: its rule makes the display name from the whole name. */
-const CENTRE_DISPLAY_NAME: Record<CentreSource, (name: string) => string> = { ssi: ssiCentreDisplayName };
+/**
+ * How each Source names a centre for showing: its rule makes the display name from the whole name. The rules live
+ * with their Provider (providers/ssi/ssi-centre.ts, ADR 0043); app.ts passes them in.
+ */
+export type CentreDisplayNames = Record<CentreSource, (name: string) => string>;
 
 /**
  * The name to show (owner, 2026-10-08): made by the rule of the Source the centre has an ID at, since the name is
  * spelled as that Source spells it. A centre without one shows its whole name. The whole name is what is edited.
  */
-export const displayNameOf = (name: string, externalIds: CentreExternalId[]): string => {
+const displayNameOf = (rules: CentreDisplayNames, name: string, externalIds: CentreExternalId[]): string => {
   const source = CENTRE_SOURCES.find((s) => externalIds.some((e) => e.source === s));
-  return source ? CENTRE_DISPLAY_NAME[source](name) : name;
+  return source ? rules[source](name) : name;
 };
 
+/** The centre's code, when it has what the code is built from. */
 export const verificationCodeOf = (name: string, externalIds: CentreExternalId[]): VerificationCodeView | null => {
   const ssi = externalIds.find((e) => e.source === 'ssi');
   return ssi ? { provider: 'ssi', text: centreCodeText(ssi.externalId, name) } : null;
@@ -63,7 +65,7 @@ export const verificationCodeOf = (name: string, externalIds: CentreExternalId[]
 
 const live = isNull(diveCentre.deletedAt);
 
-export function createCentreService(db: Db) {
+export function createCentreService(db: Db, displayNames: CentreDisplayNames) {
   /** The subqueries name their tables: in a single-table select Drizzle leaves columns unqualified. */
   const columns = {
     centre: diveCentre,
@@ -77,7 +79,7 @@ export function createCentreService(db: Db) {
   const view = (actor: Caller, row: { centre: typeof diveCentre.$inferSelect; externalIds: CentreExternalId[]; sites: { id: string; name: string }[] }) => ({
     ...row,
     canDelete: actor.isAdmin || row.centre.createdBy === actor.userId,
-    displayName: displayNameOf(row.centre.name, row.externalIds),
+    displayName: displayNameOf(displayNames, row.centre.name, row.externalIds),
     verificationCode: verificationCodeOf(row.centre.name, row.externalIds),
   });
 
@@ -243,7 +245,7 @@ export function createCentreService(db: Db) {
         .orderBy(sql`lower(${diveCentre.name})`, diveCentre.id);
       return rows.flatMap((r) => {
         const code = verificationCodeOf(r.name, r.externalIds);
-        return code ? [{ centre: { id: r.id, name: r.name, displayName: displayNameOf(r.name, r.externalIds) }, ...code }] : [];
+        return code ? [{ centre: { id: r.id, name: r.name, displayName: displayNameOf(displayNames, r.name, r.externalIds) }, ...code }] : [];
       });
     },
   };

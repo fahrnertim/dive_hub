@@ -6,7 +6,7 @@ import { createDb } from './db/client.js';
 import { findChangedMigrations, migrateDatabase } from './db/migrate.js';
 import { buildApp } from './app.js';
 import { createImportService } from './imports/import-service.js';
-import { createSiteSources } from './sites/import/create-site-sources.js';
+import { createSiteSources } from './site-sources.js';
 import { createSiteImportService } from './sites/import/site-import-service.js';
 import { userAgent } from './sites/import/polite-http.js';
 import { createSecretBox } from './secrets/secret-box.js';
