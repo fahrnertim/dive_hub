@@ -162,11 +162,10 @@ const SamplesView = Type.Object({
   })),
 });
 
-const iso = (d: Date | null) => (d ? d.toISOString() : null);
 export const toImportView = (j: typeof importJob.$inferSelect): Static<typeof ImportView> => ({
   id: j.id, status: j.status, uploadName: j.uploadName, provider: j.provider, createdAt: j.createdAt.toISOString(),
   // A parser's own words (English, internals) stay in the database and the server log (client contract §6).
-  finishedAt: iso(j.finishedAt), outcome: j.outcome.map(({ message: _detail, ...o }) => o),
+  finishedAt: j.finishedAt?.toISOString() ?? null, outcome: j.outcome.map(({ message: _detail, ...o }) => o),
   errorCode: j.error === null ? null : j.error === 'unsupported_file' || j.error === 'choice_expired' ? j.error : 'processing_failed',
   found: j.found, kinds: j.kinds, unsentTo: [],
 });

@@ -10,7 +10,7 @@ import { Problem, problem } from '../http/problems.js';
 import { NO_CERTIFICATIONS, type CertificationService } from '../certifications/certification-service.js';
 import { DiverError } from './diver-error.js';
 import type { DiverService } from './diver-service.js';
-import { IdParams, Nullable } from '../http/schemas.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface DiverRouteDeps {
   auth: Auth;
@@ -62,7 +62,7 @@ const ExternalDiverView = Type.Object({
 const DeviceView = Type.Object({
   id: Type.String(), manufacturer: Type.String(), product: Nullable(Type.String()), serialNumber: Type.String(),
   firmware: Nullable(Type.String()), diverId: Type.String(),
-  recordingCount: Type.Integer(), lastUsedAt: Nullable(Type.String({ format: 'date-time' })),
+  recordingCount: Type.Integer(), lastUsedAt: Nullable(DateTime),
 });
 
 const CodePart = (description: string, maxLength: number) => Nullable(Type.String({ maxLength, description }));

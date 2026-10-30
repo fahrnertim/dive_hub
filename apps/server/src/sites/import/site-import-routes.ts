@@ -5,6 +5,7 @@ import type { Auth } from '../../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../../auth/fastify.js';
 import type { siteImport } from '../../db/schema.js';
 import { Problem, problem, PROBLEMS, type ProblemCode } from '../../http/problems.js';
+import { DateTime, IdParams, Nullable } from '../../http/schemas.js';
 import { IMPORT_SOURCES } from '../sources.js';
 import { SiteImportError, type SiteImportService } from './site-import-service.js';
 
@@ -64,8 +65,8 @@ export const SiteImportView = Type.Object({
     }, { description: 'A hand-made site the Source describes: its page offers the Source\'s data' }),
   ])),
   failureCode: Type.Union([Type.Null(), Type.Enum(Object.keys(PROBLEMS) as ProblemCode[])], { description: 'Why it failed (a problem code)' }),
-  createdAt: Type.String({ format: 'date-time' }),
-  finishedAt: Type.Union([Type.Null(), Type.String({ format: 'date-time' })]),
+  createdAt: DateTime,
+  finishedAt: Nullable(DateTime),
 });
 
 const toView = (r: typeof siteImport.$inferSelect): Static<typeof SiteImportView> => ({
@@ -106,7 +107,7 @@ export const siteImportRoutes: FastifyPluginAsyncTypebox<SiteImportRouteDeps> = 
   app.get('/admin/site-imports/:id', {
     schema: {
       summary: 'One Site import with its progress, counts and findings (admins)',
-      params: Type.Object({ id: Type.String({ format: 'uuid' }) }), response: { 200: SiteImportView, 403: Problem, 404: Problem },
+      params: IdParams, response: { 200: SiteImportView, 403: Problem, 404: Problem },
     },
   }, async (request) => toView(await siteImports.get(request.params.id)));
 };

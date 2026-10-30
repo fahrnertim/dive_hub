@@ -13,7 +13,7 @@ import { Problem, problem } from '../http/problems.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import type { LeadService } from './service.js';
 import type { EstimateBasis } from './types.js';
-import { Nullable } from '../http/schemas.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface LeadRouteDeps {
   auth: Auth;
@@ -54,7 +54,7 @@ const EstimateView = Type.Object({
       kind: Type.Literal('dives'),
       dives: Type.Array(Type.Object({
         diveId: Type.String({ description: 'Link to the Dive: GET /dives/{id}' }),
-        startsAt: Type.String({ format: 'date-time' }),
+        startsAt: DateTime,
         number: Nullable(Type.Integer()),
         carried: Amount,
         needed: Type.Number({ description: 'What it needed: carried, corrected by its feedback; in the answer\'s `unit`' }),
@@ -109,7 +109,7 @@ export const leadRoutes: FastifyPluginAsyncTypebox<LeadRouteDeps> = async (app, 
         + 'Never certain: the answer always carries `range`, `basis`, `adjustments`, `missing` and the `weightCheck`; `total` and `range` are '
         + 'null when there is no Dive with the suit and no body weight. Nothing is stored. 400 `suit_invalid` for a thickness on a suit that has none, '
         + 'or an undergarment under anything but a drysuit.',
-      params: Type.Object({ id: Type.String({ format: 'uuid' }) }),
+      params: IdParams,
       querystring: EstimateQuery,
       response: { 200: EstimateView, 400: Problem, 404: Problem },
     },

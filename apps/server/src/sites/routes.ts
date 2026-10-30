@@ -9,7 +9,7 @@ import { REVISION_CAUSES } from '../dives/revisions.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { NEARBY_M, SITE_SORTS, SiteError, type ExternalIdRow, type SiteService } from './site-service.js';
 import { IMPORT_SOURCES, SITE_SOURCES, SOURCE_INFO } from './sources.js';
-import { IdParams, Nullable } from '../http/schemas.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface SiteRouteDeps {
   auth: Auth;
@@ -123,7 +123,7 @@ const AdoptBody = Type.Object({
 
 const SiteRevisionView = Type.Object({
   id: Type.String(),
-  at: Type.String({ format: 'date-time' }),
+  at: DateTime,
   actor: Type.Object({
     type: Type.Enum(['you', 'user', 'site_import', 'import', 'system'], {
       description: 'you: the signed-in User; user: another User, never named (ADR 0020); site_import: named by its Sources',

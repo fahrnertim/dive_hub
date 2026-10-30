@@ -8,14 +8,13 @@ import { requireUser, userOf } from '../auth/fastify.js';
 import { CERTIFICATION_IMAGE_STATES, CERTIFICATION_VERIFICATIONS } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
 import { CertificationError, type CertificationService } from './certification-service.js';
-import { Nullable } from '../http/schemas.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface CertificationRouteDeps {
   auth: Auth;
   certifications: CertificationService;
 }
 
-const DiverParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
 const CardParams = Type.Object({ id: Type.String({ format: 'uuid' }), certificationId: Type.String({ format: 'uuid' }) });
 const Day = Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'YYYY-MM-DD' });
 const Text = (max: number) => Type.String({ maxLength: max });
@@ -41,9 +40,9 @@ export const CertificationView = Type.Object({
   category: Nullable(Type.String({ description: 'The Provider\'s category code, e.g. `scubadiving`; not a translation' })),
   imageState: Type.Enum([...CERTIFICATION_IMAGE_STATES], { description: 'pending: a job will fetch the picture; failed: show "Fetch again" (POST …/image)' }),
   imageUrl: Nullable(Type.String({ description: 'API path of the picture (needs the session); set only while imageState is stored' })),
-  importedAt: Nullable(Type.String({ format: 'date-time' })),
+  importedAt: Nullable(DateTime),
   version: Type.Integer({ description: 'Send it back with a change; 409 certification_changed when the card changed meanwhile' }),
-  createdAt: Type.String({ format: 'date-time' }),
+  createdAt: DateTime,
 }, { description: 'A certification card of a Diver (ADR 0050)' });
 
 const Fields = {
@@ -84,7 +83,7 @@ export const certificationRoutes: FastifyPluginAsyncTypebox<CertificationRouteDe
     schema: {
       summary: 'A Diver\'s certification cards, the latest issue first (only the Users who keep the Diver; others and external Divers: 404 diver_not_found)',
       description: 'ADR 0050. Never part of another view, never shown to other Users (ADR 0028).',
-      params: DiverParams, response: { 200: Type.Array(CertificationView), ...errors },
+      params: IdParams, response: { 200: Type.Array(CertificationView), ...errors },
     },
   }, async (request) => certifications.list(userOf(request).id, request.params.id));
 
@@ -92,7 +91,7 @@ export const certificationRoutes: FastifyPluginAsyncTypebox<CertificationRouteDe
     schema: {
       summary: 'Add a certification card by hand: self_declared, or card_seen with cardSeen',
       description: 'Agency and level are free text; clients suggest the agencies already in the list. 400 for a date that does not exist, an expiry before the issue or a count outside 0 to 100 000.',
-      params: DiverParams, body: Type.Object(Fields, { additionalProperties: false }),
+      params: IdParams, body: Type.Object(Fields, { additionalProperties: false }),
       response: { 201: CertificationView, ...errors },
     },
   }, async (request, reply) => reply.code(201).send(await certifications.create(userOf(request).id, request.params.id, request.body)));

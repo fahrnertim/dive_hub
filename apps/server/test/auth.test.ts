@@ -211,6 +211,12 @@ describe.skipIf(!online)('invitations', () => {
     expect((await accept(token, 'Someone Else')).statusCode).toBe(404);
   });
 
+  it('refuses a blank name, keeping the link usable', async () => {
+    const token = tokenOf((await invite('blank@example.com')).json().url);
+    expect((await accept(token, '   ')).statusCode).toBe(400);
+    expect((await accept(token)).statusCode).toBe(201);
+  });
+
   it('accepts one of two simultaneous uses of the same link', async () => {
     const token = tokenOf((await invite('race@example.com')).json().url);
     const results = await Promise.all([accept(token, 'First'), accept(token, 'Second')]);

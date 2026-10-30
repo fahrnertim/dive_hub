@@ -19,7 +19,7 @@ export interface UserRouteDeps {
   invitations: Invitations;
 }
 
-const Name = Type.String({ minLength: 1, maxLength: 100 });
+const Name = Type.String({ minLength: 1, maxLength: 100, pattern: '\\S' });
 
 const MeView = Type.Object({
   user: UserView,
