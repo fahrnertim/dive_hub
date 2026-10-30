@@ -5,7 +5,7 @@ export { Button, LinkButton } from './Button.tsx';
 export { Checkbox, RadioGroup, Switch } from './Choice.tsx';
 export { ToggleChip } from './Chip.tsx';
 export { Avatar, DiverAvatar } from './Avatar.tsx';
-export { BackLink, Badge, BrandMark, Muted, Notice, PageHeader, Panel, Table } from './Layout.tsx';
+export { BackLink, Badge, BrandMark, Muted, NotFoundPage, Notice, PageHeader, Panel, Table } from './Layout.tsx';
 export { CancelButton, ConfirmButton, ConfirmDialog, CopyField, Dialog } from './Overlay.tsx';
 export { ActionMenu, type MenuAction } from './Menu.tsx';
 export { Icon, type IconName } from './Icon.tsx';

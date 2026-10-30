@@ -55,6 +55,24 @@ export function BackLink({ href, label }: { href: string; label: string }) {
   return <p><a href={href} className="back-link"><Icon name="back" />{label}</a></p>;
 }
 
+/**
+ * A page whose thing doesn't exist: not an error to dismiss but a dead end to leave. It says why and offers the way
+ * back (visual refresh 8).
+ */
+export function NotFoundPage({ title, message, back }: { title: ReactNode; message: ReactNode; back: { href: string; label: string } }) {
+  return (
+    <>
+      <PageHeader title={title} />
+      <Panel>
+        <div className="empty-state">
+          <p>{message}</p>
+          <a href={back.href} className="btn btn-secondary"><Icon name="back" />{back.label}</a>
+        </div>
+      </Panel>
+    </>
+  );
+}
+
 /** A short state next to a value ("done", "edited"). Neutral unless it reports success or failure. */
 export function Badge({ tone = 'neutral', children }: { tone?: 'neutral' | 'success' | 'danger'; children: ReactNode }) {
   return <span className={tone === 'neutral' ? 'badge' : `badge badge-${tone}`}>{children}</span>;

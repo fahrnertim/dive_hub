@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
@@ -16,7 +16,7 @@ import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
 import { useFormatValue } from './lib/dive-values.ts';
-import { focusFirstIn, focusHeading } from './lib/focus.ts';
+import { focusFirstIn, focusHeading, useFocusBackWhenClosed } from './lib/focus.ts';
 import { mapsUrl } from './lib/geo.ts';
 import { diveHref, listQuery, logbookHrefOf, logbookParams, mixName, neighbourParams } from './lib/logbook.ts';
 import { usePageTitle } from './lib/page.ts';
@@ -25,7 +25,7 @@ import { SitePicker } from './SitePicker.tsx';
 import { Participants } from './Participants.tsx';
 import { ProviderPanels } from './ProviderPanel.tsx';
 import { DiveCodes } from './DiveCodes.tsx';
-import { ActionMenu, BackLink, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, PageHeader, Panel, Select } from './ui/index.ts';
+import { ActionMenu, BackLink, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, NotFoundPage, Notice, PageHeader, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
 export function DivePage({ id, recordingId, list = '' }: { id: string; recordingId?: string | undefined; list?: string }) {
@@ -43,13 +43,7 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
   const [moving, setMoving] = useState(false);
   const [merging, setMerging] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  // Closing the edit form puts focus back on "Edit dive" (the form had it; UI review B1).
-  const editButton = useRef<HTMLButtonElement>(null);
-  const wasEditing = useRef(false);
-  useEffect(() => {
-    if (wasEditing.current && !editing) editButton.current?.focus();
-    wasEditing.current = !!editing;
-  }, [editing]);
+  const editButton = useFocusBackWhenClosed(!!editing);
   const v = dive.data?.values;
   const notFound = dive.error instanceof ApiError && dive.error.status === 404;
   const title = !v ? (notFound ? t('dive.notFoundTitle') : undefined)
@@ -57,20 +51,7 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
   usePageTitle(title);
 
   if (dive.isPending) return <DiveLoading />;
-  if (notFound) {
-    // Not an error to dismiss but a dead end to leave: say why and offer the way back (visual refresh 8).
-    return (
-      <>
-        <PageHeader title={title} />
-        <Panel>
-          <div className="empty-state">
-            <p>{errorText(dive.error)}</p>
-            <a href={logbook} className="btn btn-secondary"><Icon name="back" />{t('dive.backToLogbook')}</a>
-          </div>
-        </Panel>
-      </>
-    );
-  }
+  if (notFound) return <NotFoundPage title={title} message={errorText(dive.error)} back={{ href: logbook, label: t('dive.backToLogbook') }} />;
   // Only a first load that failed replaces the page; a failed refetch keeps the Dive already shown (below).
   if (dive.isLoadingError) {
     return (
@@ -212,12 +193,9 @@ function MoveDialog({ dive: d, onClose }: { dive: DiveView; onClose: () => void 
         location.hash = `#/dives/${updated.id}`;
         queryClient.removeQueries({ queryKey: keys.dive(d.id) });
         await queryClient.invalidateQueries({ predicate: (q) => !(q.queryKey[0] === 'dives' && q.queryKey[1] === d.id) });
-        onClose();
-        return;
+      } else {
+        await Promise.all([keys.dives, keys.divers, keys.revisions(d.id)].map((queryKey) => queryClient.invalidateQueries({ queryKey })));
       }
-      await queryClient.invalidateQueries({ queryKey: keys.dives });
-      await queryClient.invalidateQueries({ queryKey: keys.divers });
-      await queryClient.invalidateQueries({ queryKey: keys.revisions(d.id) });
       onClose();
     },
   });

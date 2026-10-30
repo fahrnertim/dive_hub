@@ -10,7 +10,7 @@ import { useErrorText } from './lib/display.ts';
 import { usePageTitle } from './lib/page.ts';
 import { NewCentre, TakenNotice } from './NewCentre.tsx';
 import {
-  ActionMenu, BackLink, Button, ConfirmDialog, Dialog, Form, Icon, Muted, Notice, PageHeader, Panel, SEARCH_SHOWN, SearchList, TextField,
+  ActionMenu, BackLink, Button, ConfirmDialog, Dialog, Form, Muted, NotFoundPage, Notice, PageHeader, Panel, SEARCH_SHOWN, SearchList, TextField,
   type SearchListItem,
 } from './ui/index.ts';
 
@@ -110,19 +110,7 @@ export function CentrePage({ id }: { id: string }) {
 
   const back = { href: '#/centres', label: t('centres.back') };
   if (centre.isPending) return <Muted>{t('common.loading')}</Muted>;
-  if (notFound) {
-    return (
-      <>
-        <PageHeader title={t('centres.notFound')} />
-        <Panel>
-          <div className="empty-state">
-            <p>{errorText(centre.error)}</p>
-            <a href="#/centres" className="btn btn-secondary"><Icon name="back" />{t('centres.backToCentres')}</a>
-          </div>
-        </Panel>
-      </>
-    );
-  }
+  if (notFound) return <NotFoundPage title={t('centres.notFound')} message={errorText(centre.error)} back={{ href: '#/centres', label: t('centres.backToCentres') }} />;
   if (centre.error) return <><BackLink {...back} /><Notice tone="danger">{errorText(centre.error)}</Notice></>;
   const c = centre.data;
   const ssi = ssiNumber(c);

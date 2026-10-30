@@ -182,11 +182,6 @@
       "count": 2
     }
   },
-  "apps/web/src/PushRun.tsx": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "apps/web/src/SiteImportPage.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
