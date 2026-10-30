@@ -1,7 +1,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './Account.tsx';
+import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './SignedOut.tsx';
 import { api, divesQuery, meQuery, setupQuery, type Me } from './api.ts';
 import { DiveList, LogbookHeader } from './DiveList.tsx';
 import { listOfDiveAddress, logbookParams, type LogbookParams } from './lib/logbook.ts';
@@ -21,9 +21,9 @@ import { reviewTab, useWaiting } from './lib/review.ts';
 import { ActionMenu, BrandMark, ErrorBoundary, Icon, Muted, Notice, PageHeader } from './ui/index.ts';
 
 // Pages most visits don't need load on demand: the chart library, account settings, admin.
-const DiveDetail = lazy(() => import('./DiveDetail.tsx').then((m) => ({ default: m.DiveDetail })));
+const DivePage = lazy(() => import('./DivePage.tsx').then((m) => ({ default: m.DivePage })));
 const AccountPage = lazy(() => import('./AccountPage.tsx').then((m) => ({ default: m.AccountPage })));
-const Admin = lazy(() => import('./Admin.tsx').then((m) => ({ default: m.Admin })));
+const AdminPage = lazy(() => import('./AdminPage.tsx').then((m) => ({ default: m.AdminPage })));
 const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
 const SitesPage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
 const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
@@ -164,7 +164,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const [path, query = ''] = route.split('?');
   const params = new URLSearchParams(query);
   const diveId = /^\/dives\/([\w-]+)$/.exec(path!)?.[1];
-  if (diveId) return <DiveDetail key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
+  if (diveId) return <DivePage key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
   if (path === '/account') return <AccountPage tab={accountTab(params)} connection={params.get('connection') ?? undefined} />;
   if (path === '/divers') return <DiversPage open={params.get('certifications') ?? undefined} />;
   if (path === '/review') return <ReviewPage tab={reviewTab(params)} />;
@@ -177,7 +177,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (centreId) return <CentrePage key={centreId} id={centreId} />;
   if (route === '/admin' || route === '/admin/site-imports') {
     if (me.user.role !== 'admin') return <><PageHeader title={t('nav.admin')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
-    return route === '/admin' ? <Admin /> : <SiteImportPage />;
+    return route === '/admin' ? <AdminPage /> : <SiteImportPage />;
   }
   return <Logbook params={logbookParams(params)} />;
 }

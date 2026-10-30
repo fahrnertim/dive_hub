@@ -14,7 +14,11 @@
     "saving": "Saving…",
     "close": "Close",
     "closeDialog": "Close dialog",
-    "done": "Done"
+    "done": "Done",
+    "unsavedTitle": "Leave without saving?",
+    "unsavedQuestion": "Leave without saving? {{lost}}",
+    "discardChanges": "Discard changes",
+    "keepEditing": "Keep editing"
   },
   "nav": {
     "main": "Main",
@@ -374,7 +378,7 @@
     "splitOffTitle": "Split off this recording?",
     "splitOffBody": "It becomes a dive of its own, with its own history. This dive keeps its other recordings.",
     "splitOffConfirm": "Split off",
-    "unsavedQuestion": "Leave without saving? Your changes to this dive will be lost.",
+    "unsavedLost": "Your changes to this dive will be lost.",
     "profileSummary": "Deepest point {{depth}} after {{time}}; {{duration}} in total.",
     "profileTemperature": "Water {{range}}.",
     "profileTable": "Profile as a table",
@@ -921,7 +925,7 @@
     "description": "Description",
     "noDescription": "No description yet.",
     "sharedHint": "Every User of this Dive Hub sees the dive site, its position and description, and can edit them.",
-    "unsavedQuestion": "Leave without saving? Your changes to this dive site will be lost.",
+    "unsavedLost": "Your changes to this dive site will be lost.",
     "changedMeanwhile": "Someone changed this dive site meanwhile. Cancel, look at their changes, and make yours again.",
     "back": "Dive sites",
     "backToSites": "Back to dive sites",

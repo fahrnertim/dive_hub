@@ -110,6 +110,9 @@ export const keys = {
   setup: ['setup'] as const,
   users: ['users'] as const,
   invitations: ['invitations'] as const,
+  /** What an invitation or password reset link opens (ADR 0013); not under ['invitations'], the admin's list. */
+  invitationLink: (token: string) => ['invitation', token] as const,
+  passwordReset: (token: string) => ['password-reset', token] as const,
   sessions: ['me', 'sessions'] as const,
   imports: ['imports'] as const,
   dives: ['dives'] as const,
@@ -203,6 +206,13 @@ export const setupQuery = () =>
 export const usersQuery = () => queryOptions({ queryKey: keys.users, queryFn: async () => unwrap(await api.GET('/api/users')) });
 export const sessionsQuery = () => queryOptions({ queryKey: keys.sessions, queryFn: async () => unwrap(await api.GET('/api/me/sessions')) });
 export const invitationsQuery = () => queryOptions({ queryKey: keys.invitations, queryFn: async () => unwrap(await api.GET('/api/invitations')) });
+/** A link that is used up or expired stays an error: asking again won't change it. */
+export const invitationLinkQuery = (token: string) => queryOptions({
+  queryKey: keys.invitationLink(token), queryFn: async () => unwrap(await api.POST('/api/invitations/lookup', { body: { token } })), retry: false,
+});
+export const passwordResetQuery = (token: string) => queryOptions({
+  queryKey: keys.passwordReset(token), queryFn: async () => unwrap(await api.POST('/api/password-resets/lookup', { body: { token } })), retry: false,
+});
 
 
 export const importsQuery = () =>

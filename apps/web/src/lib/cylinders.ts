@@ -1,12 +1,11 @@
 // A Dive's Cylinders in its form (ADR 0045): pressures in the User's unit (whole bar or psi, as a gauge is read), sizes
 // in litres; filled from the cylinder catalogue or from the Diver's last dive.
-import type { paths } from '@dive-hub/api-client';
+import type { Answer } from './answer.ts';
 import { pressureFromDisplay, pressureIn, type UnitSystem } from './units.ts';
 
-type Json<P extends keyof paths> = paths[P] extends { get: { responses: { 200: { content: { 'application/json': infer T } } } } } ? T : never;
-export type CylinderView = Json<'/api/dives/{id}'>['cylinders'][number];
-export type CatalogueCylinder = Json<'/api/cylinder-catalogue'>[number];
-export type LastCylinder = Json<'/api/dives/{id}/same-as-last'>['cylinders'][number];
+export type CylinderView = Answer<'/api/dives/{id}'>['cylinders'][number];
+export type CatalogueCylinder = Answer<'/api/cylinder-catalogue'>[number];
+export type LastCylinder = Answer<'/api/dives/{id}/same-as-last'>['cylinders'][number];
 /** What the Dive's edit takes. */
 export type CylinderInput = Omit<CylinderView, 'fromPod'>;
 export type CylinderMaterial = NonNullable<CylinderView['material']>;

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formValues } from './Account.tsx';
+import { formValues } from './lib/form.ts';
 import { api, ApiError, connectionsQuery, diversQuery, keys, unwrap, type ConnectionView, type ProviderView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';

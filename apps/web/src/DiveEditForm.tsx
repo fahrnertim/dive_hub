@@ -13,7 +13,7 @@ import { draftOfWeighting, emptyLead, fromLastDive as weightingFromLastDive, lac
 import { depthFromDisplay, depthIn, temperatureFromDisplay, temperatureIn } from './lib/units.ts';
 import { LeadHint } from './LeadHint.tsx';
 import { WeightingFields } from './Weighting.tsx';
-import { Badge, Button, DateTimeField, Form, Muted, Notice, NumberField, TextArea } from './ui/index.ts';
+import { Badge, Button, CancelButton, DateTimeField, Form, Muted, Notice, NumberField, TextArea } from './ui/index.ts';
 
 /** The form's values, in the User's display units (feet, °F, minutes, local time at the site). */
 interface Draft {
@@ -147,10 +147,7 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
   });
   // Unsaved changes: leaving the page or cancelling asks first (UI review B3).
   const dirty = touched.size > 0 || reset.size > 0 || notes !== (d.notes ?? '') || cylindersChanged || weightingChanged;
-  useLeaveGuard(dirty && !save.isSuccess, t('dive.unsavedQuestion'));
-  const cancel = () => {
-    if (!dirty || confirm(t('dive.unsavedQuestion'))) onDone();
-  };
+  useLeaveGuard(dirty && !save.isSuccess, t('common.unsavedQuestion', { lost: t('dive.unsavedLost') }));
   const changedMeanwhile = save.error instanceof ApiError && save.error.code === 'dive_changed';
 
   /** The field's description: what the recording says, or that it goes back to that on save. */
@@ -236,7 +233,7 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
       )}
       <div className="form-actions form-actions-sticky">
         <Button type="submit" variant="primary" icon="save" isPending={save.isPending}>{t('dive.save')}</Button>
-        <Button onPress={cancel}>{t('common.cancel')}</Button>
+        <CancelButton unsaved={dirty} lost={t('dive.unsavedLost')} onCancel={onDone} />
       </div>
     </Form>
   );

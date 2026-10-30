@@ -1261,9 +1261,13 @@ test.describe('behaviour', () => {
     // The hash changes first and is put back once the question is dismissed: wait for it.
     await expect(page).toHaveURL(new RegExp(`/dives/${diveId}`));
 
-    page.once('dialog', (dialog) => void dialog.dismiss());
+    // Cancelling asks in the app's own dialog; leaving the page can only ask in the browser's.
     await page.getByRole('button', { name: 'Cancel' }).click();
-    await expect(page.getByRole('textbox', { name: 'Notes' })).toBeVisible();
+    const ask = page.getByRole('dialog', { name: 'Leave without saving?' });
+    await expect(ask).toContainText('Your changes to this dive will be lost.');
+    await ask.getByRole('button', { name: 'Keep editing' }).click();
+    await expect(ask).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveValue('Not saved yet');
 
     await page.getByRole('button', { name: 'Save' }).click();
     await expect(page.locator('[data-announcer]')).toHaveText('Dive saved.');

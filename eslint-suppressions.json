@@ -192,22 +192,7 @@
       "count": 1
     }
   },
-  "apps/web/src/Account.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "apps/web/src/Admin.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "apps/web/src/App.tsx": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/web/src/DiveDetail.tsx": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }

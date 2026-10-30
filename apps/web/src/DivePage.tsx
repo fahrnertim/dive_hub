@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
 import { api, ApiError, diveNeighboursQuery, diveProvidersQuery, PAGE_SIZE, diveQuery, diversQuery, keys, unwrap, type DiveView, type NeighboursView, type OverridableField, type RecordingSummary } from './api.ts';
@@ -27,7 +28,7 @@ import { DiveCodes } from './CentresPage.tsx';
 import { ActionMenu, BackLink, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, Notice, PageHeader, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
-export function DiveDetail({ id, recordingId, list = '' }: { id: string; recordingId?: string | undefined; list?: string }) {
+export function DivePage({ id, recordingId, list = '' }: { id: string; recordingId?: string | undefined; list?: string }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
@@ -488,21 +489,7 @@ function RecordingDetails({ recording, cylinders, named }: { recording: DiveView
   const mode = s.diveMode && t(`vocabulary.diveMode.${s.diveMode}`);
   const deco = s.decoModel && `${t(`vocabulary.decoModel.${s.decoModel}`)}${s.gfLow !== undefined ? `, GF ${s.gfLow}/${s.gfHigh}` : ''}`;
   const device = named && recording.device && `${deviceName(recording.device.manufacturer, recording.device.product)} (${recording.device.serialNumber})`;
-  const values: [string, string][] = [];
-  if (mode) values.push([t('dive.diveMode'), mode]);
-  if (deco) values.push([t('dive.decoModel'), deco]);
-  // The computer's own counter, kept with the Recording; the Dive's number is its place in the logbook (ADR 0048).
-  if (s.diveNumber !== undefined) values.push([t('dive.numberOnComputer'), String(s.diveNumber)]);
-  if (gases) values.push([t('dive.gases'), gases]);
-  // The computer's setting, not the Dive's water (that is the site's, ADR 0025).
-  if (s.waterType) {
-    values.push([t('dive.computerWater'), t(`vocabulary.waterType.${s.waterType}`)
-      + (s.waterDensity !== undefined && s.waterType !== 'en13319' ? ` (${new Intl.NumberFormat(display.locale).format(s.waterDensity)} kg/m³)` : '')]);
-  }
-  if (s.minTemperatureC !== undefined) {
-    values.push([t('dive.temperatureRange'), display.temperature(s.minTemperatureC)
-      + (s.maxTemperatureC !== undefined && s.maxTemperatureC !== s.minTemperatureC ? ` – ${display.temperature(s.maxTemperatureC)}` : '')]);
-  }
+  const values = recordingValues(s, { mode: mode || undefined, deco: deco || undefined, gases: gases || undefined }, t, display);
   const about = (
     <>
       {(device || mode || deco) && (
@@ -528,4 +515,25 @@ function RecordingDetails({ recording, cylinders, named }: { recording: DiveView
       <DepthProfile recordingId={recording.id} gases={s.gases} sacLpm={s.sacLpm} cylinders={tied}>{about}</DepthProfile>
     </ErrorBoundary>
   );
+}
+
+/** The Recording's values under "All values": the computer's settings and readings, each with its label. */
+function recordingValues(s: RecordingSummary, named: Record<'mode' | 'deco' | 'gases', string | undefined>, t: TFunction, display: ReturnType<typeof useDisplay>) {
+  const { mode, deco, gases } = named;
+  const values: [string, string][] = [];
+  if (mode) values.push([t('dive.diveMode'), mode]);
+  if (deco) values.push([t('dive.decoModel'), deco]);
+  // The computer's own counter, kept with the Recording; the Dive's number is its place in the logbook (ADR 0048).
+  if (s.diveNumber !== undefined) values.push([t('dive.numberOnComputer'), String(s.diveNumber)]);
+  if (gases) values.push([t('dive.gases'), gases]);
+  // The computer's setting, not the Dive's water (that is the site's, ADR 0025).
+  if (s.waterType) {
+    values.push([t('dive.computerWater'), t(`vocabulary.waterType.${s.waterType}`)
+      + (s.waterDensity !== undefined && s.waterType !== 'en13319' ? ` (${new Intl.NumberFormat(display.locale).format(s.waterDensity)} kg/m³)` : '')]);
+  }
+  if (s.minTemperatureC !== undefined) {
+    values.push([t('dive.temperatureRange'), display.temperature(s.minTemperatureC)
+      + (s.maxTemperatureC !== undefined && s.maxTemperatureC !== s.minTemperatureC ? ` – ${display.temperature(s.maxTemperatureC)}` : '')]);
+  }
+  return values;
 }

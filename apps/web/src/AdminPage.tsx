@@ -11,7 +11,7 @@ import { usePageTitle } from './lib/page.ts';
 import { Badge, Button, Checkbox, ConfirmButton, CopyField, Dialog, Form, Icon, Notice, PageHeader, Panel, Table, TextField } from './ui/index.ts';
 
 /** Admins invite people (copy the link, there's no mail yet) and manage Users (ADR 0012, 0013). */
-export function Admin() {
+export function AdminPage() {
   const { t } = useTranslation();
   usePageTitle(t('nav.admin'));
   return (
@@ -139,7 +139,6 @@ function Invite() {
 
 function Invitations() {
   const { t } = useTranslation();
-  const errorText = useErrorText();
   const display = useDisplay();
   const queryClient = useQueryClient();
   const invitations = useQuery(invitationsQuery());

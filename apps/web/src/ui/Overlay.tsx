@@ -49,9 +49,9 @@ export function CopyField({ value, label }: { value: string; label: string }) {
  * says what will happen (UI review B2). `onConfirm` runs the action; the dialog closes when it
  * succeeds and shows the error when it fails. Opened by `ConfirmButton`, or by a menu item.
  */
-export function ConfirmDialog({ isOpen, onOpenChange, title, body, confirmLabel, onConfirm, onDone, tone = 'danger' }: {
+export function ConfirmDialog({ isOpen, onOpenChange, title, body, confirmLabel, cancelLabel, onConfirm, onDone, tone = 'danger' }: {
   isOpen: boolean; onOpenChange: (open: boolean) => void; title: ReactNode; body: ReactNode; confirmLabel: string;
-  onConfirm: () => Promise<unknown>; onDone?: (() => void) | undefined; tone?: 'danger' | 'primary' | undefined;
+  cancelLabel?: string | undefined; onConfirm: () => Promise<unknown>; onDone?: (() => void) | undefined; tone?: 'danger' | 'primary' | undefined;
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
@@ -76,7 +76,7 @@ export function ConfirmDialog({ isOpen, onOpenChange, title, body, confirmLabel,
       {error !== undefined && <Notice tone="danger">{errorText(error)}</Notice>}
       <div className="form-actions">
         <Button variant={tone} isPending={pending} onPress={confirm}>{confirmLabel}</Button>
-        <Button onPress={() => onOpenChange(false)}>{t('common.cancel')}</Button>
+        <Button onPress={() => onOpenChange(false)}>{cancelLabel ?? t('common.cancel')}</Button>
       </div>
     </Dialog>
   );
@@ -94,6 +94,24 @@ export function ConfirmButton({ children, title, body, confirmLabel, onConfirm, 
       <ConfirmDialog
         isOpen={open} onOpenChange={setOpen} title={title} body={body} confirmLabel={confirmLabel}
         onConfirm={onConfirm} onDone={onDone} tone={tone}
+      />
+    </>
+  );
+}
+
+/**
+ * A form's Cancel. With unsaved changes it asks first and says what `lost` (UI review B3); leaving the page
+ * instead asks through useLeaveGuard, in the browser's own prompt.
+ */
+export function CancelButton({ unsaved, lost, onCancel }: { unsaved: boolean; lost: string; onCancel: () => void }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button onPress={() => (unsaved ? setOpen(true) : onCancel())}>{t('common.cancel')}</Button>
+      <ConfirmDialog
+        isOpen={open} onOpenChange={setOpen} title={t('common.unsavedTitle')} body={lost}
+        confirmLabel={t('common.discardChanges')} cancelLabel={t('common.keepEditing')} onConfirm={async () => {}} onDone={onCancel}
       />
     </>
   );

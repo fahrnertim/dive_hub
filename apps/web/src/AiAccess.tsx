@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { formValues } from './Account.tsx';
+import { formValues } from './lib/form.ts';
 import {
   aiAccessLogQuery, aiAccessQuery, aiAccessSettingQuery, api, keys, meQuery, unwrap, type AiAccessLogEntry, type AiAccessView,
 } from './api.ts';

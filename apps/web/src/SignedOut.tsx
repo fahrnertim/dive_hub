@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { api, authClient, unwrap } from './api.ts';
+import { api, authClient, invitationLinkQuery, passwordResetQuery, unwrap } from './api.ts';
 import { useErrorText } from './lib/display.ts';
+import { formValues } from './lib/form.ts';
 import { usePageTitle } from './lib/page.ts';
 import { Button, Form, Muted, Notice, Panel, TextField } from './ui/index.ts';
 
@@ -22,11 +22,6 @@ export function useUserChanged() {
     await queryClient.resetQueries();
   };
 }
-
-export const formValues = (event: FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
-  return Object.fromEntries(new FormData(event.currentTarget)) as Record<string, string>;
-};
 
 export function NewPasswordField({ label }: { label: string }) {
   const { t } = useTranslation();
@@ -100,11 +95,7 @@ export function AcceptInvitation({ token }: { token: string }) {
   usePageTitle(t('invitation.title'));
   const errorText = useErrorText();
   const signedIn = useUserChanged();
-  const invitation = useQuery({
-    queryKey: ['invitation', token],
-    queryFn: async () => unwrap(await api.POST('/api/invitations/lookup', { body: { token } })),
-    retry: false,
-  });
+  const invitation = useQuery(invitationLinkQuery(token));
   const accept = useMutation({
     mutationFn: async ({ name, password }: Record<string, string>) =>
       unwrap(await api.POST('/api/invitations/accept', { body: { token, name: name!, password: password! } })),
@@ -142,11 +133,7 @@ export function ResetPassword({ token }: { token: string }) {
   usePageTitle(t('reset.title'));
   const errorText = useErrorText();
   const signedIn = useUserChanged();
-  const link = useQuery({
-    queryKey: ['password-reset', token],
-    queryFn: async () => unwrap(await api.POST('/api/password-resets/lookup', { body: { token } })),
-    retry: false,
-  });
+  const link = useQuery(passwordResetQuery(token));
   const reset = useMutation({
     mutationFn: async ({ password }: Record<string, string>) =>
       unwrap(await api.POST('/api/password-resets/complete', { body: { token, password: password! } })),

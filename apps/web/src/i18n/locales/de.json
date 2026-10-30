@@ -14,7 +14,11 @@
     "saving": "Wird gespeichert…",
     "close": "Schließen",
     "closeDialog": "Dialog schließen",
-    "done": "Fertig"
+    "done": "Fertig",
+    "unsavedTitle": "Ohne Speichern verlassen?",
+    "unsavedQuestion": "Ohne Speichern verlassen? {{lost}}",
+    "discardChanges": "Änderungen verwerfen",
+    "keepEditing": "Weiter bearbeiten"
   },
   "nav": {
     "main": "Hauptmenü",
@@ -374,7 +378,7 @@
     "splitOffTitle": "Diese Aufzeichnung abtrennen?",
     "splitOffBody": "Sie wird ein eigener Tauchgang mit eigenem Verlauf. Dieser Tauchgang behält seine anderen Aufzeichnungen.",
     "splitOffConfirm": "Abtrennen",
-    "unsavedQuestion": "Ohne Speichern verlassen? Deine Änderungen an diesem Tauchgang gehen verloren.",
+    "unsavedLost": "Deine Änderungen an diesem Tauchgang gehen verloren.",
     "profileSummary": "Tiefster Punkt {{depth}} nach {{time}}; insgesamt {{duration}}.",
     "profileTemperature": "Wasser {{range}}.",
     "profileTable": "Profil als Tabelle",
@@ -921,7 +925,7 @@
     "description": "Beschreibung",
     "noDescription": "Noch keine Beschreibung.",
     "sharedHint": "Alle Benutzer dieses Dive Hub sehen den Tauchplatz, seine Position und Beschreibung und können sie bearbeiten.",
-    "unsavedQuestion": "Ohne Speichern verlassen? Deine Änderungen an diesem Tauchplatz gehen verloren.",
+    "unsavedLost": "Deine Änderungen an diesem Tauchplatz gehen verloren.",
     "changedMeanwhile": "Jemand hat diesen Tauchplatz inzwischen geändert. Brich ab, sieh dir die Änderungen an und mach deine noch einmal.",
     "back": "Tauchplätze",
     "backToSites": "Zurück zu den Tauchplätzen",

@@ -74,8 +74,8 @@ test('absent: no earlier dive with this suit or no site water type', { tag: ['@d
   await page.getByRole('textbox', { name: 'Thickness' }).fill('5');
   await choose(page, /Hood$/, 'Without hood');
   await expect(hint(page)).toBeVisible();
-  page.once('dialog', (dialog) => void dialog.accept()); // the unsaved suit
   await page.getByRole('button', { name: 'Cancel' }).click();
+  await page.getByRole('dialog', { name: 'Leave without saving?' }).getByRole('button', { name: 'Discard changes' }).click(); // the unsaved suit
   await openForm(page, request, null);
   await choose(page, /Suit$/, 'Wetsuit');
   await page.getByRole('textbox', { name: 'Thickness' }).fill('5');

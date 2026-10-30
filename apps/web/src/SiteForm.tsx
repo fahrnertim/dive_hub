@@ -7,7 +7,7 @@ import { countryOptions } from './lib/geo.ts';
 import { depthFromDisplay, depthIn } from './lib/units.ts';
 import { releaseLeaveGuard, useLeaveGuard } from './lib/leave-guard.ts';
 import { typedSiteId, useProviders, useProviderText } from './lib/providers.ts';
-import { Button, Form, Muted, Notice, NumberField, Select, TextArea, TextField } from './ui/index.ts';
+import { Button, CancelButton, Form, Muted, Notice, NumberField, Select, TextArea, TextField } from './ui/index.ts';
 
 const NO_COUNTRY = 'none';
 const NO_WATER = 'none';
@@ -180,7 +180,7 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
       onSaved(saved);
     },
   });
-  useLeaveGuard(changed && !save.isSuccess, t('sites.unsavedQuestion'));
+  useLeaveGuard(changed && !save.isSuccess, t('common.unsavedQuestion', { lost: t('sites.unsavedLost') }));
   const stale = save.error instanceof ApiError && save.error.code === 'site_changed';
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -273,7 +273,7 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
       )}
       <div className="form-actions">
         <Button type="submit" variant="primary" icon="save" isPending={save.isPending}>{submitLabel}</Button>
-        <Button onPress={() => { if (!changed || confirm(t('sites.unsavedQuestion'))) onCancel(); }}>{t('common.cancel')}</Button>
+        <CancelButton unsaved={changed} lost={t('sites.unsavedLost')} onCancel={onCancel} />
       </div>
     </Form>
   );
