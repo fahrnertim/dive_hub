@@ -19,6 +19,7 @@ import { WeightingError, leadTotalKg, suitOf, weightingFeedbackOf } from './weig
 import type { Merging } from './merging.js';
 import type { LogbookService } from './logbook-service.js';
 import type { DeletionService } from './deletion-service.js';
+import type { MergeService } from './merge-service.js';
 import { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
 import type { LogbookChecks } from './logbook-checks.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
@@ -52,6 +53,8 @@ export interface DiveRouteDeps {
   waitingPushes: Pick<WaitingPushService, 'deletingItself'>;
   /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
   deletion: DeletionService;
+  /** Merging two Dives deletes the one not kept at the Providers asked first (ADR 0038). */
+  merge: MergeService;
   assessments: AssessmentService;
 }
 
@@ -380,7 +383,7 @@ const DeleteProblem = Type.Object({
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, assessments }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, merge, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
   refreshAssessmentsAfterChange(app, assessments);
 
@@ -659,21 +662,9 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request, reply) => {
     const { version, otherId, otherVersion, alsoAt = [] } = request.body;
-    const userId = userOf(request).id;
-    const candidate = (await merging.mergeCandidates(userId, request.params.id)).find((c) => c.dive.id === otherId);
-    // Deleted at the Provider before anything changes here, as when deleting a Dive: only the copy of the Dive not kept,
-    // and only where the kept one has its own.
-    // Where the Dive's Connection deletes by itself, the queue does it after 5 minutes, not asked.
-    const asked = candidate ? candidate.bothAt.filter((provider) => alsoAt.includes(provider) && !candidate.deletesItself.includes(provider)) : [];
-    if (asked.length > 0) {
-      const leaving = candidate!.keeps === otherId ? request.params.id : otherId;
-      if (await logbook.versionOf(leaving) !== (leaving === otherId ? otherVersion : version)) return reply.code(409).send(problem('dive_changed'));
-      const { copies, failure } = await pushes.removeAt(userId, leaving, asked);
-      if (failure) return replyProviderError(failure, reply, { providers: asked.map((provider) => ({ provider, copy: copies.find((c) => c.provider === provider)?.copy ?? 'kept' as const })) });
-    }
-    // Deleting there recorded a Push, not a change of the Dive: its version is the one sent.
-    const { kept } = await merging.merge(userId, { id: request.params.id, version }, { id: otherId, version: otherVersion });
-    return viewOfKept(request, kept);
+    const merged = await merge.merge(userOf(request).id, { id: request.params.id, version }, { id: otherId, version: otherVersion }, alsoAt);
+    if (merged.failure) return replyProviderError(merged.failure, reply, { providers: merged.providers });
+    return viewOfKept(request, merged.kept);
   });
 
   app.post('/recordings/:id/detach', {

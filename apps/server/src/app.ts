@@ -16,6 +16,7 @@ import { createDeletionService } from './dives/deletion-service.js';
 import { createLogbookService } from './dives/logbook-service.js';
 import { logbookRoutes } from './dives/logbook-routes.js';
 import { importRoutes } from './imports/routes.js';
+import { createMergeService } from './dives/merge-service.js';
 import { createMerging } from './dives/merging.js';
 import { createLogbookChecks } from './dives/logbook-checks.js';
 import { createCandidates } from './dives/candidates.js';
@@ -122,9 +123,11 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes });
   const dives = createDiveService(db);
   const checks = createLogbookChecks(db);
+  const merging = createMerging(db, checks);
   await app.register(diveRoutes, {
-    prefix: '/api', auth, logbook, divers, centres, dives, merging: createMerging(db, checks), checks, pushes, waitingPushes,
-    deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }), assessments,
+    prefix: '/api', auth, logbook, divers, centres, dives, merging, checks, pushes, waitingPushes,
+    deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }),
+    merge: createMergeService({ merging, logbook, pushes }), assessments,
   });
   await app.register(candidateRoutes, { prefix: '/api', auth, candidates: createCandidates(db), assessments });
   await app.register(assessmentRoutes, { prefix: '/api', auth, assessments });
