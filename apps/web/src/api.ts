@@ -2,7 +2,7 @@ import { createApiClient, type components, type paths } from '@dive-hub/api-clie
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { createAuthClient } from 'better-auth/client';
 import { SITES_PAGE, type SitesParams } from './lib/sites-list.ts';
-import type { LogbookParams, neighbourParams } from './lib/logbook.ts';
+import { neighbourParams, type LogbookParams } from './lib/logbook.ts';
 import { BOTTOM_TIME_RULES, type ToolsParams } from './lib/tools.ts';
 import { pollUntilDue } from './lib/waiting-push.ts';
 
@@ -237,13 +237,7 @@ export const PAGE_SIZE = 25;
 export const divesQuery = (p: LogbookParams = {}) => queryOptions({
   queryKey: [...keys.dives, { ...p }],
   queryFn: async () => unwrap(await api.GET('/api/dives', {
-    params: {
-      query: {
-        ...(p.diverId && { diverId: p.diverId }), ...(p.siteId && { siteId: p.siteId }), ...(p.q && { q: p.q }), ...(p.sort && { sort: p.sort }), ...(p.order && { order: p.order }),
-        ...(p.only?.length && { only: p.only.join(',') }),
-        limit: PAGE_SIZE, offset: ((p.page ?? 1) - 1) * PAGE_SIZE,
-      },
-    },
+    params: { query: { ...neighbourParams(p), limit: PAGE_SIZE, offset: ((p.page ?? 1) - 1) * PAGE_SIZE } },
   })),
   placeholderData: keepPreviousData,
 });
@@ -530,18 +524,17 @@ export const toolsBottomTimeQuery = (p: ToolsInput, diverId: string | undefined,
 export type ToolsPlan = Ok<'/api/tools/gas-plan', 'post'>;
 export type ToolsPlanDiver = Extract<ToolsPlan, { status: 'ok' }>['divers'][number];
 
-const fetchToolsPlan = async (p: ToolsInput) => unwrap(await api.POST('/api/tools/gas-plan', {
-  body: defined({
-    // The plan's own mix (air when empty), never the one of "Your dive"; no helium: a plan is air or nitrox.
-    o2: p.mix ?? 21, water: p.water, altitude: p.altitude, rule: p.rule, bar: p.bar, ppo2Contingency: p.pc, descentRate: p.dr, ascentRate: p.ar,
-    levels: (p.levels ?? []).map((l) => ({ depth: l.depth, minutes: l.minutes })),
-    divers: (p.divers ?? []).map((d) => defined({ name: d.name, volume: d.volume, pressure: d.pressure, sac: d.sac, diverId: d.diverId })),
-  }),
-}));
 export const toolsPlanQuery = (p: ToolsInput) => {
   const enabled = (p.levels?.length ?? 0) > 0 && (p.divers?.length ?? 0) > 0;
   return queryOptions({
-    queryKey: ['tools', 'plan', p] as const, queryFn: () => fetchToolsPlan(p), enabled, retry: false,
+    queryKey: ['tools', 'plan', p] as const, queryFn: async () => unwrap(await api.POST('/api/tools/gas-plan', {
+      body: defined({
+        // The plan's own mix (air when empty), never the one of "Your dive"; no helium: a plan is air or nitrox.
+        o2: p.mix ?? 21, water: p.water, altitude: p.altitude, rule: p.rule, bar: p.bar, ppo2Contingency: p.pc, descentRate: p.dr, ascentRate: p.ar,
+        levels: (p.levels ?? []).map((l) => ({ depth: l.depth, minutes: l.minutes })),
+        divers: (p.divers ?? []).map((d) => defined({ name: d.name, volume: d.volume, pressure: d.pressure, sac: d.sac, diverId: d.diverId })),
+      }),
+    })), enabled, retry: false,
     ...(enabled && { placeholderData: keepPreviousData }),
   });
 };
