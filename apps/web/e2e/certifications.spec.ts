@@ -2,19 +2,22 @@
 // edited and deleted in a dialog; read from SSI against the e2e server's fake account (two invented cards) with their
 // pictures, the imported card read-only apart from its notes; a card deleted stays deleted when the import runs again;
 // an expired card says so and goes last; the profile menu's link lands on the open section.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { E2E_BASE_URL, connectSsi, expectGoodPage, setPreferences } from './support.ts';
 
 const headers = { origin: E2E_BASE_URL };
 
-test.describe.configure({ mode: 'serial' });
-
 test.beforeAll(async ({ request }) => setPreferences(request, { language: null, units: 'metric' }));
+/** The own Diver's id, its cards deleted: each test that counts cards starts from none. */
+async function withoutCards(api: APIRequestContext): Promise<string> {
+  const [own] = (await (await api.get('/api/divers')).json()) as { id: string }[];
+  const cards = (await (await api.get(`/api/divers/${own!.id}/certifications`)).json()) as { id: string }[];
+  for (const c of cards) await api.delete(`/api/divers/${own!.id}/certifications/${c.id}`, { headers });
+  return own!.id;
+}
 test.afterAll(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
-  const [own] = (await (await request.get('/api/divers')).json()) as { id: string }[];
-  const cards = (await (await request.get(`/api/divers/${own!.id}/certifications`)).json()) as { id: string }[];
-  for (const c of cards) await request.delete(`/api/divers/${own!.id}/certifications/${c.id}`, { headers });
+  await withoutCards(request);
 });
 
 /** The own Diver's row (the first), found by its Certifications line. */
@@ -28,7 +31,8 @@ const open = async (page: Page) => {
   return ownRow(page);
 };
 
-test('a certification is typed, seen, edited and deleted', { tag: ['@divers'] }, async ({ page }) => {
+test('a certification is typed, seen, edited and deleted', { tag: ['@divers'] }, async ({ page, request }) => {
+  await withoutCards(request);
   await page.goto('/#/divers');
   const row = ownRow(page);
   // Closed, the Diver's line already says there are no cards yet.
@@ -120,13 +124,9 @@ test('cards are imported from SSI with their pictures, an imported card takes on
 });
 
 test('an expired card says so in words, goes last and is counted on the Diver’s line', { tag: ['@divers'] }, async ({ page, request }) => {
-  // Start from none: the import test left cards behind.
-  const [own] = (await (await request.get('/api/divers')).json()) as { id: string }[];
-  for (const c of (await (await request.get(`/api/divers/${own!.id}/certifications`)).json()) as { id: string }[]) {
-    await request.delete(`/api/divers/${own!.id}/certifications/${c.id}`, { headers });
-  }
+  const own = await withoutCards(request);
   const day = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
-  const post = (body: object) => request.post(`/api/divers/${own!.id}/certifications`, { data: body, headers });
+  const post = (body: object) => request.post(`/api/divers/${own}/certifications`, { data: body, headers });
   // The expired card is the one issued last: by issue date it would be first.
   await post({ agency: 'ERC', level: 'Emergency First Response', issuedOn: '2024-06-01', expiresOn: day(-5) });
   await post({ agency: 'DAN', level: 'Oxygen Provider', issuedOn: '2020-06-01', expiresOn: day(30) });

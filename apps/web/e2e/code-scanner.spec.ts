@@ -7,8 +7,6 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 import { modules, picture } from './qr-picture.ts';
 import { E2E_BASE_URL, expectGoodPage, setPreferences } from './support.ts';
 
-test.describe.configure({ mode: 'serial' });
-
 const headers = { origin: E2E_BASE_URL };
 const CENTRE = 'Scanner Divers GmbH, Musterstadt';
 const CODE = `center;700101;name:${CENTRE}`;

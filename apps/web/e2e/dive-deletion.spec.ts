@@ -4,8 +4,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { E2E_BASE_URL, deletableDive, diveNumber, diveRows, sendToSsi, setPreferences } from './support.ts';
 
-test.describe.configure({ mode: 'serial' });
-
 test.beforeAll(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
 });

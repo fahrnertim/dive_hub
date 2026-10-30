@@ -7,8 +7,6 @@ import { E2E_BASE_URL, resetDive, setPreferences, tankPodDive } from './support.
 const headers = { origin: E2E_BASE_URL };
 const NOTHING = { lead: [], suit: null, weightingFeedback: null, cylinders: [] };
 
-test.describe.configure({ mode: 'serial' });
-
 const getDive = async (api: APIRequestContext, id: string) => (await (await api.get(`/api/dives/${id}`)).json()) as { version: number; site: { id: string } | null };
 async function patchDive(api: APIRequestContext, id: string, values: object) {
   const { version } = await getDive(api, id);

@@ -4,11 +4,11 @@
 import { expect, test } from '@playwright/test';
 import { deletableDive, diveNumber, goneAtSsi, readyForSsi, E2E_BASE_URL, SSI_ACCOUNT, connectSsi } from './support.ts';
 
-test.describe.configure({ mode: 'serial' });
+// Each test makes its own gone dive; the Connection they all need is made first.
+test.beforeAll(async ({ request }) => connectSsi(request));
 
 test('the Connection\'s check finds a dive deleted in SSI and says so; nothing about the dive changes', { tag: ['@account', '@dives'] }, async ({ page, request }) => {
   const id = await deletableDive(request);
-  await connectSsi(request);
   await readyForSsi(request, id);
   const n = await diveNumber(request, id);
   try {

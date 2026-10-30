@@ -5,8 +5,6 @@ import { E2E_BASE_URL, expectGoodPage, setPreferences } from './support.ts';
 
 const headers = { origin: E2E_BASE_URL };
 
-test.describe.configure({ mode: 'serial' });
-
 test.beforeAll(async ({ request }) => setPreferences(request, { language: null, units: 'metric' }));
 test.afterAll(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });

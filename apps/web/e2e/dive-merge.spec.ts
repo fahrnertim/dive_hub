@@ -4,8 +4,6 @@
 import { expect, test } from '@playwright/test';
 import { diveNumber, diveRows, falseStart, keepFalseStart, mergePair, mergeablePair, openLine, setPreferences } from './support.ts';
 
-test.describe.configure({ mode: 'serial' });
-
 test.beforeAll(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
 });
@@ -70,6 +68,7 @@ test('offers the dives nearby to merge with by hand, and asks before merging the
 
 // Logbook checks (ADR 0038): the pair waits on the Review page, and the logbook says so in one line.
 test('lists two dives at the same time on the logbook, keeps them apart when told so, asks again, and merges them', { tag: ['@dives'] }, async ({ page, request }) => {
+  await keepFalseStart(request); // the pair is the one thing to decide
   const { kept } = await mergeablePair(request);
   const n = await diveNumber(request, kept);
   try {
@@ -118,6 +117,7 @@ test('lists two dives at the same time on the logbook, keeps them apart when tol
 // A logbook check about one Dive (ADR 0038, `short_shallow_dive`): a recording of 50 seconds at 1.8 m is offered for
 // deleting, kept when told so, and deleted only through the delete dialog, with its Undo.
 test('offers a short and shallow dive for deleting, keeps it when told so, and deletes it only after asking', { tag: ['@dives'] }, async ({ page, request }) => {
+  await mergePair(request); // the false start is the one thing to decide
   await falseStart(request);
   try {
     await page.goto('/');
