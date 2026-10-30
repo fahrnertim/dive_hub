@@ -63,6 +63,13 @@ module.exports = {
       to: { path: '^apps/server/src/', pathNot: '^apps/server/src/(db/|vocabulary[.]ts$)' },
     },
     {
+      name: 'modules-import-no-assembly',
+      severity: 'error',
+      comment: 'The root files that assemble the server (app, compose, start, main, worker, site-sources) import the modules, never the other way; only src/scripts/ may use them (ADR 0053).',
+      from: { path: '^apps/server/src/[a-z-]+/', pathNot: '^apps/server/src/scripts/' },
+      to: { path: '^apps/server/src/(app|compose|start|main|worker|site-sources)[.]ts$' },
+    },
+    {
       name: 'routes-use-no-drizzle',
       severity: 'error',
       comment: 'Route files speak HTTP and call services; queries belong in a service or the db layer.',
