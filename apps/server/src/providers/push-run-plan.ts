@@ -135,7 +135,10 @@ function numberOnlyPlan(status: PlanStatus, options: PlanOptions) {
   return 'send' in planned && planned.send === 'number' ? planned : null;
 }
 
-/** A Dive that is busy is tried again later; this many tries in all. */
+/**
+ * A Dive that is busy is tried again later; this many tries in all. After the last it fails, but busy is no failure in
+ * a row (ADR 0047: the Provider was busy, not refusing), so it never stops a run.
+ */
 const BUSY_TRIES = 3;
 /** What stops a run at once: the account needs the User, not another try. */
 const STOPS_AT_ONCE: ReadonlySet<string> = new Set(['provider_sign_in_needed', 'provider_wrong_credentials', 'provider_not_connected']);
