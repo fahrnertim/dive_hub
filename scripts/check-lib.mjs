@@ -154,6 +154,8 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
     more('lint', 'changed');
     const spec = /^apps\/web\/e2e\/([\w-]+\.spec\.ts)$/.exec(path);
     if (spec) { more('e2e', 'some'); plan.specs.add(spec[1]); continue; }
+    // The component tests' set-up is imported by none of them (vitest.config.ts runs it), so `vitest related` would miss them.
+    if (path === 'apps/web/test/dom-setup.ts') { more('web', 'all'); continue; }
     if (/^apps\/web\/test\//.test(path)) { more('web', 'changed'); continue; }
     if (/^apps\/server\/test\/[\w-]+\.test\.ts$/.test(path)) { more('server', 'changed'); continue; }
     const area = AREAS.find(([re]) => re.test(path));

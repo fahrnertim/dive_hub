@@ -99,6 +99,16 @@ test('documentation runs nothing; shared code of an app runs its tests and every
   assert.deepEqual([unknown.typecheck, unknown.lint, unknown.server, unknown.web, unknown.e2e], [true, 'all', 'all', 'all', 'all']);
 });
 
+test('a web unit or component test runs itself, without browser tests', () => {
+  for (const path of ['apps/web/test/units.test.ts', 'apps/web/test/dialogs.test.tsx']) {
+    const plan = planFor([path]);
+    assert.deepEqual([plan.web, plan.server, plan.e2e], ['changed', 'none', 'none'], path);
+  }
+  // No test imports the component tests' set-up, so all web tests run.
+  const setup = planFor(['apps/web/test/dom-setup.ts']);
+  assert.deepEqual([setup.web, setup.server, setup.e2e], ['all', 'none', 'none']);
+});
+
 test('a changed source file is linted itself; the CI workflow and the git hooks run nothing', () => {
   assert.equal(planFor(['apps/web/src/SitesPage.tsx']).lint, 'changed');
   assert.equal(planFor(['apps/server/test/dive-list.test.ts']).lint, 'changed');

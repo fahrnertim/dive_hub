@@ -68,7 +68,7 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 | **Git hook** | `pnpm hooks:install` once per clone: sets `core.hooksPath` to `.githooks/`, whose `pre-commit` runs `pnpm check` on the working tree (not only what is staged), so with only documentation changed it passes at once. |
 | **Lint and module boundaries** | `pnpm lint` checks every file: ESLint (`eslint.config.mjs`: typescript-eslint's recommended rules, cognitive complexity at most 15) and dependency-cruiser (`.dependency-cruiser.cjs`: no cycles, `db/` imports no domain module (only `vocabulary.ts`), route files don't import `drizzle-orm`, domain modules import only what `MODULE_IMPORTS` lists (a new import between modules adds its entry there, no new ADR), `ui/` imports no page; [ADR 0053](decisions/0053-module-boundaries.md)). Problems that existed on 2026-10-22 are in `eslint-suppressions.json` (84) and `.dependency-cruiser-known-violations.json` (22): only new ones fail, and both may only shrink. After fixing one, `pnpm lint:baseline` takes it out; the check fails until then. Prints only problems. Also runs after every edit by Claude Code (`.claude/hooks/lint-file.mjs`, about 5 s). |
 | **Architecture review** | The `architecture-review` subagent (`.claude/agents/architecture-review.md`) reviews a slice's diff against ADR 0053, the ADRs it touches and the baselines, read-only, before the commit. |
-| All tests | `pnpm test` (DB tests create and drop their own database; skipped, with a warning, if PostgreSQL is unreachable; with `REQUIRE_DATABASE=1`, as in CI, they fail instead). Web tests (`apps/web/test`) cover units/formatting and translation completeness. |
+| All tests | `pnpm test` (DB tests create and drop their own database; skipped, with a warning, if PostgreSQL is unreachable; with `REQUIRE_DATABASE=1`, as in CI, they fail instead). Web tests (`apps/web/test`) cover units/formatting and translation completeness, and components ([component tests](#component-tests)). |
 | New UI text | Add the key to `en.json` and `de.json` (tests fail otherwise); use `t('…')`, `<Trans>` for markup |
 | New API error | Add a code to `PROBLEMS` in `problems.ts`, regenerate the API client, add `errors.<code>` to both translations |
 | Type check | `pnpm typecheck` |
@@ -101,6 +101,18 @@ Upgrading a slice-1 database deletes its development data (`user_id = 'dev'`); r
 
 Real dive files go in `samples/private/` (git-ignored). FIT adapter tests cross-check them against
 Garmin's official SDK automatically when present ([samples](../samples/README.md)).
+
+## Component tests
+
+Below the browser tests, a web component's behaviour is tested in `apps/web/test/*.test.tsx`: rendered with
+`@testing-library/react`, driven with `@testing-library/user-event`, asserted through roles, names and texts, never
+through props or state. `vitest.config.ts` has two projects: `unit` (`*.test.ts`, Node) and `component` (`*.test.tsx`,
+jsdom); `test/dom-setup.ts` starts the texts in English with `initI18n` (as `main.tsx` does) and empties the document
+after each test. `pnpm --filter @dive-hub/web test` runs both; `-- --project component` only these. In `pnpm check` they
+run like the other web unit tests (those that import a changed file; a change to `dom-setup.ts` runs all).
+A component that calls the API is tested in the browser tests instead (the client's `fetch` is fixed when `api.ts`
+loads); a component test covers a part of `ui/` or `lib/` (dialogs, `SearchList`, forms with `useLeaveGuard`), or a
+harness the test builds from them. jsdom, not happy-dom: React Aria, which our controls are built on, is tested in jsdom.
 
 ## Tooling notes
 
