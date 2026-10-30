@@ -12,6 +12,8 @@ minimumReleaseAgeExclude:
 
 # dependency-cruiser parses TypeScript only when it can load the compiler, which it doesn't declare. TypeScript 7 has
 # no compiler API, so the lint tools get the root's TypeScript 6 (research note 2026-10-22-agent-guardrails).
+# packages/api-client keeps TypeScript 5.9 for the same reason: openapi-typescript 7.13 uses the compiler API and its
+# peer range is typescript ^5.x. The apps type-check with TypeScript 7 (docs/development.md, Tooling notes).
 packageExtensions:
   dependency-cruiser:
     peerDependencies:
