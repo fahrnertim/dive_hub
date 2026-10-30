@@ -14,7 +14,7 @@ import { Code, DiveProviderParams, errors } from './route-parts.js';
 import type { SitePickService } from './site-pick.js';
 import { SYNCED_FIELDS } from './three-way.js';
 import { UnmetView } from './unmet-view.js';
-import { WaitingPushViewSchema } from './waiting-push-view.js';
+import { WaitingPushViewSchema } from '../dives/waiting-push-view.js';
 
 const LeftOut = Type.Object({
   diverId: Type.String(),

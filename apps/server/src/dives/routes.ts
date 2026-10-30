@@ -35,8 +35,8 @@ import type { PushService } from '../providers/push-service.js';
 import type { WaitingPushService } from '../providers/waiting-push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
 import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
-import { WaitingPushViewSchema } from '../providers/waiting-push-view.js';
-import { answerProviderError, replyProviderError } from '../providers/route-parts.js';
+import { WaitingPushViewSchema } from './waiting-push-view.js';
+import type { ProviderAnswers } from '../providers/route-parts.js';
 import { Change, Changes, DateTime, historyRoute, IdParams, Made, Nullable } from '../http/schemas.js';
 
 export interface DiveRouteDeps {
@@ -56,6 +56,8 @@ export interface DiveRouteDeps {
   /** Merging two Dives deletes the one not kept at the Providers asked first (ADR 0038). */
   merge: MergeService;
   assessments: AssessmentService;
+  /** How a refusal about a Provider is answered (providers/route-parts.ts). */
+  providerAnswers: ProviderAnswers;
 }
 
 
@@ -402,12 +404,12 @@ const DeleteProblem = Type.Object({
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, merge, assessments }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, merge, assessments, providerAnswers }) => {
   app.addHook('onRequest', requireUser(auth));
   refreshAssessmentsAfterChange(app, assessments);
 
   app.setErrorHandler(answerErrors(
-    answers(DiveError, STATUS), answers(CylinderError, CYLINDER_STATUS), answers(WeightingError, WEIGHTING_STATUS), answerProviderError,
+    answers(DiveError, STATUS), answers(CylinderError, CYLINDER_STATUS), answers(WeightingError, WEIGHTING_STATUS), providerAnswers.answer,
   ));
 
 
@@ -682,7 +684,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request, reply) => {
     const { version, otherId, otherVersion, alsoAt = [] } = request.body;
     const merged = await merge.merge(userOf(request).id, { id: request.params.id, version }, { id: otherId, version: otherVersion }, alsoAt);
-    if (merged.failure) return replyProviderError(merged.failure, reply, { providers: merged.providers });
+    if (merged.failure) return providerAnswers.reply(merged.failure, reply, { providers: merged.providers });
     return viewOfKept(request, merged.kept);
   });
 
@@ -715,7 +717,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request, reply) => {
     const { version, alsoAt = [] } = request.body;
     const { providers, failure } = await deletion.remove(userOf(request).id, request.params.id, version, alsoAt);
-    if (failure) return replyProviderError(failure, reply, { providers });
+    if (failure) return providerAnswers.reply(failure, reply, { providers });
     return { providers };
   });
 

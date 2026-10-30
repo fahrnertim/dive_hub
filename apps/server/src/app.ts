@@ -36,6 +36,8 @@ import { centreRoutes } from './centres/routes.js';
 import type { SiteImportService } from './sites/import/site-import-service.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
 import type { ProviderLayer } from './providers/layer.js';
+import { currentRemote } from './providers/remote-state.js';
+import { providerAnswers } from './providers/route-parts.js';
 import { providerRoutes } from './providers/routes.js';
 import { ssiCentreDisplayName } from './providers/ssi/ssi-centre.js';
 import { assessmentRoutes } from './assessment/routes.js';
@@ -123,11 +125,11 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes });
   const dives = createDiveService(db);
   const checks = createLogbookCheckService(db);
-  const merging = createMergingService(db, checks);
+  const merging = createMergingService(db, checks, { currentRemote, deletingItself: waitingPushes.deletingItself });
   await app.register(diveRoutes, {
     prefix: '/api', auth, logbook, divers, centres, dives, merging, checks, pushes, waitingPushes,
     deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }),
-    merge: createMergeService({ merging, logbook, pushes }), assessments,
+    merge: createMergeService({ merging, logbook, pushes }), assessments, providerAnswers,
   });
   await app.register(candidateRoutes, { prefix: '/api', auth, candidates: createCandidateService(db), assessments });
   await app.register(assessmentRoutes, { prefix: '/api', auth, assessments });

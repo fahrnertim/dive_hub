@@ -52,3 +52,7 @@ export function replyProviderError(error: ProviderServiceError, reply: FastifyRe
 }
 /** replyProviderError as a route plugin's answer (answerErrors). */
 export const answerProviderError: ErrorAnswer = (error, reply) => (error instanceof ProviderServiceError ? replyProviderError(error, reply) : undefined);
+
+/** Both, for another module's route plugin: app.ts passes them in, so that module imports only types from here (ADR 0053). */
+export const providerAnswers = { reply: replyProviderError, answer: answerProviderError };
+export type ProviderAnswers = typeof providerAnswers;

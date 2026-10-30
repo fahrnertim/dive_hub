@@ -13,7 +13,7 @@ import type { PushService } from './push-service.js';
 import { ProviderServiceError, type ProviderRegistry } from './registry.js';
 import { blocking } from './requirements.js';
 import { clearIfUnchanged, deletingItself, newDivesConnection, queueNow, scheduleConnection, stampOf, upsertSend, type QueueStamp, type ProviderLog } from './waiting-push-queue.js';
-import { waitingOf } from './waiting-push-view.js';
+import { waitingOf } from '../dives/waiting-push-view.js';
 export type { ProviderLog };
 
 /** After a failure the Provider may be back: tried again after 5 min, 30 min, 2 h, then every 6 h (the last repeats). */

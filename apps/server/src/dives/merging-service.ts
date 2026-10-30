@@ -6,8 +6,8 @@ import { and, desc, eq, gte, inArray, isNull, lte, ne } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
 import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localDay } from '../imports/matching.js';
-import { currentRemote, type PushRow } from '../providers/remote-state.js';
-import { deletingItself } from '../providers/waiting-push-queue.js';
+import type { currentRemote as CurrentRemote, PushRow } from '../providers/remote-state.js';
+import type { WaitingPushService } from '../providers/waiting-push-service.js';
 import { liveSite } from '../sites/dive-site-link.js';
 import {
   DiveError, applyToDive, attachRecording, lockManagedDive, nextVersion, participantsOf,
@@ -21,6 +21,12 @@ import { changeListener, userActor, writeRevision, type Actor, type Changes } fr
 import { renumber } from './dive-numbers.js';
 
 type DiveRow = typeof dive.$inferSelect;
+
+/**
+ * The Provider rules merging and moving read (passed in from app.ts, so dives/ imports only types from providers/, ADR
+ * 0053): the remote dive a Dive has at a Provider now, and where a Dive is deleted through the Waiting push queue.
+ */
+export type ProviderLinks = Pick<WaitingPushService, 'deletingItself'> & { currentRemote: typeof CurrentRemote };
 
 /** Values a Dive may lack; the start and the duration it always has. */
 const FILLABLE = ['maxDepthM', 'avgDepthM', 'waterTemperatureC'] as const satisfies readonly OverridableField[];
@@ -100,7 +106,7 @@ async function deleteLeftBehind(tx: Tx, diveId: string, actor: Actor, cause: 'me
   return at;
 }
 
-export function createMergingService(db: Db, checks: LogbookCheckService) {
+export function createMergingService(db: Db, checks: LogbookCheckService, { currentRemote, deletingItself }: ProviderLinks) {
   return {
     /**
      * The Dives of the same Diver this one breaks a rule of the logbook checks with (ADR 0038): at the same time, as the
@@ -128,7 +134,7 @@ export function createMergingService(db: Db, checks: LogbookCheckService) {
         return remote ? [{ provider, remoteNumber: remote.remoteNumber }] : [];
       });
       const mine = at(row.id);
-      const itself = await deletingItself(db, [row.id, ...hits.map((h) => h.id)]);
+      const itself = await deletingItself([row.id, ...hits.map((h) => h.id)]);
       return hits.map((h) => {
         const original = near.find(({ d }) => d.id === h.id)!.d;
         const theirs = at(h.id);
@@ -178,7 +184,7 @@ export function createMergingService(db: Db, checks: LogbookCheckService) {
           extra.participants = { from: before, to: await participantsOf(tx, kept.id) };
         }
 
-        const moved = await moveLinks(tx, userId, kept.id, other.id);
+        const moved = await moveLinks(tx, currentRemote, userId, kept.id, other.id);
         if (moved.length > 0) extra.providers = { from: [], to: moved };
 
         const [current] = await tx.select().from(dive).where(eq(dive.id, kept.id));
@@ -238,7 +244,7 @@ export function createMergingService(db: Db, checks: LogbookCheckService) {
  * and the kept Dive has none, the other's Pushes there become the kept Dive's, so what Dive Hub sent and saw stays
  * with the link. Where both have one, the other's stays behind on the Dive that is deleted.
  */
-async function moveLinks(tx: Tx, userId: string, keptId: string, otherId: string) {
+async function moveLinks(tx: Tx, currentRemote: typeof CurrentRemote, userId: string, keptId: string, otherId: string) {
   const pushes = await pushesOf(tx, [keptId, otherId]);
   const mine = byProvider(pushes, keptId);
   const moved: { provider: string; remoteId: string; remoteNumber: number | null }[] = [];

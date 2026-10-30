@@ -1,5 +1,6 @@
 // What the API says about a Dive's Waiting pushes (ADR 0056): the entries of the queue as a client shows them.
-// Like the queue, it imports only the database layer.
+// Here, not in providers/, because the Dive views show it too (ADR 0053: providers/ imports dives/, not the other way);
+// like the queue, it imports only the database layer.
 import { and, asc, inArray } from 'drizzle-orm';
 import { Type, type Static } from 'typebox';
 import type { Queryable } from '../db/client.js';

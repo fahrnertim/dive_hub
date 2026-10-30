@@ -25,7 +25,7 @@ import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements 
 import { siteForSend } from './site-for-send.js';
 import { buddiesForSend, keepBuddies, type BuddiesForSend } from './buddies-for-send.js';
 import { deletingItself, clearIfUnchanged, stampOf, type QueueStamp, type ProviderLog } from './waiting-push-queue.js';
-import { waitingOf } from './waiting-push-view.js';
+import { waitingOf } from '../dives/waiting-push-view.js';
 import { comparableOf, planSend, sameAtProvider, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
 
 /** What deleting a Dive at Providers did: each copy deleted or kept, and why it stopped, if it did. */

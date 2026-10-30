@@ -12,7 +12,7 @@ const MODULE_IMPORTS = {
   centres: ['divers:type', 'dives', 'sites'],
   certifications: ['divers', 'dives', 'providers'],
   divers: ['centres', 'certifications', 'dives', 'providers'],
-  dives: ['assessment:type', 'centres', 'divers', 'imports', 'providers', 'sites'],
+  dives: ['assessment:type', 'centres', 'divers', 'imports', 'providers:type', 'sites'],
   fit: ['imports', 'suunto'],
   imports: ['divers', 'dives', 'fit', 'sites', 'suunto'],
   lead: ['divers', 'dives'],
