@@ -8,14 +8,13 @@ import { nearSql, distanceSql, type Position } from './site-service.js';
 /** An Import links a new Dive to a site only if it is the one site within this distance. */
 export const AUTO_LINK_M = 200;
 
-/** Recording columns for the positions a parser found; the Original counts as read for them. */
+/** Recording columns for the positions a parser found. */
 export function positionColumns(parsed: { entryPosition: Position | undefined; exitPosition: Position | undefined }) {
   return {
     entryLatitude: parsed.entryPosition?.latitude ?? null,
     entryLongitude: parsed.entryPosition?.longitude ?? null,
     exitLatitude: parsed.exitPosition?.latitude ?? null,
     exitLongitude: parsed.exitPosition?.longitude ?? null,
-    positionsReadAt: new Date(),
   };
 }
 

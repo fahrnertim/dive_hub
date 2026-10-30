@@ -323,6 +323,20 @@
       "when": 1793381090320,
       "tag": "0045_connection_credentials_not_null",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1793381355920,
+      "tag": "0046_retire_backfills",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793381563370,
+      "tag": "0047_drop_backfill_markers",
+      "breakpoints": true
     }
   ]
 }

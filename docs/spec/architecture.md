@@ -255,8 +255,8 @@ Implemented:
 - Dive sites shared by every User: `/api/dive-sites` (list by name or near a position, one, create, edit with
   version, delete). Any User edits (Revisions on `dive_site`); the creator or an admin deletes while no Dive is there.
 - Entry and exit positions on Recordings from FIT (`session.start_position_*`, `end_position_*`); a Dive shows
-  its Primary recording's (exit, else entry). Older Recordings are backfilled from their Originals by the
-  `backfill_positions` worker job, queued once per start (job key).
+  its Primary recording's (exit, else entry). Older Recordings were backfilled from their Originals by a
+  worker job at each start, retired by migrations 0046 and 0047 once every instance had run it.
 - An Import links a new Dive to the only site within 200 m (Revision cause `auto-site`).
 - A Dive's site in `PATCH /api/dives/:id` (`siteId`, under the Dive's version); the logbook shows it, filters
   by it (`siteId`, `#/?site=`) and searches its name.

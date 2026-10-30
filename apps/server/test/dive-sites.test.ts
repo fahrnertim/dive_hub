@@ -214,20 +214,6 @@ describe.skipIf(!(await databaseReachable()))('Dive sites', () => {
       expect((await call('GET', `/api/dives/${diveId}`, anna)).statusCode).toBe(404);
     });
 
-    it('Recordings imported before positions were kept get them from their Original, once', async () => {
-      const exit = { latitude: 47.9, longitude: 13.55 };
-      const outcome = await upload('old.fit', makeSyntheticDive({ serialNumber: 506, start: new Date('2026-03-06T08:00:00Z'), exit }));
-      // As a database from before ADR 0020 has it: no positions, never read for them.
-      await t.pool.query(`update recording set exit_latitude = null, exit_longitude = null, positions_read_at = null
-        where dive_id = $1`, [outcome.diveId]);
-      expect((await getDive(outcome.diveId)).position).toBeNull();
-
-      expect(await ctx.imports.backfillPositions()).toBe(1);
-      const { position } = await getDive(outcome.diveId);
-      expect(position!.latitude).toBeCloseTo(exit.latitude, 6);
-      expect(await ctx.imports.backfillPositions()).toBe(0);
-    });
-
     it('the logbook shows each Dive\'s site, filters by site and finds Dives by the site\'s name', async () => {
       type Page = { dives: { id: string; site: { id: string; name: string } | null }[]; total: number };
       const all = await json<Page>('GET', '/api/dives');

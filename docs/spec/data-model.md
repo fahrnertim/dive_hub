@@ -203,7 +203,7 @@ and nothing reaches that User.
   per-source extension area (A7) rather than dropped.
 - *From FIT, gas figures ([ADR 0032](../decisions/0032-mod-and-no-decompression-limits.md), implemented in slice 21):* the summary also keeps FIT's
   `avg_volume_sac` as `sacLpm`, `avg_rmv` as `rmvLpm` (L/min at the surface) and `o2_toxicity` (OTU); older Recordings read their Originals again
-  once (`recording.gas_figures_read_at`, migration 0030), keeping a value already in the summary. The bottom-time tool takes its default SAC from them and its default GF from `gfHigh`; tests compare its NDL with
+  once (migration 0030; the job and its marker column were retired by 0046 and 0047), keeping a value already in the summary. The bottom-time tool takes its default SAC from them and its default GF from `gfHigh`; tests compare its NDL with
   the computer's `ndl` samples.
 - *Source logbook fields*: notes, buddy names, site name and similar values the Source
   delivered (UDDF, Subsurface). They're kept as the baseline for 3-way merges on re-import.

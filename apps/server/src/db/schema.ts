@@ -644,10 +644,6 @@ export const recording = pgTable(
     entryLongitude: doublePrecision('entry_longitude'),
     exitLatitude: doublePrecision('exit_latitude'),
     exitLongitude: doublePrecision('exit_longitude'),
-    /** Set once the Original was read for positions (imported with them, or backfilled). */
-    positionsReadAt: timestamp('positions_read_at', { withTimezone: true }),
-    /** Set once the Original was read for the gas consumption the summary keeps (ADR 0032; backfilled). */
-    gasFiguresReadAt: timestamp('gas_figures_read_at', { withTimezone: true }),
     summary: jsonb('summary').$type<RecordingSummary>().notNull().default({}),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

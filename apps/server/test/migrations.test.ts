@@ -207,6 +207,36 @@ describe.skipIf(!(await databaseReachable()))('0044 and 0045: every Connection h
   });
 });
 
+describe.skipIf(!(await databaseReachable()))('0046 and 0047: the backfills of earlier Recordings are retired', () => {
+  let t: TestDatabase;
+  let before: string;
+  beforeAll(async () => {
+    before = await migrationsBefore('0046_retire_backfills');
+    t = await createTestDatabase({ migrationsFolder: before });
+  });
+  afterAll(async () => {
+    await t?.drop();
+    if (before) await rm(before, { recursive: true, force: true });
+  });
+
+  it('stop while a Recording still waits for its positions, and drop the marker columns once none does', async () => {
+    const q = (sql: string, params: unknown[] = []) => t.pool.query(sql, params);
+    const user = (await q(`insert into "user" (name, email) values ('Erika', 'erika@example.com') returning id`)).rows[0].id as string;
+    const original = (await q(`insert into original (user_id, sha256, media_type, size_bytes, file_name, storage_key)
+      values ($1, 'abc', 'application/vnd.ant.fit', 1, 'a.fit', 'k') returning id`, [user])).rows[0].id as string;
+    const job = (await q(`insert into import (user_id, upload_name) values ($1, 'a.fit') returning id`, [user])).rows[0].id as string;
+    const rec = (await q(`insert into recording (original_id, import_id, recording_key, parser, parser_version, starts_at, duration_seconds)
+      values ($1, $2, 'r1', 'fit', '1', now(), 1800) returning id`, [original, job])).rows[0].id as string;
+
+    await expect(migrateDatabase(t.db, t.pool, migrations)).rejects.toThrow(/positions/);
+
+    await q('update recording set positions_read_at = now() where id = $1', [rec]);
+    await migrateDatabase(t.db, t.pool, migrations);
+    const columns = (await q(`select column_name from information_schema.columns where table_name = 'recording' and column_name like '%_read_at'`)).rows;
+    expect(columns).toEqual([]);
+  });
+});
+
 describe.skipIf(!(await databaseReachable()))('0040: private site IDs (ADR 0057)', () => {
   let t: TestDatabase;
   let before: string;

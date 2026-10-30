@@ -1,7 +1,7 @@
 import { run, type Runner } from 'graphile-worker';
 import type pg from 'pg';
 import type { FastifyBaseLogger } from 'fastify';
-import { BACKFILL_GAS_FIGURES_TASK, BACKFILL_POSITIONS_TASK, EXPIRE_WAITING_IMPORTS_TASK, FILL_CYLINDERS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
+import { EXPIRE_WAITING_IMPORTS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
 import { IMPORT_DIVE_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
 import { PUSH_RUN_STEP_TASK, type PushRunService } from './providers/push/push-run-service.js';
 import { WAITING_PUSHES_TASK, waitingPushesKey } from './providers/waiting-push/waiting-push-queue.js';
@@ -141,24 +141,9 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
         const divers = await assessments.refreshAll();
         log.info({ divers }, 'dive assessments are up to date');
       },
-      [BACKFILL_POSITIONS_TASK]: async () => {
-        const read = await imports.backfillPositions();
-        if (read > 0) log.info({ read }, 'read positions of earlier Recordings');
-      },
-      [BACKFILL_GAS_FIGURES_TASK]: async () => {
-        const read = await imports.backfillGasFigures();
-        if (read > 0) log.info({ read }, 'read the gas consumption of earlier Recordings');
-      },
-      [FILL_CYLINDERS_TASK]: async () => {
-        const filled = await imports.fillCylinders();
-        if (filled > 0) log.info({ filled }, 'made the Cylinders of earlier Dives from their tank pod data');
-      },
     },
   });
   // Once per start; the job key keeps it to one queued job however many workers start.
-  await runner.addJob(BACKFILL_POSITIONS_TASK, {}, { jobKey: BACKFILL_POSITIONS_TASK });
-  await runner.addJob(BACKFILL_GAS_FIGURES_TASK, {}, { jobKey: BACKFILL_GAS_FIGURES_TASK });
-  await runner.addJob(FILL_CYLINDERS_TASK, {}, { jobKey: FILL_CYLINDERS_TASK });
   await runner.addJob(ASSESS_DIVES_TASK, {}, { jobKey: ASSESS_DIVES_TASK });
   return runner;
 }

@@ -1,8 +1,6 @@
 // Cylinders on a Dive through the HTTP API (ADR 0045, slice 2): set as one list with the Dive's edit, part of its
 // version and its history; "same as last dive"; and the Cylinders an import makes from a tank pod's data.
-import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { cylinder, revision } from '../src/db/schema.js';
 import { makeSuuntoJson } from './fixtures/suunto-dive.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -254,32 +252,6 @@ describe.skipIf(!(await databaseReachable()))('Cylinders on a Dive', () => {
       expect(entries).toHaveLength(2);
       expect(entries[0]).toMatchObject({ cause: 'reimport', actor: { type: 'import' }, changes: { cylinders: { from: [{ fromPod: true }], to: [{ series: null }] } } });
       expect((await setCylinders(first.diveId, [{ ...steel12, gas: { o2: 36, he: 0 } }])).statusCode).toBe(200);
-    });
-  });
-
-  describe('a Dive imported before Cylinders were kept', () => {
-    let diveId: string;
-    let recordingId: string;
-
-    it('gets its pod\'s Cylinder once, by the hub itself, with an entry in its history', async () => {
-      ({ diveId, recordingId } = await upload('earlier.json', makeSuuntoJson({ start: day(20), serialNumber: '900000000009' })));
-      // As it was before this was built: no Cylinders, and a history that never spoke of any.
-      await t.db.delete(cylinder).where(eq(cylinder.diveId, diveId));
-      await t.db.update(revision).set({ changes: sql`${revision.changes} - 'cylinders'` }).where(eq(revision.entityId, diveId));
-      const { version } = await getDive(diveId);
-
-      expect(await ctx.imports.fillCylinders()).toBe(1);
-      const d = await getDive(diveId);
-      expect(d.version).toBe(version + 1);
-      expect(d.cylinders).toMatchObject([{ volumeL: 12, gas: { o2: 32, he: 0 }, fromPod: true, series: { recordingId, channel: 'tankPressure' } }]);
-      expect((await history(diveId))[0]).toMatchObject({ cause: 'fill', actor: { type: 'system' }, changes: { cylinders: { from: [] } } });
-      expect(await ctx.imports.fillCylinders()).toBe(0);
-    });
-
-    it('stays without them once the User removed them', async () => {
-      expect((await setCylinders(diveId, [])).statusCode).toBe(200);
-      expect(await ctx.imports.fillCylinders()).toBe(0);
-      expect((await getDive(diveId)).cylinders).toEqual([]);
     });
   });
 
