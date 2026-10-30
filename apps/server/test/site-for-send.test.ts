@@ -8,7 +8,7 @@ import pg from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as schema from '../src/db/schema.js';
 import { dive, diveSiteExternalId } from '../src/db/schema.js';
-import { siteForSend } from '../src/providers/site-for-send.js';
+import { siteForSend } from '../src/providers/push/site-for-send.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { accountOf, storeId } from '../src/sites/site-ids.js';

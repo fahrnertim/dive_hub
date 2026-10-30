@@ -7,7 +7,7 @@
 import { createHash } from 'node:crypto';
 import type { SiteWaterType } from '../../vocabulary.js';
 import type { DiveField, Leave, OutgoingDive, Series } from '../provider.js';
-import type { SyncedField } from '../three-way.js';
+import type { SyncedField } from '../dive-import/three-way.js';
 import type { SsiRecord } from './ssi-client.js';
 import { asBool, DIVE_ROW, SENT_KEYS } from './ssi-dive-row.js';
 import { keepTraining, ssiDiveType } from './ssi-dive-type.js';

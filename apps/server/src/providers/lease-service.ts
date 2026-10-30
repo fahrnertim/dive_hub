@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, isNull, lt, lte, or } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, diveLease, type ConnectionRow } from '../db/schema.js';
-import type { ProviderLog } from './waiting-push-queue.js';
+import type { ProviderLog } from './waiting-push/waiting-push-queue.js';
 
 /** Where leases take their time from. Every app process on one database must agree on it (NTP is enough). */
 export interface Clock {

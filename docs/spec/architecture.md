@@ -576,7 +576,7 @@ Implemented:
   leaves out one not in the list (`not_at_provider`), keeps buddies set in SSI's app on update (SSI's IDs minus those
   sent before, from the current Push's payload), counts the Participants' SSI accounts in the fingerprint and reads the
   buddy IDs back. `GET /api/connections/{id}/buddies` and `POST …/buddies/import` read the list live and create external
-  Divers with name and SSI account (`src/providers/buddy-service.ts`).
+  Divers with name and SSI account (`src/providers/buddies/buddy-service.ts`).
 - **Web client:** `Participants.tsx` (buddies, guides and instructors on the dive page; a role radio group and a live
   search over every Diver, or a new one by the typed name, when adding; a role dropdown per row that saves at once); `ProviderPanel.tsx` renders one resolver per requirement type
   (the site picker takes its ID forms from the capabilities; "Find … in your SSI buddy list" sets the Diver's account), an
@@ -597,7 +597,7 @@ Implemented:
   doesn't block. A typed ID through the old route still counts.
 - **Storage:** `dive_site_external_id.account_id` is the Diver's provider account; null = public. Only
   `apps/server/src/sites/site-ids.ts` touches the table.
-- **The site step of a send** (manual or Push run; `providers/site-for-send.ts`): the ID sent is the remote dive's ID if
+- **The site step of a send** (manual or Push run; `providers/push/site-for-send.ts`): the ID sent is the remote dive's ID if
   usable, else the public one, else the Diver's own private one, never another account's. With none, the send finds a
   nearby same-name site in the account's SSI logbook whose ID no site here holds, else creates a private site
   (`save_divesite`). One find-or-make per site and account, under an advisory lock.
@@ -633,7 +633,7 @@ Implemented:
   context)` and `dives.parser`; SSI's are in `src/providers/ssi/ssi-import.ts` (evidence, local start, values, profile,
   Device, site ID and position, buddies as SSI accounts, notes). `ImportedDive`, `ImportContext` and `REFERENCE_PREFIX`
   are in `provider.ts`.
-- **The import** (`src/providers/dive-import.ts`, part of the provider layer): the Connection's settings (`import_mode`
+- **The import** (`src/providers/dive-import/dive-import.ts`, part of the provider layer): the Connection's settings (`import_mode`
   off / add / create, `import_window_minutes` 5–60, `import_computers`), `PATCH /api/connections/{id}`, the preview
   (`GET /api/connections/{id}/dive-import`: computers with choice and suggestion, counts, the entries to decide) and the
   start (`POST`: one JSON Original per dive, an Import with `provider`, `connection_id` and its `plan`: the context,
@@ -696,7 +696,7 @@ Implemented:
 **Slice 15b (2026-10-06): changes made at the Provider come back** (ADR 0030, amended by the owner).
 
 Implemented:
-- `src/providers/three-way.ts` (pure): the fields, comparing as the Provider keeps values, and the decision per field
+- `src/providers/dive-import/three-way.ts` (pure): the fields, comparing as the Provider keeps values, and the decision per field
   (take, conflict, nothing). `dive-changes.ts`: the base (`baseDiveOf`: the last finished Import's Original or the last Push
   that sent values, the newer), the Dive's side (`hubSideOf`), taking values (`takeChanges`: one Revision `update`, the site
   through `siteForProvider`, Participants with an account replaced, values and their Overrides on Dives without a
@@ -868,7 +868,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - The same test in matching (rule version 4, [ADR 0030, amended](../decisions/0030-importing-dives-from-providers.md)):
   `decideMatch` gets `probablyNoDive` for the Recording and each candidate from `placement.ts` (never attached by itself:
   a Duplicate candidate with the reason `probably_no_dive`; such a Dive is no candidate for a real Recording), `assess` in
-  `providers/dive-import.ts` leaves such Dives out of an entry's matches and asks when nothing else is in the window, and
+  `providers/dive-import/dive-import.ts` leaves such Dives out of an entry's matches and asks when nothing else is in the window, and
   `findChecks` never calls such a pair `obvious`. Tests: `matching.test.ts`, `false-start-import.test.ts`.
 - Routes: `GET /api/logbook-checks?status=open|answered`, `PUT /api/logbook-checks/answer`; `merge-candidates` gains
   `rule` and `answered`. Problem `check_not_found`.
@@ -884,7 +884,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   per pair from the client; no rule looks at Dives of two Divers (a dive filed under the wrong Diver shows up as an
   overlap only in its own logbook).
 - Afterwards (2026-10-07): the import follows a dive Dive Hub sent to the Dive it is linked to now (`assess` in
-  `providers/dive-import.ts`: the current link before our reference), so a Dive merged into another keeps taking changes
+  `providers/dive-import/dive-import.ts`: the current link before our reference), so a Dive merged into another keeps taking changes
   made at the Provider; and the web client says which of two Dives a merge keeps (the hint, the pair, the dialog).
 - Not yet: rules beyond overlaps (a number twice, a dive inside a no-fly time), telling by e-mail, the checks over MCP.
 
@@ -911,7 +911,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   server gives the seeded Divers `dives_before` 41 and 500 so the fixtures keep their numbers (42, 501 to 504).
 
 **Slice 22c (2026-10-10): Push runs** ([ADR 0047](../decisions/0047-push-runs.md)).
-- `providers/push-run-service.ts` (`preview`, `start`, `list`, `get`, `cancel`, `continue`, `step`, `requeueActive`), the pure planner
+- `providers/push/push-run-service.ts` (`preview`, `start`, `list`, `get`, `cancel`, `continue`, `step`, `requeueActive`), the pure planner
   `push-run-plan.ts` (`planItem`, `orderItems`) and the routes `push-run-routes.ts`, registered inside `providerRoutes`. The logbook's list
   filter moved to `dives/list-filter.ts` so `GET /api/dives` and a run's `list` share it.
 - The worker has one task, `push_run_step`, one job per Dive: `step(runId)` sends one Dive through `pushes.send` / `pushes.setNumber` and
@@ -954,7 +954,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 
 **Piece 6 (2026-10-27): automation for every Provider** ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md),
 [plan](../superpowers/plans/2026-10-27-provider-automation.md)).
-- The Waiting push queue: one `waiting_push` row per Dive and Connection (`providers/waiting-push-queue.ts`: `noteDiveChange`,
+- The Waiting push queue: one `waiting_push` row per Dive and Connection (`providers/waiting-push/waiting-push-queue.ts`: `noteDiveChange`,
   `noteSiteChange`, `queueNow`, `settle`), written in the same transaction as the change; quiet periods 30 s (edit) and 5 min
   (delete). An Import from the same Provider is not sent back.
 - Worker tasks: `waiting_pushes` (one job per Connection, job key `waiting-pushes:<connectionId>`; `step` sends one due entry and
@@ -962,6 +962,6 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   sign-in or the Provider's return, retries after 5 min / 30 min / 2 h / 6 h until 24 h, queues due fetches) and
   `scheduled_fetch` (one Connection's fetch as an unattended Import; `last_fetched_at` is claimed atomically). Intervals 60, 360
   or 1440 minutes; more than 20 new Dives from one Import wait as an offer.
-- `providers/waiting-push-service.ts` (`step`, `tick`, `retry`, `afterImport`, `unsentDives`, `dismissOffer`, `decide`),
-  `providers/scheduled-fetch.ts`; the API's settings, waiting states, Retry and decisions are in the
+- `providers/waiting-push/waiting-push-service.ts` (`step`, `tick`, `retry`, `afterImport`, `unsentDives`, `dismissOffer`, `decide`),
+  `providers/dive-import/scheduled-fetch.ts`; the API's settings, waiting states, Retry and decisions are in the
   [client contract](clients.md) ("Sending by itself").

@@ -10,23 +10,23 @@ import type { CertificationService } from '../certifications/certification-servi
 import { replyCertificationError } from '../certifications/certification-answers.js';
 import { replyDiverError } from '../divers/diver-answers.js';
 import { accountRoutes } from './account-routes.js';
-import type { BuddyService } from './buddy-service.js';
-import type { ConflictService } from './conflict-service.js';
+import type { BuddyService } from './buddies/buddy-service.js';
+import type { ConflictService } from './conflicts/conflict-service.js';
 import { connectionRoutes } from './connection-routes.js';
 import type { ConnectionService } from './connection-service.js';
-import { decisionRoutes } from './decision-routes.js';
-import type { DiveImportService } from './dive-import.js';
-import { diveImportRoutes } from './dive-import-routes.js';
+import { decisionRoutes } from './conflicts/decision-routes.js';
+import type { DiveImportService } from './dive-import/dive-import.js';
+import { diveImportRoutes } from './dive-import/dive-import-routes.js';
 import { diveProviderRoutes } from './dive-provider-routes.js';
-import type { GoneDiveService } from './gone-dives.js';
-import { pushRunRoutes } from './push-run-routes.js';
-import type { PushRunService } from './push-run-service.js';
-import type { PushService } from './push-service.js';
+import type { GoneDiveService } from './dive-import/gone-dives.js';
+import { pushRunRoutes } from './push/push-run-routes.js';
+import type { PushRunService } from './push/push-run-service.js';
+import type { PushService } from './push/push-service.js';
 import type { ProviderRegistry } from './registry.js';
 import { answerProviderError } from './route-parts.js';
-import type { ScheduledFetch } from './scheduled-fetch.js';
+import type { ScheduledFetch } from './dive-import/scheduled-fetch.js';
 import type { SitePickService } from './site-pick.js';
-import type { WaitingPushService } from './waiting-push-service.js';
+import type { WaitingPushService } from './waiting-push/waiting-push-service.js';
 
 export interface ProviderRouteDeps {
   auth: Auth;

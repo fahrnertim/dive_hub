@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { orderItems, planItem, type PlanOptions, type PlanStatus } from '../src/providers/push-run-plan.js';
+import { orderItems, planItem, type PlanOptions, type PlanStatus } from '../src/providers/push/push-run-plan.js';
 
 const options = (o: Partial<PlanOptions> = {}): PlanOptions => ({
   updates: false, updatesRemovingVerification: false, numbers: false, numbersRemovingVerification: false, canUpdate: true, ...o,

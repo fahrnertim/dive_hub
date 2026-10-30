@@ -9,7 +9,7 @@ import { createAiAccessService } from './mcp/access-service.js';
 import type { Clock } from './providers/lease-service.js';
 import { createProviderLayer } from './providers/layer.js';
 import type { ProviderAdapter } from './providers/provider.js';
-import type { ProviderLog } from './providers/waiting-push-queue.js';
+import type { ProviderLog } from './providers/waiting-push/waiting-push-queue.js';
 import type { SecretBox } from './secrets/secret-box.js';
 import { createSiteImportService } from './sites/import/site-import-service.js';
 import type { SiteSourceAdapter } from './sites/import/site-source.js';

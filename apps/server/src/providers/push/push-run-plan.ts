@@ -1,7 +1,7 @@
 // What a Push run does with one Dive, and in which order (ADR 0047, 0048). Pure: it works from a Dive's status at the
 // Provider (what Dive Hub knows, no call) and the run's options.
-import type { ProblemCode } from '../http/problems.js';
-import { blocking } from './requirements.js';
+import type { ProblemCode } from '../../http/problems.js';
+import { blocking } from '../requirements.js';
 
 export type LeftOutReason = 'up_to_date' | 'requirements_unmet' | 'update_not_chosen' | 'removes_verification' | 'update_unsupported';
 

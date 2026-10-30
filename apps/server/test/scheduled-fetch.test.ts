@@ -5,7 +5,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { connection, diver, importJob, providerConflict, push, waitingPush, type ImportOutcome } from '../src/db/schema.js';
-import { createScheduledFetch, SCHEDULED_FETCH_TASK } from '../src/providers/scheduled-fetch.js';
+import { createScheduledFetch, SCHEDULED_FETCH_TASK } from '../src/providers/dive-import/scheduled-fetch.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {

@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { connection, importJob, providerConflict, push, waitingPush } from '../src/db/schema.js';
-import { close, openFields, record, type ConflictField, type StoredConflictField } from '../src/providers/conflict-service.js';
+import { close, openFields, record, type ConflictField, type StoredConflictField } from '../src/providers/conflicts/conflict-service.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {

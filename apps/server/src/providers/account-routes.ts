@@ -7,7 +7,7 @@ import { callerOf } from '../http/caller.js';
 import { Problem } from '../http/problems.js';
 import { IdParams, Nullable } from '../http/schemas.js';
 import type { CertificationService } from '../certifications/certification-service.js';
-import type { BuddyService } from './buddy-service.js';
+import type { BuddyService } from './buddies/buddy-service.js';
 import { errors } from './route-parts.js';
 
 const BuddyView = Type.Object({

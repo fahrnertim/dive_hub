@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { DIVE_FIELDS } from '../src/providers/provider.js';
 import { contextOf, parseSsiDive } from '../src/providers/ssi/ssi-import.js';
-import { SYNCED_FIELDS, comparableOf, planSend, threeWay, type Comparable, type SyncedField } from '../src/providers/three-way.js';
+import { SYNCED_FIELDS, comparableOf, planSend, threeWay, type Comparable, type SyncedField } from '../src/providers/dive-import/three-way.js';
 import { handTypedDive } from './fake-ssi.js';
 
 const base: Comparable = {

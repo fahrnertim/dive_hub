@@ -4,16 +4,16 @@
 // at the Provider, a lost verification), retries a Provider that is down for a day, and stops what would fail again.
 // The minute tick wakes what a sign-in or the Provider's return cleared, and Retry is the User's.
 import { and, arrayOverlaps, asc, count, desc, eq, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
-import { connection, dive, importJob, providerConflict, push, pushRun, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../db/schema.js';
-import { managedDiverIds } from '../divers/management.js';
-import { currentRemote } from './current-remote.js';
-import { realClock, type Clock } from './lease-service.js';
-import type { PushService } from './push-service.js';
-import { ProviderServiceError, type ProviderRegistry } from './registry.js';
-import { blocking } from './requirements.js';
+import type { Db, Tx } from '../../db/client.js';
+import { connection, dive, importJob, providerConflict, push, pushRun, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../../db/schema.js';
+import { managedDiverIds } from '../../divers/management.js';
+import { currentRemote } from '../current-remote.js';
+import { realClock, type Clock } from '../lease-service.js';
+import type { PushService } from '../push/push-service.js';
+import { ProviderServiceError, type ProviderRegistry } from '../registry.js';
+import { blocking } from '../requirements.js';
 import { clearIfUnchanged, deletingItself, newDivesConnection, queueNow, scheduleConnection, stampOf, upsertSend, type QueueStamp, type ProviderLog } from './waiting-push-queue.js';
-import { waitingOf } from '../dives/waiting-push-view.js';
+import { waitingOf } from '../../dives/waiting-push-view.js';
 export type { ProviderLog };
 
 /** After a failure the Provider may be back: tried again after 5 min, 30 min, 2 h, then every 6 h (the last repeats). */

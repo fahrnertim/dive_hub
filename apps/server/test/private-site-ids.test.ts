@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Tx } from '../src/db/client.js';
 import { dive, diveSiteExternalId } from '../src/db/schema.js';
 import { getSite, searchSites } from '../src/mcp/tools-sites.js';
-import { loadOutgoingDive } from '../src/providers/outgoing-dive.js';
+import { loadOutgoingDive } from '../src/providers/push/outgoing-dive.js';
 import type { SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { siteForProvider } from '../src/sites/provider-sites.js';
 import { accountOf, storeId } from '../src/sites/site-ids.js';

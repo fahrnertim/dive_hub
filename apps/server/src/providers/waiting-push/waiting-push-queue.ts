@@ -4,9 +4,9 @@
 // a site's name or position) and by the User's decisions; the worker step that sends is elsewhere.
 // It imports only the database layer. Merging asks it `deletingItself` through the ProviderLinks app.ts passes in. Revisions and site changes reach it through the ChangeListener of `dives/revisions.ts` (set in layer.ts).
 import { and, asc, desc, eq, inArray, min, ne, or, sql } from 'drizzle-orm';
-import type { Queryable, Tx } from '../db/client.js';
-import { currentRemote, type PushRow } from './current-remote.js';
-import { connection, dive, importJob, push, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../db/schema.js';
+import type { Queryable, Tx } from '../../db/client.js';
+import { currentRemote, type PushRow } from '../current-remote.js';
+import { connection, dive, importJob, push, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../../db/schema.js';
 
 /** Where Dive Hub's own faults go for the operator (the app's logger in production; Users see only the code). */
 export interface ProviderLog {

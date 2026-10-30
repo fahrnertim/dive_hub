@@ -25,7 +25,7 @@ import { resettableClock } from './support.js';
 import { createMergingService } from '../src/dives/merging-service.js';
 import { createLogbookCheckService } from '../src/dives/checks/logbook-check-service.js';
 import { currentRemote } from '../src/providers/remote-state.js';
-import { deletingItself } from '../src/providers/waiting-push-queue.js';
+import { deletingItself } from '../src/providers/waiting-push/waiting-push-queue.js';
 import { createDiverService } from '../src/divers/diver-service.js';
 import { connection, dive, importJob, pushRun, waitingPush } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';

@@ -5,28 +5,28 @@
 // first, a removal goes out, and a field changed on both sides is a Conflict. What a Provider does with the Dive is the
 // adapter's.
 import { and, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
-import { connection, dive, push, type ConnectionRow } from '../db/schema.js';
-import type { SiteSource } from '../sites/sources.js';
-import type { BlobStore } from '../storage/blob-store.js';
-import { close, openFields, record as recordConflict, type ConflictField, type ConflictService } from './conflict-service.js';
-import type { ConnectionService } from './connection-service.js';
-import { createDiveChanges, type ProviderContext } from './dive-changes.js';
-import { LeaseBusy, realClock, type Clock, type LeaseService } from './lease-service.js';
+import type { Db } from '../../db/client.js';
+import { connection, dive, push, type ConnectionRow } from '../../db/schema.js';
+import type { SiteSource } from '../../sites/sources.js';
+import type { BlobStore } from '../../storage/blob-store.js';
+import { close, openFields, record as recordConflict, type ConflictField, type ConflictService } from '../conflicts/conflict-service.js';
+import type { ConnectionService } from '../connection-service.js';
+import { createDiveChanges, type ProviderContext } from '../dive-import/dive-changes.js';
+import { LeaseBusy, realClock, type Clock, type LeaseService } from '../lease-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import {
   DIVE_FIELDS, ProviderError, referenceOf, type ActionContext, type Delivered, type DiveExport, type DiveExportAction, type DiveField, type ImportContext,
   type ImportedDive, type Leave, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite,
-} from './provider.js';
-import { withRemembered } from './list-entries.js';
-import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
-import { currentRemote, type PushRow } from './remote-state.js';
-import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements } from './requirements.js';
+} from '../provider.js';
+import { withRemembered } from '../list-entries.js';
+import { asProblem, named, ProviderServiceError, type ProviderRegistry } from '../registry.js';
+import { currentRemote, type PushRow } from '../remote-state.js';
+import { blocking, forProvider, leftOutBy, offersListEntries, unmetRequirements } from '../requirements.js';
 import { siteForSend } from './site-for-send.js';
 import { buddiesForSend, keepBuddies, type BuddiesForSend } from './buddies-for-send.js';
-import { deletingItself, clearIfUnchanged, stampOf, type QueueStamp, type ProviderLog } from './waiting-push-queue.js';
-import { waitingOf } from '../dives/waiting-push-view.js';
-import { comparableOf, planSend, sameAtProvider, type Choice, type Comparable, type SendPlan, type SyncedField } from './three-way.js';
+import { deletingItself, clearIfUnchanged, stampOf, type QueueStamp, type ProviderLog } from '../waiting-push/waiting-push-queue.js';
+import { waitingOf } from '../../dives/waiting-push-view.js';
+import { comparableOf, planSend, sameAtProvider, type Choice, type Comparable, type SendPlan, type SyncedField } from '../dive-import/three-way.js';
 
 /** What deleting a Dive at Providers did: each copy deleted or kept, and why it stopped, if it did. */
 export interface Removal {

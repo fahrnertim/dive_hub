@@ -4,12 +4,12 @@
 // never comes sooner than the Provider's minimum. A successful read sets the Connection's `lastUsedAt`, which wakes the
 // Provider's stopped Waiting pushes at the next tick.
 import { and, eq, inArray, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
-import { connection, importJob, type ConnectionRow } from '../db/schema.js';
+import type { Db } from '../../db/client.js';
+import { connection, importJob, type ConnectionRow } from '../../db/schema.js';
 import type { DiveImportService } from './dive-import.js';
-import { realClock, type Clock } from './lease-service.js';
-import { ProviderServiceError, type ProviderRegistry } from './registry.js';
-import type { ProviderLog } from './waiting-push-queue.js';
+import { realClock, type Clock } from '../lease-service.js';
+import { ProviderServiceError, type ProviderRegistry } from '../registry.js';
+import type { ProviderLog } from '../waiting-push/waiting-push-queue.js';
 
 /** One fetch of a Connection (job key `fetch:<connection>`). */
 export const SCHEDULED_FETCH_TASK = 'scheduled_fetch';

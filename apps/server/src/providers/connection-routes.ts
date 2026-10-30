@@ -9,13 +9,13 @@ import { DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES } from '../db/sc
 import { SOURCE_INFO } from '../sites/sources.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 import { automationOffers, type ConnectionService } from './connection-service.js';
-import type { ConflictService } from './conflict-service.js';
-import type { DiveImportService } from './dive-import.js';
+import type { ConflictService } from './conflicts/conflict-service.js';
+import type { DiveImportService } from './dive-import/dive-import.js';
 import { FIND_BY, OPERATIONS, type ProviderAdapter, type Requirement } from './provider.js';
 import type { ProviderRegistry } from './registry.js';
 import { ComputerChoices, errors, ProviderParam } from './route-parts.js';
-import type { ScheduledFetch } from './scheduled-fetch.js';
-import type { WaitingPushService } from './waiting-push-service.js';
+import type { ScheduledFetch } from './dive-import/scheduled-fetch.js';
+import type { WaitingPushService } from './waiting-push/waiting-push-service.js';
 
 const Secret = Type.String({ minLength: 1, maxLength: 4000 });
 const KeepSignedIn = Type.Boolean({

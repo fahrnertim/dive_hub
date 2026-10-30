@@ -4,14 +4,14 @@
 // a Participant with neither is left out, and asked on the Dive's page. Generic: the adapter's `buddies` say what the
 // Provider can do.
 import { and, eq, inArray } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
-import { diver, diverExternalId } from '../db/schema.js';
-import { participantsOf } from '../dives/dive-service.js';
-import { locked } from './advisory-lock.js';
-import { nameDiffers } from './buddy-names.js';
-import { forgetEntry, listAccountOf, remember, rememberedFor } from './list-entries.js';
-import { realClock, type Clock } from './lease-service.js';
-import { ProviderError, type ActionContext, type DiverSource, type ProviderAdapter, type RemoteBuddy } from './provider.js';
+import type { Db } from '../../db/client.js';
+import { diver, diverExternalId } from '../../db/schema.js';
+import { participantsOf } from '../../dives/dive-service.js';
+import { locked } from '../advisory-lock.js';
+import { nameDiffers } from '../buddies/buddy-names.js';
+import { forgetEntry, listAccountOf, remember, rememberedFor } from '../list-entries.js';
+import { realClock, type Clock } from '../lease-service.js';
+import { ProviderError, type ActionContext, type DiverSource, type ProviderAdapter, type RemoteBuddy } from '../provider.js';
 
 export interface BuddiesForSend {
   /** Entries the send made, by Diver. `name` is the entry's name as the Provider answered it. */

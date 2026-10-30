@@ -2,13 +2,13 @@
 // so the sign-in hook and the Provider error handler are theirs. A run is the User's, never another's (404).
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
-import { userOf } from '../auth/fastify.js';
-import { Problem, problem, storedProblemCode } from '../http/problems.js';
-import { DIVE_ONLY_PATTERN } from '../dives/list-filter.js';
+import { userOf } from '../../auth/fastify.js';
+import { Problem, problem, storedProblemCode } from '../../http/problems.js';
+import { DIVE_ONLY_PATTERN } from '../../dives/list-filter.js';
 import { MAX_IDS, type PushRunService } from './push-run-service.js';
-import { DateTime, IdParams, Nullable, oneOf } from '../http/schemas.js';
-import { Code } from './route-parts.js';
-import { UnmetView } from './unmet-view.js';
+import { DateTime, IdParams, Nullable, oneOf } from '../../http/schemas.js';
+import { Code } from '../route-parts.js';
+import { UnmetView } from '../unmet-view.js';
 
 // A run item's action and outcome are text columns; the views check them against these.
 const ACTIONS = ['create', 'update', 'number'] as const;

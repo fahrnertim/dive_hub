@@ -1,8 +1,8 @@
 // How a Conflict (ADR 0056) is shown and chosen over HTTP: in a Dive's status, a send, an import preview and "Needs your decision".
 import { Type, type TOptional } from 'typebox';
-import { CYLINDER_MATERIALS } from '../db/schema.js';
-import { Nullable } from '../http/schemas.js';
-import { SYNCED_FIELDS, type SyncedField } from './three-way.js';
+import { CYLINDER_MATERIALS } from '../../db/schema.js';
+import { Nullable } from '../../http/schemas.js';
+import { SYNCED_FIELDS, type SyncedField } from '../dive-import/three-way.js';
 
 const ConflictCylinder = Type.Object({
   volumeL: Nullable(Type.Number()),

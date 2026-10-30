@@ -1,5 +1,5 @@
 // Merging two Dives with the copy at Providers of the one not kept (ADR 0038, 0026).
-import type { PushService, Removal } from '../providers/push-service.js';
+import type { PushService, Removal } from '../providers/push/push-service.js';
 import type { ProviderServiceError } from '../providers/registry.js';
 import { DiveError } from './dive-service.js';
 import type { LogbookService } from './logbook-service.js';

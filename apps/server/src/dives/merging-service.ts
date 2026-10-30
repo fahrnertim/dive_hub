@@ -7,7 +7,7 @@ import type { Db, Queryable, Tx } from '../db/client.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
 import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localDay } from '../imports/matching.js';
 import type { currentRemote as CurrentRemote, PushRow } from '../providers/remote-state.js';
-import type { WaitingPushService } from '../providers/waiting-push-service.js';
+import type { WaitingPushService } from '../providers/waiting-push/waiting-push-service.js';
 import { liveSite } from '../sites/dive-site-link.js';
 import {
   DiveError, applyToDive, attachRecording, lockManagedDive, nextVersion, participantsOf,

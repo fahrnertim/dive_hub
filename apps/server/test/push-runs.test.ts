@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { diveLease, push, pushRun, pushRunItem } from '../src/db/schema.js';
 import { referenceOf } from '../src/providers/provider.js';
-import { createPushRunService } from '../src/providers/push-run-service.js';
+import { createPushRunService } from '../src/providers/push/push-run-service.js';
 import { createFakeHandover } from './fake-handover-provider.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { createFakeSsi, handTypedDive } from './fake-ssi.js';

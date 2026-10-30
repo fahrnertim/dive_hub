@@ -4,35 +4,35 @@
 // like a file's. A preview first (nothing stored), then an Import over one JSON Original per dive that the worker runs.
 import { isDeepStrictEqual } from 'node:util';
 import { and, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
-import type { Db, Queryable, Tx } from '../db/client.js';
+import type { Db, Queryable, Tx } from '../../db/client.js';
 import {
   connection, dive, diveSite, device, importJob, importOriginal, original, providerSiteData, push, user,
   recording, type ComputerChoice, type DiveImportMode, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
-} from '../db/schema.js';
-import { writeRevision, type Actor } from '../dives/revisions.js';
-import type { PlacedTime } from '../dives/time-zone.js';
-import { errorMessage } from '../errors.js';
-import type { ParsedRecording } from '../imports/parsed-recording.js';
-import { PROCESS_IMPORT_TASK } from '../imports/import-service.js';
-import { deviceDiver, placeRecording } from '../imports/placement.js';
-import { DAY_MS, MAX_OFFSET_MS, entryMatches } from '../imports/matching.js';
+} from '../../db/schema.js';
+import { writeRevision, type Actor } from '../../dives/revisions.js';
+import type { PlacedTime } from '../../dives/time-zone.js';
+import { errorMessage } from '../../errors.js';
+import type { ParsedRecording } from '../../imports/parsed-recording.js';
+import { PROCESS_IMPORT_TASK } from '../../imports/import-service.js';
+import { deviceDiver, placeRecording } from '../../imports/placement.js';
+import { DAY_MS, MAX_OFFSET_MS, entryMatches } from '../../imports/matching.js';
 import { recordFindings } from './gone-dives.js';
-import { probablyNoDive } from '../dives/checks/logbook-check-rules.js';
-import { siteRef } from '../dives/dive-summary-view.js';
-import { siteOutlook } from '../sites/provider-sites.js';
-import type { BlobStore } from '../storage/blob-store.js';
-import type { ConnectionService } from './connection-service.js';
-import { loadOutgoingDive } from './outgoing-dive.js';
-import { REFERENCE_PREFIX, localStartOf, type DiveField, type ImportContext, type ImportedDive, type ProviderCylinder } from './provider.js';
+import { probablyNoDive } from '../../dives/checks/logbook-check-rules.js';
+import { siteRef } from '../../dives/dive-summary-view.js';
+import { siteOutlook } from '../../sites/provider-sites.js';
+import type { BlobStore } from '../../storage/blob-store.js';
+import type { ConnectionService } from '../connection-service.js';
+import { loadOutgoingDive } from '../push/outgoing-dive.js';
+import { REFERENCE_PREFIX, localStartOf, type DiveField, type ImportContext, type ImportedDive, type ProviderCylinder } from '../provider.js';
 import { createDiveChanges, importsField, type ProviderContext } from './dive-changes.js';
-import { currentRemote, fingerprintNow } from './remote-state.js';
+import { currentRemote, fingerprintNow } from '../remote-state.js';
 import { sameAtProvider, type SyncedField } from './three-way.js';
-import { closeFields, entryOf, openFields, record as recordConflict, type StoredConflictField } from './conflict-service.js';
-import { realClock, type Clock } from './lease-service.js';
-import { queueNow } from './waiting-push-queue.js';
-import { withRemembered } from './list-entries.js';
-import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
-import { renumber } from '../dives/dive-numbers.js';
+import { closeFields, entryOf, openFields, record as recordConflict, type StoredConflictField } from '../conflicts/conflict-service.js';
+import { realClock, type Clock } from '../lease-service.js';
+import { queueNow } from '../waiting-push/waiting-push-queue.js';
+import { withRemembered } from '../list-entries.js';
+import { named, ProviderServiceError, type ProviderRegistry } from '../registry.js';
+import { renumber } from '../../dives/dive-numbers.js';
 
 /** A dive computer found at the Provider, and how its dives are used. */
 export interface ComputerView {

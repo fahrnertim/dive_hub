@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, gte, isNull, lt } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, waitingPush } from '../src/db/schema.js';
-import { DELETE_QUIET_MS } from '../src/providers/waiting-push-queue.js';
+import { DELETE_QUIET_MS } from '../src/providers/waiting-push/waiting-push-queue.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { createFakeSsi, handTypedDive } from './fake-ssi.js';
 import { makeSuuntoJson } from './fixtures/suunto-dive.js';

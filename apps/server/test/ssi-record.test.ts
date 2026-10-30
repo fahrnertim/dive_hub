@@ -1,7 +1,7 @@
 // A Dive as SSI's dive record (ADR 0024), and the secrets kept for SSI: pure, no database.
 import { describe, expect, it } from 'vitest';
 import { createSecretBox, parseEncryptionKey } from '../src/secrets/secret-box.js';
-import { SYNCED_FIELDS } from '../src/providers/three-way.js';
+import { SYNCED_FIELDS } from '../src/providers/dive-import/three-way.js';
 import { SENT_KEYS } from '../src/providers/ssi/ssi-dive-row.js';
 import {
   compareReadBack, buildCreateRecord, buildDeleteRecord, fingerprint, localTime, ownFields, resample, samplesJson, SSI_FIELD_KEYS, buildUpdateRecord, writableRecord,

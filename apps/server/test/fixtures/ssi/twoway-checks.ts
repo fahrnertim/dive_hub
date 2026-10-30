@@ -6,7 +6,7 @@
 import type { SsiClient, SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
 import { contextOf, parseSsiDive } from '../../../src/providers/ssi/ssi-import.js';
 import { buildCreateRecord, buildDeleteRecord, buildUpdateRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
-import { comparableOf, planSend, SYNCED_FIELDS, type Comparable } from '../../../src/providers/three-way.js';
+import { comparableOf, planSend, SYNCED_FIELDS, type Comparable } from '../../../src/providers/dive-import/three-way.js';
 
 const NOTES = 'Dive Hub test';
 const GAS = { o2: 21, he: 0 };

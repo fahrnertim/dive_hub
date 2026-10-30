@@ -14,7 +14,7 @@ and give the reason. Done means: `pnpm check:full` is green.
 
 ### Server
 1. **Queue writes cost queries on every change.**
-   - `noteDiveChange` (`apps/server/src/providers/waiting-push-queue.ts`), called from `dives/revisions.ts`, runs its
+   - `noteDiveChange` (`apps/server/src/providers/waiting-push/waiting-push-queue.ts`), called from `dives/revisions.ts`, runs its
      queries (dive, connections, pushes, importJob) on every Revision, also for import causes that it then drops.
      Return before any query when no Connection of the Diver has a sending setting on.
    - `noteSiteChange` runs per-Dive queries, which is slow for a big public site.
@@ -83,7 +83,7 @@ and give the reason. Done means: `pnpm check:full` is green.
 ## Read first
 - [ADR 0056](../decisions/0056-two-way-exchange-and-automation.md), the amendment of 2026-10-27.
 - The [plan](../superpowers/plans/2026-10-27-provider-automation.md), Global Constraints.
-- `apps/server/src/providers/waiting-push-queue.ts`, `waiting-push-service.ts` and `scheduled-fetch.ts`.
+- `apps/server/src/providers/waiting-push/waiting-push-queue.ts`, `waiting-push-service.ts` and `scheduled-fetch.ts`.
 - The "Sending by itself" part of the [client contract](../spec/clients.md).
 
 ## Decided

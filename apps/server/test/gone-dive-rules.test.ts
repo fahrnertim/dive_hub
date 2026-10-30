@@ -1,7 +1,7 @@
 // Which Dives are gone at a Provider (ADR 0051): the comparison of a Connection's linked Dives with a complete listing,
 // by remote ID over the raw records. Pure; what is stored and confirmed is in gone-dives.test.ts.
 import { describe, expect, it } from 'vitest';
-import { compareGone, type GoneCandidate } from '../src/providers/gone-dive-rules.js';
+import { compareGone, type GoneCandidate } from '../src/providers/dive-import/gone-dive-rules.js';
 
 const CONNECTION = 'c-1';
 const dive = (n: number, over: Partial<GoneCandidate> = {}): GoneCandidate => ({

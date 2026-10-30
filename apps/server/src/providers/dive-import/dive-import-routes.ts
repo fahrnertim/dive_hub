@@ -2,15 +2,15 @@
 // whether Dive sites may be made from a Provider's site data. Registered inside the provider routes, so the sign-in hook and the error handler are theirs.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
-import { requireAdmin, userOf } from '../auth/fastify.js';
-import { Problem, problem } from '../http/problems.js';
-import { DIVE_IMPORT_MODES, UTC_OFFSET_SOURCES } from '../db/schema.js';
-import { DiveSummaryFields } from '../dives/dive-summary-view.js';
-import { ImportView, toImportView } from '../imports/import-view.js';
-import { DateTime, IdParams, Nullable } from '../http/schemas.js';
-import { ConflictValue } from './conflict-view.js';
+import { requireAdmin, userOf } from '../../auth/fastify.js';
+import { Problem, problem } from '../../http/problems.js';
+import { DIVE_IMPORT_MODES, UTC_OFFSET_SOURCES } from '../../db/schema.js';
+import { DiveSummaryFields } from '../../dives/dive-summary-view.js';
+import { ImportView, toImportView } from '../../imports/import-view.js';
+import { DateTime, IdParams, Nullable } from '../../http/schemas.js';
+import { ConflictValue } from '../conflicts/conflict-view.js';
 import type { DiveImportService } from './dive-import.js';
-import { Choice, ComputerChoices, errors, GoneSummary, ProviderParam } from './route-parts.js';
+import { Choice, ComputerChoices, errors, GoneSummary, ProviderParam } from '../route-parts.js';
 import { SYNCED_FIELDS } from './three-way.js';
 
 const Candidate = Type.Object({

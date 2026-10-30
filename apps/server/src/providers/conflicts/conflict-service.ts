@@ -7,17 +7,17 @@
 // `close`) with their own `Queryable`, inside their own flow; `createConflictService` is the one read side, for the Dive's
 // page, "Needs your decision" and a Push run's count.
 import { and, desc, eq, inArray, or } from 'drizzle-orm';
-import type { Db, Queryable } from '../db/client.js';
-import { connection, dive, diveSite, providerConflict, push, waitingPush, type ConnectionRow } from '../db/schema.js';
-import { siteRef } from '../dives/dive-summary-view.js';
-import type { BlobStore } from '../storage/blob-store.js';
-import type { ConnectionService } from './connection-service.js';
-import { createDiveChanges, type ProviderContext, type ShownValue } from './dive-changes.js';
-import type { ProviderAdapter } from './provider.js';
-import type { ProviderRegistry } from './registry.js';
-import { currentRemote, type PushRow } from './remote-state.js';
-import { sameAtProvider, type Comparable, type SyncedField } from './three-way.js';
-import type { SiteSource } from '../sites/sources.js';
+import type { Db, Queryable } from '../../db/client.js';
+import { connection, dive, diveSite, providerConflict, push, waitingPush, type ConnectionRow } from '../../db/schema.js';
+import { siteRef } from '../../dives/dive-summary-view.js';
+import type { BlobStore } from '../../storage/blob-store.js';
+import type { ConnectionService } from '../connection-service.js';
+import { createDiveChanges, type ProviderContext, type ShownValue } from '../dive-import/dive-changes.js';
+import type { ProviderAdapter } from '../provider.js';
+import type { ProviderRegistry } from '../registry.js';
+import { currentRemote, type PushRow } from '../remote-state.js';
+import { sameAtProvider, type Comparable, type SyncedField } from '../dive-import/three-way.js';
+import type { SiteSource } from '../../sites/sources.js';
 
 /** One field on which the two sides differ, both values said as in the import preview. */
 export interface ConflictField {

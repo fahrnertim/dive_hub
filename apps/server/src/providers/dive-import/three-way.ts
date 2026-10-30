@@ -1,7 +1,7 @@
 // Changes made at a Provider, taken back into Dive Hub (ADR 0030, amended): a three-way comparison per field between
 // what the Provider had when Dive Hub last saw its dive (the base: the Original of the last import, or what Dive Hub
 // sent last), what it has now, and what the Dive here has now. Pure: no database.
-import { localStartOf, type DiveField, type ImportedDive, type ProviderCylinder } from './provider.js';
+import { localStartOf, type DiveField, type ImportedDive, type ProviderCylinder } from '../provider.js';
 
 /**
  * Fields a Provider's change can bring: on every Dive the site, notes and buddies; the tank on a Dive with at most one

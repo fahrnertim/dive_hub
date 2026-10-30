@@ -4,15 +4,15 @@
 // every complete read of the logbook: the import preview, the scheduled fetch and the check below. Only the User's
 // choice deletes anything.
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
-import { dive, diveSite, providerGoneDive, push, type ConnectionRow } from '../db/schema.js';
-import { siteRef } from '../dives/dive-summary-view.js';
-import type { ConnectionService } from './connection-service.js';
+import type { Db } from '../../db/client.js';
+import { dive, diveSite, providerGoneDive, push, type ConnectionRow } from '../../db/schema.js';
+import { siteRef } from '../../dives/dive-summary-view.js';
+import type { ConnectionService } from '../connection-service.js';
 import { compareGone, goneWarning, type GoneCandidate } from './gone-dive-rules.js';
-import { LeaseBusy, type LeaseService } from './lease-service.js';
-import type { ProviderAdapter } from './provider.js';
-import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
-import { currentRemote, type PushRow } from './remote-state.js';
+import { LeaseBusy, type LeaseService } from '../lease-service.js';
+import type { ProviderAdapter } from '../provider.js';
+import { named, ProviderServiceError, type ProviderRegistry } from '../registry.js';
+import { currentRemote, type PushRow } from '../remote-state.js';
 
 
 /** What a check or a preview found. Nothing is deleted or sent by finding it. */

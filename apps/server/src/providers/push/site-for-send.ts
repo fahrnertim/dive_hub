@@ -4,15 +4,15 @@
 // private to the account (stored private at once, so a retry, a later Dive of a run or a failed dive save makes none).
 // Generic: the adapter's `diveSites` say what the Provider has.
 import { eq } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
-import { diveSite } from '../db/schema.js';
-import type { Actor } from '../dives/revisions.js';
-import { accountOf, heldIds, idsOf, nearbyMatch, pickId, settleVisibility, storeId } from '../sites/site-ids.js';
-import { SiteError } from '../sites/site-error.js';
-import type { SiteSource } from '../sites/sources.js';
-import { locked } from './advisory-lock.js';
-import { realClock, type Clock } from './lease-service.js';
-import type { ActionContext, ProviderAdapter, RemoteSite } from './provider.js';
+import type { Db } from '../../db/client.js';
+import { diveSite } from '../../db/schema.js';
+import type { Actor } from '../../dives/revisions.js';
+import { accountOf, heldIds, idsOf, nearbyMatch, pickId, settleVisibility, storeId } from '../../sites/site-ids.js';
+import { SiteError } from '../../sites/site-error.js';
+import type { SiteSource } from '../../sites/sources.js';
+import { locked } from '../advisory-lock.js';
+import { realClock, type Clock } from '../lease-service.js';
+import type { ActionContext, ProviderAdapter, RemoteSite } from '../provider.js';
 
 export type SiteForSend = 'had' | 'matched' | 'created' | 'none';
 

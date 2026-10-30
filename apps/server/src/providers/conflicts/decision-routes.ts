@@ -3,16 +3,16 @@
 // Registered inside the provider routes, so the sign-in hook and the error handler are theirs.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
-import { userOf } from '../auth/fastify.js';
-import { Problem } from '../http/problems.js';
-import { DiveSummaryFields } from '../dives/dive-summary-view.js';
-import { DateTime, IdParams, Nullable } from '../http/schemas.js';
+import { userOf } from '../../auth/fastify.js';
+import { Problem } from '../../http/problems.js';
+import { DiveSummaryFields } from '../../dives/dive-summary-view.js';
+import { DateTime, IdParams, Nullable } from '../../http/schemas.js';
 import { ConflictChoices, ConflictFieldView } from './conflict-view.js';
 import type { ConflictService } from './conflict-service.js';
-import type { GoneDiveService } from './gone-dives.js';
-import type { ProviderRegistry } from './registry.js';
-import { DiveProviderParams, errors, GoneSummary } from './route-parts.js';
-import type { WaitingPushService } from './waiting-push-service.js';
+import type { GoneDiveService } from '../dive-import/gone-dives.js';
+import type { ProviderRegistry } from '../registry.js';
+import { DiveProviderParams, errors, GoneSummary } from '../route-parts.js';
+import type { WaitingPushService } from '../waiting-push/waiting-push-service.js';
 
 const GoneDivesView = Type.Object({
   connectionId: Type.String(),

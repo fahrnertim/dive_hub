@@ -5,18 +5,18 @@
 // which entries match a Diver. An entry is linked to a Diver here, or added for one (piece 5, ADR 0057): the entry
 // is remembered for the Diver (`list-entries.ts`), and an entry with an account gives the Diver that account.
 import { and, inArray, isNull } from 'drizzle-orm';
-import type { Db } from '../db/client.js';
-import { diver as diverTable } from '../db/schema.js';
-import { tidyName } from '../divers/diver-name.js';
-import type { DiverDetails, DiverService } from '../divers/diver-service.js';
-import type { Caller } from '../http/caller.js';
-import { locked } from './advisory-lock.js';
+import type { Db } from '../../db/client.js';
+import { diver as diverTable } from '../../db/schema.js';
+import { tidyName } from '../../divers/diver-name.js';
+import type { DiverDetails, DiverService } from '../../divers/diver-service.js';
+import type { Caller } from '../../http/caller.js';
+import { locked } from '../advisory-lock.js';
 import { foldName, nameDiffers } from './buddy-names.js';
-import type { ConnectionService } from './connection-service.js';
-import { realClock } from './lease-service.js';
-import { listAccountOf, remember, rememberedEntries } from './list-entries.js';
-import type { ActionContext, DiverSource, RemoteBuddy } from './provider.js';
-import { named, ProviderServiceError, type ProviderRegistry } from './registry.js';
+import type { ConnectionService } from '../connection-service.js';
+import { realClock } from '../lease-service.js';
+import { listAccountOf, remember, rememberedEntries } from '../list-entries.js';
+import type { ActionContext, DiverSource, RemoteBuddy } from '../provider.js';
+import { named, ProviderServiceError, type ProviderRegistry } from '../registry.js';
 
 export interface Buddy {
   /** The entry's ID at the Provider, to link it with. */

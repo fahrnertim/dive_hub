@@ -460,8 +460,8 @@ SSI is a Provider ([ADR 0027](../decisions/0027-providers-as-adapters.md)): ever
 | `apps/server/src/providers/ssi/ssi-record.ts` | Dive → record (the empty and the writable record are built from `ssi-dive-row.ts`), samples, update and delete records, read-back comparison, fingerprint |
 | `apps/server/src/providers/ssi/ssi-adapter.ts` | SSI's capabilities and requirements, sign-in, the logbook read (kept two minutes after a save), the ±2 min match, SSI's dive numbers, the SSI site ID, buddies as buddy-list entries; SSI's record as typed values |
 | `apps/server/src/providers/ssi/ssi-import.ts` | SSI's dives for an import (ADR 0030): evidence, local start, values, profile, computer, site, buddies as SSI accounts; the logbook's context |
-| `apps/server/src/providers/dive-import.ts` | generic: importing a Provider's dives (settings, preview, start, the worker's run) |
-| `apps/server/src/providers/buddy-service.ts` | generic: the account's list of people read live and imported as external Divers (name and account only) |
+| `apps/server/src/providers/dive-import/dive-import.ts` | generic: importing a Provider's dives (settings, preview, start, the worker's run) |
+| `apps/server/src/providers/buddies/buddy-service.ts` | generic: the account's list of people read live and imported as external Divers (name and account only) |
 | `apps/server/src/providers/ssi/ssi-sites.ts` | the site list for the admin's SSI site import |
 | `apps/server/src/providers/connection-service.ts`, `push-service.ts` | generic: Connections, signing in again, create / update / link / delete, Pushes |
 | `apps/server/test/fake-ssi.ts` | an in-memory SSI for tests and the browser tests' server |

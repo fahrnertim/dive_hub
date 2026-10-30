@@ -2,7 +2,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { dive, sampleSeries, user } from '../src/db/schema.js';
-import { loadOutgoingDive } from '../src/providers/outgoing-dive.js';
+import { loadOutgoingDive } from '../src/providers/push/outgoing-dive.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,

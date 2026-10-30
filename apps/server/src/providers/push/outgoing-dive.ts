@@ -1,17 +1,17 @@
 // A Dive as it leaves Dive Hub (ADR 0027): the same values for every Provider, read once from the Dive, its Primary
 // recording, Device, samples and site. Each adapter turns it into its own record.
 import { and, eq, inArray, isNull } from 'drizzle-orm';
-import type { Queryable } from '../db/client.js';
-import { device, dive, diveSite, diverExternalId, recording, sampleSeries } from '../db/schema.js';
-import { cylindersOf, providerCylinderOf } from '../dives/cylinders.js';
-import { participantsOf } from '../dives/dive-service.js';
-import { managedDiverIds } from '../divers/management.js';
-import { leadOf, leadTotalKg } from '../dives/weighting.js';
-import { accountOf, idsOf, pickId } from '../sites/site-ids.js';
-import { SITE_SOURCES, type SiteSource } from '../sites/sources.js';
-import type { DiverSource, OutgoingDive, OutgoingParticipant, Series } from './provider.js';
-import { listAccountOf, rememberedFor } from './list-entries.js';
-import { ProviderServiceError } from './registry.js';
+import type { Queryable } from '../../db/client.js';
+import { device, dive, diveSite, diverExternalId, recording, sampleSeries } from '../../db/schema.js';
+import { cylindersOf, providerCylinderOf } from '../../dives/cylinders.js';
+import { participantsOf } from '../../dives/dive-service.js';
+import { managedDiverIds } from '../../divers/management.js';
+import { leadOf, leadTotalKg } from '../../dives/weighting.js';
+import { accountOf, idsOf, pickId } from '../../sites/site-ids.js';
+import { SITE_SOURCES, type SiteSource } from '../../sites/sources.js';
+import type { DiverSource, OutgoingDive, OutgoingParticipant, Series } from '../provider.js';
+import { listAccountOf, rememberedFor } from '../list-entries.js';
+import { ProviderServiceError } from '../registry.js';
 
 /** The sources whose accounts have a list of people of their own. */
 const LIST_SOURCES: DiverSource[] = ['ssi'];

@@ -2,28 +2,28 @@
 // last import or send left, the Dive as the comparison sees it, what changed at the Provider since, and taking those
 // changes. Generic; the adapter says what it has. Lives apart from the import so that the send can use it as well (ADR 0053).
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import type { Db, Queryable, Tx } from '../db/client.js';
+import type { Db, Queryable, Tx } from '../../db/client.js';
 import {
   dive, diveSite, diver, diverExternalId, importJob, importOriginal, original, participant, push,
   type ComputerChoice, type DiveImportMode,
-} from '../db/schema.js';
-import { nextVersion, participantsOf } from '../dives/dive-service.js';
-import { managedDiverIds } from '../divers/management.js';
-import { columnsOf } from '../dives/dive-values.js';
-import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
-import { placeLocalTime, type PlacedTime } from '../dives/time-zone.js';
-import { siteRef } from '../sites/dive-site-link.js';
-import { siteDataAllowed, siteForProvider, type ProviderSite } from '../sites/provider-sites.js';
-import { accountOf, idsOf, pickId, settleVisibility } from '../sites/site-ids.js';
-import type { SiteSource } from '../sites/sources.js';
-import type { BlobStore } from '../storage/blob-store.js';
-import { loadOutgoingDive } from './outgoing-dive.js';
-import { localStartOf, type DiveField, type DiverSource, type ImportContext, type ImportedDive, type ProviderAdapter, type ProviderCylinder } from './provider.js';
-import { currentRemote, fingerprintNow } from './remote-state.js';
+} from '../../db/schema.js';
+import { nextVersion, participantsOf } from '../../dives/dive-service.js';
+import { managedDiverIds } from '../../divers/management.js';
+import { columnsOf } from '../../dives/dive-values.js';
+import { writeRevision, type Actor, type Changes } from '../../dives/revisions.js';
+import { placeLocalTime, type PlacedTime } from '../../dives/time-zone.js';
+import { siteRef } from '../../sites/dive-site-link.js';
+import { siteDataAllowed, siteForProvider, type ProviderSite } from '../../sites/provider-sites.js';
+import { accountOf, idsOf, pickId, settleVisibility } from '../../sites/site-ids.js';
+import type { SiteSource } from '../../sites/sources.js';
+import type { BlobStore } from '../../storage/blob-store.js';
+import { loadOutgoingDive } from '../push/outgoing-dive.js';
+import { localStartOf, type DiveField, type DiverSource, type ImportContext, type ImportedDive, type ProviderAdapter, type ProviderCylinder } from '../provider.js';
+import { currentRemote, fingerprintNow } from '../remote-state.js';
 import { comparableOf, SYNCED_FIELDS, threeWay, VALUE_FIELDS, type Comparable, type SyncedField } from './three-way.js';
-import { cylindersOf, mergeProviderCylinder, providerCylinderOf } from '../dives/cylinders.js';
-import { leadOf, leadTotalKg, mergeProviderLead } from '../dives/weighting.js';
-import { renumber } from '../dives/dive-numbers.js';
+import { cylindersOf, mergeProviderCylinder, providerCylinderOf } from '../../dives/cylinders.js';
+import { leadOf, leadTotalKg, mergeProviderLead } from '../../dives/weighting.js';
+import { renumber } from '../../dives/dive-numbers.js';
 
 /** Who and what one exchange with a Provider is about (an import and its preview, a send, a comparison), the same in the preview and in the worker. */
 export interface ProviderContext {

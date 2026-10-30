@@ -62,12 +62,12 @@
       "count": 1
     }
   },
-  "apps/server/src/providers/dive-import.ts": {
+  "apps/server/src/providers/dive-import/dive-import.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 2
     }
   },
-  "apps/server/src/providers/push-run-service.ts": {
+  "apps/server/src/providers/push/push-run-service.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
@@ -82,7 +82,7 @@
       "count": 1
     }
   },
-  "apps/server/src/providers/three-way.ts": {
+  "apps/server/src/providers/dive-import/three-way.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }

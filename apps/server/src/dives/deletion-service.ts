@@ -1,6 +1,6 @@
 // Deleting a Dive with its copies at Providers, and the list of deleted Dives with where they still are (ADR 0026, 0027).
-import type { PushService, Removal } from '../providers/push-service.js';
-import type { WaitingPushService } from '../providers/waiting-push-service.js';
+import type { PushService, Removal } from '../providers/push/push-service.js';
+import type { WaitingPushService } from '../providers/waiting-push/waiting-push-service.js';
 import { DiveError, type DiveService } from './dive-service.js';
 import { diveSummaryOf, providersOf } from './dive-summary-view.js';
 import type { LogbookService } from './logbook-service.js';

@@ -7,12 +7,12 @@ import { refreshAssessmentsAfterChange, type AssessmentRefresh } from '../dives/
 import { Problem, storedProblemCode } from '../http/problems.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
-import { ConflictChoices, ConflictFieldView } from './conflict-view.js';
-import type { PushService } from './push-service.js';
+import { ConflictChoices, ConflictFieldView } from './conflicts/conflict-view.js';
+import type { PushService } from './push/push-service.js';
 import type { PushRow } from './remote-state.js';
 import { Code, DiveProviderParams, errors } from './route-parts.js';
 import type { SitePickService } from './site-pick.js';
-import { SYNCED_FIELDS } from './three-way.js';
+import { SYNCED_FIELDS } from './dive-import/three-way.js';
 import { UnmetView } from './unmet-view.js';
 import { WaitingPushViewSchema } from '../dives/waiting-push-view.js';
 
