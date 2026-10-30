@@ -235,8 +235,16 @@ describe.skipIf(!(await databaseReachable()))('Suunto files through the import p
     it('a JSON file that is no Suunto log is an unsupported file', async () => {
       const created = await imports.createImport(tim, 'other.json', Readable.from([Buffer.from('{"a":1}')]), 1 << 20);
       await expect(imports.processImport(created.id)).rejects.toThrow(/Unsupported file/);
-      const [{ status, error }] = (await pool.query('select status, error from import where id = $1', [created.id])).rows;
-      expect([status, error]).toEqual(['failed', 'unsupported_file']);
+      const [row] = (await pool.query('select status, error_code, error_detail from import where id = $1', [created.id])).rows;
+      expect(row).toEqual({ status: 'failed', error_code: 'unsupported_file', error_detail: expect.stringMatching(/Unsupported file/) });
+    });
+
+    it('an Import that fails for another reason keeps processing_failed apart from what went wrong', async () => {
+      // A Provider's Import on a server that runs none: anything unexpected.
+      const [{ id }] = (await pool.query(`insert into import (user_id, upload_name, provider) values ($1, 'SSI', 'ssi') returning id`, [tim])).rows;
+      await expect(imports.processImport(id)).rejects.toThrow(/no imports from Providers/);
+      const [row] = (await pool.query('select status, error_code, error_detail from import where id = $1', [id])).rows;
+      expect(row).toEqual({ status: 'failed', error_code: 'processing_failed', error_detail: 'This server runs no imports from Providers' });
     });
 
     it('a Suunto log cut off in the middle fails as that file, not as the Import', async () => {

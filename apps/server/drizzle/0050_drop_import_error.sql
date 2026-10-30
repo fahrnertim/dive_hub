@@ -1,0 +1,1 @@
+ALTER TABLE "import" DROP COLUMN "error";

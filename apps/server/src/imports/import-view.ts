@@ -50,6 +50,6 @@ export const toImportView = (j: typeof importJob.$inferSelect): Static<typeof Im
   id: j.id, status: j.status, uploadName: j.uploadName, provider: j.provider, createdAt: j.createdAt.toISOString(),
   // A parser's own words (English, internals) stay in the database and the server log (client contract §6).
   finishedAt: j.finishedAt?.toISOString() ?? null, outcome: j.outcome.map(({ message: _detail, ...o }) => o),
-  errorCode: j.error === null ? null : j.error === 'unsupported_file' || j.error === 'choice_expired' ? j.error : 'processing_failed',
+  errorCode: j.errorCode,
   found: j.found, kinds: j.kinds, unsentTo: [],
 });

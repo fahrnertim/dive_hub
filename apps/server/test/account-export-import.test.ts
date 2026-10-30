@@ -175,7 +175,7 @@ describe.skipIf(!(await databaseReachable()))('an account export through the imp
       await db.update(importJob).set({ createdAt: daysAgo(8) }).where(eq(importJob.id, old));
       await db.update(importJob).set({ createdAt: daysAgo(1) }).where(eq(importJob.id, fresh));
       expect(await imports.expireWaiting()).toBe(1);
-      expect(await importOf(old)).toMatchObject({ status: 'cancelled', error: 'choice_expired', uploadStorageKey: null });
+      expect(await importOf(old)).toMatchObject({ status: 'cancelled', errorCode: 'choice_expired', errorDetail: null, uploadStorageKey: null });
       expect((await importOf(fresh)).status).toBe('awaiting_choice');
       expect(await waitingUploads()).toHaveLength(1);
       await imports.cancelImport(alice, fresh);

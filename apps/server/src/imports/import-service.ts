@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, lt, sql, type SQL } from 'drizzle-orm';
 import type { Readable } from 'node:stream';
 import type { Db } from '../db/client.js';
-import { DIVE_KINDS, duplicateCandidate, importJob, importOriginal, original, recording, type DiveKind, type ImportFound, type ImportOutcome } from '../db/schema.js';
+import { DIVE_KINDS, duplicateCandidate, importJob, importOriginal, original, recording, type DiveKind, type ImportErrorCode, type ImportFound, type ImportOutcome } from '../db/schema.js';
 import { errorMessage } from '../errors.js';
 import type { Actor } from '../dives/revisions.js';
 import type { BlobStore } from '../storage/blob-store.js';
@@ -24,10 +24,15 @@ export const kindOf = (rec: ParsedRecording): DiveKind => (rec.summary.diveMode 
 type UploadedFile = Pick<ArchiveEntry, 'index' | 'name' | 'read'>;
 interface FileToPlace { name: string; data: Buffer }
 
-/** The upload is neither a dive file in a format we read nor a zip archive. Stored as the Import's error code. */
+/** The upload is neither a dive file in a format we read nor a zip archive: the Import's error code `unsupported_file`. */
 export class UnsupportedFileError extends Error {
   constructor() { super('Unsupported file: expected a dive file (FIT, Suunto JSON) or a zip archive'); }
 }
+
+/** The error code and detail a failed Import keeps: only an unsupported upload has a code of its own. */
+const failureOf = (error: unknown): { errorCode: ImportErrorCode; errorDetail: string } => ({
+  errorCode: error instanceof UnsupportedFileError ? 'unsupported_file' : 'processing_failed', errorDetail: errorMessage(error),
+});
 
 export interface ImportServiceDeps {
   db: Db;
@@ -84,7 +89,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
         await afterImport?.(job.userId);
         return outcome;
       } catch (error) {
-        await db.update(importJob).set({ status: 'failed', error: errorMessage(error), finishedAt: new Date() }).where(eq(importJob.id, importId));
+        await db.update(importJob).set({ status: 'failed', ...failureOf(error), finishedAt: new Date() }).where(eq(importJob.id, importId));
         throw error;
       }
     }
@@ -141,7 +146,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
     } catch (error) {
       await db
         .update(importJob)
-        .set({ status: 'failed', error: error instanceof UnsupportedFileError ? 'unsupported_file' : errorMessage(error), finishedAt: new Date() })
+        .set({ status: 'failed', ...failureOf(error), finishedAt: new Date() })
         .where(eq(importJob.id, importId));
       throw error;
     }
@@ -211,13 +216,13 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
     return (await endWaiting(lt(importJob.createdAt, new Date(now.getTime() - CHOICE_WAIT_DAYS * DAY_MS)), 'choice_expired')).length;
   }
 
-  async function endWaiting(which: SQL, error: 'choice_expired' | null) {
+  async function endWaiting(which: SQL, errorCode: 'choice_expired' | null) {
     const waiting = await db.select({ id: importJob.id, key: importJob.uploadStorageKey }).from(importJob)
       .where(and(eq(importJob.status, 'awaiting_choice'), which));
     const ended: (typeof importJob.$inferSelect)[] = [];
     for (const w of waiting) {
       // Only what still waits: a start that came first wins, and its upload stays.
-      const [row] = await db.update(importJob).set({ status: 'cancelled', error, finishedAt: new Date(), uploadStorageKey: null })
+      const [row] = await db.update(importJob).set({ status: 'cancelled', errorCode, finishedAt: new Date(), uploadStorageKey: null })
         .where(and(eq(importJob.id, w.id), eq(importJob.status, 'awaiting_choice'))).returning();
       if (!row) continue;
       if (w.key) await blobs.delete(w.key);

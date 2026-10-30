@@ -237,6 +237,39 @@ describe.skipIf(!(await databaseReachable()))('0046 and 0047: the backfills of e
   });
 });
 
+describe.skipIf(!(await databaseReachable()))('0048 to 0050: an Import keeps its error code apart from the detail', () => {
+  let t: TestDatabase;
+  let before: string;
+  beforeAll(async () => {
+    before = await migrationsBefore('0049_split_import_error');
+    t = await createTestDatabase({ migrationsFolder: before });
+  });
+  afterAll(async () => {
+    await t?.drop();
+    if (before) await rm(before, { recursive: true, force: true });
+  });
+
+  it('moves a code to error_code and anything else to error_detail under processing_failed', async () => {
+    const q = (sql: string, params: unknown[] = []) => t.pool.query(sql, params);
+    const user = (await q(`insert into "user" (name, email) values ('Erika', 'erika@example.com') returning id`)).rows[0].id as string;
+    const insert = async (error: string | null) =>
+      (await q(`insert into import (user_id, upload_name, status, error) values ($1, 'a.fit', 'failed', $2) returning id`, [user, error])).rows[0].id as string;
+    const ids = {
+      unsupported: await insert('unsupported_file'), expired: await insert('choice_expired'),
+      crashed: await insert('connect ECONNREFUSED'), none: await insert(null),
+    };
+
+    await migrateDatabase(t.db, t.pool, migrations);
+
+    const rowOf = async (id: string) => (await q('select error_code, error_detail from import where id = $1', [id])).rows[0];
+    expect(await rowOf(ids.unsupported)).toEqual({ error_code: 'unsupported_file', error_detail: null });
+    expect(await rowOf(ids.expired)).toEqual({ error_code: 'choice_expired', error_detail: null });
+    expect(await rowOf(ids.crashed)).toEqual({ error_code: 'processing_failed', error_detail: 'connect ECONNREFUSED' });
+    expect(await rowOf(ids.none)).toEqual({ error_code: null, error_detail: null });
+    expect((await q(`select 1 from information_schema.columns where table_name = 'import' and column_name = 'error'`)).rows).toEqual([]);
+  });
+});
+
 describe.skipIf(!(await databaseReachable()))('0040: private site IDs (ADR 0057)', () => {
   let t: TestDatabase;
   let before: string;

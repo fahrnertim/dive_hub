@@ -218,11 +218,12 @@ export const OUTCOME_REASONS = [
 export type OutcomeReason = (typeof OUTCOME_REASONS)[number];
 
 /**
- * Why a whole Import failed; anything unexpected is 'processing_failed', with details in `error`. `choice_expired`: it
- * waited seven days for the User's choice and its upload was removed (ADR 0044).
+ * Why a whole Import failed; anything unexpected is 'processing_failed', with what went wrong in `errorDetail`.
+ * `choice_expired`: it waited seven days for the User's choice and its upload was removed (ADR 0044).
  */
 export const IMPORT_ERROR_CODES = ['unsupported_file', 'processing_failed', 'choice_expired'] as const;
 export type ImportErrorCode = (typeof IMPORT_ERROR_CODES)[number];
+export const importErrorCode = pgEnum('import_error_code', [...IMPORT_ERROR_CODES]);
 
 export type ImportOutcome = {
   fileName: string;
@@ -295,7 +296,9 @@ export const importJob = pgTable(
     /** The kinds of dive the User chose to import; null while nobody was asked (then all of them). */
     kinds: jsonb('kinds').$type<DiveKind[]>(),
     outcome: jsonb('outcome').$type<ImportOutcome>().notNull().default([]),
-    error: text('error'),
+    errorCode: importErrorCode('error_code'),
+    /** What went wrong, in English for the server log and the operator; never sent to clients (client contract §6). */
+    errorDetail: text('error_detail'),
     createdAt: createdAt(),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
   },
