@@ -4,6 +4,9 @@ import { revision } from '../db/schema.js';
 /** Who or what changed logbook data: a User, an Import, a Site import (ADR 0021), or the hub itself. */
 export type Actor = { type: 'user' | 'import' | 'system' | 'site_import'; id: string };
 
+/** The User as the author of a Revision. */
+export const userActor = (userId: string): Actor => ({ type: 'user', id: userId });
+
 /** Why logbook data changed; clients translate these (ADR 0015). */
 export const REVISION_CAUSES = [
   'import-create', 'auto-attach', 'reimport', 'edit', 'primary-change',

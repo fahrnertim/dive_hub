@@ -2,7 +2,7 @@
 // from the other, moves the other's links to Providers where the kept one has none, and deletes the other the normal
 // way (ADR 0026). A Dive that is linked to a Provider moves as a copy, the old one deleted with its links, so no import
 // of the old Diver's makes it again. Links are read as the Pushes say, for any Provider.
-import { and, desc, eq, gte, inArray, isNull, lte, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, lte, ne } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
 import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localDay } from '../imports/matching.js';
@@ -10,14 +10,14 @@ import { currentRemote, type PushRow } from '../providers/remote-state.js';
 import { deletingItself } from '../providers/waiting-push-queue.js';
 import { liveSite } from '../sites/dive-site-link.js';
 import {
-  DiveError, applyToDive, attachRecording, lockManagedDive, participantsOf,
+  DiveError, applyToDive, attachRecording, lockManagedDive, nextVersion, participantsOf,
 } from './dive-service.js';
 import { managedDiverIds } from '../divers/management.js';
 import { valuesOfDive, type DiveValues } from './dive-values.js';
 import type { LogbookChecks } from './logbook-checks.js';
 import { takeCylinders } from './cylinders.js';
 import { takeWeighting } from './weighting.js';
-import { changeListener, writeRevision, type Actor, type Changes } from './revisions.js';
+import { changeListener, userActor, writeRevision, type Actor, type Changes } from './revisions.js';
 import { renumber } from './dive-numbers.js';
 
 type DiveRow = typeof dive.$inferSelect;
@@ -89,6 +89,17 @@ function mergeNotes(kept: string | null, other: string | null): string | null {
   return !more || own === more ? kept : own ? `${own}\n\n${more}` : more;
 }
 
+/**
+ * Deletes the Dive a merge or a move leaves behind (ADR 0026, 0038), its Recordings already gone to the other: one
+ * Revision with the delete and `extra` (where it went). Answers when.
+ */
+async function deleteLeftBehind(tx: Tx, diveId: string, actor: Actor, cause: 'merge' | 'move', extra: Changes): Promise<Date> {
+  const at = new Date();
+  await tx.update(dive).set({ deletedAt: at, primaryRecordingId: null, ...nextVersion(at) }).where(eq(dive.id, diveId));
+  await writeRevision(tx, 'dive', diveId, actor, cause, { deletedAt: { from: null, to: at.toISOString() }, ...extra });
+  return at;
+}
+
 export function createMerging(db: Db, checks: LogbookChecks) {
   return {
     /**
@@ -151,7 +162,7 @@ export function createMerging(db: Db, checks: LogbookChecks) {
         if (a.version !== first.version || b.version !== second.version) throw new DiveError('dive_changed');
         if (a.diverId !== b.diverId) throw new DiveError('merge_not_possible');
         const [kept, other] = keptOf(a, (await liveRecordings(tx, a.id)).length, b, (await liveRecordings(tx, b.id)).length);
-        const actor: Actor = { type: 'user', id: userId };
+        const actor = userActor(userId);
 
         // The other's Recordings first: which becomes primary is attaching's rule (ADR 0016, 0030). Each is a Recording
         // added in the history; the merge itself is one entry after them.
@@ -174,14 +185,10 @@ export function createMerging(db: Db, checks: LogbookChecks) {
         Object.assign(extra, await takeWeighting(tx, current!, other));
         const siteId = current!.siteId ?? (other.siteId && (await liveSite(tx, other.siteId)) ? other.siteId : null);
         await applyToDive(tx, current!, {
-          ...fillValues(current!, other), notes: mergeNotes(current!.notes, other.notes), primaryRecordingId: current!.primaryRecordingId, siteId,
+          ...fillValues(current!, other), notes: mergeNotes(current!.notes, other.notes), siteId,
         }, actor, 'merge', extra);
 
-        const at = new Date();
-        await tx.update(dive).set({ deletedAt: at, primaryRecordingId: null, version: sql`${dive.version} + 1`, updatedAt: at }).where(eq(dive.id, other.id));
-        await writeRevision(tx, 'dive', other.id, actor, 'merge', {
-          deletedAt: { from: null, to: at.toISOString() }, mergedInto: { from: null, to: kept.id },
-        });
+        const at = await deleteLeftBehind(tx, other.id, actor, 'merge', { mergedInto: { from: null, to: kept.id } });
         // The Revision's cause is `merge`, which the queue doesn't read as a delete: told so, the copy at a Provider whose
         // Connection deletes by itself goes after the quiet period, and restoring the Dive cancels it.
         await changeListener().diveChanged(tx, other.id, 'delete', at, actor);
@@ -201,10 +208,10 @@ export function createMerging(db: Db, checks: LogbookChecks) {
         if (current.version !== version) throw new DiveError('dive_changed');
         if (!(await managedDiverIds(tx, userId)).has(diverId)) throw new DiveError('diver_not_found');
         if (diverId === current.diverId) return diveId;
-        const actor: Actor = { type: 'user', id: userId };
+        const actor = userActor(userId);
         const linked = [...byProvider(await pushesOf(tx, [diveId]), diveId).values()].some((rows) => currentRemote(rows));
         if (!linked) {
-          await tx.update(dive).set({ diverId, version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
+          await tx.update(dive).set({ diverId, ...nextVersion() }).where(eq(dive.id, diveId));
           await writeRevision(tx, 'dive', diveId, actor, 'move', { diverId: { from: current.diverId, to: diverId } });
           await renumber(tx, [current.diverId, diverId]);
           return diveId;
@@ -218,11 +225,7 @@ export function createMerging(db: Db, checks: LogbookChecks) {
         await writeRevision(tx, 'dive', copy!.id, actor, 'move', {
           diverId: { from: current.diverId, to: diverId }, movedFrom: { from: null, to: diveId },
         });
-        const at = new Date();
-        await tx.update(dive).set({ deletedAt: at, primaryRecordingId: null, version: sql`${dive.version} + 1`, updatedAt: at }).where(eq(dive.id, diveId));
-        await writeRevision(tx, 'dive', diveId, actor, 'move', {
-          deletedAt: { from: null, to: at.toISOString() }, movedTo: { from: null, to: copy!.id },
-        });
+        await deleteLeftBehind(tx, diveId, actor, 'move', { movedTo: { from: null, to: copy!.id } });
         await renumber(tx, [current.diverId, diverId]);
         return copy!.id;
       });

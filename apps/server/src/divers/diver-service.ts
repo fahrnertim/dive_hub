@@ -10,7 +10,7 @@ import {
 } from '../db/schema.js';
 import { managedDiverIds, managementOf } from './management.js';
 import { renumber } from '../dives/dive-numbers.js';
-import { writeRevision } from '../dives/revisions.js';
+import { userActor, writeRevision } from '../dives/revisions.js';
 import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
 import { tidyName } from './diver-name.js';
@@ -78,8 +78,9 @@ export function createDiverService(db: Db) {
     return row;
   }
 
-  async function externalOrThrow(id: string) {
-    const [row] = await db.select().from(diver).where(and(eq(diver.id, id), live, unmanaged));
+  /** Locks an external Diver for the transaction: a Dive that takes it as a Participant waits (setParticipants). */
+  async function lockExternal(tx: Tx, id: string) {
+    const [row] = await tx.select().from(diver).where(and(eq(diver.id, id), live, unmanaged)).for('update');
     if (!row) throw new DiverError('diver_not_found');
     return row;
   }
@@ -133,7 +134,7 @@ export function createDiverService(db: Db) {
     }
     if (Object.keys(set).length === 0) return;
     await tx.update(diver).set({ ...set, updatedAt: new Date() }).where(eq(diver.id, id));
-    await writeRevision(tx, 'diver', id, { type: 'user', id: actor.userId }, 'edit', changes);
+    await writeRevision(tx, 'diver', id, userActor(actor.userId), 'edit', changes);
   }
 
   /** The live Diver that has this account at a service. */
@@ -166,7 +167,7 @@ export function createDiverService(db: Db) {
     }
     await tx.delete(diverExternalId).where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, source)));
     if (externalId !== null) await tx.insert(diverExternalId).values({ diverId, source, externalId });
-    await writeRevision(tx, 'diver', diverId, { type: 'user', id: actor.userId }, 'edit', { [accountKey(source)]: { from, to: externalId } });
+    await writeRevision(tx, 'diver', diverId, userActor(actor.userId), 'edit', { [accountKey(source)]: { from, to: externalId } });
   }
 
   /** An external Diver with an account and details, in the caller's transaction. */
@@ -175,7 +176,7 @@ export function createDiverService(db: Db) {
   ) {
     const [created] = await tx.insert(diver).values({ name, createdBy: actor.userId, ...details }).returning({ id: diver.id });
     if (account) await tx.insert(diverExternalId).values({ diverId: created!.id, ...account });
-    await writeRevision(tx, 'diver', created!.id, { type: 'user', id: actor.userId }, 'create', {
+    await writeRevision(tx, 'diver', created!.id, userActor(actor.userId), 'create', {
       name: { from: null, to: name }, ...(account && { [accountKey(account.source)]: { from: null, to: account.externalId } }),
       ...Object.fromEntries(Object.entries(details).map(([field, value]) => [field, { from: null, to: field === 'email' ? true : value }])),
     });
@@ -306,7 +307,7 @@ export function createDiverService(db: Db) {
      * the admin gate (requireAdmin); the service does not check again.
      */
     async mergeExternal(adminId: string, fromId: string, intoId: string) {
-      return db.transaction((tx) => mergeExternalDiver(tx, fromId, intoId, { type: 'user', id: adminId }));
+      return db.transaction((tx) => mergeExternalDiver(tx, fromId, intoId, userActor(adminId)));
     },
 
     /** A Diver whose logbook the User keeps (e.g. their child). */
@@ -415,19 +416,19 @@ export function createDiverService(db: Db) {
 
     /** Any User renames an external Diver, with a Revision. */
     async renameExternal(actor: Caller, id: string, name: string) {
-      const current = await externalOrThrow(id);
-      if (current.name === name) return;
       await db.transaction(async (tx) => {
+        const current = await lockExternal(tx, id);
+        if (current.name === name) return;
         await tx.update(diver).set({ name, updatedAt: new Date() }).where(eq(diver.id, id));
-        await writeRevision(tx, 'diver', id, { type: 'user', id: actor.userId }, 'edit', { name: { from: current.name, to: name } });
+        await writeRevision(tx, 'diver', id, userActor(actor.userId), 'edit', { name: { from: current.name, to: name } });
       });
     },
 
     /** Its creator or an admin, while no Dive lists it. */
     async removeExternal(actor: Caller, id: string) {
-      const current = await externalOrThrow(id);
-      if (!actor.isAdmin && current.createdBy !== actor.userId) throw new DiverError('diver_not_deletable');
       await db.transaction(async (tx) => {
+        const current = await lockExternal(tx, id);
+        if (!actor.isAdmin && current.createdBy !== actor.userId) throw new DiverError('diver_not_deletable');
         const [on] = await tx.select({ diveId: participant.diveId }).from(participant).where(eq(participant.diverId, id)).limit(1);
         if (on) throw new DiverError('diver_in_use');
         // Its accounts go, so another Diver can have them; the row stays for the history.
@@ -435,7 +436,7 @@ export function createDiverService(db: Db) {
         const at = new Date();
         // The row stays for the history, without the personal data its code held.
         await tx.update(diver).set({ deletedAt: at, updatedAt: at, firstName: null, lastName: null, email: null, leaderNumber: null }).where(eq(diver.id, id));
-        await writeRevision(tx, 'diver', id, { type: 'user', id: actor.userId }, 'delete', { deletedAt: { from: null, to: at.toISOString() } });
+        await writeRevision(tx, 'diver', id, userActor(actor.userId), 'delete', { deletedAt: { from: null, to: at.toISOString() } });
       });
     },
 
@@ -492,7 +493,7 @@ export function createDiverService(db: Db) {
         if (!current || !managed.has(current.diverId)) throw new DiverError('device_not_found');
         if (current.diverId === diverId) return;
         await tx.update(device).set({ diverId, updatedAt: new Date() }).where(eq(device.id, deviceId));
-        await writeRevision(tx, 'device', deviceId, { type: 'user', id: userId }, 'assign-device', {
+        await writeRevision(tx, 'device', deviceId, userActor(userId), 'assign-device', {
           diverId: { from: current.diverId, to: diverId },
         });
       });

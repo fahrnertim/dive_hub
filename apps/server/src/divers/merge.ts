@@ -1,7 +1,7 @@
 // Merging an external Diver into another (ADR 0028, amended): the same person twice, e.g. a buddy imported from a
 // Provider's list who later becomes a User. Claimed by that User through their account at the Provider, or done by an
 // admin. Only an external Diver (no User keeps it) is merged away; it has no Dives or Devices of its own.
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Tx } from '../db/client.js';
 import { device, dive, diver, diverExternalId, diverManagement, participant } from '../db/schema.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
@@ -33,6 +33,8 @@ export async function participations(tx: Tx, diverId: string): Promise<number> {
  */
 export async function mergeExternalDiver(tx: Tx, fromId: string, intoId: string, actor: Actor): Promise<{ dives: number }> {
   if (fromId === intoId) throw new DiverError('invalid_input');
+  // Both locked, in the order of their ids: a Dive that takes either as a Participant waits (setParticipants).
+  await tx.select({ id: diver.id }).from(diver).where(inArray(diver.id, [fromId, intoId])).orderBy(diver.id).for('update');
   const from = await externalDiver(tx, fromId);
   if (!from) throw new DiverError('diver_not_external');
   const [into] = await tx.select().from(diver).where(and(eq(diver.id, intoId), isNull(diver.deletedAt)));
