@@ -100,7 +100,7 @@ function descentRate(p: Profile): Finding | null {
 function judgedParts(p: Profile) {
   return p.parts
     .map((part) => ({ part, deepest: Math.max(...p.d.slice(part[0], part[1] + 1)) }))
-    .filter(({ part, deepest }) => deepest > LIMITS.stopDivesDeeperThanM && p.d[part[1]]! <= 2);
+    .filter(({ part, deepest }) => deepest > LIMITS.stopDivesDeeperThanM && p.d[part[1]]! <= LIMITS.endsAtSurfaceM);
 }
 
 /** The last metres of each judged part; the part that came up fastest is reported. */
@@ -112,18 +112,16 @@ function lastMetres(p: Profile): Finding | null {
     let surfaced = b;
     while (surfaced > a && d[surfaced - 1]! < LIMITS.surfaceM) surfaced--;
     let below = surfaced;
-    // Held: within 0.3 m of where the diver was ten seconds earlier.
     const held = (i: number) => {
       let k = i;
-      while (k > a && t[i]! - t[k]! < 10) k--;
-      return d[k]! - d[i]! < 0.3;
+      while (k > a && t[i]! - t[k]! < LIMITS.heldS) k--;
+      return d[k]! - d[i]! < LIMITS.heldWithinM;
     };
     while (below > a && d[below - 1]! <= LIMITS.lastMetresFromM && !held(below)) below--;
     const seconds = t[surfaced]! - t[below]!;
     const metres = d[below]! - d[surfaced]!;
     const mMin = seconds > 0 ? (metres / seconds) * 60 : 0;
-    // Judged once the stretch is at least 3 m.
-    if (metres >= 3 && mMin > LIMITS.lastMetresMMin && (!worst || mMin > (worst.values.m_min as number))) {
+    if (metres >= LIMITS.lastMetresAtLeastM &&mMin > LIMITS.lastMetresMMin && (!worst || mMin > (worst.values.m_min as number))) {
       worst = {
         rule: 'last_metres', severity: 'info', startS: t[below]!, endS: t[surfaced]!,
         values: { seconds: Math.round(seconds), metres: round(metres), m_min: round(mMin), limit_m_min: LIMITS.lastMetresMMin, last_m: LIMITS.lastMetresFromM },
@@ -133,10 +131,11 @@ function lastMetres(p: Profile): Finding | null {
   return worst;
 }
 
-/** The samples of a part's safety stop (3–6 m, after the last time deeper), the seconds spent there, and its last deep sample. */
+/** The samples of a part's safety stop (its band with tolerance, after the last time deeper), the seconds spent there, and its last deep sample. */
 function stopIn(p: Profile, [a, b]: Run) {
   const { t, d } = p;
-  const [shallowEdge, deepEdge] = LIMITS.stopBandM;
+  const shallowEdge = LIMITS.stopBandM[0] - LIMITS.stopToleranceM;
+  const deepEdge = LIMITS.stopBandM[1] + LIMITS.stopToleranceM;
   let lastDeep = b;
   while (lastDeep > a && d[lastDeep]! <= deepEdge) lastDeep--;
   const inBand = (i: number) => d[i]! >= shallowEdge && d[i]! <= deepEdge;
@@ -164,7 +163,7 @@ function safetyStop(p: Profile): Finding | null {
         rule: 'safety_stop', severity, startS: t[samples[0] ?? lastDeep]!, endS: t[samples.at(-1) ?? part[1]]!,
         values: {
           seconds: Math.round(seconds), recommended_s: long ? LIMITS.stopLongS : LIMITS.stopMinS, minimum_s: LIMITS.stopMinS,
-          max_depth_m: round(deepest), min_ndl_s: minNdl, from_m: 3, to_m: 6,
+          max_depth_m: round(deepest), min_ndl_s: minNdl, from_m: LIMITS.stopBandM[0], to_m: LIMITS.stopBandM[1],
         },
       };
     }
@@ -172,26 +171,30 @@ function safetyStop(p: Profile): Finding | null {
   return worst;
 }
 
-/** A safety stop of a minute or more that wandered by more than 1.5 m; the first such stop is reported. */
+/** A safety stop of a minute or more that wandered by more than 1.5 m; the part whose stop wandered furthest is reported. */
 function stopStability(p: Profile): Finding | null {
   if (p.enteredDeco) return null;
   const { t, d } = p;
+  let worst: { finding: Finding; off: number } | null = null;
   for (const { part } of judgedParts(p)) {
     const { samples, seconds } = stopIn(p, part);
-    if (seconds < 60) continue;
+    if (seconds < LIMITS.stopStabilityMinS) continue;
     // Between arriving at the stop's depth and leaving it: the way in and out is not wandering.
     const middle = median(samples.map((i) => d[i]!));
-    const near = samples.filter((i) => Math.abs(d[i]! - middle) <= 0.5);
+    const near = samples.filter((i) => Math.abs(d[i]! - middle) <= LIMITS.stopSettledWithinM);
     const depths = samples.filter((i) => i >= near[0]! && i <= near.at(-1)!).map((i) => d[i]!);
     const off = Math.max(...depths.map((v) => Math.abs(v - middle)));
-    if (off > LIMITS.stopStabilityM) {
-      return {
-        rule: 'stop_stability', severity: 'info', startS: t[samples[0]!]!, endS: t[samples.at(-1)!]!,
-        values: { shallowest_m: round(Math.min(...depths)), deepest_m: round(Math.max(...depths)), within_m: LIMITS.stopStabilityM },
+    if (off > LIMITS.stopStabilityM && (!worst || off > worst.off)) {
+      worst = {
+        off,
+        finding: {
+          rule: 'stop_stability', severity: 'info', startS: t[samples[0]!]!, endS: t[samples.at(-1)!]!,
+          values: { shallowest_m: round(Math.min(...depths)), deepest_m: round(Math.max(...depths)), within_m: LIMITS.stopStabilityM },
+        },
       };
     }
   }
-  return null;
+  return worst?.finding ?? null;
 }
 
 /** The computer's no-decompression limit. */

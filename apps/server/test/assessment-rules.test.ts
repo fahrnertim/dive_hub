@@ -155,6 +155,17 @@ describe('profile practice', () => {
     expect(find(assessProfile({ depth }).findings, 'stop_stability')).toMatchObject({ severity: 'info', values: { within_m: 1.5 } });
   });
 
+  it('reports the stop that wandered most when a recording holds several dives', () => {
+    // Both stops wander more than 1.5 m; the second one further (2.6–6.4 m against 3.2–6.4 m).
+    const depth = profile([
+      [0, 0], [2, 18], [20, 18], [21.6, 6.4], [22.7, 3.2], [23.7, 6.4], [25.1, 3.2], [26, 0], [29, 0],
+      [31, 18], [45, 18], [46.6, 6.4], [47.7, 2.6], [48.7, 6.4], [50.1, 2.6], [51, 0],
+    ]);
+    const found = find(assessProfile({ depth }).findings, 'stop_stability')!;
+    expect(found.startS).toBeGreaterThan(45 * 60);
+    expect(found.values.shallowest_m).toBeCloseTo(2.6, 1);
+  });
+
   it('judges each dive of a recording with a surface interval inside it', () => {
     // The first dive ends with a stop and a slow way up; the second shoots up from 5 m in 12 seconds.
     const depth = profile([[0, 0], [2, 18], [20, 18], [21.6, 5], [25.1, 5], [26.3, 0], [29, 0], [31, 18], [45, 18], [46.6, 5], [50.1, 5], [50.3, 0]]);

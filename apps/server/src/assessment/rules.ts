@@ -5,9 +5,10 @@
 
 /**
  * Raised with every change to a threshold or a rule's logic; stored with each finding. Also raised when the
- * assessment row gains something to fill for existing Dives (2: the logbook's profile sketch, ADR 0041).
+ * assessment row gains something to fill for existing Dives (2: the logbook's profile sketch, ADR 0041). 3: stop
+ * stability reports the part whose stop wandered furthest, not the first.
  */
-export const ENGINE_VERSION = 2;
+export const ENGINE_VERSION = 3;
 
 export const SEVERITIES = ['info', 'note', 'caution'] as const;
 export type Severity = (typeof SEVERITIES)[number];
@@ -72,15 +73,25 @@ export const LIMITS = {
    * remarked on only when the diver shot up, faster than 18 m/min, and as information.
    */
   lastMetresMMin: 18,
-  /** Stops and the last metres are judged on dives deeper than this. */
+  /** The last metres are judged once the final ascent is at least this long. */
+  lastMetresAtLeastM: 3,
+  /** The diver held a depth when it is within heldWithinM of where they were heldS earlier. */
+  heldS: 10,
+  heldWithinM: 0.3,
+  /** Stops and the last metres are judged on dives deeper than this that end shallower than endsAtSurfaceM. */
   stopDivesDeeperThanM: 10,
-  /** A safety stop is credited between these depths (3–6 m with half a metre of tolerance). */
-  stopBandM: [2.5, 6.5] as const,
+  endsAtSurfaceM: 2,
+  /** The safety stop's band; a stop is credited within stopToleranceM of it (2.5–6.5 m). */
+  stopBandM: [3, 6] as const,
+  stopToleranceM: 0.5,
   stopMinS: 180,
   stopLongS: 300,
   stopLongDeeperThanM: 30,
   stopLongNdlS: 300,
+  /** Stop stability: a stop of stopStabilityMinS or more, from where it settled within stopSettledWithinM of its middle depth. */
   stopStabilityM: 1.5,
+  stopStabilityMinS: 60,
+  stopSettledWithinM: 0.5,
   descentMMin: 18,
   descentFirstM: 10,
   ndlNoteS: 300,
