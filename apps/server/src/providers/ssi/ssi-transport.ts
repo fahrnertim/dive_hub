@@ -1,6 +1,7 @@
 // One call to SSI's app API, answered by the app's own rules (docs/research/2026-10-23-ssi-decompilation-review.md §3.2).
 // Both the token and the password travel in the query string, so nothing here ever logs a URL or puts one into an
 // error message.
+import { tryParseJson } from './ssi-json.js';
 
 // What SSI's Android app sends on every call (the owner's capture, 2026-10-10, app 5.0.43): its label and version, and
 // since 5.0 four fields about the phone. Dive Hub is no phone and says so there; SSI stores saves all the same.
@@ -49,14 +50,6 @@ export interface SsiTransport {
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-function parseJson(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return undefined;
-  }
-}
-
 export function createSsiTransport(options: { url: string; fetch: Fetch; timeoutMs: number }): SsiTransport {
   /** The answer as it is, with the checks every call shares: signed out, maintenance. */
   async function exchange(what: string, params: Record<string, string>, body?: Record<string, unknown>) {
@@ -78,7 +71,7 @@ export function createSsiTransport(options: { url: string; fetch: Fetch; timeout
       // The error of a failed fetch can quote the URL; keep only its kind.
       throw new SsiError('unavailable', `${what}: ${error instanceof Error ? error.name : 'network error'}`);
     }
-    const data = parseJson(text);
+    const data = tryParseJson(text);
     // The app reads a body status 401 as signed out under any HTTP status. A false `authenticated` is read the
     // same here, kept from the community report [S]; the app itself reads only `status` 401. While signing in
     // it means a refused password, which the caller decides.

@@ -12,6 +12,7 @@ import {
   type DiveForSsi,
 } from './ssi-record.js';
 import { contextOf, parseSsiDive, ssiOrigin, SSI_PARSER } from './ssi-import.js';
+import { storedList } from './ssi-json.js';
 import { readSsiSite, ssiSiteRow, visibilityFor } from './ssi-site-record.js';
 
 /** Two dives this close in time (minutes) count as the same descent. */
@@ -122,22 +123,13 @@ export interface SsiCallLog {
 const remoteBuddy = ({ id, row: _row, ...b }: SsiBuddy) => ({ remoteId: String(id), ...b });
 
 /** How many samples a record's profile (`odin_user_log_diveSamples`, a JSON list) holds; 0 when it has none. */
-function sampleCount(samples: unknown): number {
-  if (Array.isArray(samples)) return samples.length;
-  if (typeof samples !== 'string' || !samples) return 0;
-  try {
-    const list: unknown = JSON.parse(samples);
-    return Array.isArray(list) ? list.length : 0;
-  } catch {
-    return 0;
-  }
-}
+const sampleCount = (r: SsiRecord) => storedList(r.odin_user_log_diveSamples)?.length ?? 0;
 
 /** Whether the record SSI answered a save with shows what was sent: the reference, the number, no fewer samples. */
 function showsSent(stored: SsiRecord, sent: SsiRecord, expect: { reference?: string; number?: number }): boolean {
   return (expect.reference === undefined || stored.odin_user_log_divecomputer_dive_ref === expect.reference)
     && (expect.number === undefined || numberOf(stored.odin_user_log_nr) === expect.number)
-    && sampleCount(stored.odin_user_log_diveSamples) >= sampleCount(sent.odin_user_log_diveSamples);
+    && sampleCount(stored) >= sampleCount(sent);
 }
 
 /** SSI's maintenance (HTTP 503) is, for the generic layer, SSI being unavailable. */

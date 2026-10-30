@@ -11,6 +11,7 @@ import type { SyncedField } from '../three-way.js';
 import type { SsiRecord } from './ssi-client.js';
 import { asBool, DIVE_ROW, SENT_KEYS } from './ssi-dive-row.js';
 import { keepTraining, ssiDiveType } from './ssi-dive-type.js';
+import { storedList } from './ssi-json.js';
 
 export type { Series };
 
@@ -341,15 +342,7 @@ export interface ReadBackDifference {
 
 const asNumber = (v: unknown) => (typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
 const asText = (v: unknown) => (typeof v === 'string' && v !== '' ? v : typeof v === 'number' ? String(v) : null);
-const datasetLength = (v: unknown) => {
-  if (typeof v !== 'string' || v === '') return null;
-  try {
-    const parsed: unknown = JSON.parse(v);
-    return Array.isArray(parsed) ? parsed.length : null;
-  } catch {
-    return null;
-  }
-};
+const datasetLength = (v: unknown) => storedList(v)?.length ?? null;
 
 /**
  * Fields SSI stored differently from what we sent, read back after saving. SSI keeps minutes (time and
