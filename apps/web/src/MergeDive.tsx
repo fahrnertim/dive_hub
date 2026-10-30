@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, diveProvidersQuery, keys, mergeCandidatesQuery, nearbyDivesQuery, unwrap, type DiveView, type LogbookCheckView, type MergeCandidateView } from './api.ts';
+import { allButDive, api, ApiError, diveProvidersQuery, keys, mergeCandidatesQuery, nearbyDivesQuery, unwrap, type DiveView, type LogbookCheckView, type MergeCandidateView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { deleteChoice, type CopyAt } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -143,7 +143,7 @@ export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
       queryClient.setQueryData(keys.dive(kept.id), kept);
       queryClient.removeQueries({ queryKey: keys.dive(leaving) });
       if (kept.id !== d.id && !stay) location.hash = `#/dives/${kept.id}`;
-      await queryClient.invalidateQueries({ predicate: (q) => !(q.queryKey[0] === 'dives' && q.queryKey[1] === leaving) });
+      await queryClient.invalidateQueries(allButDive(leaving));
       announce(t('merge.done'));
       onClose();
       onMerged?.();

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, diveProvidersQuery, keys, unwrap, type DiveView } from './api.ts';
+import { allButDive, api, ApiError, diveProvidersQuery, keys, unwrap, type DiveView } from './api.ts';
 import { deleteChoice, updateDeletion, type CopyAt } from './lib/deletion.ts';
 import { useErrorText } from './lib/display.ts';
 import { useJoinNames, useProviderOf, useProviderText, type ProviderRef } from './lib/providers.ts';
@@ -41,7 +41,7 @@ export function DeleteDiveDialog({ dive: d, name, onClose }: { dive: Pick<DiveVi
       });
       location.hash = '#/';
       // Every list and count changes; the deleted Dive itself would only answer "not found" now.
-      await queryClient.invalidateQueries({ predicate: (q) => !(q.queryKey[0] === 'dives' && q.queryKey[1] === d.id) });
+      await queryClient.invalidateQueries(allButDive(d.id));
       queryClient.removeQueries({ queryKey: keys.dive(d.id) });
     },
   });

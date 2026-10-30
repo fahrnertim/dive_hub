@@ -72,7 +72,7 @@ function Group({ group: g, provider: p, several, onTold, onDelete }: {
       announce(t('gone.confirmed'));
       await queryClient.invalidateQueries({ queryKey: keys.goneDives });
       // The Dive's state at the Provider changed.
-      await queryClient.invalidateQueries({ queryKey: ['dives'] });
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
     },
   });
   const heading = several ? t('gone.titleDiver', { name: p.name, diver: g.diverName }) : t('gone.title', { name: p.name });

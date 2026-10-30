@@ -259,6 +259,12 @@ export const candidatesQuery = (status: 'open' | 'discarded') =>
 export const diveListPages = { queryKey: keys.dives, predicate: (q: { queryKey: readonly unknown[] }) => typeof q.queryKey[1] === 'object' && q.queryKey[1] !== null };
 
 /**
+ * Every query but a Dive's own (`['dives', id, …]`): for a Dive that is gone (deleted, merged away, moved as a copy),
+ * whose queries are removed and would only answer "not found", while every list and count changes.
+ */
+export const allButDive = (id: string) => ({ predicate: (q: { queryKey: readonly unknown[] }) => !(q.queryKey[0] === keys.dives[0] && q.queryKey[1] === id) });
+
+/**
  * The User's deleted Dives, to restore them, and which Providers they are still at (ADR 0026, 0027); a delete at a
  * Provider that waits is asked about again when it is due (ADR 0056).
  */

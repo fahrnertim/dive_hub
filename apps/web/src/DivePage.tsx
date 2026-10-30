@@ -3,7 +3,7 @@ import { useMemo, useRef, useState, type ReactNode } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
-import { api, ApiError, diveNeighboursQuery, diveProvidersQuery, PAGE_SIZE, diveQuery, diversQuery, keys, unwrap, type DiveView, type NeighboursView, type OverridableField, type RecordingSummary } from './api.ts';
+import { allButDive, api, ApiError, diveNeighboursQuery, diveProvidersQuery, PAGE_SIZE, diveQuery, diversQuery, keys, unwrap, type DiveView, type NeighboursView, type OverridableField, type RecordingSummary } from './api.ts';
 import { AssessmentPanel, AssessmentProvider } from './Assessment.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { DepthProfile } from './DepthProfile.tsx';
@@ -192,7 +192,7 @@ function MoveDialog({ dive: d, onClose }: { dive: DiveView; onClose: () => void 
         // Moved as a copy: the Dive is another one now, and the old one only answers "not found".
         location.hash = `#/dives/${updated.id}`;
         queryClient.removeQueries({ queryKey: keys.dive(d.id) });
-        await queryClient.invalidateQueries({ predicate: (q) => !(q.queryKey[0] === 'dives' && q.queryKey[1] === d.id) });
+        await queryClient.invalidateQueries(allButDive(d.id));
       } else {
         await Promise.all([keys.dives, keys.divers, keys.revisions(d.id)].map((queryKey) => queryClient.invalidateQueries({ queryKey })));
       }
