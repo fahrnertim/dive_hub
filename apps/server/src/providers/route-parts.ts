@@ -2,7 +2,7 @@
 // Provider is answered.
 import type { FastifyReply } from 'fastify';
 import { Type } from 'typebox';
-import { type ErrorAnswer, Problem, problem, PROBLEM_CODES, providerProblem } from '../http/problems.js';
+import { type ErrorAnswer, Problem, problem, PROBLEM_CODES, ProblemSchema, providerProblem } from '../http/problems.js';
 import { UnmetView } from './unmet-view.js';
 import { ProviderServiceError, type ProviderRefusal } from './registry.js';
 
@@ -24,7 +24,7 @@ export const PROVIDER_STATUS: Record<ProviderRefusal, number> = {
 };
 /** A refusal about a Provider; with provider_requirements_unmet, what is unmet. */
 const ProviderProblem = Type.Object({
-  ...Problem.properties,
+  ...ProblemSchema.properties,
   unmet: Type.Optional(Type.Array(UnmetView, { description: 'With provider_requirements_unmet: every requirement unmet, blocking ones among them' })),
 });
 export const Choice = Type.Enum(['recordings', 'entries'], {

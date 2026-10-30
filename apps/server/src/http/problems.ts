@@ -1,7 +1,7 @@
 // Error responses (ADR 0014): every refusal carries a stable `code`, which clients translate,
 // and an English `error` text for logs, scripts and anything without a translation.
 import type { FastifyError, FastifyInstance, FastifyReply } from 'fastify';
-import { Type } from 'typebox';
+import { type Static, Type } from 'typebox';
 import { Nullable, oneOf } from './schemas.js';
 
 export const PROBLEMS = {
@@ -124,7 +124,8 @@ export const PROBLEM_CODES = Object.keys(PROBLEMS) as ProblemCode[];
 /** A problem code kept in a text column, read back as one (it throws on a value that isn't). */
 export const storedProblemCode = (code: string | null): ProblemCode | null => (code === null ? null : oneOf(PROBLEM_CODES, code));
 
-export const Problem = Type.Object({
+/** Every refusal's shape, registered once (app.addSchema) so the OpenAPI document names it once (ADR 0014). */
+export const ProblemSchema = Type.Object({
   code: Type.Enum(PROBLEM_CODES, {
     description: 'Stable, machine-readable reason; clients translate it',
   }),
@@ -147,7 +148,10 @@ export const Problem = Type.Object({
   }, { description: 'With provider_number_taken: the dive at the Provider that has the number (ADR 0048)' })),
   diveId: Type.Optional(Nullable(Type.String({ description: 'With provider_number_taken: the Dive here that dive is, if Dive Hub knows it' }))),
   runId: Type.Optional(Type.String({ description: 'With push_run_active: the run that is going (ADR 0047)' })),
-}, { description: 'A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types' });
+}, { $id: 'Problem', description: 'A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types' });
+
+/** What a route's response names for a refusal: a reference to ProblemSchema, typed as it. */
+export const Problem = Type.Unsafe<Static<typeof ProblemSchema>>(Type.Ref('Problem'));
 
 /** A response body for `code`; `detail` replaces the default English text where it says more. */
 export const problem = (code: ProblemCode, detail?: string) => ({ code, error: detail ?? PROBLEMS[code] });
