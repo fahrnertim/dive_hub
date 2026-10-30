@@ -5,7 +5,7 @@
 import { and, desc, eq, gte, inArray, isNull, lte, ne, sql } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
-import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localStartMs } from '../imports/matching.js';
+import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localDay } from '../imports/matching.js';
 import { currentRemote, type PushRow } from '../providers/remote-state.js';
 import { deletingItself } from '../providers/waiting-push-queue.js';
 import { liveSite } from '../sites/dive-site-link.js';
@@ -106,7 +106,6 @@ export function createMerging(db: Db, checks: LogbookChecks) {
       const recs = await db.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, all), isNull(recording.deletedAt)));
       const count = (id: string) => recs.filter((r) => r.diveId === id).length;
       const found = await checks.against(row.id, near.map(({ d }) => ({ ...d, recordings: count(d.id) })), { ...row, recordings: count(row.id) });
-      const localDay = (d: DiveRow) => Math.floor(localStartMs(d) / DAY_MS);
       const hits = near
         .map(({ d, siteName }) => ({ d, siteName, hit: found.find((f) => f.other.id === d.id) }))
         .filter(({ d, hit }) => (scope === 'nearby' ? Math.abs(localDay(d) - localDay(row)) <= 1 : hit !== undefined))

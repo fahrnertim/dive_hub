@@ -4,7 +4,7 @@ import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
-import { problem } from '../http/problems.js';
+import { answerErrors, answers, problem } from '../http/problems.js';
 import { EmailTakenError, invitationStatus, type InvitationRow, type Invitations } from './invitations.js';
 import type { PasswordResets } from './password-resets.js';
 import { UserAdminError, type UserAdmin } from './user-admin.js';
@@ -42,11 +42,7 @@ export const adminRoutes: FastifyPluginAsyncTypebox<AdminRouteDeps> = async (sco
   app.addHook('onRequest', requireUser(auth));
   app.addHook('onRequest', requireAdmin);
   // Refusals from the admin service become their status; anything else goes to the default handler.
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof UserAdminError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    if (error instanceof EmailTakenError) return reply.code(409).send(problem('email_taken'));
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(UserAdminError, STATUS), answers(EmailTakenError, { email_taken: 409 })));
   const errors = { 400: Problem, 404: Problem, 409: Problem };
 
   app.get('/invitations', {

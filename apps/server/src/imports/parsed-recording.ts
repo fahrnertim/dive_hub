@@ -2,6 +2,15 @@
 import type { RecordingSummary, UtcOffsetSource } from '../db/schema.js';
 import type { Position } from '../vocabulary.js';
 
+/**
+ * A file an adapter can't read as its format: not that format after all, broken, or without what a dive needs. Its
+ * message is the parser's detail for the server log (an Import's `file_failed`); the cause, when there is one, the
+ * error underneath.
+ */
+export class ParseError extends Error {
+  override name = 'ParseError';
+}
+
 export interface ParsedDevice {
   manufacturer: string;
   product?: string;

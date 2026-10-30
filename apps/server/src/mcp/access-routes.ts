@@ -4,7 +4,7 @@ import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/ty
 import { Type, type Static } from 'typebox';
 import { AI_ACCESS_NAME_MAX, type Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
-import { Problem, problem } from '../http/problems.js';
+import { answerErrors, answers, Problem } from '../http/problems.js';
 import { AI_ACCESS_SCOPES, AiAccessError, LOG_DAYS, LOG_PAGE_MAX, type AiAccessService } from './access-service.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
@@ -50,10 +50,7 @@ const STATUS: Record<AiAccessError['code'], number> = { ai_access_not_found: 404
 export const aiAccessRoutes: FastifyPluginAsyncTypebox<AiAccessRouteDeps> = async (scope, { auth, accesses, baseUrl }) => {
   const app = scope.withTypeProvider<TypeBoxTypeProvider>();
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof AiAccessError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(AiAccessError, STATUS)));
 
   app.get('/me/ai-access', {
     schema: {

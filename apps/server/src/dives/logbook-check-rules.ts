@@ -1,7 +1,7 @@
 // The rules of the logbook checks (ADR 0038), pure: which pairs of Dives can't both be right as they stand, and which
 // Dive is probably no dive. The pair rules use the import's own matching, so a check never disagrees with what a fresh
 // import would have done.
-import { DAY_MS, OVERLAP_TOLERANCE_SECONDS, alignedForMatching, depthsDisagree, localStartMs, overlaps } from '../imports/matching.js';
+import { MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, alignedForMatching, depthsDisagree, localDay, localStartMs, overlaps } from '../imports/matching.js';
 
 /** Changes when a rule changes what it finds. */
 export const LOGBOOK_CHECKS_VERSION = 4;
@@ -39,7 +39,7 @@ const APART_DURATION_SECONDS = 3 * 60;
 const NO_DIVE_BELOW_SECONDS = 2 * 60;
 const NO_DIVE_ABOVE_M = 3;
 
-const sameLocalDay = (a: CheckedDive, b: CheckedDive) => Math.floor(localStartMs(a) / DAY_MS) === Math.floor(localStartMs(b) / DAY_MS);
+const sameLocalDay = (a: CheckedDive, b: CheckedDive) => localDay(a) === localDay(b);
 
 /** Whether two Dives look like one dive typed with another start: depth (0.2 m or 3 %) and duration (3 minutes) agree. */
 function agreeInDepthAndDuration(a: CheckedDive, b: CheckedDive): boolean {
@@ -105,7 +105,7 @@ export interface LogbookCheck {
 export function findChecks(dives: CheckedDive[]): LogbookCheck[] {
   const sorted = [...dives].sort((x, y) => x.startsAt.getTime() - y.startsAt.getTime() || x.id.localeCompare(y.id));
   // A Dive whose offset is unknown keeps a wall-clock time up to 14 hours from its instant: looked that much further.
-  const reach = (d: CheckedDive) => d.startsAt.getTime() + (d.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + 2 * 14 * 3600_000;
+  const reach = (d: CheckedDive) => d.startsAt.getTime() + (d.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + 2 * MAX_OFFSET_MS;
   const found: { rule: PairRule; a: CheckedDive; b: CheckedDive }[] = [];
   sorted.forEach((a, i) => {
     for (let k = i + 1; k < sorted.length && sorted[k]!.startsAt.getTime() <= reach(a); k++) {
@@ -116,7 +116,7 @@ export function findChecks(dives: CheckedDive[]): LogbookCheck[] {
   // Pairs far apart on the clock: the same local day, found apart from the overlap scan above, which only reaches a few hours.
   const byDay = new Map<string, CheckedDive[]>();
   for (const d of sorted) {
-    const key = `${d.diverId}:${Math.floor(localStartMs(d) / DAY_MS)}`;
+    const key = `${d.diverId}:${localDay(d)}`;
     byDay.set(key, [...(byDay.get(key) ?? []), d]);
   }
   const apart: { a: CheckedDive; b: CheckedDive }[] = [];

@@ -1,12 +1,11 @@
 // A Diver's certification cards (ADR 0050). Only the Users who manage the Diver; everyone else, and every call for an
 // external Diver, gets 404 diver_not_found. The import from a Provider is in providers/routes.ts.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import type { FastifyReply } from 'fastify';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { CERTIFICATION_IMAGE_STATES, CERTIFICATION_VERIFICATIONS } from '../db/schema.js';
-import { Problem, problem } from '../http/problems.js';
+import { answerErrors, answers, Problem } from '../http/problems.js';
 import { CertificationError, type CertificationService } from './certification-service.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
@@ -67,17 +66,13 @@ export const CERTIFICATION_STATUS: Record<CertificationError['code'], number> = 
   certification_changed: 409, certification_read_only: 409, invalid_input: 400,
 };
 
-export const replyCertificationError = (error: CertificationError, reply: FastifyReply) =>
-  reply.code(CERTIFICATION_STATUS[error.code]).send(problem(error.code));
+export const replyCertificationError = answers(CertificationError, CERTIFICATION_STATUS);
 
 const errors = { 400: Problem, 404: Problem, 409: Problem };
 
 export const certificationRoutes: FastifyPluginAsyncTypebox<CertificationRouteDeps> = async (app, { auth, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof CertificationError) return replyCertificationError(error, reply);
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(replyCertificationError));
 
   app.get('/divers/:id/certifications', {
     schema: {

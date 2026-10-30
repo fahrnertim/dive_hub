@@ -3,11 +3,13 @@ import type { Readable } from 'node:stream';
 import type { Db } from '../db/client.js';
 import { DIVE_KINDS, duplicateCandidate, importJob, importOriginal, original, recording, type DiveKind, type ImportFound, type ImportOutcome } from '../db/schema.js';
 import { fillMissingCylinders } from '../dives/cylinders.js';
+import { errorMessage } from '../errors.js';
 import type { Actor } from '../dives/revisions.js';
 import { positionColumns } from '../sites/dive-site-link.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { DEFAULT_LIMITS, eachFile, looksLikeZip, type ArchiveEntry } from './archive.js';
 import { createFileFormats, formatOf, type FileFormat } from './formats.js';
+import { DAY_MS } from './matching.js';
 import type { ParsedRecording } from './parsed-recording.js';
 import { placeRecording } from './placement.js';
 
@@ -88,7 +90,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
         await afterImport?.(job.userId);
         return outcome;
       } catch (error) {
-        await db.update(importJob).set({ status: 'failed', error: (error as Error).message, finishedAt: new Date() }).where(eq(importJob.id, importId));
+        await db.update(importJob).set({ status: 'failed', error: errorMessage(error), finishedAt: new Date() }).where(eq(importJob.id, importId));
         throw error;
       }
     }
@@ -126,7 +128,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
         try {
           outcome.push(...(await processFile(job.userId, importId, { name: file.name, data: await file.read() }, actor, chosen)));
         } catch (error) {
-          outcome.push({ fileName: file.name, result: 'failed', reason: 'file_failed', message: (error as Error).message });
+          outcome.push({ fileName: file.name, result: 'failed', reason: 'file_failed', message: errorMessage(error) });
         }
       });
       if (outcome.length === 0) {
@@ -145,7 +147,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
     } catch (error) {
       await db
         .update(importJob)
-        .set({ status: 'failed', error: error instanceof UnsupportedFileError ? 'unsupported_file' : (error as Error).message, finishedAt: new Date() })
+        .set({ status: 'failed', error: error instanceof UnsupportedFileError ? 'unsupported_file' : errorMessage(error), finishedAt: new Date() })
         .where(eq(importJob.id, importId));
       throw error;
     }
@@ -212,7 +214,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
 
   /** Worker task: Imports nobody answered for seven days are ended, so no upload lies here for good. Returns how many. */
   async function expireWaiting(now = new Date()): Promise<number> {
-    return (await endWaiting(lt(importJob.createdAt, new Date(now.getTime() - CHOICE_WAIT_DAYS * 86_400_000)), 'choice_expired')).length;
+    return (await endWaiting(lt(importJob.createdAt, new Date(now.getTime() - CHOICE_WAIT_DAYS * DAY_MS)), 'choice_expired')).length;
   }
 
   async function endWaiting(which: SQL, error: 'choice_expired' | null) {

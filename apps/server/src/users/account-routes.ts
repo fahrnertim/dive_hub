@@ -8,7 +8,7 @@ import { problem } from '../http/problems.js';
 import type { PasswordResets } from './password-resets.js';
 import type { SessionService } from './session-service.js';
 import { Password, Problem, Token, UserView, toUserView } from './views.js';
-import { DateTime, IdParams } from '../http/schemas.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface AccountRouteDeps {
   auth: Auth;
@@ -19,10 +19,10 @@ export interface AccountRouteDeps {
 const SessionView = Type.Object({
   id: Type.String(),
   createdAt: DateTime,
-  lastActiveAt: Type.Union([DateTime, Type.Null()], { description: 'Last time the session was refreshed (about daily)' }),
+  lastActiveAt: Nullable(DateTime, { description: 'Last time the session was refreshed (about daily)' }),
   expiresAt: DateTime,
-  ipAddress: Type.Union([Type.String(), Type.Null()]),
-  userAgent: Type.Union([Type.String(), Type.Null()]),
+  ipAddress: Nullable(Type.String()),
+  userAgent: Nullable(Type.String()),
   current: Type.Boolean({ description: 'The session this request came with' }),
 });
 

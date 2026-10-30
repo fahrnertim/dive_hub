@@ -87,22 +87,12 @@
       "count": 1
     }
   },
-  "apps/server/src/providers/ssi/ssi-sites.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "apps/server/src/providers/three-way.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
   "apps/server/src/sites/import/import-plan.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/sites/import/polite-http.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
@@ -114,11 +104,6 @@
   },
   "apps/server/src/sites/site-service.ts": {
     "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/suunto/suunto-json.ts": {
-    "preserve-caught-error": {
       "count": 1
     }
   },

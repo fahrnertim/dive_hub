@@ -1,12 +1,11 @@
 // Divers (ADR 0016, 0028): the User's Divers and their Devices; every Diver found by name; external Divers; a Diver's
 // accounts at services.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import type { FastifyReply } from 'fastify';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
 import { callerOf } from '../http/caller.js';
-import { Problem, problem } from '../http/problems.js';
+import { answerErrors, answers, Problem } from '../http/problems.js';
 import { NO_CERTIFICATIONS, type CertificationService } from '../certifications/certification-service.js';
 import { DiverError } from './diver-error.js';
 import type { DiverService } from './diver-service.js';
@@ -99,18 +98,14 @@ const STATUS: Record<DiverError['code'], number> = {
 };
 
 /** Answers a Diver refusal; with diver_external_id_taken, the Diver that has the account. */
-export const replyDiverError = (error: DiverError, reply: FastifyReply) =>
-  reply.code(STATUS[error.code]).send({ ...problem(error.code), ...(error.diver && { diver: error.diver }) });
+export const replyDiverError = answers(DiverError, STATUS, (error) => error.diver && { diver: error.diver });
 
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
 
 export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app, { auth, divers, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof DiverError) return replyDiverError(error, reply);
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(replyDiverError));
 
   const listDivers = async (userId: string) => {
     const rows = await divers.list(userId);

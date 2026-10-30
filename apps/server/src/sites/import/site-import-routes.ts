@@ -4,7 +4,7 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from '../../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../../auth/fastify.js';
 import type { siteImport } from '../../db/schema.js';
-import { Problem, problem, PROBLEMS, type ProblemCode } from '../../http/problems.js';
+import { answerErrors, answers, Problem, problem, PROBLEMS, type ProblemCode } from '../../http/problems.js';
 import { DateTime, IdParams, Nullable } from '../../http/schemas.js';
 import { IMPORT_SOURCES } from '../sources.js';
 import { SiteImportError, type SiteImportService } from './site-import-service.js';
@@ -55,7 +55,7 @@ export const SiteImportView = Type.Object({
     step: Type.Union([Type.Literal('waiting'), Type.Literal('osm'), Type.Literal('wikidata'), Type.Literal('ssi'), Type.Literal('saving')]),
     done: Type.Integer(), total: Type.Integer(),
   }),
-  counts: Type.Union([Type.Null(), Counts]),
+  counts: Nullable(Counts),
   findings: Type.Array(Type.Union([
     Type.Object({
       kind: Type.Literal('near'), siteId: Type.String(), name: Type.String(), nearSiteId: Type.String(), nearName: Type.String(), distanceM: Type.Integer(),
@@ -64,7 +64,7 @@ export const SiteImportView = Type.Object({
       kind: Type.Literal('offer'), siteId: Type.String(), name: Type.String(), source: Source,
     }, { description: 'A hand-made site the Source describes: its page offers the Source\'s data' }),
   ])),
-  failureCode: Type.Union([Type.Null(), Type.Enum(Object.keys(PROBLEMS) as ProblemCode[])], { description: 'Why it failed (a problem code)' }),
+  failureCode: Nullable(Type.Enum(Object.keys(PROBLEMS) as ProblemCode[]), { description: 'Why it failed (a problem code)' }),
   createdAt: DateTime,
   finishedAt: Nullable(DateTime),
 });
@@ -80,10 +80,7 @@ const STATUS: Record<SiteImportError['code'], number> = { odbl_not_confirmed: 40
 export const siteImportRoutes: FastifyPluginAsyncTypebox<SiteImportRouteDeps> = async (app, { auth, siteImports }) => {
   app.addHook('onRequest', requireUser(auth));
   app.addHook('onRequest', requireAdmin);
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof SiteImportError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(SiteImportError, STATUS)));
 
   app.post('/admin/site-imports', {
     schema: {

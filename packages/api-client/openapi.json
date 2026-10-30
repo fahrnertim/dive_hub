@@ -2740,11 +2740,11 @@
                       "lastActiveAt": {
                         "anyOf": [
                           {
-                            "type": "string",
-                            "format": "date-time"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         ],
                         "description": "Last time the session was refreshed (about daily)"
@@ -2756,20 +2756,20 @@
                       "ipAddress": {
                         "anyOf": [
                           {
-                            "type": "string"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string"
                           }
                         ]
                       },
                       "userAgent": {
                         "anyOf": [
                           {
-                            "type": "string"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string"
                           }
                         ]
                       },

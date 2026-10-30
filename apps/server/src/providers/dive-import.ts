@@ -11,6 +11,7 @@ import {
 } from '../db/schema.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
 import { wallClockMs, type PlacedTime } from '../dives/time-zone.js';
+import { errorMessage } from '../errors.js';
 import type { ParsedRecording } from '../imports/parsed-recording.js';
 import { PROCESS_IMPORT_TASK } from '../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../imports/placement.js';
@@ -698,7 +699,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
             .where(and(eq(importOriginal.originalId, o.id), sql`${importOriginal.importId} <> ${job.id}`, eq(importJob.status, 'done'))).limit(1);
           items.push({ o, fileName, dive: dive_, seen: !!earlier });
         } catch (error) {
-          items.push({ o, fileName, dive: null, seen: false, error: error as Error });
+          items.push({ o, fileName, dive: null, seen: false, error: errorMessage(error) });
         }
       }
       items.sort((a, b) => (a.dive?.localStart ?? '').localeCompare(b.dive?.localStart ?? ''));
@@ -706,7 +707,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       for (const item of items) {
         if (!item.dive) {
           outcome.push(item.error
-            ? { fileName: item.fileName, result: 'failed', reason: 'file_failed', message: item.error.message }
+            ? { fileName: item.fileName, result: 'failed', reason: 'file_failed', message: item.error }
             : { fileName: item.fileName, result: 'skipped', reason: 'not_a_dive' });
           continue;
         }
@@ -716,7 +717,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
             importId: job.id, originalId: item.o.id, fileName: item.fileName, seen: item.seen,
           })));
         } catch (error) {
-          outcome.push({ fileName: item.fileName, result: 'failed', reason: 'file_failed', message: (error as Error).message, remoteId: d.remoteId });
+          outcome.push({ fileName: item.fileName, result: 'failed', reason: 'file_failed', message: errorMessage(error), remoteId: d.remoteId });
         }
       }
       return outcome;

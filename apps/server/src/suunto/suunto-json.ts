@@ -2,7 +2,8 @@
 // `{"DeviceLog": {"Header", "Samples", "Device"}}`, in SI units (Pa, K, m³, m³/s, fractions, seconds).
 // Read from a Suunto D5's exports; what other models write differently is noted where it is handled.
 import type { RecordingSummary, UtcOffsetSource } from '../db/schema.js';
-import { stripUndefined, type ParsedDevice, type ParsedEvent, type ParsedRecording, type ParsedSeries } from '../imports/parsed-recording.js';
+import { errorMessage } from '../errors.js';
+import { ParseError, stripUndefined, type ParsedDevice, type ParsedEvent, type ParsedRecording, type ParsedSeries } from '../imports/parsed-recording.js';
 import { SUUNTO_EVENT_TYPES, decoModelFromSuunto, diveModeFromSuunto } from './suunto-vocabulary.js';
 
 export interface SuuntoJsonAdapter {
@@ -63,15 +64,15 @@ export function createSuuntoJsonAdapter(): SuuntoJsonAdapter {
     parser: 'suunto-json',
     parserVersion: '1',
     async parse(data) {
-      if (!looksLikeSuuntoJson(data)) throw new Error('Not a Suunto JSON export');
+      if (!looksLikeSuuntoJson(data)) throw new ParseError('Not a Suunto JSON export');
       let root: unknown;
       try {
         root = JSON.parse(new TextDecoder('utf-8', { ignoreBOM: false }).decode(data));
       } catch (error) {
-        throw new Error(`Suunto JSON export is not valid JSON: ${(error as Error).message}`);
+        throw new ParseError(`Suunto JSON export is not valid JSON: ${errorMessage(error)}`, { cause: error });
       }
       const log = obj(obj(root)?.DeviceLog);
-      if (!log) throw new Error('Suunto JSON export has no DeviceLog');
+      if (!log) throw new ParseError('Suunto JSON export has no DeviceLog');
       const recording = toRecording(log);
       return recording ? [recording] : [];
     },
@@ -85,7 +86,7 @@ function toRecording(log: Json): ParsedRecording | undefined {
   if (!samples.some((s) => num(s.Depth) !== undefined) && !obj(header.Diving)) return undefined;
 
   const start = time(header.DateTime);
-  if (!start) throw new Error('Suunto dive log has no start time');
+  if (!start) throw new ParseError('Suunto dive log has no start time');
   const diving = obj(header.Diving) ?? {};
   const offsetOf = (s: Json) => { const t = time(s.TimeISO8601); return t ? t.ms - start.ms : undefined; };
 

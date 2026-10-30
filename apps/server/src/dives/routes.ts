@@ -9,7 +9,7 @@ import {
   CYLINDER_MATERIALS, LEAD_PLACEMENTS, OVERRIDABLE_FIELDS, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive,
   type RecordingSummary,
 } from '../db/schema.js';
-import { Problem, problem } from '../http/problems.js';
+import { answerErrors, answers, Problem, problem } from '../http/problems.js';
 import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, SITE_WATER_TYPES, WATER_TYPES } from '../vocabulary.js';
 import { CYLINDER_CATALOGUE } from './cylinder-catalogue.js';
 import { CylinderError, withoutPressures } from './cylinders.js';
@@ -33,9 +33,8 @@ import type { PushService } from '../providers/push-service.js';
 import type { WaitingPushService } from '../providers/waiting-push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
 import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
-import { ProviderServiceError } from '../providers/registry.js';
 import { WaitingPushViewSchema } from '../providers/waiting-push-view.js';
-import { replyProviderError } from '../providers/routes.js';
+import { answerProviderError, replyProviderError } from '../providers/routes.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface DiveRouteDeps {
@@ -290,6 +289,8 @@ const STATUS: Record<DiveError['code'], number> = {
   recording_not_found: 404, last_recording: 409, diver_not_found: 404, site_not_found: 404, participant_invalid: 400,
   merge_not_possible: 400, check_not_found: 404,
 };
+const CYLINDER_STATUS: Record<CylinderError['code'], number> = { cylinder_invalid: 400, cylinder_series_not_found: 400 };
+const WEIGHTING_STATUS: Record<WeightingError['code'], number> = { weighting_feedback_invalid: 400, suit_invalid: 400 };
 
 const DeletedDiveView = Type.Object({
   id: Type.String(),
@@ -394,12 +395,9 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   app.addHook('onRequest', requireUser(auth));
   refreshAssessmentsAfterChange(app, assessments);
 
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof DiveError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    if (error instanceof CylinderError || error instanceof WeightingError) return reply.code(400).send(problem(error.code));
-    if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(
+    answers(DiveError, STATUS), answers(CylinderError, CYLINDER_STATUS), answers(WeightingError, WEIGHTING_STATUS), answerProviderError,
+  ));
 
 
   /** The Dive if the signed-in User manages its Diver. */

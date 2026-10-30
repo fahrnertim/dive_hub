@@ -6,7 +6,7 @@ import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { UTC_OFFSET_SOURCES } from '../db/schema.js';
-import { Problem, problem } from '../http/problems.js';
+import { answerErrors, answers, Problem } from '../http/problems.js';
 import type { DuplicateReason } from '../imports/matching.js';
 import { CandidateError, type Candidates } from './candidates.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
@@ -58,10 +58,7 @@ const STATUS: Record<CandidateError['code'], number> = {
 export const candidateRoutes: FastifyPluginAsyncTypebox<CandidateRouteDeps> = async (app, { auth, candidates, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
   refreshAssessmentsAfterChange(app, assessments);
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof CandidateError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(CandidateError, STATUS)));
 
   app.get('/duplicate-candidates', {
     schema: {

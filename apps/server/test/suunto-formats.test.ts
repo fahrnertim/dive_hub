@@ -9,7 +9,7 @@ import { probablyNoDive } from '../src/dives/logbook-check-rules.js';
 import { createFitAdapter } from '../src/fit/fit-adapter.js';
 import { computerEventOf } from '../src/imports/computer-events.js';
 import { createFileFormats, formatOf } from '../src/imports/formats.js';
-import type { ParsedRecording } from '../src/imports/parsed-recording.js';
+import { ParseError, type ParsedRecording } from '../src/imports/parsed-recording.js';
 import { createSuuntoJsonAdapter, looksLikeSuuntoJson } from '../src/suunto/suunto-json.js';
 import { decoModelFromSuunto, diveModeFromSuunto, diveModeFromSuuntoFit } from '../src/suunto/suunto-vocabulary.js';
 import { makeSuuntoAppFit, makeSuuntoJson } from './fixtures/suunto-dive.js';
@@ -133,8 +133,13 @@ describe('the Suunto app\'s JSON export', () => {
 
   it('holds no dive when the log has no depth, and refuses what is not a log', async () => {
     expect(await json.parse(text('{"DeviceLog":{"Header":{"DateTime":"2026-02-10T10:00:00+01:00","Duration":600},"Samples":[{"HR":1.2,"TimeISO8601":"2026-02-10T10:00:01+01:00"}]}}'))).toEqual([]);
-    await expect(json.parse(text('{"DeviceLog": 5'))).rejects.toThrow(/not valid JSON/);
-    await expect(json.parse(text('{"dives": []}'))).rejects.toThrow(/Not a Suunto JSON/);
+    const broken = json.parse(text('{"DeviceLog": 5'));
+    await expect(broken).rejects.toThrow(ParseError);
+    await expect(broken).rejects.toThrow(/not valid JSON/);
+    await expect(broken).rejects.toHaveProperty('cause', expect.any(SyntaxError));
+    await expect(json.parse(text('{"dives": []}'))).rejects.toThrow(ParseError);
+    await expect(json.parse(text('{"DeviceLog": []}'))).rejects.toThrow(/has no DeviceLog/);
+    await expect(fit.parse(text('not a fit file'))).rejects.toThrow(ParseError);
   });
 
   it('keeps values without a word of ours as extras', async () => {

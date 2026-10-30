@@ -726,11 +726,11 @@ export interface paths {
                             /** Format: date-time */
                             createdAt: string;
                             /** @description Last time the session was refreshed (about daily) */
-                            lastActiveAt: string | null;
+                            lastActiveAt: null | string;
                             /** Format: date-time */
                             expiresAt: string;
-                            ipAddress: string | null;
-                            userAgent: string | null;
+                            ipAddress: null | string;
+                            userAgent: null | string;
                             /** @description The session this request came with */
                             current: boolean;
                         }[];

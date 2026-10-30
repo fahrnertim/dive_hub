@@ -4,7 +4,7 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { callerOf } from '../http/caller.js';
-import { Problem, problem } from '../http/problems.js';
+import { answerErrors, answers, Problem, problem } from '../http/problems.js';
 import { REVISION_CAUSES } from '../dives/revisions.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { NEARBY_M, SITE_SORTS, SiteError, type ExternalIdRow, type SiteService } from './site-service.js';
@@ -168,10 +168,7 @@ const text = (v: string | null | undefined) => (v === undefined ? undefined : v?
 
 export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, { auth, sites }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof SiteError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(SiteError, STATUS)));
 
   app.get('/dive-sites', {
     schema: {

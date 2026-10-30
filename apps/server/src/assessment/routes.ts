@@ -4,7 +4,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
-import { Problem, problem } from '../http/problems.js';
+import { answerErrors, answers, Problem } from '../http/problems.js';
 import { COMPUTER_EVENTS } from '../vocabulary.js';
 import { AssessmentError, type AssessmentService, type AssessmentView } from './assessment-service.js';
 import { EVIDENCE, RULES, RULE_IDS, SEVERITIES, SOURCES } from './rules.js';
@@ -64,12 +64,11 @@ const toView = (a: AssessmentView): Static<typeof AssessmentViewSchema> => ({
   computerEvents: a.computerEvents.map((e) => ({ atSeconds: e.atS, event: e.event })),
 });
 
+const STATUS: Record<AssessmentError['code'], number> = { dive_not_found: 404, diver_not_found: 404, finding_not_found: 404 };
+
 export const assessmentRoutes: FastifyPluginAsyncTypebox<AssessmentRouteDeps> = async (app, { auth, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof AssessmentError) return reply.code(404).send(problem(error.code));
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(AssessmentError, STATUS)));
 
   app.get('/dives/:id/assessment', {
     schema: {

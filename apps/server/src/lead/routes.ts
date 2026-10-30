@@ -6,10 +6,9 @@ import { Value } from 'typebox/value';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { CYLINDER_MATERIALS, SUIT_TYPES, SUIT_UNDERGARMENTS } from '../db/schema.js';
-import { DiverError } from '../divers/diver-error.js';
 import { replyDiverError } from '../divers/routes.js';
 import type { Suit } from '../dives/weighting.js';
-import { Problem, problem } from '../http/problems.js';
+import { answerErrors, Problem, problem } from '../http/problems.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import type { LeadService } from './service.js';
 import type { EstimateBasis } from './types.js';
@@ -96,10 +95,7 @@ const EstimateView = Type.Object({
 
 export const leadRoutes: FastifyPluginAsyncTypebox<LeadRouteDeps> = async (app, deps) => {
   app.addHook('onRequest', requireUser(deps.auth));
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof DiverError) return replyDiverError(error, reply);
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(replyDiverError));
 
   app.get('/divers/:id/lead-estimate', {
     schema: {

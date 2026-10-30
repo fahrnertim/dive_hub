@@ -5,6 +5,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../../db/client.js';
 import { diveSite, siteImport, type SiteImportFinding, type SiteImportProgress } from '../../db/schema.js';
 import { changeListener, writeRevision, type Actor, type Changes } from '../../dives/revisions.js';
+import { errorMessage } from '../../errors.js';
 import type { ProblemCode } from '../../http/problems.js';
 import { isUniqueViolation } from '../site-error.js';
 import { allPublicIds, heldIds, insertImportedIds, publishIds, updateImported } from '../site-ids.js';
@@ -200,7 +201,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
           ? (error.reason === 'rate_limited' ? 'source_rate_limited' : 'source_unavailable')
           : 'internal_error';
         await db.update(siteImport).set({
-          status: 'failed', errorCode: code, errorDetail: (error instanceof Error ? error.message : String(error)).slice(0, 500), finishedAt: new Date(),
+          status: 'failed', errorCode: code, errorDetail: errorMessage(error).slice(0, 500), finishedAt: new Date(),
         }).where(eq(siteImport.id, id));
         if (!(error instanceof SiteSourceError)) throw error;
       }

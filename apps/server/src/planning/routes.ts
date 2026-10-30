@@ -4,7 +4,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
-import { Problem, problem } from '../http/problems.js';
+import { answerErrors, answers, Problem } from '../http/problems.js';
 import { Nullable } from '../http/schemas.js';
 import type { PlanningService } from './planning-service.js';
 import { BOTTOM_TIME_RULES } from './bottom-time-service.js';
@@ -39,9 +39,9 @@ const GasView = Type.Object({
   ppO2Limits: Type.Object({ working: Type.Number(), contingency: Type.Number() }),
   modWorkingM: Type.Number({ description: 'Rounded down to 0.1 m' }),
   modContingencyM: Type.Number({ description: 'Rounded down to 0.1 m' }),
-  atDepth: Type.Union([Type.Null(), Type.Object({
+  atDepth: Nullable(Type.Object({
     depthM: Type.Number(), ppO2: Type.Number(), bestMixPercent: Type.Integer(), eadM: Type.Number(), endM: Type.Number(),
-  })], { description: 'Null without a depth' }),
+  }), { description: 'Null without a depth' }),
   conditions: Type.Object({ water: Water, altitudeM: Type.Number() }),
   oxygenNarcotic: Type.Boolean(),
 });
@@ -142,27 +142,27 @@ const GasPlanView = Type.Union([
 const BottomTimeView = Type.Object({
   status: Type.Enum(['ok', 'outside_limits']),
   reason: Type.Optional(Type.Enum(['depth', 'mod', 'gas'], { description: 'Why there is no number: deeper than 40 m, beyond the MOD at the contingency ppO2, or a mix other than air and nitrox 21-40 %' })),
-  modM: Type.Optional(Type.Union([Type.Null(), Type.Number()])),
+  modM: Type.Optional(Nullable(Type.Number())),
   minutes: Type.Optional(Type.Integer({ description: 'Whole minutes from leaving the surface to leaving the depth' })),
   binding: Type.Optional(Type.Array(Type.Enum(['ndl', 'oxygen', 'gas']), { description: 'The limits that decide; several when they bind together' })),
   limits: Type.Optional(Type.Object({
-    ndl: Type.Union([Type.Null(), Type.Number()], { description: 'Minutes; null when the depth does not limit' }),
-    oxygen: Type.Union([Type.Null(), Type.Number()]),
-    gas: Type.Union([Type.Null(), Type.Number()], { description: 'Null without a Cylinder' }),
+    ndl: Nullable(Type.Number(), { description: 'Minutes; null when the depth does not limit' }),
+    oxygen: Nullable(Type.Number()),
+    gas: Nullable(Type.Number(), { description: 'Null without a Cylinder' }),
   })),
   otu: Type.Optional(Type.Number()),
   ppO2AtDepth: Type.Optional(Type.Number()),
   ppO2AboveWorking: Type.Optional(Type.Boolean()),
-  ascentPressureBar: Type.Optional(Type.Union([Type.Null(), Type.Number()], { description: 'The pressure the gas limit ends at; null without a Cylinder' })),
+  ascentPressureBar: Type.Optional(Nullable(Type.Number(), { description: 'The pressure the gas limit ends at; null without a Cylinder' })),
   used: Type.Object({
     gfHigh: Used(Type.Number()),
     sacLpm: Type.Intersect([Used(Type.Number()), Type.Object({ basedOn: Type.Optional(Type.Integer({ description: 'How many Dives the planning SAC rests on' })) })]),
     water: Used(Water), altitudeM: Used(Type.Number()),
-    gasRule: Used(Type.Object({ kind: Type.Enum([...BOTTOM_TIME_RULES]), bar: Type.Union([Type.Null(), Type.Number()]) })),
+    gasRule: Used(Type.Object({ kind: Type.Enum([...BOTTOM_TIME_RULES]), bar: Nullable(Type.Number()) })),
   }),
   gas: Type.Object({ o2: Type.Number(), he: Type.Number() }),
   depthM: Type.Number(),
-  recentDiveEndedAt: Type.Union([Type.Null(), Type.String()], { description: 'When the Diver\'s Dive within the last 48 hours ended; the real limit is then shorter than shown' }),
+  recentDiveEndedAt: Nullable(Type.String(), { description: 'When the Diver\'s Dive within the last 48 hours ended; the real limit is then shorter than shown' }),
 });
 
 const STATUS: Record<PlanningError['code'], number> = {
@@ -172,10 +172,7 @@ const STATUS: Record<PlanningError['code'], number> = {
 export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = async (app, deps) => {
   app.addHook('onRequest', requireUser(deps.auth));
 
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof PlanningError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(PlanningError, STATUS)));
 
   app.get('/tools/gas', {
     schema: {

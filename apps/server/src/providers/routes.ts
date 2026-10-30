@@ -6,7 +6,7 @@ import { Type, type Static, type TOptional } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
 import { callerOf } from '../http/caller.js';
-import { Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
+import { answerErrors, type ErrorAnswer, Problem, problem, PROBLEMS, providerProblem, type ProblemCode } from '../http/problems.js';
 import { CYLINDER_MATERIALS, DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES } from '../db/schema.js';
 import { ImportView, toImportView } from '../routes.js';
 import { SOURCE_INFO } from '../sites/sources.js';
@@ -28,9 +28,8 @@ import type { PushService } from './push-service.js';
 import type { SitePickService } from './site-pick.js';
 import type { PushRow } from './remote-state.js';
 import { ProviderServiceError, type ProviderRefusal, type ProviderRegistry } from './registry.js';
-import { CertificationError, type CertificationService } from '../certifications/certification-service.js';
+import { type CertificationService } from '../certifications/certification-service.js';
 import { replyCertificationError } from '../certifications/routes.js';
-import { DiverError } from '../divers/diver-error.js';
 import { replyDiverError } from '../divers/routes.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
@@ -300,6 +299,8 @@ const errors = { 400: Problem, 404: Problem, 409: ProviderProblem, 422: Problem,
 export function replyProviderError(error: ProviderServiceError, reply: FastifyReply, extra: object = {}) {
   return reply.code(PROVIDER_STATUS[error.code]).send({ ...(error.provider ? providerProblem(error.code, error.provider) : problem(error.code)), ...error.extra, ...extra });
 }
+/** replyProviderError as a route plugin's answer (answerErrors). */
+export const answerProviderError: ErrorAnswer = (error, reply) => (error instanceof ProviderServiceError ? replyProviderError(error, reply) : undefined);
 
 export const pushView = (p: PushRow): Static<typeof PushView> => ({
   id: p.id, action: p.action, state: p.state, remoteId: p.remoteId, remoteNumber: p.remoteNumber, remoteGone: p.remoteGone,
@@ -349,13 +350,8 @@ export function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Sta
 
 export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, sitePicks, diveImports, goneDives, waitingPushes, scheduledFetch, conflicts, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
-    if (error instanceof CertificationError) return replyCertificationError(error, reply);
-    // Linking and adding a buddy refuse as the Diver routes do.
-    if (error instanceof DiverError) return replyDiverError(error, reply);
-    throw error;
-  });
+  // Linking and adding a buddy refuse as the Diver routes do.
+  app.setErrorHandler(answerErrors(answerProviderError, replyCertificationError, replyDiverError));
 
   // A string, not an enum: clients take the Providers from GET /api/providers, and the registry refuses others.
   const ProviderParam = Type.String({ pattern: '^[a-z][a-z0-9_]*$', description: 'A Provider\'s id (GET /api/providers); others answer provider_unsupported' });

@@ -4,7 +4,8 @@
 // dive_settings or serial number and keeps its summary in `session` and developer fields.
 import FitParser from 'fit-file-parser';
 import type { RecordingSummary } from '../db/schema.js';
-import { stripUndefined, type ParsedDevice, type ParsedEvent, type ParsedRecording, type ParsedSeries, type Position } from '../imports/parsed-recording.js';
+import { errorMessage } from '../errors.js';
+import { ParseError, stripUndefined, type ParsedDevice, type ParsedEvent, type ParsedRecording, type ParsedSeries, type Position } from '../imports/parsed-recording.js';
 import { suuntoFitKey } from '../suunto/suunto-json.js';
 import { diveModeFromSuuntoFit } from '../suunto/suunto-vocabulary.js';
 import { circuitFromFit, decoModelFromFit, diveModeFromFit, waterTypeFromFit } from './fit-vocabulary.js';
@@ -71,7 +72,7 @@ function parseWithFitFileParser(data: Uint8Array): Promise<{ messages: FitMessag
   });
   return new Promise((resolve, reject) => {
     parser.parse(Buffer.from(data), (error, result) => {
-      if (error) reject(new Error(String(error)));
+      if (error) reject(new ParseError(errorMessage(error), { cause: error }));
       else resolve(result as unknown as { messages: FitMessages });
     });
   });
@@ -82,7 +83,7 @@ export function createFitAdapter(): FitAdapter {
     parser: 'fit-file-parser',
     parserVersion: '6.1.2',
     async parse(data) {
-      if (!looksLikeFit(data)) throw new Error('Not a FIT file');
+      if (!looksLikeFit(data)) throw new ParseError('Not a FIT file');
       const { messages } = await parseWithFitFileParser(data);
       const recording = toRecording(messages);
       return recording ? [recording] : [];
@@ -96,7 +97,7 @@ function toRecording(m: FitMessages): ParsedRecording | undefined {
   if (!session || sport !== 'diving') return undefined;
 
   const startsAt = date(session.start_time);
-  if (!startsAt) throw new Error('Dive session has no start time');
+  if (!startsAt) throw new ParseError('Dive session has no start time');
 
   const fileId = m.file_id?.[0] ?? {};
   const creator = m.device_info?.find((d) => d.device_index === 'creator') ?? m.device_info?.[0] ?? {};

@@ -2,7 +2,7 @@
 import { Type, type Static } from 'typebox';
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from '../auth/password.js';
 import type { Role } from './invitations.js';
-import { DateTime } from '../http/schemas.js';
+import { DateTime, Nullable } from '../http/schemas.js';
 import { userRole } from '../db/schema.js';
 
 export { Problem } from '../http/problems.js';
@@ -22,7 +22,7 @@ export const UserView = Type.Object({
 
 export const PreferencesView = Type.Object({
   // Null first, so the validator's type coercion never turns null into a string (see dives/routes.ts).
-  language: Type.Union([Type.Null(), Type.String({ pattern: '^[a-z]{2,3}(-[A-Z]{2})?$', description: 'BCP 47 tag, e.g. "de"' })], {
+  language: Nullable(Type.String({ pattern: '^[a-z]{2,3}(-[A-Z]{2})?$', description: 'BCP 47 tag, e.g. "de"' }), {
     description: 'Null: follow the browser',
   }),
   units: Type.Union([Type.Null(), Type.Literal('metric'), Type.Literal('imperial')], {

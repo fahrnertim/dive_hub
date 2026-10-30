@@ -1,6 +1,6 @@
 // Error responses (ADR 0014): every refusal carries a stable `code`, which clients translate,
 // and an English `error` text for logs, scripts and anything without a translation.
-import type { FastifyError, FastifyInstance } from 'fastify';
+import type { FastifyError, FastifyInstance, FastifyReply } from 'fastify';
 import { Type } from 'typebox';
 import { Nullable } from './schemas.js';
 
@@ -151,6 +151,32 @@ export const problem = (code: ProblemCode, detail?: string) => ({ code, error: d
 /** A problem about a Provider: names it, so clients can say "SSI didn't answer" (ADR 0027). */
 export const providerProblem = (code: ProblemCode, provider: { id: string; name: string }) =>
   ({ ...problem(code), provider: provider.id, providerName: provider.name });
+
+/** How a route plugin answers one kind of error: it replies to an error it knows and answers undefined to any other. */
+export type ErrorAnswer = (error: unknown, reply: FastifyReply) => FastifyReply | undefined;
+
+/**
+ * Answers a module's error by its code: the status from the module's STATUS, which the code union keeps exhaustive,
+ * and the problem with the extras `extras` names (such as the Diver that has an account).
+ */
+export const answers = <E extends Error & { code: ProblemCode }>(
+  type: abstract new (...args: never[]) => E,
+  status: Record<E['code'], number>,
+  extras: (error: E) => object | undefined = () => undefined,
+): ErrorAnswer => (error, reply) => {
+  if (!(error instanceof type)) return undefined;
+  const code: number = status[error.code as E['code']];
+  return reply.code(code).send({ ...problem(error.code), ...extras(error) });
+};
+
+/** A route plugin's error handler: the first answer that knows the error replies; any other error goes on to useProblemErrors. */
+export const answerErrors = (...answered: ErrorAnswer[]) => (error: Error, _request: unknown, reply: FastifyReply) => {
+  for (const answer of answered) {
+    const sent = answer(error, reply);
+    if (sent) return sent;
+  }
+  throw error;
+};
 
 /**
  * Turns Fastify's own errors into problems: validation failures keep their (English) explanation,

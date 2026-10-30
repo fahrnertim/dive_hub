@@ -3,6 +3,7 @@
 // type. Never kept: moderation comments (they hold submitters' IP addresses), private sites and their owners,
 // statistics, wildlife, alias names. The file has no area query, so the area is applied here.
 import yauzl from 'yauzl';
+import { errorMessage } from '../../errors.js';
 import { looksLikeZip } from '../../imports/archive.js';
 import type { SiteWaterType } from '../../vocabulary.js';
 import { alpha2Of } from '../../sites/countries.js';
@@ -37,7 +38,7 @@ async function sitesJson(zip: Buffer): Promise<string> {
   try {
     file = await yauzl.fromBufferPromise(zip, { decodeStrings: true, validateEntrySizes: true, strictFileNames: false });
   } catch (error) {
-    throw unavailable(`broken zip: ${error instanceof Error ? error.message : String(error)}`);
+    throw unavailable(`broken zip: ${errorMessage(error)}`);
   }
   try {
     for await (const entry of file.eachEntry()) {
@@ -49,7 +50,7 @@ async function sitesJson(zip: Buffer): Promise<string> {
     }
   } catch (error) {
     if (error instanceof SiteSourceError) throw error;
-    throw unavailable(`broken zip: ${error instanceof Error ? error.message : String(error)}`);
+    throw unavailable(`broken zip: ${errorMessage(error)}`);
   } finally {
     file.close();
   }
@@ -66,7 +67,7 @@ export function parseSsiSites(json: string, area: ImportArea): SourceSite[] {
     if (!Array.isArray(parsed.divesites)) throw new Error('no divesites');
     rows = parsed.divesites;
   } catch (error) {
-    throw unavailable(error instanceof Error ? error.message : String(error));
+    throw unavailable(errorMessage(error));
   }
   return rows.flatMap((row): SourceSite[] => {
     if (typeof row !== 'object' || row === null) return [];

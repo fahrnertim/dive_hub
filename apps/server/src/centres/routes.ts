@@ -4,7 +4,7 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { callerOf } from '../http/caller.js';
-import { Problem, problem } from '../http/problems.js';
+import { answerErrors, answers, Problem, problem } from '../http/problems.js';
 import type { DiverService } from '../divers/diver-service.js';
 import { CENTRE_SOURCE_NAME, CENTRE_SOURCES, CentreError, type CentreService } from './centre-service.js';
 import { IdParams, Nullable } from '../http/schemas.js';
@@ -90,12 +90,7 @@ const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
 export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (app, { auth, centres, divers }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof CentreError) {
-      return reply.code(STATUS[error.code]).send({ ...problem(error.code), ...(error.centre && { centre: error.centre }) });
-    }
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(CentreError, STATUS, (error) => error.centre && { centre: error.centre })));
 
   app.get('/dive-centres', {
     schema: {

@@ -18,6 +18,7 @@ export function invitationStatus(row: InvitationRow, now = new Date()): Invitati
 }
 
 export class EmailTakenError extends Error {
+  readonly code = 'email_taken' as const;
   constructor() { super('A User with this e-mail already exists'); }
 }
 
