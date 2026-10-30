@@ -7,7 +7,7 @@ import { DiveList, LogbookHeader } from './DiveList.tsx';
 import { listOfDiveAddress, logbookParams, type LogbookParams } from './lib/logbook.ts';
 import { sitesParams } from './lib/sites-list.ts';
 import { toolsParams } from './lib/tools.ts';
-import { pickLanguage } from './i18n/index.ts';
+import { pickLanguage } from './i18n/languages.ts';
 import { DeletedNotices } from './DeletedDives.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
 import { PushRunStrip, RunMark } from './PushRun.tsx';

@@ -5,19 +5,19 @@ import { pickLanguage } from './languages.ts';
 import de from './locales/de.json';
 import en from './locales/en.json';
 
-export { LANGUAGES, pickLanguage, type Language } from './languages.ts';
+const resources = { en: { translation: en }, de: { translation: de } } as const;
 
-export const resources = { en: { translation: en }, de: { translation: de } } as const;
-
-void i18n.use(initReactI18next).init({
-  resources,
-  lng: pickLanguage(null, navigator.languages),
-  fallbackLng: 'en',
-  interpolation: { escapeValue: false }, // React escapes already
-});
-
-const setDocumentLanguage = (language: string) => { document.documentElement.lang = language; };
-setDocumentLanguage(i18n.language);
-i18n.on('languageChanged', setDocumentLanguage);
-
-export default i18n;
+/** Starts i18next in the first of the given browser languages we have, and keeps <html lang> in step.
+ * main.tsx calls it once before the first render; until then nothing here has run. */
+export function initI18n(browser: readonly string[]) {
+  void i18n.use(initReactI18next).init({
+    resources,
+    lng: pickLanguage(null, browser),
+    fallbackLng: 'en',
+    interpolation: { escapeValue: false }, // React escapes already
+  });
+  const setDocumentLanguage = (language: string) => { document.documentElement.lang = language; };
+  setDocumentLanguage(i18n.language);
+  i18n.on('languageChanged', setDocumentLanguage);
+  return i18n;
+}

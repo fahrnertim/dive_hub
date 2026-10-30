@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { formValues } from './lib/form.ts';
 import { NewPasswordField, useUserChanged } from './SignedOut.tsx';
 import { api, authClient, keys, meQuery, sessionsQuery, unwrap, type SessionView } from './api.ts';
-import { LANGUAGES } from './i18n/index.ts';
+import { LANGUAGES } from './i18n/languages.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
