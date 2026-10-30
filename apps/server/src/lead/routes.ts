@@ -10,7 +10,7 @@ import { replyDiverError } from '../divers/diver-answers.js';
 import type { Suit } from '../dives/weighting.js';
 import { answerErrors, Problem, problem } from '../http/problems.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
-import type { LeadService } from './service.js';
+import type { LeadService } from './lead-service.js';
 import type { EstimateBasis } from './types.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 

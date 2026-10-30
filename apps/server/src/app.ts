@@ -25,7 +25,7 @@ import { createDiverService } from './divers/diver-service.js';
 import { certificationRoutes } from './certifications/routes.js';
 import { diverRoutes } from './divers/routes.js';
 import { leadRoutes } from './lead/routes.js';
-import { createLeadService } from './lead/service.js';
+import { createLeadService } from './lead/lead-service.js';
 import { createPlanningService } from './planning/planning-service.js';
 import { planningRoutes } from './planning/routes.js';
 import { createSiteService } from './sites/site-service.js';

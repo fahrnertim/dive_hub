@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { diver, user } from '../src/db/schema.js';
 import { DiverError } from '../src/divers/diver-error.js';
-import { createLeadService } from '../src/lead/service.js';
+import { createLeadService } from '../src/lead/lead-service.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';
 
 describe.skipIf(!(await databaseReachable()))('lead service', () => {
