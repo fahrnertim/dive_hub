@@ -111,7 +111,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   Discarding a Duplicate candidate is not confirmed. It offers **Undo** at once (reopen) and keeps a list of
   discarded ones ([ADR 0016](../decisions/0016-recording-decisions-and-divers.md)). *Web:* `Decisions.tsx`.
 - **Should guard unsaved changes** when leaving a form, including through the address, and release the guard
-  once saved before navigating. *Web:* `lib/leave-guard.ts` (`releaseLeaveGuard()`), `App.tsx` (`useRoute`).
+  once saved before navigating. *Web:* `lib/leave-guard.ts` (the release `useLeaveGuard` returns), `App.tsx` (`useRoute`).
 - **Must send `null` to clear a field, and leave a field out to keep it.** The two mean different things in every
   PATCH. A Dive edit sends only the fields the User changed (`set`) and the ones to give back to the recording
   (`reset`); see [Dives](#dives).

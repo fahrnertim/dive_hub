@@ -64,7 +64,8 @@ interface State {
 }
 
 // Shared by the dive page (which deletes and leaves) and the logbook (which shows the outcome): the page changes in between.
-let state: State = { justDeleted: undefined, reminderDismissed: false };
+const empty: State = { justDeleted: undefined, reminderDismissed: false };
+let state = empty;
 const listeners = new Set<() => void>();
 
 export function updateDeletion(change: Partial<State>) {
@@ -72,9 +73,14 @@ export function updateDeletion(change: Partial<State>) {
   for (const listener of listeners) listener();
 }
 
+/** Another User signs in (or nobody): the last one's deleted Dive and dismissed reminder aren't theirs. */
+export const resetDeletion = () => updateDeletion(empty);
+
+export const deletionState = (): State => state;
+
 export function useDeletion(): State {
   return useSyncExternalStore(
     (listener) => { listeners.add(listener); return () => listeners.delete(listener); },
-    () => state,
+    deletionState,
   );
 }

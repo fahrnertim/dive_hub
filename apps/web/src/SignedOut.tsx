@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trans, useTranslation } from 'react-i18next';
 import { api, authClient, invitationLinkQuery, passwordResetQuery, unwrap } from './api.ts';
+import { resetDeletion } from './lib/deletion.ts';
 import { useErrorText } from './lib/display.ts';
 import { formValues } from './lib/form.ts';
 import { usePageTitle } from './lib/page.ts';
@@ -10,7 +11,7 @@ const MIN_PASSWORD_LENGTH = 15;
 const MAX_PASSWORD_LENGTH = 128;
 
 /**
- * After the User changes, nothing cached for the previous one may show. resetQueries drops all
+ * After the User changes, nothing cached for the previous one may show (nor the Dive they just deleted). resetQueries drops all
  * cached data and refetches what's on screen (so `me` picks up the new session); clear() would
  * detach the mounted queries and leave the page as it was.
  */
@@ -19,6 +20,7 @@ export function useUserChanged() {
   return async () => {
     history.replaceState(null, '', location.pathname); // drop tokens from the address bar
     location.hash = '/';
+    resetDeletion();
     await queryClient.resetQueries();
   };
 }

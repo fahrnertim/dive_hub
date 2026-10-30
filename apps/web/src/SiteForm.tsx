@@ -5,7 +5,7 @@ import { api, ApiError, connectionsQuery, keys, unwrap, type ConnectionView, typ
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { countryOptions } from './lib/geo.ts';
 import { depthFromDisplay, depthIn } from './lib/units.ts';
-import { releaseLeaveGuard, useLeaveGuard } from './lib/leave-guard.ts';
+import { useLeaveGuard } from './lib/leave-guard.ts';
 import { typedSiteId, useProviders, useProviderText } from './lib/providers.ts';
 import { Button, CancelButton, Form, Muted, Notice, NumberField, Select, TextArea, TextField } from './ui/index.ts';
 
@@ -170,7 +170,7 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
       return saved;
     },
     onSuccess: (saved, sent) => {
-      releaseLeaveGuard();
+      releaseGuard();
       queryClient.setQueryData(keys.site(saved.id), saved);
       // Close at once; lists, nearby sites and the history refresh behind it (waiting kept the form open).
       void queryClient.invalidateQueries({ queryKey: keys.sites, predicate: (q) => q.queryKey[1] !== saved.id || q.queryKey.length > 2 });
@@ -180,7 +180,7 @@ export function SiteForm({ site, initial, submitLabel, onSaved, onCancel }: {
       onSaved(saved);
     },
   });
-  useLeaveGuard(changed && !save.isSuccess, t('common.unsavedQuestion', { lost: t('sites.unsavedLost') }));
+  const releaseGuard = useLeaveGuard(changed && !save.isSuccess, t('common.unsavedQuestion', { lost: t('sites.unsavedLost') }));
   const stale = save.error instanceof ApiError && save.error.code === 'site_changed';
 
   const submit = (event: FormEvent<HTMLFormElement>) => {

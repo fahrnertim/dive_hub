@@ -267,7 +267,7 @@ Implemented:
 Found in the screenshot review and fixed:
 - With a fourth section the phone navigation, a sideways-scrolling strip, hid "Admin" at 320 px; it wraps now.
 - A form's unsaved-changes guard stayed on after saving, so moving to the new site's page asked first;
-  `releaseLeaveGuard()` (`lib/leave-guard.ts`) ends it once saved.
+  the release `useLeaveGuard` returns (`lib/leave-guard.ts`) ends it once saved.
 - Removing a form message on blur moved the buttons under a pressing pointer; such messages now change only on submit.
 
 Deliberate simplifications, to revisit:
