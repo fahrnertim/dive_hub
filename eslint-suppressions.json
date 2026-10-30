@@ -19,11 +19,6 @@
       "count": 1
     }
   },
-  "apps/server/src/dives/merging.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "apps/server/src/fit/fit-adapter.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
@@ -36,11 +31,6 @@
   },
   "apps/server/src/imports/import-service.ts": {
     "no-useless-assignment": {
-      "count": 1
-    }
-  },
-  "apps/server/src/imports/placement.ts": {
-    "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
@@ -79,12 +69,12 @@
   },
   "apps/server/src/providers/dive-import.ts": {
     "sonarjs/cognitive-complexity": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/server/src/providers/push-run-service.ts": {
     "sonarjs/cognitive-complexity": {
-      "count": 3
+      "count": 1
     }
   },
   "apps/server/src/providers/ssi/ssi-import.ts": {

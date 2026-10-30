@@ -580,7 +580,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       querystring: Type.Object({ scope: Type.Optional(Type.Enum(['rule', 'nearby'], { default: 'rule' })) }),
       response: { 200: Type.Array(MergeCandidate), 404: Problem },
     },
-  }, async (request) => (await merging.candidates(userOf(request).id, request.params.id, request.query.scope)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, deletesItself, rule, answered }) => ({
+  }, async (request) => (await merging.mergeCandidates(userOf(request).id, request.params.id, request.query.scope)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, deletesItself, rule, answered }) => ({
     id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
     utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
     site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null, fromProvider: d.fromProvider, recordings, at, keeps, bothAt, deletesItself,
@@ -676,7 +676,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request, reply) => {
     const { version, otherId, otherVersion, alsoAt = [] } = request.body;
     const userId = userOf(request).id;
-    const candidate = (await merging.candidates(userId, request.params.id)).find((c) => c.dive.id === otherId);
+    const candidate = (await merging.mergeCandidates(userId, request.params.id)).find((c) => c.dive.id === otherId);
     // Deleted at the Provider before anything changes here, as when deleting a Dive: only the copy of the Dive not kept,
     // and only where the kept one has its own.
     // Where the Dive's Connection deletes by itself, the queue does it after 5 minutes, not asked.

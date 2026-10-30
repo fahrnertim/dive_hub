@@ -14,7 +14,7 @@ import {
 } from './dive-service.js';
 import { managedDiverIds } from '../divers/management.js';
 import { valuesOfDive, type DiveValues } from './dive-values.js';
-import { createLogbookChecks } from './logbook-checks.js';
+import type { LogbookChecks } from './logbook-checks.js';
 import { takeCylinders } from './cylinders.js';
 import { takeWeighting } from './weighting.js';
 import { changeListener, writeRevision, type Actor, type Changes } from './revisions.js';
@@ -22,7 +22,6 @@ import { renumber } from './dive-numbers.js';
 
 type DiveRow = typeof dive.$inferSelect;
 
-/** The widest UTC offset: a Dive whose offset is unknown keeps a wall-clock time at most this far from its instant. */
 /** Values a Dive may lack; the start and the duration it always has. */
 const FILLABLE = ['maxDepthM', 'avgDepthM', 'waterTemperatureC'] as const satisfies readonly OverridableField[];
 
@@ -46,8 +45,51 @@ const liveRecordings = (tx: Queryable, diveId: string) =>
 const keptOf = <T>(a: T, aRecordings: number, b: T, bRecordings: number): [kept: T, other: T] =>
   (aRecordings === 0 && bRecordings > 0 ? [b, a] : [a, b]);
 
-export function createMerging(db: Db) {
-  const checks = createLogbookChecks(db);
+/**
+ * The other Dives of the Diver near this one, with their site's name: up to two local days and both offsets away either
+ * way, or the Dive's length and the tolerance where that reaches further. The same local day is a check too
+ * (entry_apart_from_recording), and nearby is the day before to the day after.
+ */
+function nearbyDives(db: Queryable, row: DiveRow) {
+  const reach = Math.max((row.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + MAX_OFFSET_MS, 2 * DAY_MS + 2 * MAX_OFFSET_MS);
+  return db.select({ d: dive, siteName: diveSite.name }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
+    .where(and(
+      eq(dive.diverId, row.diverId), isNull(dive.deletedAt), ne(dive.id, row.id),
+      lte(dive.startsAt, new Date(row.startsAt.getTime() + reach)),
+      gte(dive.startsAt, new Date(row.startsAt.getTime() - 2 * DAY_MS - 2 * MAX_OFFSET_MS)),
+    )).orderBy(dive.startsAt, dive.id);
+}
+
+type Participant = Awaited<ReturnType<typeof participantsOf>>[number];
+
+/** The other's Participants the kept Dive lacks: not its own Diver, nor one it has already. */
+const addedParticipants = (kept: Participant[], theirs: Participant[], diverId: string) =>
+  theirs.filter((p) => p.diverId !== diverId && !kept.some((k) => k.diverId === p.diverId));
+
+/**
+ * The kept Dive's values with its gaps filled from the other's, and its overrides: beside a Recording a filled value is
+ * one set by hand, or the next refresh from the Recording would drop it.
+ */
+function fillValues(current: DiveRow, other: DiveRow): { values: DiveValues; overrides: OverridableField[] } {
+  const values: DiveValues = valuesOfDive(current);
+  const theirs = valuesOfDive(other);
+  const overrides = new Set(current.overrides);
+  for (const field of FILLABLE) {
+    if (values[field] !== null || theirs[field] === null) continue;
+    values[field] = theirs[field];
+    if (current.primaryRecordingId) overrides.add(field);
+  }
+  return { values, overrides: OVERRIDABLE_FIELDS.filter((f) => overrides.has(f)) };
+}
+
+/** The kept Dive's notes with the other's appended, unless they are empty or the same. */
+function mergeNotes(kept: string | null, other: string | null): string | null {
+  const own = kept?.trim() ?? '';
+  const more = other?.trim() ?? '';
+  return !more || own === more ? kept : own ? `${own}\n\n${more}` : more;
+}
+
+export function createMerging(db: Db, checks: LogbookChecks) {
   return {
     /**
      * The Dives of the same Diver this one breaks a rule of the logbook checks with (ADR 0038): at the same time, as the
@@ -55,18 +97,10 @@ export function createMerging(db: Db) {
      * and whether the User answered that they are two dives. `nearby` lists instead every Dive of the Diver from the
      * local day before to the day after, with the rule where there is one: the Dives to choose from for a merge by hand.
      */
-    async candidates(userId: string, diveId: string, scope: 'rule' | 'nearby' = 'rule') {
+    async mergeCandidates(userId: string, diveId: string, scope: 'rule' | 'nearby' = 'rule') {
       const [row] = await db.select().from(dive).where(and(eq(dive.id, diveId), isNull(dive.deletedAt)));
       if (!row || !(await managedDiverIds(db, userId)).has(row.diverId)) throw new DiveError('dive_not_found');
-      // The same local day is a check too (entry_apart_from_recording), and nearby is the day before to the day after: up
-      // to two days and both offsets away either way.
-      const reach = Math.max((row.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + MAX_OFFSET_MS, 2 * DAY_MS + 2 * MAX_OFFSET_MS);
-      const near = await db.select({ d: dive, siteName: diveSite.name }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
-        .where(and(
-          eq(dive.diverId, row.diverId), isNull(dive.deletedAt), ne(dive.id, row.id),
-          lte(dive.startsAt, new Date(row.startsAt.getTime() + reach)),
-          gte(dive.startsAt, new Date(row.startsAt.getTime() - 2 * DAY_MS - 2 * MAX_OFFSET_MS)),
-        )).orderBy(dive.startsAt, dive.id);
+      const near = await nearbyDives(db, row);
       if (near.length === 0) return [];
       const all = [row.id, ...near.map(({ d }) => d.id)];
       const recs = await db.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, all), isNull(recording.deletedAt)));
@@ -128,7 +162,7 @@ export function createMerging(db: Db) {
 
         const extra: Changes = { mergedFrom: { from: null, to: other.id }, ...cylinders };
         const before = await participantsOf(tx, kept.id);
-        const added = (await participantsOf(tx, other.id)).filter((p) => p.diverId !== kept.diverId && !before.some((k) => k.diverId === p.diverId));
+        const added = addedParticipants(before, await participantsOf(tx, other.id), kept.diverId);
         if (added.length > 0) {
           await tx.insert(participant).values(added.map((p) => ({ diveId: kept.id, diverId: p.diverId, role: p.role })));
           extra.participants = { from: before, to: await participantsOf(tx, kept.id) };
@@ -139,21 +173,9 @@ export function createMerging(db: Db) {
 
         const [current] = await tx.select().from(dive).where(eq(dive.id, kept.id));
         Object.assign(extra, await takeWeighting(tx, current!, other));
-        const values: DiveValues = valuesOfDive(current!);
-        const theirs = valuesOfDive(other);
-        const overrides = new Set(current!.overrides);
-        for (const field of FILLABLE) {
-          if (values[field] !== null || theirs[field] === null) continue;
-          values[field] = theirs[field];
-          // Beside a Recording the value is one set by hand, or the next refresh from the Recording would drop it.
-          if (current!.primaryRecordingId) overrides.add(field);
-        }
-        const own = current!.notes?.trim() ?? '';
-        const more = other.notes?.trim() ?? '';
-        const notes = !more || own === more ? current!.notes : own ? `${own}\n\n${more}` : more;
         const siteId = current!.siteId ?? (other.siteId && (await liveSite(tx, other.siteId)) ? other.siteId : null);
         await applyToDive(tx, current!, {
-          values, overrides: OVERRIDABLE_FIELDS.filter((f) => overrides.has(f)), notes, primaryRecordingId: current!.primaryRecordingId, siteId,
+          ...fillValues(current!, other), notes: mergeNotes(current!.notes, other.notes), primaryRecordingId: current!.primaryRecordingId, siteId,
         }, actor, 'merge', extra);
 
         const at = new Date();

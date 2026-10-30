@@ -117,8 +117,9 @@ export async function buildApp(deps: AppDeps, options: FastifyServerOptions = {}
   const centres = createCentreService(db);
   await app.register(apiRoutes, { prefix: '/api', auth, imports: deps.imports, logbook, pushes, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
   const dives = createDiveService(db);
+  const checks = createLogbookChecks(db);
   await app.register(diveRoutes, {
-    prefix: '/api', auth, logbook, divers, centres, dives, merging: createMerging(db), checks: createLogbookChecks(db), pushes, waitingPushes,
+    prefix: '/api', auth, logbook, divers, centres, dives, merging: createMerging(db, checks), checks, pushes, waitingPushes,
     deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }), assessments,
   });
   await app.register(candidateRoutes, { prefix: '/api', auth, candidates: createCandidates(db), assessments });
