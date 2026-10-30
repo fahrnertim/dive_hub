@@ -1,5 +1,7 @@
-// The services of one Dive Hub process, built in the order they use each other: main.ts, the server tests' createTestApp
-// and the browser tests' server all build them here, and differ only in the parts they pass in (adapters, sources, clock).
+// The services the server and the worker share (assessments, Providers, imports, site imports, AI accesses, setup,
+// invitations), built in the order they use each other: main.ts, the server tests' createTestApp and the browser tests'
+// server all build them here, and differ only in the parts they pass in (adapters, sources, clock). The services only
+// the routes use (logbook, Divers, centres, Dives, sites, planning and the like) are built by buildApp in app.ts.
 import type { Auth } from './auth/auth.js';
 import type { Db } from './db/client.js';
 import type { FastifyBaseLogger } from 'fastify';
