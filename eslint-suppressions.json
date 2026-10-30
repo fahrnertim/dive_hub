@@ -19,12 +19,12 @@
       "count": 1
     }
   },
-  "apps/server/src/imports/formats/fit/fit-adapter.ts": {
+  "apps/server/src/imports/archive.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
-  "apps/server/src/imports/archive.ts": {
+  "apps/server/src/imports/formats/fit/fit-adapter.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
@@ -67,6 +67,11 @@
       "count": 2
     }
   },
+  "apps/server/src/providers/dive-import/three-way.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
   "apps/server/src/providers/push/push-run-service.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
@@ -78,11 +83,6 @@
     }
   },
   "apps/server/src/providers/ssi/ssi-record.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/providers/dive-import/three-way.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }

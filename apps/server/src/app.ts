@@ -5,85 +5,45 @@ import fastifyStatic from '@fastify/static';
 import swagger from '@fastify/swagger';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { sql } from 'drizzle-orm';
-import type { Auth } from './auth/auth.js';
 import { authHandler } from './auth/fastify.js';
+import type { Services } from './compose.js';
 import { withAuthEndpoints } from './auth/openapi.js';
-import type { Db } from './db/client.js';
-import type { ImportService } from './imports/import-service.js';
 import { problem, ProblemSchema, useProblemErrors } from './http/problems.js';
-import { createDiveService } from './dives/dive-service.js';
-import { createDeletionService } from './dives/deletion-service.js';
 import { DeleteProblemSchema } from './dives/deletion-view.js';
-import { createLogbookService } from './dives/logbook-service.js';
 import { logbookRoutes } from './dives/logbook-routes.js';
 import { importRoutes } from './imports/routes.js';
-import { createMergeService } from './dives/merge-service.js';
-import { createMergingService } from './dives/merging-service.js';
-import { createLogbookCheckService } from './dives/checks/logbook-check-service.js';
-import { createCandidateService } from './dives/candidates/candidate-service.js';
 import { candidateRoutes } from './dives/candidates/candidate-routes.js';
 import { diveRoutes } from './dives/routes.js';
-import { createDiverService } from './divers/diver-service.js';
 import { certificationRoutes } from './certifications/routes.js';
 import { diverRoutes } from './divers/routes.js';
 import { leadRoutes } from './lead/routes.js';
-import { createLeadService } from './lead/lead-service.js';
-import { createPlanningService } from './planning/planning-service.js';
 import { planningRoutes } from './planning/routes.js';
-import { createSiteService } from './sites/site-service.js';
 import { siteRoutes } from './sites/routes.js';
-import { createCentreService } from './centres/centre-service.js';
 import { centreRoutes } from './centres/routes.js';
-import type { SiteImportService } from './sites/import/site-import-service.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
-import type { ProviderLayer } from './providers/layer.js';
-import { currentRemote } from './providers/remote-state.js';
 import { providerAnswers, ProviderProblemSchema } from './providers/route-parts.js';
 import { providerRoutes } from './providers/routes.js';
-import { ssiCentreDisplayName } from './providers/ssi/ssi-centre.js';
 import { assessmentRoutes } from './assessment/routes.js';
-import type { AssessmentService } from './assessment/assessment-service.js';
 import { aiAccessRoutes } from './mcp/access-routes.js';
-import type { AiAccessService } from './mcp/access-service.js';
 import { mcpEndpoint } from './mcp/endpoint.js';
-import type { BlobStore } from './storage/blob-store.js';
 import { accountRoutes } from './users/account-routes.js';
 import { adminRoutes } from './users/admin-routes.js';
-import type { InvitationService } from './users/invitation-service.js';
-import { createPasswordResetService } from './users/password-reset-service.js';
-import { createProfileService } from './users/profile-service.js';
-import { createSessionService } from './users/session-service.js';
 import { userRoutes } from './users/routes.js';
-import type { SetupService } from './users/setup-service.js';
-import { createUserAdminService } from './users/user-admin-service.js';
 
-export interface AppDeps {
-  db: Db;
-  imports: ImportService;
-  siteImports: SiteImportService;
-  /** Providers such as SSI, their Connections and Pushes (ADR 0024, 0027). */
-  providers: ProviderLayer;
-  /** Stored files: deleting a User lets theirs go. */
-  blobs: BlobStore;
-  auth: Auth;
-  /** The dive assessment (ADR 0036): kept up to date after whatever changes a logbook. */
-  assessments: AssessmentService;
-  /** AI accesses to the MCP endpoint, the instance's switch and the log (ADR 0035). */
-  aiAccesses: AiAccessService;
-  setup: SetupService;
-  invitations: InvitationService;
+/** Every service, as createServices (compose.ts) builds them, and the instance's settings. */
+export type AppDeps = Services & {
   /** Public URL of the instance; invitation links point there. */
   baseUrl: string;
   maxUploadBytes: number;
   webDir?: string | undefined;
-}
+};
 
 /** The Fastify instance, logger included, before any route: main.ts hands its logger to the services first. */
 export const createServer = (options: FastifyServerOptions = {}) => Fastify(options).withTypeProvider<TypeBoxTypeProvider>();
 
 export type Server = ReturnType<typeof createServer>;
 
-/** Registers the routes on `app` (a fresh instance unless given) and returns it. */
+/** Registers the plugins and routes on `app` (a fresh instance unless given) with the services it is given, and returns it. */
 export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   app.decorateRequest('user', null);
   app.decorateRequest('sessionId', null);
@@ -113,34 +73,24 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   app.get('/api/openapi.json', { schema: { hide: true } }, async () => withAuthEndpoints(app.swagger(), deps.auth));
 
   await app.register(authHandler, { auth: deps.auth });
-  const passwordResets = createPasswordResetService(deps.db);
-  const { db, auth, assessments, baseUrl } = deps;
+  const { db, auth, assessments, baseUrl, passwordResets, logbook, divers, centres, dives, merging, checks } = deps;
   const { pushes, waitingPushes, certifications } = deps.providers;
-  await app.register(userRoutes, { prefix: '/api', auth, profiles: createProfileService(db), setup: deps.setup, invitations: deps.invitations });
-  await app.register(accountRoutes, { prefix: '/api', auth, passwordResets, sessions: createSessionService(db) });
-  await app.register(adminRoutes, {
-    prefix: '/api', auth, passwordResets, userAdmin: createUserAdminService(db, deps.blobs), invitations: deps.invitations, baseUrl,
-  });
-  const logbook = createLogbookService(db);
-  const divers = createDiverService(db);
-  const centres = createCentreService(db, { ssi: ssiCentreDisplayName });
+  await app.register(userRoutes, { prefix: '/api', auth, profiles: deps.profiles, setup: deps.setup, invitations: deps.invitations });
+  await app.register(accountRoutes, { prefix: '/api', auth, passwordResets, sessions: deps.sessions });
+  await app.register(adminRoutes, { prefix: '/api', auth, passwordResets, userAdmin: deps.userAdmin, invitations: deps.invitations, baseUrl });
   await app.register(importRoutes, { prefix: '/api', auth, imports: deps.imports, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
   await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes });
-  const dives = createDiveService(db);
-  const checks = createLogbookCheckService(db);
-  const merging = createMergingService(db, checks, { currentRemote, deletingItself: waitingPushes.deletingItself });
   await app.register(diveRoutes, {
     prefix: '/api', auth, logbook, divers, centres, dives, merging, checks, pushes, waitingPushes,
-    deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }),
-    merge: createMergeService({ merging, logbook, pushes }), assessments, providerAnswers,
+    deletion: deps.deletion, merge: deps.merge, assessments, providerAnswers,
   });
-  await app.register(candidateRoutes, { prefix: '/api', auth, candidates: createCandidateService(db), assessments });
+  await app.register(candidateRoutes, { prefix: '/api', auth, candidates: deps.candidates, assessments });
   await app.register(assessmentRoutes, { prefix: '/api', auth, assessments });
   await app.register(diverRoutes, { prefix: '/api', auth, divers, certifications });
   await app.register(certificationRoutes, { prefix: '/api', auth, certifications });
-  await app.register(planningRoutes, { prefix: '/api', auth, planning: createPlanningService(db) });
-  await app.register(leadRoutes, { prefix: '/api', auth, lead: createLeadService(db) });
-  await app.register(siteRoutes, { prefix: '/api', auth, sites: createSiteService(db) });
+  await app.register(planningRoutes, { prefix: '/api', auth, planning: deps.planning });
+  await app.register(leadRoutes, { prefix: '/api', auth, lead: deps.lead });
+  await app.register(siteRoutes, { prefix: '/api', auth, sites: deps.sites });
   await app.register(centreRoutes, { prefix: '/api', auth, centres, divers });
   await app.register(siteImportRoutes, { prefix: '/api', auth, siteImports: deps.siteImports });
   await app.register(providerRoutes, { prefix: '/api', auth, ...deps.providers, assessments });
