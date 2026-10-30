@@ -143,7 +143,7 @@ harness the test builds from them. jsdom, not happy-dom: React Aria, which our c
 - **Version ranges:** a dependency takes a caret range (`^1.2.3`) unless an upgrade must be a deliberate step; then it
   is pinned exactly. Pinned: the root's lint tooling and every `typescript` (each package's compiler is chosen, see
   above); the Better Auth family (`better-auth`, `@better-auth/api-key` and the `auth` CLI that generates our schema
-  must be one version); `geo-tz` (its time-zone data decides stored instants); `qr` (young 0.x decoder, ADR 0043).
+  must be one version); `geo-tz` (its time-zone data decides stored instants); `qr` (young 0.x encoder and decoder, ADR 0043).
   A new pin names its reason here.
 - **pnpm supply-chain defaults stay on**: packages with install scripts must be approved in
   `allowBuilds` (`pnpm-workspace.yaml`); new releases are installable after one day.

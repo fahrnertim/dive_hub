@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { encode } from 'uqr';
+import encodeQR from 'qr';
 
 /**
  * A text drawn as a QR code (ADR 0043): the text comes from the API and is drawn unchanged, as UTF-8 bytes. Dark on
@@ -8,10 +8,10 @@ import { encode } from 'uqr';
  */
 export function QrCode({ text, label }: { text: string; label: string }) {
   const { size, path } = useMemo(() => {
-    const code = encode(text, { ecc: 'M', border: 4 });
+    const rows = encodeQR(text, 'raw', { ecc: 'medium', border: 4 });
     let d = '';
-    code.data.forEach((row, y) => row.forEach((dark, x) => { if (dark) d += `M${x} ${y}h1v1h-1z`; }));
-    return { size: code.size, path: d };
+    rows.forEach((row, y) => row.forEach((dark, x) => { if (dark) d += `M${x} ${y}h1v1h-1z`; }));
+    return { size: rows.length, path: d };
   }, [text]);
   return (
     <svg className="qr-code" role="img" aria-label={label} viewBox={`0 0 ${size} ${size}`} shapeRendering="crispEdges">
