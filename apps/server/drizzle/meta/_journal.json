@@ -309,6 +309,20 @@
       "when": 1793181733176,
       "tag": "0043_provider_conflict_run_index",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793380663960,
+      "tag": "0044_fill_pre_0027_credentials",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793381090320,
+      "tag": "0045_connection_credentials_not_null",
+      "breakpoints": true
     }
   ]
 }

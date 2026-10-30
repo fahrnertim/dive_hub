@@ -829,7 +829,7 @@ export const connection = pgTable(
     accountLabel: text('account_label').notNull(),
     /** Dive Hub may sign in again by itself (the password is kept). */
     keepSignedIn: boolean('keep_signed_in').notNull(),
-    credentials: text('credentials'),
+    credentials: text('credentials').notNull(),
     state: connectionState('state').notNull().default('active'),
     /**
      * Pacing (src/providers/leases.ts): the next action may start from then on. An action holds its turn by setting

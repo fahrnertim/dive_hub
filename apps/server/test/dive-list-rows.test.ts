@@ -77,7 +77,7 @@ describe.skipIf(!(await databaseReachable()))('the logbook list: rows and "show 
     // Connected to SSI; the reef dive is linked, the deep dive was linked and then deleted there.
     const [owner] = await t.db.select({ id: user.id }).from(user).where(eq(user.email, 'ann@example.com'));
     const [conn] = await t.db.insert(connection).values({
-      userId: owner!.id, diverId: annDiver, provider: 'ssi', accountId: '1', accountLabel: 'ann@example.com', keepSignedIn: false,
+      userId: owner!.id, diverId: annDiver, provider: 'ssi', accountId: '1', accountLabel: 'ann@example.com', keepSignedIn: false, credentials: '{}',
     }).returning({ id: connection.id });
     const sent = (diveId: string, action: 'link' | 'delete', at: string) => t.db.insert(push).values({
       diveId, connectionId: conn!.id, userId: owner!.id, provider: 'ssi', mode: 'api', action, state: 'confirmed',

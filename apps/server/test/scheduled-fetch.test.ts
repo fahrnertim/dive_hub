@@ -270,7 +270,7 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
     for (let i = 0; i < 2; i++) {
       const [other] = await t.db.insert(diver).values({ name: `Diver ${i}` }).returning();
       const made = (await t.db.insert(connection).values({
-        userId: annId, diverId: other!.id, provider: 'ledger', accountId: `extra-${i}`, accountLabel: `Ledger ${i}`, keepSignedIn: false, importMode: 'create', fetchEveryMinutes: 60,
+        userId: annId, diverId: other!.id, provider: 'ledger', accountId: `extra-${i}`, accountLabel: `Ledger ${i}`, keepSignedIn: false, credentials: '{}', importMode: 'create', fetchEveryMinutes: 60,
       }).returning())[0]!;
       extra.push(made.id);
     }

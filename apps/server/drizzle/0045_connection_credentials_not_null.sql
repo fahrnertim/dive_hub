@@ -1,0 +1,1 @@
+ALTER TABLE "connection" ALTER COLUMN "credentials" SET NOT NULL;

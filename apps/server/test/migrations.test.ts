@@ -34,7 +34,7 @@ describe.skipIf(!(await databaseReachable()))('applied migrations', () => {
     const diver = (await q(`insert into diver (name) values ('Erika') returning id`)).rows[0].id as string;
     const dive = (await q(`insert into dive (diver_id, starts_at, duration_seconds) values ($1, now(), 1800) returning id`, [diver])).rows[0].id as string;
     const conn = (await q(
-      `insert into connection (user_id, diver_id, provider, account_id, account_label, keep_signed_in) values ($1, $2, 'ledger', '1', 'a@b.c', false) returning *`,
+      `insert into connection (user_id, diver_id, provider, account_id, account_label, keep_signed_in, credentials) values ($1, $2, 'ledger', '1', 'a@b.c', false, '{}') returning *`,
       [user, diver],
     )).rows[0];
     expect(conn).toMatchObject({ send_changes: false, send_new_dives: false, delete_at_provider: false, fetch_every_minutes: null, last_fetched_at: null, last_fetch_import_id: null, unsent_import_ids: [] });
@@ -139,7 +139,9 @@ describe.skipIf(!(await databaseReachable()))('0013: Providers as adapters (ADR 
     await migrateDatabase(t.db, t.pool, migrations);
 
     const { rows: [after] } = await q('select provider, account_label, credentials, state, keep_signed_in from connection where id = $1', [conn]);
-    expect(after).toEqual({ provider: 'ssi', account_label: 'erika@example.com', credentials: null, state: 'needs_sign_in', keep_signed_in: false });
+    // 0044 gave it credentials again: its account label as login, nothing to sign in with.
+    expect(after).toMatchObject({ provider: 'ssi', account_label: 'erika@example.com', state: 'needs_sign_in', keep_signed_in: false });
+    expect(JSON.parse(after.credentials)).toEqual({ kind: 'password', login: 'erika@example.com', access: null, password: null });
     const pushes = Object.fromEntries((await q('select id, provider, error_code, remote_gone from push')).rows.map((r) => [r.id, r]));
     expect(pushes[goneUpdate]).toMatchObject({ provider: 'ssi', error_code: 'provider_dive_gone', remote_gone: true });
     expect(pushes[goneDelete]).toMatchObject({ error_code: null, remote_gone: true });
@@ -168,6 +170,40 @@ describe.skipIf(!(await databaseReachable()))('0013: Providers as adapters (ADR 
     expect(pushes[dropped]).toMatchObject({ state: 'failed', error_code: 'provider_not_stored', remote_id: '27031918' });
     expect(pushes[created]).toMatchObject({ state: 'confirmed', remote_id: '29837680' });
     expect(pushes[invented]).toMatchObject({ state: 'failed', error_code: 'provider_not_stored', remote_id: null, remote_number: null });
+  });
+});
+
+describe.skipIf(!(await databaseReachable()))('0044 and 0045: every Connection has credentials', () => {
+  let t: TestDatabase;
+  let before: string;
+  beforeAll(async () => {
+    before = await migrationsBefore('0044_fill_pre_0027_credentials');
+    t = await createTestDatabase({ migrationsFolder: before });
+  });
+  afterAll(async () => {
+    await t?.drop();
+    if (before) await rm(before, { recursive: true, force: true });
+  });
+
+  it('gives a Connection from before ADR 0027 its account label as login, keeps sealed ones, and refuses none', async () => {
+    const q = (sql: string, params: unknown[] = []) => t.pool.query(sql, params);
+    const user = (await q(`insert into "user" (name, email) values ('Erika', 'erika@example.com') returning id`)).rows[0].id as string;
+    const diver = (await q(`insert into diver (name) values ('Erika') returning id`)).rows[0].id as string;
+    const insert = (provider: string, credentials: string | null) => q(
+      `insert into connection (user_id, diver_id, provider, account_id, account_label, keep_signed_in, state, credentials)
+       values ($1, $2, $3, '5012047', 'erika@example.com', false, 'needs_sign_in', $4) returning id`,
+      [user, diver, provider, credentials],
+    );
+    const old = (await insert('ssi', null)).rows[0].id as string;
+    const sealed = (await insert('ledger', 'v1.a.b')).rows[0].id as string;
+
+    await migrateDatabase(t.db, t.pool, migrations);
+
+    const credentialsOf = async (id: string) => (await q('select credentials from connection where id = $1', [id])).rows[0].credentials as string;
+    // Plain JSON: SecretBox.open hands back a value that isn't sealed, and it holds nothing secret.
+    expect(JSON.parse(await credentialsOf(old))).toEqual({ kind: 'password', login: 'erika@example.com', access: null, password: null });
+    expect(await credentialsOf(sealed)).toBe('v1.a.b');
+    await expect(q('update connection set credentials = null where id = $1', [sealed])).rejects.toThrow(/not-null/);
   });
 });
 

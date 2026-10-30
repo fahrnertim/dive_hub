@@ -80,9 +80,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
   }
 
   const seal = (id: string, c: Credentials) => secrets.seal(JSON.stringify(c), purpose(id));
-  /** The Connection's credentials; a row from before ADR 0027 has none, and signs in with its account label. */
-  const credentialsOf = (row: ConnectionRow): Credentials | null =>
-    row.credentials ? JSON.parse(secrets.open(row.credentials, purpose(row.id))) as Credentials : null;
+  const credentialsOf = (row: ConnectionRow) => JSON.parse(secrets.open(row.credentials, purpose(row.id))) as Credentials;
 
   /** What the User typed, checked against the Provider's sign-in kind. */
   function signInInput(adapter: ProviderAdapter, fields: SignInFields, login?: string): SignInInput {
@@ -241,7 +239,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const row = await ownConnection(userId, connectionId);
       const adapter = registry.get(row.provider);
       const kept = credentialsOf(row);
-      const input = signInInput(adapter, fields, kept?.kind === 'password' ? kept.login : row.accountLabel);
+      const input = signInInput(adapter, fields, kept.kind === 'password' ? kept.login : undefined);
       const signedIn = await onTurn(adapter, row.id, () => signInAt(adapter, input));
       if (signedIn.account.id !== row.accountId) throw new ProviderServiceError('provider_other_account', named(adapter));
       await db.update(connection).set({
@@ -267,19 +265,19 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       return onTurn(adapter, given.id, async (row) => {
         if (!row) throw new ProviderServiceError('provider_not_connected', named(adapter));
         let credentials = credentialsOf(row);
-        const password = credentials?.kind === 'password' ? credentials.password : null;
+        const password = credentials.kind === 'password' ? credentials.password : null;
         const needsSignIn = async () => {
-          if (credentials) credentials = { ...credentials, access: null };
+          credentials = { ...credentials, access: null };
           await db.update(connection).set({
-            state: 'needs_sign_in', credentials: credentials && seal(row.id, credentials), updatedAt: new Date(),
+            state: 'needs_sign_in', credentials: seal(row.id, credentials), updatedAt: new Date(),
           }).where(eq(connection.id, row.id));
           return new ProviderServiceError('provider_sign_in_needed', named(adapter));
         };
         if (row.state === 'needs_sign_in' && !password) throw new ProviderServiceError('provider_sign_in_needed', named(adapter));
-        let access = credentials?.access ?? null;
+        let access = credentials.access;
         for (let attempt = 1; ; attempt++) {
           if (!access) {
-            if (!password || credentials?.kind !== 'password') throw await needsSignIn();
+            if (!password || credentials.kind !== 'password') throw await needsSignIn();
             try {
               access = (await adapter.signIn({ kind: 'password', login: credentials.login, password })).access;
             } catch (error) {
