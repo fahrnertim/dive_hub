@@ -4,6 +4,8 @@ import * as schema from './schema.js';
 
 export type Db = NodePgDatabase<typeof schema>;
 export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+/** For a helper that runs inside the caller's transaction, or on its own when called with the Db. */
+export type Queryable = Db | Tx;
 
 export function createDb(databaseUrl: string): { db: Db; pool: pg.Pool } {
   const pool = new pg.Pool({ connectionString: databaseUrl, max: 10 });

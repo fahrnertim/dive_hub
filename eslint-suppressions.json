@@ -4,40 +4,27 @@
       "count": 1
     }
   },
-  "apps/server/src/assessment/rules.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    }
-  },
   "apps/server/src/certifications/certification-service.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
-  "apps/server/src/dives/downsample.ts": {
+  "apps/server/src/dives/calc/downsample.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
-  "apps/server/src/dives/logbook-check-rules.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/dives/merging.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/fit/fit-adapter.ts": {
+  "apps/server/src/dives/checks/logbook-check-rules.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
   "apps/server/src/imports/archive.ts": {
-    "no-useless-escape": {
+    "sonarjs/cognitive-complexity": {
       "count": 1
-    },
+    }
+  },
+  "apps/server/src/imports/formats/fit/fit-adapter.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
@@ -47,21 +34,11 @@
       "count": 1
     }
   },
-  "apps/server/src/imports/placement.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "apps/server/src/lead/estimate.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
     "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/main.ts": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
@@ -80,29 +57,24 @@
       "count": 1
     }
   },
-  "apps/server/src/planning/plan-service.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/planning/service.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "apps/server/src/providers/connection-service.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
-  "apps/server/src/providers/dive-import.ts": {
+  "apps/server/src/providers/dive-import/dive-import.ts": {
     "sonarjs/cognitive-complexity": {
-      "count": 3
+      "count": 2
     }
   },
-  "apps/server/src/providers/push-run-service.ts": {
+  "apps/server/src/providers/dive-import/three-way.ts": {
     "sonarjs/cognitive-complexity": {
-      "count": 3
+      "count": 1
+    }
+  },
+  "apps/server/src/providers/push/push-run-service.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
     }
   },
   "apps/server/src/providers/ssi/ssi-import.ts": {
@@ -115,27 +87,7 @@
       "count": 1
     }
   },
-  "apps/server/src/providers/ssi/ssi-sites.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/providers/three-way.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/routes.ts": {
-    "no-useless-escape": {
-      "count": 2
-    }
-  },
   "apps/server/src/sites/import/import-plan.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/sites/import/polite-http.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
@@ -147,11 +99,6 @@
   },
   "apps/server/src/sites/site-service.ts": {
     "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/server/src/suunto/suunto-json.ts": {
-    "preserve-caught-error": {
       "count": 1
     }
   },
@@ -195,16 +142,6 @@
       "count": 2
     }
   },
-  "apps/web/e2e/assessment.spec.ts": {
-    "no-useless-escape": {
-      "count": 1
-    }
-  },
-  "apps/web/e2e/dive-deletion.spec.ts": {
-    "no-useless-escape": {
-      "count": 1
-    }
-  },
   "apps/web/e2e/diver-codes.spec.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
@@ -220,22 +157,7 @@
       "count": 1
     }
   },
-  "apps/web/src/Account.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "apps/web/src/Admin.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "apps/web/src/App.tsx": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "apps/web/src/DiveDetail.tsx": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
@@ -260,11 +182,6 @@
       "count": 2
     }
   },
-  "apps/web/src/PushRun.tsx": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "apps/web/src/SiteImportPage.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
@@ -286,11 +203,6 @@
   "apps/web/src/ToolsPlan.tsx": {
     "react-hooks/exhaustive-deps": {
       "count": 1
-    }
-  },
-  "apps/web/src/api.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
     }
   },
   "apps/web/src/lib/tools.ts": {

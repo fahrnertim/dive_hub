@@ -3,36 +3,42 @@
 import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { authHeaders, forwardCookies, requireUser } from '../auth/fastify.js';
+import { authHeaders, forwardCookies, requireUser, sessionIdOf, userOf } from '../auth/fastify.js';
+import { limitAttempts, type AttemptLimit } from '../http/attempt-limit.js';
 import { problem } from '../http/problems.js';
-import type { PasswordResets } from './password-resets.js';
+import type { PasswordResetService } from './password-reset-service.js';
 import type { SessionService } from './session-service.js';
-import { DateTime, IdParams, Password, Problem, Token, UserView, toUserView } from './views.js';
+import { Password, Problem, Token, UserView, toUserView } from './views.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface AccountRouteDeps {
   auth: Auth;
-  passwordResets: PasswordResets;
+  passwordResets: PasswordResetService;
   sessions: SessionService;
+  /** Counts attempts at the token routes per client IP (ADR 0061); shared with userRoutes. */
+  tokenAttempts: AttemptLimit;
 }
 
 const SessionView = Type.Object({
   id: Type.String(),
   createdAt: DateTime,
-  lastActiveAt: Type.Union([DateTime, Type.Null()], { description: 'Last time the session was refreshed (about daily)' }),
+  lastActiveAt: Nullable(DateTime, { description: 'Last time the session was refreshed (about daily)' }),
   expiresAt: DateTime,
-  ipAddress: Type.Union([Type.String(), Type.Null()]),
-  userAgent: Type.Union([Type.String(), Type.Null()]),
+  ipAddress: Nullable(Type.String()),
+  userAgent: Nullable(Type.String()),
   current: Type.Boolean({ description: 'The session this request came with' }),
 });
 
-export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async (app, { auth, passwordResets, sessions }) => {
+export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async (app, { auth, passwordResets, sessions, tokenAttempts }) => {
   // --- Public: using a password reset link ---------------------------------------------------------
+  const limited = limitAttempts(tokenAttempts);
 
   app.post('/password-resets/lookup', {
+    onRequest: limited,
     schema: {
       summary: 'Whose password a reset link is for',
       body: Type.Object({ token: Token }),
-      response: { 200: Type.Object({ email: Type.String() }), 404: Problem },
+      response: { 200: Type.Object({ email: Type.String() }), 404: Problem, 429: Problem },
     },
   }, async (request, reply) => {
     const found = await passwordResets.find(request.body.token);
@@ -40,10 +46,11 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
   });
 
   app.post('/password-resets/complete', {
+    onRequest: limited,
     schema: {
       summary: 'Set a new password with a reset link; signs out everywhere, then signs in here',
       body: Type.Object({ token: Token, password: Password }),
-      response: { 200: UserView, 404: Problem },
+      response: { 200: UserView, 404: Problem, 429: Problem },
     },
   }, async (request, reply) => {
     const email = await passwordResets.complete(request.body.token, request.body.password);
@@ -63,19 +70,19 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
 
     signedIn.get('/me/sessions', {
       schema: { summary: 'Where the signed-in User is signed in', response: { 200: Type.Array(SessionView) } },
-    }, async (request) => sessions.list(request.user!.id, request.sessionId));
+    }, async (request) => sessions.list(userOf(request).id, sessionIdOf(request)));
 
     signedIn.delete('/me/sessions/:id', {
       schema: { summary: 'Sign out one session (the current one too)', params: IdParams, response: { 204: Type.Null(), 404: Problem } },
     }, async (request, reply) => {
-      const deleted = await sessions.end(request.user!.id, request.params.id);
+      const deleted = await sessions.end(userOf(request).id, request.params.id);
       return deleted ? reply.code(204).send(null) : reply.code(404).send(problem('session_not_found'));
     });
 
     signedIn.delete('/me/sessions', {
       schema: { summary: 'Sign out every other session', response: { 204: Type.Null() } },
     }, async (request, reply) => {
-      await sessions.endOthers(request.user!.id, request.sessionId!);
+      await sessions.endOthers(userOf(request).id, sessionIdOf(request));
       return reply.code(204).send(null);
     });
   });

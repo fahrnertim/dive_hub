@@ -3,19 +3,18 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
-import { Problem, problem } from '../http/problems.js';
+import { requireUser, userOf } from '../auth/fastify.js';
+import { answerErrors, answers, Problem } from '../http/problems.js';
 import { COMPUTER_EVENTS } from '../vocabulary.js';
 import { AssessmentError, type AssessmentService, type AssessmentView } from './assessment-service.js';
 import { EVIDENCE, RULES, RULE_IDS, SEVERITIES, SOURCES } from './rules.js';
+import { IdParams, Nullable } from '../http/schemas.js';
 
 export interface AssessmentRouteDeps {
   auth: Auth;
   assessments: AssessmentService;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const Rule = Type.Enum([...RULE_IDS], { description: 'Which check found it; clients have a title and texts per rule (docs/spec/clients.md)' });
 
 const FindingView = Type.Object({
@@ -65,12 +64,11 @@ const toView = (a: AssessmentView): Static<typeof AssessmentViewSchema> => ({
   computerEvents: a.computerEvents.map((e) => ({ atSeconds: e.atS, event: e.event })),
 });
 
+const STATUS: Record<AssessmentError['code'], number> = { dive_not_found: 404, diver_not_found: 404, finding_not_found: 404 };
+
 export const assessmentRoutes: FastifyPluginAsyncTypebox<AssessmentRouteDeps> = async (app, { auth, assessments }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof AssessmentError) return reply.code(404).send(problem(error.code));
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(AssessmentError, STATUS)));
 
   app.get('/dives/:id/assessment', {
     schema: {
@@ -78,7 +76,7 @@ export const assessmentRoutes: FastifyPluginAsyncTypebox<AssessmentRouteDeps> = 
       description: 'Not medical advice and not a score: clients show the fixed note with it and word findings as facts (docs/spec/clients.md).',
       params: IdParams, response: { 200: AssessmentViewSchema, 404: Problem },
     },
-  }, async (request) => toView(await assessments.of(request.user!.id, request.params.id)));
+  }, async (request) => toView(await assessments.of(userOf(request).id, request.params.id)));
 
   app.put('/dives/:id/findings/:rule/dismissal', {
     schema: {
@@ -88,8 +86,8 @@ export const assessmentRoutes: FastifyPluginAsyncTypebox<AssessmentRouteDeps> = 
       response: { 200: AssessmentViewSchema, 404: Problem },
     },
   }, async (request) => {
-    await assessments.dismiss(request.user!.id, request.params.id, request.params.rule, request.body.dismissed);
-    return toView(await assessments.of(request.user!.id, request.params.id));
+    await assessments.dismiss(userOf(request).id, request.params.id, request.params.rule, request.body.dismissed);
+    return toView(await assessments.of(userOf(request).id, request.params.id));
   });
 
   app.put('/divers/:id/muted-rules/:rule', {
@@ -100,7 +98,7 @@ export const assessmentRoutes: FastifyPluginAsyncTypebox<AssessmentRouteDeps> = 
       response: { 204: Type.Null(), 404: Problem },
     },
   }, async (request, reply) => {
-    await assessments.mute(request.user!.id, request.params.id, request.params.rule, request.body.muted);
+    await assessments.mute(userOf(request).id, request.params.id, request.params.rule, request.body.muted);
     return reply.code(204).send(null);
   });
 };

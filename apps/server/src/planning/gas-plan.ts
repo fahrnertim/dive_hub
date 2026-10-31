@@ -1,7 +1,7 @@
 // A gas plan (ADR 0033, slice 22): the litres of each stretch of a planned dive, and per Diver the pressures that follow
 // from their Cylinder and SAC - end, rock bottom, the ascent pressure of the chosen rule. Limits from the Diver's own input
 // and settings, not advice; the dive computer and training govern. Air and nitrox 21 to 40 %, at most 40 m.
-import { pressureForLitres, surfaceLitres } from '../dives/real-gas.js';
+import { pressureForLitres, surfaceLitres } from '../dives/calc/real-gas.js';
 import { ambientPressureBar, modMetres, type Conditions, type GasMix } from './gas.js';
 import { DESCENT_RATE_M_PER_MIN } from './ndl.js';
 

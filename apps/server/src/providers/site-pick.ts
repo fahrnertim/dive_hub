@@ -73,7 +73,7 @@ export function createSitePickService(deps: { db: Db; registry: ProviderRegistry
           siteId, source, externalId, accountId: isPrivate ? account : null, actor: isPrivate ? null : { type: 'user', id: userId },
         }));
       } catch (error) {
-        throw error instanceof SiteError && error.code === 'external_id_taken' ? new ProviderServiceError('external_id_taken') : error;
+        throw error instanceof SiteError && error.code === 'external_id_taken' ? new ProviderServiceError('external_id_taken', undefined, undefined, { cause: error }) : error;
       }
       return { externalId, private: isPrivate };
     },

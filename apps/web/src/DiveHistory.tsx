@@ -1,12 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { diversQuery, revisionsQuery, type DiveView, type RevisionView } from './api.ts';
+import { diversQuery, revisionsQuery, type DiveView, type RevisionView, type UtcOffsetSource } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { useCylinderText } from './Cylinders.tsx';
 import { useWeightingText } from './Weighting.tsx';
-import type { LeadEntry, Suit, WeightingFeedback } from './lib/weighting.ts';
-import type { CylinderView } from './lib/cylinders.ts';
 import { deviceName } from './lib/devices.ts';
 import { useFormatValue, type HistoryField } from './lib/dive-values.ts';
 import { mergeEdits } from './lib/history.ts';
@@ -66,7 +64,10 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
     : r.actor.name ? t(`history.by.${r.actor.type}`, { name: r.actor.name }) : t('history.by.unknown');
   const cylinderText = useCylinderText();
   const weightingText = useWeightingText();
-  const overrides = r.changes.overrides as { from: HistoryField[]; to: HistoryField[] } | undefined;
+  const c = r.changes;
+  const listed = (list: readonly string[] | undefined, key: string) => list?.includes(key) ?? false;
+  const offsetSource = (v: UtcOffsetSource | undefined) => t(`history.offsetSource.${v ?? 'unknown'}`);
+  const siteName = (v: { name: string } | null | undefined) => v?.name ?? t('common.none');
   const recordingName = (id: unknown) => {
     const n = dive.recordings.findIndex((rec) => rec.id === id);
     if (n < 0) return t('common.none');
@@ -74,7 +75,8 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
     return d ? `${deviceName(d.manufacturer, d.product)} (${d.serialNumber})` : t('dive.recordingN', { n: n + 1 });
   };
 
-  const lines = Object.entries(r.changes).flatMap(([key, { from, to }]) => {
+  // Every change has both sides as stored; the named fields are read typed through `c`.
+  const lines = Object.entries<{ from: unknown; to: unknown }>(c).flatMap(([key, { from, to }]) => {
     // Deleting and restoring (ADR 0026): the cause says it all.
     if (key === 'overrides' || key === 'deletedAt') return [];
     if (key === 'notes') return [t('history.notesChanged')];
@@ -83,35 +85,37 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
     if (key === 'originalId') return [t('history.fileReplaced')];
     // Merging two Dives and moving a linked one (ADR 0038): the other Dive is deleted, so it is told, not linked.
     if (key === 'mergedFrom' || key === 'mergedInto' || key === 'movedFrom' || key === 'movedTo') return [t(`history.${key}`)];
-    if (key === 'providers') return ((to ?? []) as { provider: string }[]).map((p) => t('history.linkMoved', { name: providerName(p.provider) }));
+    if (key === 'providers') return (c.providers?.to ?? []).map((p) => t('history.linkMoved', { name: providerName(p.provider) }));
     // A Dive made from a Provider's logbook entry, and where its time zone came from (ADR 0030).
-    if (key === 'fromProvider') return to ? [t('history.fromProvider', { name: providerName(to) })] : [];
+    if (key === 'fromProvider') return c.fromProvider ? [t('history.fromProvider', { name: providerName(c.fromProvider.to) })] : [];
     if (key === 'utcOffsetSource') {
-      const source = (v: unknown) => t(`history.offsetSource.${v as 'device' | 'position' | 'nearby' | 'unknown'}`);
-      return [t('history.change', { field: t('history.field.utcOffsetSource'), from: source(from), to: source(to) })];
+      return [t('history.change', { field: t('history.field.utcOffsetSource'), from: offsetSource(c.utcOffsetSource?.from), to: offsetSource(c.utcOffsetSource?.to) })];
     }
-    if (key === 'site') {
-      const name = (v: unknown) => (v as { name?: string } | null)?.name ?? t('common.none');
-      return [t('history.change', { field: t('history.field.site'), from: name(from), to: name(to) })];
-    }
+    if (key === 'site') return [t('history.change', { field: t('history.field.site'), from: siteName(c.site?.from), to: siteName(c.site?.to) })];
     if (key === 'primaryRecordingId') return [t('history.changeTo', { field: t('history.field.primaryRecordingId'), value: recordingName(to) })];
     if (key === 'cylinders') {
       // The Dive's Cylinders as they were set (ADR 0045): the whole list, as it is saved.
-      const list = (to ?? []) as CylinderView[];
+      const list = c.cylinders?.to ?? [];
       return [list.length > 0 ? t('history.cylindersSet', { list: list.map(cylinderText).join('; ') }) : t('history.cylindersRemoved')];
     }
     // Lead, how the weighting felt and the suit as they were set (ADR 0031).
     if (key === 'lead') {
-      const entries = (to ?? []) as LeadEntry[];
+      const entries = c.lead?.to ?? [];
       return [entries.length > 0 ? t('history.leadSet', { value: weightingText.lead(entries) }) : t('history.leadRemoved')];
     }
-    if (key === 'weightingFeedback') return [to ? t('history.weightingSet', { value: weightingText.feedback(to as WeightingFeedback) }) : t('history.weightingRemoved')];
-    if (key === 'suit') return [to ? t('history.suitSet', { value: weightingText.suit(to as Suit) }) : t('history.suitRemoved')];
+    if (key === 'weightingFeedback') {
+      const felt = c.weightingFeedback?.to;
+      return [felt ? t('history.weightingSet', { value: weightingText.feedback(felt) }) : t('history.weightingRemoved')];
+    }
+    if (key === 'suit') {
+      const suit = c.suit?.to;
+      return [suit ? t('history.suitSet', { value: weightingText.suit(suit) }) : t('history.suitRemoved')];
+    }
     if (key === 'participants') {
       // Who came onto the Dive, who left it, and whose role changed (ADR 0028); names as they were then.
-      type P = { diverId: string; name: string; role: 'buddy' | 'guide' | 'instructor' };
-      const before = (from ?? []) as P[];
-      const after = (to ?? []) as P[];
+      const before = c.participants?.from ?? [];
+      const after = c.participants?.to ?? [];
+      type P = (typeof after)[number];
       const role = (p: P) => t(`participants.role.${p.role}`);
       const was = (p: P) => before.find((b) => b.diverId === p.diverId);
       return [
@@ -123,8 +127,9 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
       ];
     }
     if (!isValue(key)) return [key];
-    const mark = overrides?.to.includes(key) && !overrides.from.includes(key) ? t('history.setByHand')
-      : overrides?.from.includes(key) && !overrides.to.includes(key) ? t('history.reset') : undefined;
+    const setBefore = listed(c.overrides?.from, key);
+    const setAfter = listed(c.overrides?.to, key);
+    const mark = setAfter && !setBefore ? t('history.setByHand') : setBefore && !setAfter ? t('history.reset') : undefined;
     const change = { field: t(`history.field.${key}`), from: format(key, from), to: format(key, to) };
     return [mark ? t('history.changeMarked', { ...change, mark }) : t('history.change', change)];
   });

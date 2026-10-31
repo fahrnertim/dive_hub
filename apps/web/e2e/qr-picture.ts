@@ -1,8 +1,8 @@
 // A QR code as a picture file for the scanner's "Read from image" (code-scanner.spec.ts, buddies.spec.ts).
-import { encode } from 'uqr';
+import encodeQR from 'qr';
 
 /** The modules of a text's QR code, as the client draws it. */
-export const modules = (text: string) => encode(text, { ecc: 'M', border: 4 }).data;
+export const modules = (text: string) => encodeQR(text, 'raw', { ecc: 'medium', border: 4 });
 
 /** A text's QR code as a BMP file, 6 pixels per module; `null` gives a white picture without a code. */
 export function picture(text: string | null) {

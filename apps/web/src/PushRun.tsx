@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Label, ProgressBar } from 'react-aria-components';
 import {
-  ApiError, cancelPushRun, connectionsQuery, continuePushRun, dismissPushRun, keys, pushRunActive, pushRunPreviewQuery, pushRunQuery, pushRunsQuery,
-  siteQuery, startPushRun, type ConnectionView, type ProviderView, type PushRunChoices, type PushRunDetail, type PushRunView,
+  api, ApiError, connectionsQuery, keys, pushRunActive, pushRunPreviewQuery, pushRunQuery, pushRunsQuery,
+  siteQuery, startPushRun, unwrap, type ConnectionView, type ProviderView, type PushRunChoices, type PushRunDetail, type PushRunPreview, type PushRunView,
 } from './api.ts';
+import type en from './i18n/locales/en.json';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { logbookHref, toggled, type LogbookFilter, type LogbookParams } from './lib/logbook.ts';
-import { useNames, useProviders } from './lib/providers.ts';
+import { useJoinNames, useProviders } from './lib/providers.ts';
 import { reviewHref } from './lib/review.ts';
 import { accountHref } from './lib/account-tabs.ts';
 import { HeldAtProvider, NumberPlanList } from './NumberChain.tsx';
@@ -80,7 +81,17 @@ export function SendDivesDialog({ connection, provider, ids, onClose }: {
 type Scope = 'list' | 'new' | 'changed';
 const SCOPES: readonly Scope[] = ['list', 'new', 'changed'];
 const NO_CHOICES = { updates: false, updatesRemovingVerification: false, numbers: false, numbersRemovingVerification: false };
+type Choices = typeof NO_CHOICES;
 const sameList = (a: PushRunChoices['list'], b: PushRunChoices['list']) => a.siteId === b.siteId && a.q === b.q && a.only === b.only;
+
+/** The list each scope sends, and the scopes offered: a scope that is the logbook's list itself is not offered twice. */
+function scopesOf(params: LogbookParams) {
+  const listNow = { siteId: params.siteId, q: params.q, only: params.only?.join(',') || undefined };
+  const filtered = !!(listNow.siteId || listNow.q || listNow.only);
+  const lists: Record<Scope, PushRunChoices['list']> = { list: listNow, new: { only: 'not-at-provider' }, changed: { only: 'changed-since-sent' } };
+  const offered = SCOPES.filter((s) => s === 'list' || !sameList(lists[s], listNow));
+  return { filtered, lists, offered };
+}
 
 /** A scope's label with the number of Dives in it and what it is, read together by screen readers. */
 const scopeLabel = (label: string, count: number | undefined, hint: string | undefined): ReactNode => (
@@ -100,33 +111,24 @@ function SendDialog({ connection, provider, params, filterName, ids, onClose }: 
   ids?: string[] | undefined; onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const display = useDisplay();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const name = provider?.name ?? connection.provider;
-  const site = useQuery({ ...siteQuery(params.siteId ?? ''), enabled: !!params.siteId });
-  const listNow = { siteId: params.siteId, q: params.q, only: params.only?.join(',') || undefined };
-  const filtered = !!(listNow.siteId || listNow.q || listNow.only);
-  const lists: Record<Scope, PushRunChoices['list']> = { list: listNow, new: { only: 'not-at-provider' }, changed: { only: 'changed-since-sent' } };
-  // A scope that is the list itself is not offered twice.
-  const offered = SCOPES.filter((s) => s === 'list' || !sameList(lists[s], listNow));
-  const [scope, setScope] = useState<Scope>(filtered ? 'list' : 'new');
+  const scopes = scopesOf(params);
+  const [scope, setScope] = useState<Scope>(scopes.filtered ? 'list' : 'new');
   const [choices, setChoices] = useState(NO_CHOICES);
   // The Dives the User took out of the run (by id); a new scope starts with all of them in.
   const [left, setLeft] = useState<ReadonlySet<string>>(new Set());
-  const counted = (list: PushRunChoices['list']) => ({ ...pushRunPreviewQuery(connection.id, { list, ...NO_CHOICES }), enabled: !ids });
-  const sizes = { list: useQuery(counted(lists.list)), new: useQuery(counted(lists.new)), changed: useQuery(counted(lists.changed)) };
   // Numbers are previewed as if confirmed: the dialog lists every number, and asks once before sending where a verification can go.
-  const request: PushRunChoices = { list: ids ? {} : lists[scope], ...(ids && { ids }), ...choices, numbersRemovingVerification: choices.numbers };
+  const request: PushRunChoices = { list: ids ? {} : scopes.lists[scope], ...(ids && { ids }), ...choices, numbersRemovingVerification: choices.numbers };
   const preview = useQuery(pushRunPreviewQuery(connection.id, request));
   const p = preview.data;
   const dives = p?.dives ?? [];
   const goes = dives.filter((d) => !left.has(d.diveId));
   const takenOut = dives.length - goes.length;
-  // Taking one out sends the ticked Dives by id; else the list, as the preview counted it.
-  const toSend: PushRunChoices = takenOut > 0 ? { ...request, ids: goes.map((d) => d.diveId) } : request;
   const start = useMutation({
-    mutationFn: () => startPushRun(connection.id, toSend),
+    // Taking one out sends the ticked Dives by id; else the list, as the preview counted it.
+    mutationFn: () => startPushRun(connection.id, takenOut > 0 ? { ...request, ids: goes.map((d) => d.diveId) } : request),
     onSuccess: async (run) => {
       await queryClient.invalidateQueries({ queryKey: keys.pushRuns });
       announce(t('pushRun.started', { count: run.counts.total, name }));
@@ -137,49 +139,15 @@ function SendDialog({ connection, provider, params, filterName, ids, onClose }: 
       if (e instanceof ApiError && e.code === 'push_run_active') await queryClient.invalidateQueries({ queryKey: keys.pushRuns });
     },
   });
-  const set = (change: Partial<typeof NO_CHOICES>) => { start.reset(); setChoices((c) => ({ ...c, ...change })); };
-  const chooseScope = (next: Scope) => { start.reset(); setLeft(new Set()); setScope(next); };
-  const tick = (diveId: string, on: boolean) => {
-    start.reset();
-    setLeft((l) => { const next = new Set(l); if (on) next.delete(diveId); else next.add(diveId); return next; });
-  };
+  const choose = (change: Partial<Choices>) => { start.reset(); setChoices((c) => ({ ...c, ...change })); };
+  const leave = (next: ReadonlySet<string>) => { start.reset(); setLeft(next); };
+  const chooseScope = (next: Scope) => { leave(new Set()); setScope(next); };
   const minutes = p && p.send > 0 ? Math.ceil((p.estimatedSeconds * goes.length) / p.send / 60) : 0;
-  const siteGroups = new Map<string, { siteId: string | null; name: string | null; count: number }>();
-  for (const d of p?.blocked.dives ?? []) {
-    const key = d.siteId ?? '';
-    const group = siteGroups.get(key) ?? { siteId: d.siteId, name: d.siteName, count: 0 };
-    group.count += 1;
-    siteGroups.set(key, group);
-  }
-  const blockedHidden = p ? p.blocked.total - p.blocked.dives.length : 0;
-  const listHint = filtered
-    ? [
-      listNow.siteId && site.data?.name ? t('pushRun.scopeSite', { site: site.data.name }) : null,
-      listNow.q ? t('pushRun.scopeSearch', { q: listNow.q }) : null,
-      ...(params.only ?? []).map(filterName),
-    ].filter(Boolean).join(' · ')
-    : undefined;
-  const hints: Record<Scope, string | undefined> = {
-    list: listHint, new: t('pushRun.scopeNewHint', { name }), changed: t('pushRun.scopeChangedHint', { name }),
-  };
-  const labels: Record<Scope, string> = {
-    list: filtered ? t('pushRun.scopeList') : t('pushRun.scopeAll', { diver: connection.diverName }),
-    new: t('pushRun.scopeNew', { name }), changed: t('pushRun.scopeChanged'),
-  };
-  const updatable = p ? p.counts.update + p.counts.updateRemovingVerification : 0;
-  const showUpdates = !!p && p.counts.update > 0;
-  const showRemoving = !!p && p.counts.updateRemovingVerification > 0;
-  const showNumbers = !!p && p.counts.number > 0;
-  const onChangedList = (lists[scope].only ?? '').split(',').includes('changed-since-sent');
+  const confirm = t('pushRun.confirm', { count: goes.length });
   return (
     <Dialog title={t('pushRun.title', { name })} isOpen onOpenChange={(open) => { if (!open) onClose(); }}>
       <div className="push-run-dialog">
-        {!ids && (
-          <RadioGroup
-            label={t('pushRun.which', { diver: connection.diverName })} value={scope} onChange={(v) => chooseScope(v as Scope)}
-            options={offered.map((s) => ({ value: s, label: scopeLabel(labels[s], sizes[s].data?.inScope, hints[s]) }))}
-          />
-        )}
+        {!ids && <ScopePicker connection={connection} name={name} params={params} filterName={filterName} scopes={scopes} scope={scope} onChange={chooseScope} />}
         {preview.isError && <Notice tone="danger">{errorText(preview.error)}</Notice>}
         {!p && !preview.isError && <Muted>{t('pushRun.loading')}</Muted>}
         {p && (
@@ -187,89 +155,12 @@ function SendDialog({ connection, provider, params, filterName, ids, onClose }: 
             <p className="push-run-count" aria-live="polite">
               <strong>{p.counts.create > 0 || p.send > 0 ? t('pushRun.new', { count: p.counts.create }) : t('pushRun.nothing')}</strong>
             </p>
-            {dives.length > 0 && (
-              <Disclosure
-                title={t('pushRun.showDives', { count: dives.length })}
-                summary={takenOut > 0 ? <Muted>{t('pushRun.takenOut', { count: takenOut })}</Muted> : undefined}
-              >
-                <div className="push-run-dives" role="group" aria-label={t('pushRun.divesToSend')}>
-                  <div className="push-run-dives-actions">
-                    <Button size="small" variant="quiet" onPress={() => { start.reset(); setLeft(new Set()); }}>{t('pushRun.selectAll')}</Button>
-                    <Button size="small" variant="quiet" onPress={() => { start.reset(); setLeft(new Set(dives.map((d) => d.diveId))); }}>{t('pushRun.selectNone')}</Button>
-                  </div>
-                  <ul>
-                    {dives.map((d) => (
-                      <li key={d.diveId}>
-                        <Checkbox isSelected={!left.has(d.diveId)} onChange={(on) => tick(d.diveId, on)}>
-                          <span>{d.number ? `#${d.number} ` : ''}{t('pushRun.diveLine', { when: display.dateTime(d.startsAt), site: d.siteName ?? t('pushRun.noSite') })}</span>
-                        </Checkbox>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </Disclosure>
-            )}
-            {(showUpdates || showRemoving || showNumbers) && (
-              <fieldset className="push-run-risky">
-                <legend><Icon name="warning" />{t('pushRun.risky', { name })}</legend>
-                {showUpdates && (
-                  <Checkbox isSelected={choices.updates} onChange={(updates) => set({ updates, ...(!updates && { updatesRemovingVerification: false }) })}>
-                    <span>{t('pushRun.updates')}<small className="field-hint">{t('pushRun.updatesHint', { count: updatable, name })}</small></span>
-                  </Checkbox>
-                )}
-                {updatable > 0 && !onChangedList && (
-                  <Muted>
-                    <a href={logbookHref({ ...params, only: toggled(params.only, 'changed-since-sent'), page: undefined })} onClick={onClose}>
-                      {t('pushRun.showChanged')}
-                    </a>
-                  </Muted>
-                )}
-                {showRemoving && (
-                  <Checkbox isSelected={choices.updatesRemovingVerification} isDisabled={!choices.updates} onChange={(updatesRemovingVerification) => set({ updatesRemovingVerification })}>
-                    <span>{t('pushRun.updatesRemoving', { name })}<small className="field-hint">{t('pushRun.updatesRemovingHint', { count: p.counts.updateRemovingVerification })}</small></span>
-                  </Checkbox>
-                )}
-                {showNumbers && (
-                  <>
-                    <Checkbox isSelected={choices.numbers} onChange={(numbers) => set({ numbers })}>
-                      <span>{t('pushRun.numbers', { name })}<small className="field-hint">{t('pushRun.numbersHint', { count: p.counts.number })}</small></span>
-                    </Checkbox>
-                    {p.counts.numberRemovingVerification > 0 && <Muted>{t('pushRun.numbersRemoving', { count: p.counts.numberRemovingVerification, name })}</Muted>}
-                    {choices.numbers && p.numberPlan.length > 0 && (
-                      <Disclosure title={t('pushRun.numberPlan', { count: p.numberPlan.length })}>
-                        <NumberPlanList plan={p.numberPlan} name={name} />
-                      </Disclosure>
-                    )}
-                    {choices.numbers && <HeldAtProvider held={p.heldAtProvider} name={name} onNavigate={onClose} />}
-                    {p.counts.numberTaken > 0 && <Muted>{t('pushRun.numberTaken', { count: p.counts.numberTaken })}</Muted>}
-                  </>
-                )}
-              </fieldset>
-            )}
-            {(p.blocked.total > 0 || p.leftOut.upToDate > 0 || p.beyondCeiling > 0) && (
-              <div className="push-run-leftout">
-                <h3>{t('pushRun.leftOut')}</h3>
-                <ul>
-                  {p.blocked.total > 0 && (
-                    <li>
-                      {t('pushRun.blocked', { count: p.blocked.total, name })}
-                      <ul>
-                        {[...siteGroups.values()].map((g) => (
-                          <li key={g.siteId ?? 'none'}>
-                            {g.siteId
-                              ? <a href={`#/sites/${g.siteId}`}>{t('pushRun.blockedAt', { count: g.count, site: g.name ?? '', name })}</a>
-                              : <a href="#/?only=no-site">{t('pushRun.blockedNoSite', { count: g.count })}</a>}
-                          </li>
-                        ))}
-                        {blockedHidden > 0 && <li>+{blockedHidden}</li>}
-                      </ul>
-                    </li>
-                  )}
-                  {p.leftOut.upToDate > 0 && <li>{t('pushRun.upToDate', { count: p.leftOut.upToDate, name })}</li>}
-                  {p.beyondCeiling > 0 && <li>{t('pushRun.beyondCeiling', { count: p.beyondCeiling, max: p.limits.maxDives })}</li>}
-                </ul>
-              </div>
-            )}
+            {dives.length > 0 && <DiveChecklist dives={dives} left={left} onLeave={leave} />}
+            <RiskyChoices
+              preview={p} name={name} choices={choices} onChoose={choose} params={params} onClose={onClose}
+              onChangedList={(scopes.lists[scope].only ?? '').split(',').includes('changed-since-sent')}
+            />
+            <LeftOut preview={p} name={name} />
             {p.withLeftOut > 0 && <Muted>{t('pushRun.withLeftOut', { count: p.withLeftOut, name })}</Muted>}
             {(provider?.notices ?? []).map((n) => <Muted key={n}>{t(`provider.notice.${n}`, { name })}</Muted>)}
             {goes.length > 0 && <Muted>{minutes < 1 ? t('pushRun.estimateShort') : t('pushRun.estimate', { count: minutes })}</Muted>}
@@ -282,19 +173,172 @@ function SendDialog({ connection, provider, params, filterName, ids, onClose }: 
             <ConfirmButton
               variant="primary" tone="primary" isDisabled={preview.isPlaceholderData || goes.length === 0}
               title={t('pushRun.verificationTitle', { name })} body={t('pushRun.verificationBody', { count: p.counts.numberRemovingVerification, name })}
-              confirmLabel={t('pushRun.confirm', { count: goes.length })} onConfirm={() => start.mutateAsync()}
+              confirmLabel={confirm} onConfirm={() => start.mutateAsync()}
             >
-              {t('pushRun.confirm', { count: goes.length })}
+              {confirm}
             </ConfirmButton>
           ) : (
             <Button variant="primary" isPending={start.isPending} isDisabled={!p || preview.isPlaceholderData || goes.length === 0} onPress={() => start.mutate()}>
-              {t('pushRun.confirm', { count: goes.length })}
+              {confirm}
             </Button>
           )}
           <Button onPress={onClose}>{t('common.cancel')}</Button>
         </div>
       </div>
     </Dialog>
+  );
+}
+
+/** Which Dives to send, each scope with how many Dives it holds and what it is (the logbook's filters, in words). */
+function ScopePicker({ connection, name, params, filterName, scopes: { filtered, lists, offered }, scope, onChange }: {
+  connection: ConnectionView; name: string; params: LogbookParams; filterName: (filter: LogbookFilter) => string;
+  scopes: ReturnType<typeof scopesOf>; scope: Scope; onChange: (scope: Scope) => void;
+}) {
+  const { t } = useTranslation();
+  const site = useQuery({ ...siteQuery(params.siteId ?? ''), enabled: !!params.siteId });
+  const counted = (list: PushRunChoices['list']) => pushRunPreviewQuery(connection.id, { list, ...NO_CHOICES });
+  const sizes = { list: useQuery(counted(lists.list)), new: useQuery(counted(lists.new)), changed: useQuery(counted(lists.changed)) };
+  const listHint = filtered
+    ? [
+      params.siteId && site.data?.name ? t('pushRun.scopeSite', { site: site.data.name }) : null,
+      params.q ? t('pushRun.scopeSearch', { q: params.q }) : null,
+      ...(params.only ?? []).map(filterName),
+    ].filter(Boolean).join(' · ')
+    : undefined;
+  const hints: Record<Scope, string | undefined> = {
+    list: listHint, new: t('pushRun.scopeNewHint', { name }), changed: t('pushRun.scopeChangedHint', { name }),
+  };
+  const labels: Record<Scope, string> = {
+    list: filtered ? t('pushRun.scopeList') : t('pushRun.scopeAll', { diver: connection.diverName }),
+    new: t('pushRun.scopeNew', { name }), changed: t('pushRun.scopeChanged'),
+  };
+  return (
+    <RadioGroup
+      label={t('pushRun.which', { diver: connection.diverName })} value={scope} onChange={(v) => onChange(v as Scope)}
+      options={offered.map((s) => ({ value: s, label: scopeLabel(labels[s], sizes[s].data?.inScope, hints[s]) }))}
+    />
+  );
+}
+
+/** The Dives that would go, a checkbox each: `left` are the ones taken out. */
+function DiveChecklist({ dives, left, onLeave }: { dives: PushRunPreview['dives']; left: ReadonlySet<string>; onLeave: (left: ReadonlySet<string>) => void }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  const takenOut = dives.filter((d) => left.has(d.diveId)).length;
+  const tick = (diveId: string, on: boolean) => {
+    const next = new Set(left);
+    if (on) next.delete(diveId); else next.add(diveId);
+    onLeave(next);
+  };
+  return (
+    <Disclosure
+      title={t('pushRun.showDives', { count: dives.length })}
+      summary={takenOut > 0 ? <Muted>{t('pushRun.takenOut', { count: takenOut })}</Muted> : undefined}
+    >
+      <div className="push-run-dives" role="group" aria-label={t('pushRun.divesToSend')}>
+        <div className="push-run-dives-actions">
+          <Button size="small" variant="quiet" onPress={() => onLeave(new Set())}>{t('pushRun.selectAll')}</Button>
+          <Button size="small" variant="quiet" onPress={() => onLeave(new Set(dives.map((d) => d.diveId)))}>{t('pushRun.selectNone')}</Button>
+        </div>
+        <ul>
+          {dives.map((d) => (
+            <li key={d.diveId}>
+              <Checkbox isSelected={!left.has(d.diveId)} onChange={(on) => tick(d.diveId, on)}>
+                <span>{d.number ? `#${d.number} ` : ''}{t('pushRun.diveLine', { when: display.dateTime(d.startsAt), site: d.siteName ?? t('pushRun.noSite') })}</span>
+              </Checkbox>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Disclosure>
+  );
+}
+
+/** What the User sends only when ticked (ADR 0047, 0052): updates, updates that remove a verification, numbers. */
+function RiskyChoices({ preview: p, name, choices, onChoose, params, onChangedList, onClose }: {
+  preview: PushRunPreview; name: string; choices: Choices; onChoose: (change: Partial<Choices>) => void;
+  params: LogbookParams; onChangedList: boolean; onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const updatable = p.counts.update + p.counts.updateRemovingVerification;
+  const showUpdates = p.counts.update > 0;
+  const showRemoving = p.counts.updateRemovingVerification > 0;
+  const showNumbers = p.counts.number > 0;
+  if (!showUpdates && !showRemoving && !showNumbers) return null;
+  return (
+    <fieldset className="push-run-risky">
+      <legend><Icon name="warning" />{t('pushRun.risky', { name })}</legend>
+      {showUpdates && (
+        <Checkbox isSelected={choices.updates} onChange={(updates) => onChoose({ updates, ...(!updates && { updatesRemovingVerification: false }) })}>
+          <span>{t('pushRun.updates')}<small className="field-hint">{t('pushRun.updatesHint', { count: updatable, name })}</small></span>
+        </Checkbox>
+      )}
+      {updatable > 0 && !onChangedList && (
+        <Muted>
+          <a href={logbookHref({ ...params, only: toggled(params.only, 'changed-since-sent'), page: undefined })} onClick={onClose}>
+            {t('pushRun.showChanged')}
+          </a>
+        </Muted>
+      )}
+      {showRemoving && (
+        <Checkbox isSelected={choices.updatesRemovingVerification} isDisabled={!choices.updates} onChange={(updatesRemovingVerification) => onChoose({ updatesRemovingVerification })}>
+          <span>{t('pushRun.updatesRemoving', { name })}<small className="field-hint">{t('pushRun.updatesRemovingHint', { count: p.counts.updateRemovingVerification })}</small></span>
+        </Checkbox>
+      )}
+      {showNumbers && (
+        <>
+          <Checkbox isSelected={choices.numbers} onChange={(numbers) => onChoose({ numbers })}>
+            <span>{t('pushRun.numbers', { name })}<small className="field-hint">{t('pushRun.numbersHint', { count: p.counts.number })}</small></span>
+          </Checkbox>
+          {p.counts.numberRemovingVerification > 0 && <Muted>{t('pushRun.numbersRemoving', { count: p.counts.numberRemovingVerification, name })}</Muted>}
+          {choices.numbers && p.numberPlan.length > 0 && (
+            <Disclosure title={t('pushRun.numberPlan', { count: p.numberPlan.length })}>
+              <NumberPlanList plan={p.numberPlan} name={name} />
+            </Disclosure>
+          )}
+          {choices.numbers && <HeldAtProvider held={p.heldAtProvider} name={name} onNavigate={onClose} />}
+          {p.counts.numberTaken > 0 && <Muted>{t('pushRun.numberTaken', { count: p.counts.numberTaken })}</Muted>}
+        </>
+      )}
+    </fieldset>
+  );
+}
+
+/** What the run leaves out and why: Dives blocked by their site (grouped by site), up to date, beyond the Provider's ceiling. */
+function LeftOut({ preview: p, name }: { preview: PushRunPreview; name: string }) {
+  const { t } = useTranslation();
+  if (p.blocked.total === 0 && p.leftOut.upToDate === 0 && p.beyondCeiling === 0) return null;
+  const siteGroups = new Map<string, { siteId: string | null; name: string | null; count: number }>();
+  for (const d of p.blocked.dives) {
+    const key = d.siteId ?? '';
+    const group = siteGroups.get(key) ?? { siteId: d.siteId, name: d.siteName, count: 0 };
+    group.count += 1;
+    siteGroups.set(key, group);
+  }
+  const blockedHidden = p.blocked.total - p.blocked.dives.length;
+  return (
+    <div className="push-run-leftout">
+      <h3>{t('pushRun.leftOut')}</h3>
+      <ul>
+        {p.blocked.total > 0 && (
+          <li>
+            {t('pushRun.blocked', { count: p.blocked.total, name })}
+            <ul>
+              {[...siteGroups.values()].map((g) => (
+                <li key={g.siteId ?? 'none'}>
+                  {g.siteId
+                    ? <a href={`#/sites/${g.siteId}`}>{t('pushRun.blockedAt', { count: g.count, site: g.name ?? '', name })}</a>
+                    : <a href="#/?only=no-site">{t('pushRun.blockedNoSite', { count: g.count })}</a>}
+                </li>
+              ))}
+              {blockedHidden > 0 && <li>+{blockedHidden}</li>}
+            </ul>
+          </li>
+        )}
+        {p.leftOut.upToDate > 0 && <li>{t('pushRun.upToDate', { count: p.leftOut.upToDate, name })}</li>}
+        {p.beyondCeiling > 0 && <li>{t('pushRun.beyondCeiling', { count: p.beyondCeiling, max: p.limits.maxDives })}</li>}
+      </ul>
+    </div>
   );
 }
 
@@ -335,7 +379,8 @@ export function PushRunStrip() {
   const nameOf = (provider: string) => providers.data?.find((p) => p.id === provider)?.name ?? provider;
   const name = run ? nameOf(run.provider) : '';
   const dismiss = useMutation({
-    mutationFn: (id: string) => dismissPushRun(id),
+    // Puts an ended run away for good, on the server: every browser of the User stops showing it (slice 25d).
+    mutationFn: async (id: string) => unwrap(await api.POST('/api/push-runs/{id}/dismiss', { params: { path: { id } } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.pushRuns }),
   });
   useEffect(() => {
@@ -386,8 +431,7 @@ function EarlierRuns({ runs, nameOf }: { runs: PushRunView[]; nameOf: (provider:
   );
 }
 
-function runSummary(translate: TFunction, run: PushRunView, name: string) {
-  const t = translate as unknown as (key: string, options: Record<string, unknown>) => string;
+function runSummary(t: TFunction, run: PushRunView, name: string) {
   const values = { sent: run.counts.sent, total: run.counts.total, name };
   return run.status === 'cancelled' ? t('pushRun.cancelled', values) : run.status === 'stopped' ? t('pushRun.stopped', values) : t('pushRun.done', values);
 }
@@ -397,7 +441,7 @@ function ActiveStrip({ run, name }: { run: PushRunView; name: string }) {
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const stop = useMutation({
-    mutationFn: () => cancelPushRun(run.id),
+    mutationFn: async () => unwrap(await api.POST('/api/push-runs/{id}/cancel', { params: { path: { id: run.id } } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.pushRuns }),
   });
   const done = run.counts.sent + run.counts.skipped + run.counts.failed;
@@ -426,7 +470,7 @@ function EndedStrip({ run, name, onDismiss, dismissError }: { run: PushRunView; 
   const problemText = useProblemText();
   const queryClient = useQueryClient();
   const resume = useMutation({
-    mutationFn: () => continuePushRun(run.id),
+    mutationFn: async () => unwrap(await api.POST('/api/push-runs/{id}/continue', { params: { path: { id: run.id } } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.pushRuns }),
   });
   const unsent = run.counts.skipped + run.counts.failed;
@@ -477,7 +521,7 @@ const WITHOUT_SHOWN = 10;
 function WithoutSomeone({ id }: { id: string }) {
   const { t } = useTranslation();
   const display = useDisplay();
-  const names = useNames();
+  const joinNames = useJoinNames();
   const heading = useId();
   const run = useQuery(pushRunQuery(id));
   const left = run.data?.withoutSomeone ?? [];
@@ -488,7 +532,7 @@ function WithoutSomeone({ id }: { id: string }) {
       <Muted>{t('pushRun.withoutSomeoneHint')}</Muted>
       <ul aria-labelledby={heading}>
         {left.slice(0, WITHOUT_SHOWN).map((d) => (
-          <li key={d.diveId}><a href={`#/dives/${d.diveId}`}>{display.dateTime(d.startsAt)}</a>: {names(d.names)}</li>
+          <li key={d.diveId}><a href={`#/dives/${d.diveId}`}>{display.dateTime(d.startsAt)}</a>: {joinNames(d.names)}</li>
         ))}
         {left.length > WITHOUT_SHOWN && <li>{t('pushRun.withoutMore', { count: left.length - WITHOUT_SHOWN })}</li>}
       </ul>
@@ -507,7 +551,7 @@ function RunItems({ id, name, provider }: { id: string; name: string; provider: 
     if (!i.reason) return '';
     return i.state === 'failed'
       ? `${t('pushRun.failed')}: ${problemText(i.reason as Parameters<typeof problemText>[0], provider)}`
-      : (t as unknown as (key: string, options: Record<string, unknown>) => string)(`pushRun.reason.${i.reason}`, { name });
+      : t(`pushRun.reason.${i.reason}` as `pushRun.reason.${keyof (typeof en)['pushRun']['reason']}`, { name });
   };
   if (!run.data) return <Muted>{t('pushRun.loading')}</Muted>;
   return (

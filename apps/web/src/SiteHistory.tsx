@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { siteRevisionsQuery, type SiteRevisionView, type SiteView } from './api.ts';
+import { siteRevisionsQuery, type Position, type SiteRevisionView, type SiteView } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { Button, Muted, Notice, Panel } from './ui/index.ts';
 
@@ -12,8 +12,6 @@ const LATEST = 3;
 const ORDER = ['mergedSite', 'mergedInto', 'adopted', 'name', 'country', 'waterBody', 'position', 'waterType', 'maxDepthM', 'ssiSiteId', 'description', 'osmId', 'wikidataId'];
 const WATER_TYPES = ['fresh', 'salt', 'brackish'] as const;
 const rank = (key: string) => (ORDER.includes(key) ? ORDER.indexOf(key) : ORDER.length);
-
-const asPosition = (v: unknown) => v as { latitude: number; longitude: number } | null;
 
 /**
  * Who or what changed the Dive site, when, and from what to what (ADR 0021). Other Users are never
@@ -49,31 +47,31 @@ function Entry({ revision: r }: { revision: SiteRevisionView }) {
     : r.actor.type === 'user' ? t('siteHistory.by.user')
     : t('history.by.system');
   const none = t('common.none');
-  const show = (key: string, v: unknown): string => {
+  const c = r.changes;
+  const position = (v: Position | null | undefined) => (v ? display.position(v) : none);
+  const show = (key: string, side: 'from' | 'to'): string => {
+    if (key === 'position') return position(c.position?.[side]);
+    const v = c[key]?.[side];
     if (v === null || v === undefined || v === '') return none;
-    if (key === 'position') return display.position(asPosition(v)!);
     if (key === 'country') return display.country(String(v));
     if (key === 'maxDepthM') return display.depth(Number(v));
     const water = key === 'waterType' && WATER_TYPES.find((w) => w === v);
     if (water) return t(`vocabulary.waterType.${water}`);
     return typeof v === 'string' || typeof v === 'number' ? String(v) : JSON.stringify(v);
   };
-  const lines = Object.entries(r.changes).sort(([a], [b]) => rank(a) - rank(b)).flatMap(([key, { from, to }]) => {
+  const lines = Object.entries(c).sort(([a], [b]) => rank(a) - rank(b)).flatMap(([key, { to }]) => {
     if (key === 'deletedAt') return [];
     // A site created without a description has nothing to say about it.
     if (key === 'description') return r.cause === 'create' && to === null ? [] : [t('siteHistory.descriptionChanged')];
     // Merging (ADR 0022): the other site by the name it had then.
-    if (key === 'mergedSite') return [t('siteHistory.mergedIn', { name: (to as { name: string }).name })];
-    if (key === 'mergedInto') return [t('siteHistory.mergedInto', { name: (to as { name: string }).name })];
+    if (key === 'mergedSite' && c.mergedSite) return [t('siteHistory.mergedIn', { name: c.mergedSite.to.name })];
+    if (key === 'mergedInto' && c.mergedInto) return [t('siteHistory.mergedInto', { name: c.mergedInto.to.name })];
     // Taking up a Source's offer (ADR 0025).
-    if (key === 'adopted') {
-      const source = (to as { source: 'osm' | 'wikidata' | 'ssi' }).source;
-      return [t('siteHistory.adopted', { source: t(`siteImport.sourceName.${source}`) })];
-    }
+    if (key === 'adopted' && c.adopted) return [t('siteHistory.adopted', { source: t(`siteImport.sourceName.${c.adopted.to.source}`) })];
     const field = t(`siteHistory.field.${key}`, { defaultValue: key });
     // A new site lists only what it was created with.
-    if (r.cause === 'create') return to === null ? [] : [t('history.changeTo', { field, value: show(key, to) })];
-    return [t('history.change', { field, from: show(key, from), to: show(key, to) })];
+    if (r.cause === 'create') return to === null ? [] : [t('history.changeTo', { field, value: show(key, 'to') })];
+    return [t('history.change', { field, from: show(key, 'from'), to: show(key, 'to') })];
   });
 
   return (

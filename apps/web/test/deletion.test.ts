@@ -1,6 +1,6 @@
 // What the delete dialog offers about the Dive's copies at Providers, and the notice after deleting (ADR 0026, 0027).
 import { describe, expect, it } from 'vitest';
-import { deleteChoice, deletedNotice } from '../src/lib/deletion.ts';
+import { deleteChoice, deletedNotice, deletionState, resetDeletion, updateDeletion } from '../src/lib/deletion.ts';
 
 const connection = { id: 'c1', state: 'active' as const, accountLabel: 'erika@example.com' };
 const current = { remoteId: '9', remoteNumber: 8, sentAt: '2026-10-05T10:00:00Z', upToDate: true, updateRemovesVerification: false, number: null };
@@ -45,5 +45,13 @@ describe('deletedNotice', () => {
     expect(deletedNotice([copy('kept')])).toEqual({ key: 'deleted.noticeKept', copies: [copy('kept')] });
     expect(deletedNotice([copy('deleted')])).toEqual({ key: 'deleted.noticeBoth', copies: [copy('deleted')] });
     expect(deletedNotice([copy('kept', 'padi'), copy('deleted')]).copies).toEqual([copy('deleted')]);
+  });
+});
+
+describe('the logbook\'s deletion state', () => {
+  it('starts empty again for the next User', () => {
+    updateDeletion({ justDeleted: { id: 'd1', name: 'Dive 9', copies: [], byThemselves: [] }, reminderDismissed: true });
+    resetDeletion();
+    expect(deletionState()).toEqual({ justDeleted: undefined, reminderDismissed: false });
   });
 });

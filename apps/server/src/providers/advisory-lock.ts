@@ -1,7 +1,7 @@
 // The PostgreSQL advisory lock the Provider actions share (ADR 0057): the site find-or-make and the buddy list.
 import pg from 'pg';
 import type { Db } from '../db/client.js';
-import { LeaseBusy, MAX_WAIT_MS, POLL_MS, type Clock } from './leases.js';
+import { LeaseBusy, MAX_WAIT_MS, POLL_MS, type Clock } from './lease-service.js';
 
 /**
  * Runs `fn` holding a PostgreSQL advisory lock on `key`, on a connection of its own and outside any transaction: one

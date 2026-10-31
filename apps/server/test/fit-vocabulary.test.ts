@@ -1,7 +1,7 @@
 // FIT values → Dive Hub's own vocabulary (ADR 0015). Expected values follow Garmin's FIT profile
 // (water_type, sub_sport, tissue_model_type, dive_gas_mode) as probed on 2026-10-03.
 import { describe, expect, it } from 'vitest';
-import { circuitFromFit, decoModelFromFit, diveModeFromFit, waterTypeFromFit } from '../src/fit/fit-vocabulary.js';
+import { circuitFromFit, decoModelFromFit, diveModeFromFit, waterTypeFromFit } from '../src/imports/formats/fit/fit-vocabulary.js';
 
 describe('water type', () => {
   it.each([['fresh', 'fresh'], ['salt', 'salt'], ['en13319', 'en13319'], ['custom', 'custom']])('%s → %s', (fit, ours) => {

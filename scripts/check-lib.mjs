@@ -14,11 +14,13 @@ const AREAS = [
   [/^apps\/web\/src\/(SitesPage|SiteForm|SiteHistory)\.tsx$|^apps\/web\/src\/lib\/(site-origin|sites-list|geo)\.ts$/, ['@sites']],
   [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
   // Dive centres and their verification codes (ADR 0043): their own pages, a panel on a Dive site, a line on a Dive.
-  [/^apps\/web\/src\/CentresPage\.tsx$|^apps\/web\/src\/ui\/QrCode\.tsx$/, ['@sites', '@dives']],
+  [/^apps\/web\/src\/(CentresPage|NewCentre|SiteCentres)\.tsx$|^apps\/web\/src\/lib\/centres\.ts$|^apps\/web\/src\/ui\/QrCode\.tsx$/, ['@sites', '@dives']],
+  // The codes drawn for scanning (ADR 0043): on a centre, a Diver's codes and a Dive's line of codes.
+  [/^apps\/web\/src\/DiveCodes\.tsx$/, ['@sites', '@divers', '@dives']],
   // The scanner for verification codes (ADR 0043): on the new centre form, where a centre's number is set, and where a diver's code is taken.
   [/^apps\/web\/src\/CodeScanner\.tsx$|^apps\/web\/src\/lib\/qr-reader\.ts$/, ['@sites', '@divers']],
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
-  [/^apps\/web\/src\/(DiveDetail|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|sketch|logbook|review|devices|importable|deletion|assessment|waiting-push)\.ts$/, ['@dives']],
+  [/^apps\/web\/src\/(DivePage|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|answer|sketch|logbook|review|devices|importable|deletion|assessment|waiting-push)\.ts$/, ['@dives']],
   // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
   [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
@@ -26,7 +28,7 @@ const AREAS = [
   [/^apps\/web\/src\/BodyWeight\.tsx$/, ['@divers']],
   // A Diver certification cards (ADR 0050), a section of the divers page (slice 25c); their server side also takes part in the import.
   [/^apps\/web\/src\/Certifications\.tsx$|^apps\/server\/src\/certifications\//, ['@divers', '@account']],
-  [/^apps\/web\/src\/(Account|AccountPage|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/account-tabs\.ts$/, ['@account']],
+  [/^apps\/web\/src\/(SignedOut|AccountPage|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/(account-tabs|form)\.ts$/, ['@account']],
   // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
   [/^apps\/web\/src\/(ProviderDiveImport|GoneDives|ProviderAutomation)\.tsx$/, ['@account', '@dives']],
   // A Dive at a Provider, and a Conflict with it asked on the Dive's page and waiting on the Review page (ADR 0056).
@@ -35,16 +37,16 @@ const AREAS = [
   [/^apps\/web\/src\/(NumberChain|ProviderDiveNumbers)\.tsx$/, ['@dives', '@account']],
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
-  [/^apps\/web\/src\/Admin\.tsx$/, ['@admin']],
+  [/^apps\/web\/src\/AdminPage\.tsx$/, ['@admin']],
   // The Tools page (ADR 0032): gas numbers and bottom time; its server computation and the MCP tool that answers the same.
   [/^apps\/web\/src\/Tools(Page|Plan|PlanProfile|Lead)\.tsx$|^apps\/web\/src\/ProfilePlot\.tsx$|^apps\/web\/src\/lib\/tools\.ts$|^apps\/server\/src\/planning\/|^apps\/server\/src\/lead\/|^apps\/server\/src\/mcp\/tools-planning(-gas-plan)?.ts$/, ['@tools']],
   // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
   [/^apps\/web\/src\/AiAccess\.tsx$|^apps\/web\/src\/lib\/ai-access\.ts$/, ['@account', '@admin']],
   [/^apps\/server\/src\/mcp\//, ['@account', '@admin']],
-  [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/providers\/ssi\/ssi-sites\.ts$/, ['@admin', '@sites']],
+  [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/(site-sources|providers\/ssi\/ssi-sites)\.ts$/, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/centres\//, ['@sites', '@dives']],
-  [/^apps\/server\/src\/(dives|imports|fit|suunto|assessment)\/|^apps\/server\/src\/(routes|vocabulary)\.ts$/, ['@dives']],
+  [/^apps\/server\/src\/(dives|imports|assessment)\/|^apps\/server\/src\/vocabulary\.ts$/, ['@dives']],
   // Divers reach further than their page: a Dive shows its Participants and their codes, the account page imports buddies.
   [/^apps\/server\/src\/divers\//, ['@divers', '@dives', '@account']],
   [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],
@@ -152,6 +154,8 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
     more('lint', 'changed');
     const spec = /^apps\/web\/e2e\/([\w-]+\.spec\.ts)$/.exec(path);
     if (spec) { more('e2e', 'some'); plan.specs.add(spec[1]); continue; }
+    // The component tests' set-up is imported by none of them (vitest.config.ts runs it), so `vitest related` would miss them.
+    if (path === 'apps/web/test/dom-setup.ts') { more('web', 'all'); continue; }
     if (/^apps\/web\/test\//.test(path)) { more('web', 'changed'); continue; }
     if (/^apps\/server\/test\/[\w-]+\.test\.ts$/.test(path)) { more('server', 'changed'); continue; }
     const area = AREAS.find(([re]) => re.test(path));
@@ -231,8 +235,11 @@ export function baselineSize(text) {
   return Object.values(data).flatMap((rules) => Object.values(rules)).reduce((sum, rule) => sum + rule.count, 0);
 }
 
-/** A baseline's entries by key with their counts: ESLint's file and rule, dependency-cruiser's rule, from and to. */
-function baselineEntries(text) {
+/**
+ * A baseline's entries by key with their counts: ESLint's file and rule, dependency-cruiser's rule, from and to.
+ * A file in `renames` (old path → new) counts under its new path.
+ */
+function baselineEntries(text, renames = new Map()) {
   const entries = new Map();
   if (!text) return entries;
   const data = JSON.parse(text);
@@ -242,19 +249,20 @@ function baselineEntries(text) {
       entries.set(key, (entries.get(key) ?? 0) + 1);
     }
   } else {
-    for (const [file, rules] of Object.entries(data)) for (const [rule, { count }] of Object.entries(rules)) entries.set(`${file} (${rule})`, count);
+    for (const [file, rules] of Object.entries(data)) for (const [rule, { count }] of Object.entries(rules)) entries.set(`${renames.get(file) ?? file} (${rule})`, count);
   }
   return entries;
 }
 
 /**
  * `[path, before, now]` per baseline (texts, null when absent) → a message for each one with an entry that is new
- * or counts more than before. Comparing sizes alone would let a fixed problem be swapped for a new one.
+ * or counts more than before. Comparing sizes alone would let a fixed problem be swapped for a new one. A file moved
+ * since (`renames`, old path → new) keeps its suppressions under the new path.
  */
-export function baselineGrowth(baselines) {
+export function baselineGrowth(baselines, renames = new Map()) {
   return baselines.flatMap(([path, before, now]) => {
     if (before === null) return [];
-    const was = baselineEntries(before);
+    const was = baselineEntries(before, renames);
     const grown = [...baselineEntries(now)].filter(([key, count]) => count > (was.get(key) ?? 0)).map(([key]) => key);
     return grown.length > 0 ? [`${path} has new entries: ${grown.join(', ')}: fix the new problems instead of adding them to the baseline`] : [];
   });

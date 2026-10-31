@@ -1,10 +1,10 @@
 // A Dive as SSI's dive record (ADR 0024), and the secrets kept for SSI: pure, no database.
 import { describe, expect, it } from 'vitest';
 import { createSecretBox, parseEncryptionKey } from '../src/secrets/secret-box.js';
-import { SYNCED_FIELDS } from '../src/providers/three-way.js';
+import { SYNCED_FIELDS } from '../src/providers/dive-import/three-way.js';
 import { SENT_KEYS } from '../src/providers/ssi/ssi-dive-row.js';
 import {
-  compareReadBack, createRecord, deleteRecord, fingerprint, localTime, ownFields, resample, samplesJson, SSI_FIELD_KEYS, updateRecord, writableRecord,
+  compareReadBack, buildCreateRecord, buildDeleteRecord, fingerprint, localTime, ownFields, resample, samplesJson, SSI_FIELD_KEYS, buildUpdateRecord, writableRecord,
   type DiveForSsi,
 } from '../src/providers/ssi/ssi-record.js';
 import { diveModeOfSsi, keepTraining, ssiDiveType } from '../src/providers/ssi/ssi-dive-type.js';
@@ -121,7 +121,7 @@ describe('records', () => {
   const ids = { number: 46, accountId: '5012047', reference: 'divehub-abc' };
 
   it('a new dive has every key SSI expects, our values, and nulls for the rest', () => {
-    const r = createRecord(dive(), ids);
+    const r = buildCreateRecord(dive(), ids);
     expect(Object.keys(r).length).toBeGreaterThan(300);
     expect(r).toMatchObject({
       odin_user_log_id: null, odin_user_log_nr: 46, internalPk: 46, odin_user_log_user_master_id: 5012047,
@@ -141,7 +141,7 @@ describe('records', () => {
   });
 
   it('a new dive has exactly the keys the app sends, with its booleans false', () => {
-    const r = createRecord(dive(), ids);
+    const r = buildCreateRecord(dive(), ids);
     expect(Object.keys(r).sort()).toEqual([...SENT_KEYS].sort());
     expect(r).toMatchObject({ odin_user_log_deleted: false, odin_user_log_apple_watch: false, odin_user_log_dive_on_own_risk: false });
   });
@@ -167,21 +167,21 @@ describe('records', () => {
   });
 
   it("sends the Dive site's water type: fresh and salt by SSI's IDs, nothing for brackish or none (ADR 0025)", () => {
-    expect(createRecord(dive({ waterType: 'fresh' }), ids).odin_user_log_var_watertype_id).toBe(4);
-    expect(createRecord(dive({ waterType: 'brackish' }), ids).odin_user_log_var_watertype_id).toBeNull();
-    expect(createRecord(dive({ waterType: null }), ids).odin_user_log_var_watertype_id).toBeNull();
+    expect(buildCreateRecord(dive({ waterType: 'fresh' }), ids).odin_user_log_var_watertype_id).toBe(4);
+    expect(buildCreateRecord(dive({ waterType: 'brackish' }), ids).odin_user_log_var_watertype_id).toBeNull();
+    expect(buildCreateRecord(dive({ waterType: null }), ids).odin_user_log_var_watertype_id).toBeNull();
   });
 
   it('air is EAN 0 with 0 %', () => {
-    expect(createRecord(dive({ gases: [{ o2: 21, he: 0 }] }), ids)).toMatchObject({ odin_user_log_ean: false, odin_user_log_ean_percent: 0 });
+    expect(buildCreateRecord(dive({ gases: [{ o2: 21, he: 0 }] }), ids)).toMatchObject({ odin_user_log_ean: false, odin_user_log_ean_percent: 0 });
   });
 
   it('an update keeps what was edited in the SSI app, puts our values on top, and sends nothing read-only', () => {
     const remote = {
-      ...createRecord(dive({ notes: null }), ids), odin_user_log_id: 27_000_001, odin_user_log_rating: 5,
+      ...buildCreateRecord(dive({ notes: null }), ids), odin_user_log_id: 27_000_001, odin_user_log_rating: 5,
       odin_user_log_comment: 'from the app', x_odin_user_log_frd_suit: 'wet', updates: 3, app_version: '5.0.43',
     };
-    const r = updateRecord(remote, dive({ maxDepthM: 20, notes: null }));
+    const r = buildUpdateRecord(remote, dive({ maxDepthM: 20, notes: null }));
     expect(r).toMatchObject({
       odin_user_log_id: 27_000_001, odin_user_log_nr: 46, odin_user_log_rating: 5, odin_user_log_depth_m: 20,
       odin_user_log_comment: 'from the app', odin_user_log_frd_suit: 'wet',
@@ -191,8 +191,8 @@ describe('records', () => {
   });
 
   it('a delete re-sends SSI\'s record marked deleted', () => {
-    const remote = { ...createRecord(dive(), ids), odin_user_log_id: 27_000_001 };
-    expect(deleteRecord(remote)).toMatchObject({ odin_user_log_id: 27_000_001, odin_user_log_deleted: true, odin_user_log_depth_m: 18.5 });
+    const remote = { ...buildCreateRecord(dive(), ids), odin_user_log_id: 27_000_001 };
+    expect(buildDeleteRecord(remote)).toMatchObject({ odin_user_log_id: 27_000_001, odin_user_log_deleted: true, odin_user_log_depth_m: 18.5 });
   });
 
   it('the fingerprint changes with what is sent, and only with that', () => {
@@ -203,7 +203,7 @@ describe('records', () => {
 });
 
 describe('read-back', () => {
-  const sent = createRecord(dive(), { number: 1, accountId: '1', reference: 'r' });
+  const sent = buildCreateRecord(dive(), { number: 1, accountId: '1', reference: 'r' });
 
   it('accepts what SSI does to values: minutes, serials without leading zeros, 0 for nothing', () => {
     const stored = {
@@ -219,7 +219,7 @@ describe('read-back', () => {
   });
 
   describe('dive type, tank, lead, surface interval and heart rate', () => {
-    const full = createRecord(dive({
+    const full = buildCreateRecord(dive({
       diveMode: 'apnea', cylinder: { volumeL: 12, workingPressureBar: 232, material: 'steel', startPressureBar: 200, endPressureBar: 50, gas: null },
       leadKg: 6, surfaceIntervalSeconds: 5400, avgHeartRate: 82,
     }), { number: 1, accountId: '1', reference: 'r' });
@@ -243,7 +243,7 @@ describe('read-back', () => {
 
 describe('values both sides keep', () => {
   const ids = { number: 1, accountId: '1', reference: 'r' };
-  const remote = createRecord(dive(), ids);
+  const remote = buildCreateRecord(dive(), ids);
   const cylinder = (over: Partial<NonNullable<DiveForSsi['cylinder']>> = {}): DiveForSsi['cylinder'] => ({
     volumeL: 12, workingPressureBar: 232, material: 'steel', startPressureBar: 200, endPressureBar: 50, gas: { o2: 32, he: 0 }, ...over,
   });
@@ -267,22 +267,22 @@ describe('values both sides keep', () => {
     expect(keepTraining(6, 0)).toBe(0);
     expect(keepTraining(3, 2)).toBe(3);
     expect(keepTraining(7, null)).toBeNull();
-    expect(updateRecord({ ...remote, odin_user_log_dive_type: 7 }, dive({ diveMode: 'apnea' })).odin_user_log_dive_type).toBe(7);
-    expect(updateRecord({ ...remote, odin_user_log_dive_type: 6 }, dive({ diveMode: 'open_circuit' })).odin_user_log_dive_type).toBe(0);
+    expect(buildUpdateRecord({ ...remote, odin_user_log_dive_type: 7 }, dive({ diveMode: 'apnea' })).odin_user_log_dive_type).toBe(7);
+    expect(buildUpdateRecord({ ...remote, odin_user_log_dive_type: 6 }, dive({ diveMode: 'open_circuit' })).odin_user_log_dive_type).toBe(0);
   });
 
   it('an update keeps SSI\'s extended-range type (2, 3) when ours is 0, not when ours is higher', () => {
     expect(keepTraining(2, 0)).toBe(2);
-    expect(updateRecord({ ...remote, odin_user_log_dive_type: 2 }, dive({ diveMode: 'open_circuit', gases: [] })).odin_user_log_dive_type).toBe(2);
-    expect(updateRecord({ ...remote, odin_user_log_dive_type: 3 }, dive({ diveMode: 'open_circuit', gases: [] })).odin_user_log_dive_type).toBe(3);
-    expect(updateRecord({ ...remote, odin_user_log_dive_type: 2 }, dive({ diveMode: 'apnea' })).odin_user_log_dive_type).toBe(6);
+    expect(buildUpdateRecord({ ...remote, odin_user_log_dive_type: 2 }, dive({ diveMode: 'open_circuit', gases: [] })).odin_user_log_dive_type).toBe(2);
+    expect(buildUpdateRecord({ ...remote, odin_user_log_dive_type: 3 }, dive({ diveMode: 'open_circuit', gases: [] })).odin_user_log_dive_type).toBe(3);
+    expect(buildUpdateRecord({ ...remote, odin_user_log_dive_type: 2 }, dive({ diveMode: 'apnea' })).odin_user_log_dive_type).toBe(6);
   });
 
   it('a Dive without a Recording leaves SSI\'s dive type, surface interval and heart rate', () => {
     const bare = dive({ diveMode: null, gases: [] });
-    const r = updateRecord({ ...remote, odin_user_log_dive_type: 6, odin_user_log_si_before: 5400, odin_user_log_heartRateAvg: 70 }, bare);
+    const r = buildUpdateRecord({ ...remote, odin_user_log_dive_type: 6, odin_user_log_si_before: 5400, odin_user_log_heartRateAvg: 70 }, bare);
     expect(r).toMatchObject({ odin_user_log_dive_type: 6, odin_user_log_si_before: 5400, odin_user_log_heartRateAvg: 70 });
-    expect(createRecord(bare, ids).odin_user_log_dive_type).toBe(0);
+    expect(buildCreateRecord(bare, ids).odin_user_log_dive_type).toBe(0);
   });
 
   it('the tank of the one Cylinder', () => {
@@ -296,7 +296,7 @@ describe('values both sides keep', () => {
   });
 
   it('no tank: SSI\'s tank stays', () => {
-    expect(updateRecord({ ...remote, odin_user_log_tank_vol_l: 15 }, dive({ cylinder: null })).odin_user_log_tank_vol_l).toBe(15);
+    expect(buildUpdateRecord({ ...remote, odin_user_log_tank_vol_l: 15 }, dive({ cylinder: null })).odin_user_log_tank_vol_l).toBe(15);
   });
 
   it('the lead in kg and lb', () => {
@@ -357,28 +357,28 @@ describe('secret box', () => {
 describe('an update that keeps or clears named fields', () => {
   const ids = { number: 1, accountId: '1', reference: 'r' };
   const tank = { volumeL: 12, material: 'steel' as const, startPressureBar: 200, endPressureBar: 50, workingPressureBar: 232, gas: { o2: 32, he: 0 } };
-  const remote = () => ({ ...createRecord(dive({ notes: 'created', leadKg: 6, cylinder: tank }), ids), odin_user_log_id: 9, odin_user_log_comment: 'from the app' });
+  const remote = () => ({ ...buildCreateRecord(dive({ notes: 'created', leadKg: 6, cylinder: tank }), ids), odin_user_log_id: 9, odin_user_log_comment: 'from the app' });
 
   it("an update keeps the Provider's notes when asked to", () => {
-    const r = updateRecord(remote(), dive({ notes: 'ours' }), { keep: ['notes'], clear: [] });
+    const r = buildUpdateRecord(remote(), dive({ notes: 'ours' }), { keep: ['notes'], clear: [] });
     expect(r.odin_user_log_comment).toBe('from the app');
-    expect(updateRecord(remote(), dive({ notes: 'ours' })).odin_user_log_comment).toBe('ours');
+    expect(buildUpdateRecord(remote(), dive({ notes: 'ours' })).odin_user_log_comment).toBe('ours');
   });
 
   it('an update clears the lead and the tank when asked to', () => {
-    const r = updateRecord(remote(), dive({ leadKg: null, cylinder: null, notes: null }), { keep: [], clear: ['lead', 'cylinder'] });
+    const r = buildUpdateRecord(remote(), dive({ leadKg: null, cylinder: null, notes: null }), { keep: [], clear: ['lead', 'cylinder'] });
     for (const key of [...SSI_FIELD_KEYS.lead, ...SSI_FIELD_KEYS.cylinder]) expect(r[key], key).toBeNull();
     expect(r.odin_user_log_comment).toBe('from the app');
     expect(r.odin_user_log_depth_m).toBe(18.5);
   });
 
   it('a field kept stays as the Provider has it even where the Dive has a value', () => {
-    const r = updateRecord(remote(), dive({ leadKg: 9, maxDepthM: 30 }), { keep: ['lead'], clear: [] });
+    const r = buildUpdateRecord(remote(), dive({ leadKg: 9, maxDepthM: 30 }), { keep: ['lead'], clear: [] });
     expect(r).toMatchObject({ odin_user_log_weight_kg: 6, odin_user_log_weight_lb: 13.2, odin_user_log_depth_m: 30 });
   });
 
   it('the site is never cleared', () => {
-    const r = updateRecord(remote(), dive(), { keep: [], clear: ['site'] });
+    const r = buildUpdateRecord(remote(), dive(), { keep: [], clear: ['site'] });
     expect(r.odin_user_log_dive_sites_id).toBe(3314);
   });
 

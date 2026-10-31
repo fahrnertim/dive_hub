@@ -55,15 +55,15 @@ describe.skipIf(!(await databaseReachable()))('Divers and Participants', () => {
   describe('finding Divers', () => {
     it('finds every Diver of the instance by name, and says which are the User\'s own and which are external', async () => {
       const bob = await external('Bob Miller', anna);
-      const found = await json<{ divers: Found[] }>('GET', '/api/divers/search?q=', tim);
-      expect(found.divers).toEqual(expect.arrayContaining([
+      const found = await json<Found[]>('GET', '/api/divers/search?q=', tim);
+      expect(found).toEqual(expect.arrayContaining([
         { id: timDiver, name: 'tim', managed: true, external: false },
         { id: annaDiver, name: 'anna', managed: false, external: false },
         { id: bob.id, name: 'Bob Miller', managed: false, external: true },
       ]));
-      expect((await json<{ divers: Found[] }>('GET', '/api/divers/search?q=mill', tim)).divers.map((d) => d.name)).toEqual(['Bob Miller']);
+      expect((await json<Found[]>('GET', '/api/divers/search?q=mill', tim)).map((d) => d.name)).toEqual(['Bob Miller']);
       // Nothing but the name: no counts, accounts or personal data of other Users' Divers.
-      expect(Object.keys(found.divers[0]!).sort()).toEqual(['external', 'id', 'managed', 'name']);
+      expect(Object.keys(found[0]!).sort()).toEqual(['external', 'id', 'managed', 'name']);
     });
 
     it('keeps external Divers out of the User\'s own Divers', async () => {
@@ -88,7 +88,7 @@ describe.skipIf(!(await databaseReachable()))('Divers and Participants', () => {
       expect((await call('DELETE', `/api/external-divers/${dora.id}`, tim)).json()).toMatchObject({ code: 'diver_in_use' });
       await setParticipants([]);
       expect((await call('DELETE', `/api/external-divers/${dora.id}`, admin)).statusCode).toBe(204);
-      expect((await json<{ divers: Found[] }>('GET', '/api/divers/search?q=dora', tim)).divers).toEqual([]);
+      expect((await json<Found[]>('GET', '/api/divers/search?q=dora', tim))).toEqual([]);
     });
 
     it('get an account at a service by hand, unless another Diver has it', async () => {
@@ -112,7 +112,7 @@ describe.skipIf(!(await databaseReachable()))('Divers and Participants', () => {
 
   describe('Participants', () => {
     it('are set as one list with the Dive\'s version: any Diver, as buddy, guide or instructor', async () => {
-      const bob = (await json<{ divers: Found[] }>('GET', '/api/divers/search?q=bob', tim)).divers[0]!;
+      const bob = (await json<Found[]>('GET', '/api/divers/search?q=bob', tim))[0]!;
       const before = await getDive();
       expect(before.participants).toEqual([]);
       const answer = await setParticipants([{ diverId: bob.id, role: 'buddy' }, { diverId: annaDiver, role: 'instructor' }]);

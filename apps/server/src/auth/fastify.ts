@@ -72,7 +72,25 @@ export function requireUser(auth: Auth) {
   };
 }
 
-/** onRequest hook (after requireUser): 403 unless the signed-in User is an admin. */
+/** The signed-in User of a route behind requireUser; without the hook it is the route's mistake, so it throws. */
+export function userOf(request: FastifyRequest): SessionUser {
+  if (!request.user) throw new Error('no signed-in User: the route has no requireUser hook');
+  return request.user;
+}
+
+/** The signed-in session's id of a route behind requireUser; like userOf, it throws without the hook. */
+export function sessionIdOf(request: FastifyRequest): string {
+  if (!request.sessionId) throw new Error('no session: the route has no requireUser hook');
+  return request.sessionId;
+}
+
+/** Whether the User has the admin role: the one place that rule is written. */
+export const isAdmin = (user: SessionUser | null): boolean => user?.role === 'admin';
+
+/**
+ * onRequest hook (after requireUser): 403 unless the signed-in User is an admin. The one admin gate: a plugin of only
+ * admin routes adds it for the whole plugin, an admin route in a mixed plugin takes it as `onRequest`; services trust it.
+ */
 export async function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
-  if (request.user?.role !== 'admin') return reply.code(403).send(problem('admins_only'));
+  if (!isAdmin(request.user)) return reply.code(403).send(problem('admins_only'));
 }

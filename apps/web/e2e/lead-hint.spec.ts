@@ -7,8 +7,6 @@ import { E2E_BASE_URL, resetDive, setPreferences, tankPodDive } from './support.
 const headers = { origin: E2E_BASE_URL };
 const NOTHING = { lead: [], suit: null, weightingFeedback: null, cylinders: [] };
 
-test.describe.configure({ mode: 'serial' });
-
 const getDive = async (api: APIRequestContext, id: string) => (await (await api.get(`/api/dives/${id}`)).json()) as { version: number; site: { id: string } | null };
 async function patchDive(api: APIRequestContext, id: string, values: object) {
   const { version } = await getDive(api, id);
@@ -74,8 +72,8 @@ test('absent: no earlier dive with this suit or no site water type', { tag: ['@d
   await page.getByRole('textbox', { name: 'Thickness' }).fill('5');
   await choose(page, /Hood$/, 'Without hood');
   await expect(hint(page)).toBeVisible();
-  page.once('dialog', (dialog) => void dialog.accept()); // the unsaved suit
   await page.getByRole('button', { name: 'Cancel' }).click();
+  await page.getByRole('dialog', { name: 'Leave without saving?' }).getByRole('button', { name: 'Discard changes' }).click(); // the unsaved suit
   await openForm(page, request, null);
   await choose(page, /Suit$/, 'Wetsuit');
   await page.getByRole('textbox', { name: 'Thickness' }).fill('5');

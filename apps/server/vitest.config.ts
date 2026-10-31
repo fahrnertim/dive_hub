@@ -1,7 +1,10 @@
 // Server tests (ADR 0023). Each test file has its own database, so files don't share data, but they share
 // loaded modules: without isolation the suite takes about 35 s instead of 55 s (measured 2026-10-04).
 // Module-level state must therefore stay harmless to share (caches, constants), never per-test data.
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
+
+/** Files that mock a module the app loads (vi.mock): with shared modules another file may have loaded it first. */
+const ISOLATED = ['test/route-guards.test.ts'];
 
 export default defineConfig({
   test: {
@@ -13,5 +16,9 @@ export default defineConfig({
     // Tests that take 1-2 s alone (several sends, imports, password hashing) passed 5 s when the machine was busy
     // (the whole suite at 100 s instead of 35, 2026-10-06); a test that hangs still fails.
     testTimeout: 15_000,
+    projects: [
+      { extends: true, test: { name: 'shared', exclude: [...configDefaults.exclude, ...ISOLATED] } },
+      { extends: true, test: { name: 'isolated', include: ISOLATED, isolate: true } },
+    ],
   },
 });

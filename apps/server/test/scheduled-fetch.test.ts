@@ -5,7 +5,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { connection, diver, importJob, providerConflict, push, waitingPush, type ImportOutcome } from '../src/db/schema.js';
-import { createScheduledFetch, FETCH_TASK } from '../src/providers/scheduled-fetch.js';
+import { createScheduledFetch, SCHEDULED_FETCH_TASK } from '../src/providers/dive-import/scheduled-fetch.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -37,9 +37,9 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
   const set = (id: string, values: Partial<typeof connection.$inferInsert>) => t.db.update(connection).set(values).where(eq(connection.id, id));
   const connOf = async (id: string) => (await t.db.select().from(connection).where(eq(connection.id, id)))[0]!;
   /** The Connections with a fetch job queued. */
-  const queued = async () => (await t.db.execute(sql`select key from graphile_worker.jobs where task_identifier = ${FETCH_TASK} order by key`))
+  const queued = async () => (await t.db.execute(sql`select key from graphile_worker.jobs where task_identifier = ${SCHEDULED_FETCH_TASK} order by key`))
     .rows.map((r) => (r as { key: string }).key);
-  const dropFetchJobs = () => t.db.execute(sql`select graphile_worker.remove_job(key) from graphile_worker.jobs where task_identifier = ${FETCH_TASK}`);
+  const dropFetchJobs = () => t.db.execute(sql`select graphile_worker.remove_job(key) from graphile_worker.jobs where task_identifier = ${SCHEDULED_FETCH_TASK}`);
   const upload = async (start: Date, durationSeconds?: number) => {
     const { payload, headers } = multipartFile(`dive-${start.getTime()}.fit`, makeSyntheticDive({ serialNumber: 100, start, ...(durationSeconds && { durationSeconds }) }));
     const created = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: ann } });
@@ -108,7 +108,7 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
     await set(bobs, { importMode: 'create', fetchEveryMinutes: 360, lastFetchedAt: ago(61) });
     await ctx.providers.scheduledFetch.tick();
     expect(await queued()).toEqual([`fetch:${connectionId}`]);
-    expect(FETCH_TASK).toBe('scheduled_fetch');
+    expect(SCHEDULED_FETCH_TASK).toBe('scheduled_fetch');
     const reads = ledger.listReads;
     expect(await runFetch()).toEqual([]);
     expect(ledger.listReads).toBe(reads + 1);
@@ -169,7 +169,7 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
     ledger.dives.get(remoteId)!.notes = 'Manta';
     await runFetch();
     expect((await diveOf(id)).notes).toBe('Turtle');
-    const { connections } = await json<{ connections: { connectionId: string; entries: { diveId: string; fields: unknown[] }[] }[] }>('GET', '/api/provider-conflicts');
+    const connections = await json<{ connectionId: string; entries: { diveId: string; fields: unknown[] }[] }[]>('GET', '/api/provider-conflicts');
     expect(connections).toMatchObject([{ connectionId, entries: [{ diveId: id, fields: [{ field: 'notes', hub: 'Turtle', provider: 'Manta' }] }] }]);
     expect((await t.db.select().from(providerConflict))[0]!.runId).toBeNull();
   });
@@ -270,7 +270,7 @@ describe.skipIf(!(await databaseReachable()))('the scheduled fetch', () => {
     for (let i = 0; i < 2; i++) {
       const [other] = await t.db.insert(diver).values({ name: `Diver ${i}` }).returning();
       const made = (await t.db.insert(connection).values({
-        userId: annId, diverId: other!.id, provider: 'ledger', accountId: `extra-${i}`, accountLabel: `Ledger ${i}`, keepSignedIn: false, importMode: 'create', fetchEveryMinutes: 60,
+        userId: annId, diverId: other!.id, provider: 'ledger', accountId: `extra-${i}`, accountLabel: `Ledger ${i}`, keepSignedIn: false, credentials: '{}', importMode: 'create', fetchEveryMinutes: 60,
       }).returning())[0]!;
       extra.push(made.id);
     }

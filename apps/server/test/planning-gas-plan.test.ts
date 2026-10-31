@@ -1,7 +1,7 @@
 // A gas plan (ADR 0033, slice 22): litres per segment, pressures per Diver, the gas rules and rock bottom, the controlling
 // Diver. Figures worked by hand in fresh water at sea level (10.19716 m of water per bar, 1.01325 bar at the surface), air.
 import { describe, expect, it } from 'vitest';
-import { surfaceLitres } from '../src/dives/real-gas.js';
+import { surfaceLitres } from '../src/dives/calc/real-gas.js';
 import { planGas, type GasPlanInput } from '../src/planning/gas-plan.js';
 
 const AIR = { o2: 21, he: 0 };

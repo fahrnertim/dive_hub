@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type uPlot from 'uplot';
 import type { ToolsPlan } from './api.ts';
+import type { PlanStretch } from './lib/tools.ts';
 import { useDisplay } from './lib/display.ts';
 import { DepthPlot, PressureStrip, token } from './ProfilePlot.tsx';
 import { Muted } from './ui/index.ts';
@@ -16,7 +17,7 @@ const RIGHT_SPACE = 16;
  */
 export function PlanProfile({ plan, names }: {
   /** The answer, or before there is one the levels' stretches alone: no Divers, and no minute to leave by. */
-  plan: Pick<Extract<ToolsPlan, { status: 'ok' }>, 'segments' | 'divers' | 'leaveLastLevelAtMinute' | 'fits'>; names: string[];
+  plan: Pick<Extract<ToolsPlan, { status: 'ok' }>, 'divers' | 'leaveLastLevelAtMinute' | 'fits'> & { segments: PlanStretch[] }; names: string[];
 }) {
   const { t } = useTranslation();
   const display = useDisplay();

@@ -2,7 +2,7 @@
 // `round-trip.ts clear start | finish`. It writes to the real SSI account: one throwaway dive dated 2000-01-03 10:00
 // (notes "Dive Hub test"), which `finish` deletes again. It prints only that dive's keys, never those of other dives.
 import type { SsiClient, SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
-import { createRecord, deleteRecord, updateRecord, writableRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
+import { buildCreateRecord, buildDeleteRecord, buildUpdateRecord, writableRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
 
 const NOTES = 'Dive Hub test – clear, delete me';
 const TEXT_KEYS = ['odin_user_log_comment'];
@@ -45,7 +45,7 @@ export async function startClearChecks(o: ClearChecks): Promise<string> {
   const dive = clearDive(o.siteId);
   const before = await client.logbook(access);
   const number = Math.max(0, ...before.dives.map((d) => Number(d.odin_user_log_nr) || 0)) + 1;
-  const { id } = await client.save(access, createRecord(dive, { number, accountId, reference: 'divehub-clear-test' }));
+  const { id } = await client.save(access, buildCreateRecord(dive, { number, accountId, reference: 'divehub-clear-test' }));
   log(`created SSI dive ${id} as number ${number}`);
   let stored = await findIn(o, id);
   if (!stored) throw new Error(`dive ${id} is not in the logbook`);
@@ -72,7 +72,7 @@ export async function startClearChecks(o: ClearChecks): Promise<string> {
   }
   // The notes may be cleared: put them back so that `finish` recognizes the dive as a test dive.
   if (!String(stored.odin_user_log_comment ?? '').startsWith('Dive Hub test')) {
-    await client.save(access, updateRecord(stored, { ...dive, notes: NOTES }));
+    await client.save(access, buildUpdateRecord(stored, { ...dive, notes: NOTES }));
     log('  notes put back so that finish can delete the dive');
   }
   return id;
@@ -89,6 +89,6 @@ export async function finishClearChecks(o: Pick<ClearChecks, 'client' | 'access'
     o.log(`SSI dive ${id}: is not a Dive Hub test dive, left alone (delete it in the app)`);
     return;
   }
-  await o.client.save(o.access, deleteRecord(stored));
+  await o.client.save(o.access, buildDeleteRecord(stored));
   o.log(`SSI dive ${id}: ${(await findIn(o, id)) ? 'still there after deleting, delete it in the app' : 'deleted'}`);
 }

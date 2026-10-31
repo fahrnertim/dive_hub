@@ -45,7 +45,7 @@ describe.skipIf(!(await databaseReachable()))('buddies at SSI', () => {
     return response;
   };
   const status = async () => (await call('GET', `/api/dives/${diveId}/providers/ssi`)).json() as Status;
-  const buddies = async () => ((await call('GET', `/api/connections/${connectionId}/buddies`)).json() as { buddies: Buddy[] }).buddies;
+  const buddies = async () => (await call('GET', `/api/connections/${connectionId}/buddies`)).json() as Buddy[];
   const setParticipants = async (ids: string[]) => call('PUT', `/api/dives/${diveId}/participants`, {
     version: ((await call('GET', `/api/dives/${diveId}`)).json() as { version: number }).version,
     participants: ids.map((diverId) => ({ diverId, role: 'buddy' })),

@@ -4,7 +4,7 @@ import { Icon } from './Icon.tsx';
 import {
   Button as AriaButton, DateField as AriaDateField, DateInput, DateSegment, FieldError, Group, Input, Label, ListBox,
   ListBoxItem, NumberField as AriaNumberField, Popover, Select as AriaSelect, SelectValue, Text, TextArea as AriaTextArea,
-  TextField as AriaTextField, type DateFieldProps, type DateValue, type NumberFieldProps as AriaNumberFieldProps,
+  TextField as AriaTextField, type DateFieldProps, type TextFieldProps as AriaTextFieldProps, type DateValue, type NumberFieldProps as AriaNumberFieldProps,
   type ValidationResult,
 } from 'react-aria-components';
 
@@ -46,14 +46,14 @@ export function NumberField({ label, description, unit, onInput, placeholder, ..
 }
 
 /** Multi-line text, e.g. notes. */
-export function TextArea({ label, description, ...props }: FieldChrome & {
-  name?: string; value?: string; onChange?: (value: string) => void; maxLength?: number; autoFocus?: boolean;
-}) {
+export function TextArea({ label, description, ...props }: FieldChrome & Omit<AriaTextFieldProps, 'className' | 'children'>) {
+  const message = useMessage();
   return (
     <AriaTextField {...props} className="field">
-      <Label className="field-label">{label}</Label>
+      <Label className="field-label">{label}{props.isRequired && <span className="field-required" aria-hidden="true"> *</span>}</Label>
       <AriaTextArea className="input textarea" rows={4} />
       {description && <Text slot="description" className="field-description">{description}</Text>}
+      <FieldError className="field-error">{message}</FieldError>
     </AriaTextField>
   );
 }

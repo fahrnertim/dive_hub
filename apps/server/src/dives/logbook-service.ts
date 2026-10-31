@@ -1,12 +1,14 @@
 // The logbook's reads for the API (ADR 0017, 0040, 0042, 0053): the list of Dives with its counts, totals and months, the
 // neighbours of one Dive in that list, a Recording's sample series, and the reads behind a Dive's own routes (the Dive
 // a User manages, its Recordings and site, the Dive before it, its Cylinders, Lead and Participants, its version, the deleted Dives, its Revisions). Who may see what is decided by the caller, which
-// passes the Divers the User manages.
+// passes the Divers the User manages. A lookup that may find nothing answers null; one whose thing must exist throws (as
+// lockManagedDive in dive-service.ts does).
 import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { PARTICIPANT_ROLES, device, dive, diveAssessment, diveSite, diver, diverManagement, importJob, participant, recording, revision, sampleSeries, user } from '../db/schema.js';
+import { device, dive, diveAssessment, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user } from '../db/schema.js';
 import { cylindersOf } from './cylinders.js';
-import { managedDiverIds, participantsOf } from './dive-service.js';
+import { participantsOf, participantsOfDives, type Participant } from './dive-service.js';
+import { managedDiverIds, managesDiveDiver } from '../divers/management.js';
 import { diveListFilter, FINDINGS_SHOWN } from './list-filter.js';
 import { leadOf } from './weighting.js';
 
@@ -29,13 +31,11 @@ export interface ListScope {
 /** The local month of a Dive, as the logbook groups it: an unknown offset keeps the wall-clock time as it is. */
 const LOCAL_MONTH = sql<string>`to_char("dive"."starts_at" at time zone 'UTC' + make_interval(secs => coalesce("dive"."utc_offset_seconds", 0)), 'YYYY-MM')`;
 
-const ROLE_ORDER = Object.fromEntries(PARTICIPANT_ROLES.map((r, i) => [r, i]));
-
 export interface RowExtras {
   recordings: number;
   gases: { o2: number; he: number }[];
   surfaceIntervalSeconds: number | null;
-  participants: { diverId: string; name: string; role: (typeof PARTICIPANT_ROLES)[number] }[];
+  participants: Participant[];
   profile: { depthsM: number[]; spanSeconds: number; ascentBands: [number, number, 1 | 2 | 3][] } | null;
 }
 
@@ -82,12 +82,11 @@ export function createLogbookService(db: Db) {
 
     const pageIds = rows.map((r) => r.d.id);
     const primaryIds = rows.flatMap((r) => (r.d.primaryRecordingId ? [r.d.primaryRecordingId] : []));
-    const [recordingCounts, primaries, people, assessments] = pageIds.length === 0 ? [[], [], [], []] : await Promise.all([
+    const [recordingCounts, primaries, peopleOf, assessments] = pageIds.length === 0 ? [[], [], new Map<string, Participant[]>(), []] : await Promise.all([
       db.select({ diveId: recording.diveId, n: count() }).from(recording)
         .where(and(inArray(recording.diveId, pageIds), isNull(recording.deletedAt))).groupBy(recording.diveId),
       primaryIds.length === 0 ? [] : db.select({ id: recording.id, summary: recording.summary }).from(recording).where(inArray(recording.id, primaryIds)),
-      db.select({ diveId: participant.diveId, diverId: participant.diverId, name: diver.name, role: participant.role }).from(participant)
-        .innerJoin(diver, eq(diver.id, participant.diverId)).where(and(inArray(participant.diveId, pageIds), isNull(diver.deletedAt))),
+      participantsOfDives(db, pageIds, { live: true }),
       db.select({ diveId: diveAssessment.diveId, recordingId: diveAssessment.recordingId, profile: diveAssessment.profile, ascentBands: diveAssessment.ascentBands })
         .from(diveAssessment).where(inArray(diveAssessment.diveId, pageIds)),
     ]);
@@ -95,10 +94,6 @@ export function createLogbookService(db: Db) {
     const summaryOf = new Map(primaries.map((p) => [p.id, p.summary]));
     const primary = (d: typeof dive.$inferSelect) => (d.primaryRecordingId ? summaryOf.get(d.primaryRecordingId) : undefined);
     const assessmentOf = new Map(assessments.map((a) => [a.diveId, a]));
-    const peopleOf = new Map<string, typeof people>();
-    for (const p of people.toSorted((a, b) => ROLE_ORDER[a.role]! - ROLE_ORDER[b.role]! || a.name.localeCompare(b.name))) {
-      peopleOf.set(p.diveId, [...(peopleOf.get(p.diveId) ?? []), p]);
-    }
 
     // The months of this page, with every matching Dive of each month (not only this page's share).
     let months: { month: string; dives: number; durationSeconds: number }[] = [];
@@ -118,7 +113,7 @@ export function createLogbookService(db: Db) {
           recordings: recordingsOf.get(r.d.id) ?? 0,
           gases: (primary(r.d)?.gases ?? []).map(({ o2, he }) => ({ o2, he })),
           surfaceIntervalSeconds: primary(r.d)?.surfaceIntervalSeconds ?? null,
-          participants: (peopleOf.get(r.d.id) ?? []).map(({ diverId, name, role }) => ({ diverId, name, role })),
+          participants: peopleOf.get(r.d.id) ?? [],
           profile: sketchOfDive(r.d, assessmentOf.get(r.d.id)),
         } satisfies RowExtras,
       })),
@@ -129,12 +124,12 @@ export function createLogbookService(db: Db) {
     };
   }
 
-  /** The id of this Dive when one of these Divers owns it and it is not deleted; undefined otherwise. */
+  /** The id of this Dive when one of these Divers owns it and it is not deleted; null otherwise. */
   async function ownDiveId(diveId: string, diverIds: string[]) {
-    if (diverIds.length === 0) return undefined;
+    if (diverIds.length === 0) return null;
     const [own] = await db.select({ id: dive.id }).from(dive)
       .where(and(eq(dive.id, diveId), inArray(dive.diverId, diverIds), isNull(dive.deletedAt)));
-    return own?.id;
+    return own?.id ?? null;
   }
 
   /** The Dives before and after one in the list's order; the position and neighbours are null when the list does not show it. */
@@ -154,13 +149,13 @@ export function createLogbookService(db: Db) {
     return { previous: row?.previous ?? null, next: row?.next ?? null, position: row?.position ?? null, total: counted?.n ?? 0 };
   }
 
-  /** The id of this Recording when it is on a Dive of one of these Divers and not deleted; undefined otherwise. */
+  /** The id of this Recording when it is on a Dive of one of these Divers and not deleted; null otherwise. */
   async function ownRecordingId(recordingId: string, diverIds: string[]) {
-    if (diverIds.length === 0) return undefined;
+    if (diverIds.length === 0) return null;
     const [rec] = await db.select({ id: recording.id }).from(recording)
       .innerJoin(dive, eq(dive.id, recording.diveId))
       .where(and(eq(recording.id, recordingId), inArray(dive.diverId, diverIds), isNull(recording.deletedAt)));
-    return rec?.id;
+    return rec?.id ?? null;
   }
 
   /** The Recording's stored sample series, all or only these channels. */
@@ -170,12 +165,12 @@ export function createLogbookService(db: Db) {
       ...(channels?.length ? [inArray(sampleSeries.channel, channels)] : []),
     ));
 
-  /** The Dive if the User manages its Diver and it isn't deleted. */
+  /** The Dive if the User manages its Diver and it isn't deleted; null otherwise. */
   async function findManagedDive(userId: string, id: string) {
     const [row] = await db.select({ d: dive }).from(dive)
-      .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
+      .innerJoin(diverManagement, managesDiveDiver(userId))
       .where(and(eq(dive.id, id), isNull(dive.deletedAt)));
-    return row?.d;
+    return row?.d ?? null;
   }
 
   /** A Dive's live Recordings with their Device and sample channels, earliest first, and its Dive site. */
@@ -192,12 +187,12 @@ export function createLogbookService(db: Db) {
     return { recordings, site };
   }
 
-  /** The Dive of the same Diver just before this one, not counting deleted ones. */
+  /** The Dive of the same Diver just before this one, not counting deleted ones; null for the Diver's first. */
   async function previousDive(row: typeof dive.$inferSelect) {
     const [previous] = await db.select().from(dive)
       .where(and(eq(dive.diverId, row.diverId), isNull(dive.deletedAt), lt(dive.startsAt, row.startsAt)))
       .orderBy(desc(dive.startsAt), desc(dive.id)).limit(1);
-    return previous;
+    return previous ?? null;
   }
 
   /** A Dive's Cylinders and Lead, each in its order. */
@@ -208,16 +203,16 @@ export function createLogbookService(db: Db) {
   /** A Dive's Participants with their names (ADR 0028). */
   const participantsOfDive = (diveId: string) => participantsOf(db, diveId);
 
-  /** The stored version of a Dive, whether it is deleted or not. */
+  /** The stored version of a Dive, whether it is deleted or not; null when there is no such Dive. */
   async function versionOf(id: string) {
     const [row] = await db.select({ version: dive.version }).from(dive).where(eq(dive.id, id));
-    return row?.version;
+    return row?.version ?? null;
   }
 
   /** The deleted Dives of the Divers the User manages, most recently deleted first; where a merge or move sent each. */
   async function deletedDives(userId: string, limit: number) {
     const rows = await db.select({ d: dive, siteName: diveSite.name }).from(dive)
-      .innerJoin(diverManagement, and(eq(diverManagement.diverId, dive.diverId), eq(diverManagement.userId, userId)))
+      .innerJoin(diverManagement, managesDiveDiver(userId))
       .leftJoin(diveSite, eq(diveSite.id, dive.siteId))
       .where(isNotNull(dive.deletedAt))
       .orderBy(desc(dive.deletedAt), desc(dive.id)).limit(limit);

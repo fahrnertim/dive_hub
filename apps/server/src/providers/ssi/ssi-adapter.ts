@@ -8,10 +8,11 @@ import {
 import { accountOnlyRow, newEntryRow, withAccountRow } from './ssi-buddy-row.js';
 import { SsiError, type SsiBuddy, type SsiClient, type SsiLogbook, type SsiRecord } from './ssi-client.js';
 import {
-  buddyIdsOf, COMPARED_FIELDS, compareReadBack, createRecord, deleteRecord, fingerprint, localTime, startChangesAtSsi, updateRecord, withBuddies, writableRecord,
+  buddyIdsOf, COMPARED_FIELDS, compareReadBack, buildCreateRecord, buildDeleteRecord, fingerprint, localTime, startChangesAtSsi, buildUpdateRecord, withBuddies, writableRecord,
   type DiveForSsi,
 } from './ssi-record.js';
 import { contextOf, parseSsiDive, ssiOrigin, SSI_PARSER } from './ssi-import.js';
+import { storedList } from './ssi-json.js';
 import { readSsiSite, ssiSiteRow, visibilityFor } from './ssi-site-record.js';
 
 /** Two dives this close in time (minutes) count as the same descent. */
@@ -122,22 +123,13 @@ export interface SsiCallLog {
 const remoteBuddy = ({ id, row: _row, ...b }: SsiBuddy) => ({ remoteId: String(id), ...b });
 
 /** How many samples a record's profile (`odin_user_log_diveSamples`, a JSON list) holds; 0 when it has none. */
-function sampleCount(samples: unknown): number {
-  if (Array.isArray(samples)) return samples.length;
-  if (typeof samples !== 'string' || !samples) return 0;
-  try {
-    const list: unknown = JSON.parse(samples);
-    return Array.isArray(list) ? list.length : 0;
-  } catch {
-    return 0;
-  }
-}
+const sampleCount = (r: SsiRecord) => storedList(r.odin_user_log_diveSamples)?.length ?? 0;
 
 /** Whether the record SSI answered a save with shows what was sent: the reference, the number, no fewer samples. */
 function showsSent(stored: SsiRecord, sent: SsiRecord, expect: { reference?: string; number?: number }): boolean {
   return (expect.reference === undefined || stored.odin_user_log_divecomputer_dive_ref === expect.reference)
     && (expect.number === undefined || numberOf(stored.odin_user_log_nr) === expect.number)
-    && sampleCount(stored.odin_user_log_diveSamples) >= sampleCount(sent.odin_user_log_diveSamples);
+    && sampleCount(stored) >= sampleCount(sent);
 }
 
 /** SSI's maintenance (HTTP 503) is, for the generic layer, SSI being unavailable. */
@@ -159,7 +151,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
     } catch (error) {
       if (error instanceof SsiError) report(error.reason, error.message.slice(0, 300));
       else report('error');
-      throw error instanceof SsiError ? new ProviderError(providerReason(error), error.message) : error;
+      throw error instanceof SsiError ? new ProviderError(providerReason(error), error.message, { cause: error }) : error;
     }
   }
   /** The last logbook read per Connection, kept briefly so the next action doesn't read it again. */
@@ -264,11 +256,11 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
     return found;
   }
 
-  /** Saves, then lists what SSI stored differently from what was sent. */
-  async function saveAndReadBack(ctx: ActionContext, sent: SsiRecord, number: number | null, expect: { reference?: string }): Promise<Delivered> {
+  /** Saves, then lists what SSI stored differently from what was sent; the number is the one SSI stored. */
+  async function saveAndReadBack(ctx: ActionContext, sent: SsiRecord, expect: { reference?: string }): Promise<Delivered> {
     const saved = await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, sent));
     const stored = await confirmed(ctx, sent, saved, expect);
-    return { remoteId: saved.id, remoteNumber: number, payload: withoutDatasets(sent), differences: compareReadBack(sent, stored) };
+    return { remoteId: saved.id, remoteNumber: numberOf(stored.odin_user_log_nr), payload: withoutDatasets(sent), differences: compareReadBack(sent, stored) };
   }
 
   function open(ctx: ActionContext): DiveExportAction {
@@ -294,8 +286,8 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const taken = wanted != null && dives.some((r) => numberOf(r.odin_user_log_nr) === wanted);
         const number = wanted != null && !taken ? wanted : Math.max(0, ...dives.map((r) => numberOf(r.odin_user_log_nr) ?? 0)) + 1;
         const { ids, leftOut } = buddiesFor(dive, await buddyList.recent());
-        const record = withBuddies(createRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), ids);
-        return { ...(await saveAndReadBack(ctx, record, number, { reference })), leftOut };
+        const record = withBuddies(buildCreateRecord(forSsi(dive), { number, accountId: ctx.accountId, reference }), ids);
+        return { ...(await saveAndReadBack(ctx, record, { reference })), leftOut };
       },
       async current(remoteId) {
         const read = await logbook.current();
@@ -319,8 +311,8 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         const kept = cleared ? [] : buddyIdsOf(remote).filter((id) => !sentBefore.includes(id) && !ids.includes(id));
         // The number there stays unless Dive Hub's is asked for and no other dive has it.
         const number = wanted != null && !(await holderOf(wanted, remoteId)) ? wanted : numberOf(remote.odin_user_log_nr);
-        const record = { ...withBuddies(updateRecord(remote, forSsi(dive), leave), [...ids, ...kept]), odin_user_log_nr: number };
-        return { ...(await saveAndReadBack(ctx, record, number, {})), leftOut };
+        const record = { ...withBuddies(buildUpdateRecord(remote, forSsi(dive), leave), [...ids, ...kept]), odin_user_log_nr: number };
+        return { ...(await saveAndReadBack(ctx, record, {})), leftOut };
       },
       async setNumber(remoteId, number, sharedWith) {
         const remote = await byId(remoteId);
@@ -342,7 +334,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
       async remove(remoteId) {
         const remote = await byId(remoteId);
         if (!remote) return 'gone';
-        await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, deleteRecord(remote)));
+        await called('save_divelog', ctx.connectionId, () => client.save(ctx.access, buildDeleteRecord(remote)));
         const kept = snapshots.get(ctx.connectionId);
         if (kept) kept.logbook = { ...kept.logbook, dives: kept.logbook.dives.filter((r) => idOf(r.odin_user_log_id) !== remoteId) };
         return 'deleted';
@@ -420,7 +412,7 @@ export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; 
         try {
           return await client.cardImage(url);
         } catch (error) {
-          if (error instanceof SsiError) throw new ProviderError(providerReason(error), error.message.slice(0, 300));
+          if (error instanceof SsiError) throw new ProviderError(providerReason(error), error.message.slice(0, 300), { cause: error });
           throw error;
         }
       },

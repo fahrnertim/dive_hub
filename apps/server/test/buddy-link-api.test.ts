@@ -31,7 +31,7 @@ describe.skipIf(!(await databaseReachable()))('link or add a list entry for a Di
   const person = async (name: string) => ((await call('POST', '/api/external-divers', { name })).json() as { id: string }).id;
   const list = async (forDiver?: string) => {
     const response = await call('GET', `/api/connections/${connectionId}/buddies${forDiver ? `?for=${forDiver}` : ''}`);
-    return { body: response.body, buddies: (response.json() as { buddies: View[] }).buddies };
+    return { body: response.body, buddies: response.json() as View[] };
   };
   const saves = () => ctx.fakeSsi.calls.filter((c) => c.what === 'save_buddy').map((c) => c.body as Record<string, unknown>);
   const details = async (id: string, cookie = tim) =>

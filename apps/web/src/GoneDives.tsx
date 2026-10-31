@@ -7,7 +7,7 @@ import {
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
-import { useProviderText, useProviders } from './lib/providers.ts';
+import { useProviderOf, useProviderText, type ProviderRef } from './lib/providers.ts';
 import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
 import { Button, Notice, Panel } from './ui/index.ts';
 
@@ -22,7 +22,7 @@ type Told = { key: string; tone: 'info' | 'success' | 'danger'; text: string };
 export function GoneDivesSections() {
   const { t } = useTranslation();
   const gone = useQuery(goneDivesQuery());
-  const providers = useProviders();
+  const providerOf = useProviderOf();
   const [told, setTold] = useState<Told[]>([]);
   const [deleting, setDeleting] = useState<{ dive: GoneDiveView; name: string }>();
   const groups = gone.data ?? [];
@@ -37,7 +37,7 @@ export function GoneDivesSections() {
       ))}
       {groups.map((g) => (
         <Group
-          key={g.connectionId} group={g} provider={providers.data?.find((p) => p.id === g.provider)}
+          key={g.connectionId} group={g} provider={providerOf(g.provider)}
           several={groups.filter((x) => x.provider === g.provider).length > 1} onTold={tell}
           onDelete={(dive, name) => setDeleting({ dive, name })}
         />
@@ -47,12 +47,11 @@ export function GoneDivesSections() {
   );
 }
 
-function Group({ group: g, provider, several, onTold, onDelete }: {
-  group: GoneDivesOfConnection; provider: ProviderView | undefined; several: boolean;
+function Group({ group: g, provider: p, several, onTold, onDelete }: {
+  group: GoneDivesOfConnection; provider: ProviderRef; several: boolean;
   onTold: (n: Told) => void; onDelete: (dive: GoneDiveView, name: string) => void;
 }) {
   const { t } = useTranslation();
-  const p = provider ?? ({ id: g.provider, name: g.provider } as ProviderView);
   const display = useDisplay();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
@@ -73,7 +72,7 @@ function Group({ group: g, provider, several, onTold, onDelete }: {
       announce(t('gone.confirmed'));
       await queryClient.invalidateQueries({ queryKey: keys.goneDives });
       // The Dive's state at the Provider changed.
-      await queryClient.invalidateQueries({ queryKey: ['dives'] });
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
     },
   });
   const heading = several ? t('gone.titleDiver', { name: p.name, diver: g.diverName }) : t('gone.title', { name: p.name });

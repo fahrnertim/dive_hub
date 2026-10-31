@@ -4,7 +4,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, importJob, providerConflict, push, waitingPush } from '../src/db/schema.js';
-import { record } from '../src/providers/conflicts.js';
+import { record } from '../src/providers/conflicts/conflict-service.js';
 import { createFakeHandover } from './fake-handover-provider.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -224,14 +224,14 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
     const id = await waitingDive();
     await t.db.update(waitingPush).set({ state: 'held', reason: 'exists', detail: { remoteId: 'L7', remoteNumber: 4, startsAt: '2025-05-01 09:00' } })
       .where(eq(waitingPush.diveId, id));
-    type Listed = { connections: { connectionId: string; entries: { kind: string; diveId: string; remoteId: string; fields: unknown[]; existing: unknown }[] }[] };
+    type Listed = { connectionId: string; entries: { kind: string; diveId: string; remoteId: string; fields: unknown[]; existing: unknown }[] }[];
     const listed = await json<Listed>('GET', '/api/provider-conflicts');
-    expect(listed.connections).toMatchObject([{
+    expect(listed).toMatchObject([{
       connectionId,
       entries: [{ kind: 'exists', diveId: id, remoteId: 'L7', fields: [], existing: { remoteId: 'L7', remoteNumber: 4, startsAt: '2025-05-01 09:00' } }],
     }]);
     expect((await call('POST', `/api/dives/${id}/providers/ledger/decision`, { onExisting: 'link' })).statusCode).toBe(204);
-    expect((await json<Listed>('GET', '/api/provider-conflicts')).connections).toEqual([]);
+    expect((await json<Listed>('GET', '/api/provider-conflicts'))).toEqual([]);
   });
 
   it('fetch-due answers how many it queued', async () => {
@@ -323,8 +323,10 @@ describe.skipIf(!(await databaseReachable()))('the API of the automation', () =>
     };
     expect(await ofConn(connectionId)).toEqual({ unsentDives: [a2, a3], created: 3, conflicts: 1 });
     expect(await ofConn(other)).toEqual({ unsentDives: [l2], created: 2, conflicts: 1 });
-    // The Import sent in full left the offer; the others stay.
+    // Reading changes nothing; the tick drops the Import sent in full from the offer, and the others stay.
     const stored = async (id: string) => (await t.db.select().from(connection).where(eq(connection.id, id)))[0]!.unsentImportIds;
+    expect(await stored(connectionId)).toEqual([sent, ofAnn]);
+    await ctx.providers.waitingPushes.tick();
     expect(await stored(connectionId)).toEqual([ofAnn]);
     expect(await stored(other)).toEqual([ofLena]);
   });

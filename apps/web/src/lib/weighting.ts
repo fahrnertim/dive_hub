@@ -1,10 +1,9 @@
 // Lead, weighting feedback and the exposure suit in the Dive's form (ADR 0031): lead in the User's unit (kilograms or
 // pounds, one decimal), the suit's values kept to the ones its type has; filled from the Diver's last dive.
-import type { paths } from '@dive-hub/api-client';
+import type { Answer } from './answer.ts';
 import { massFromDisplay, massIn, type UnitSystem } from './units.ts';
 
-type Json<P extends keyof paths> = paths[P] extends { get: { responses: { 200: { content: { 'application/json': infer T } } } } } ? T : never;
-type Dive = Json<'/api/dives/{id}'>;
+type Dive = Answer<'/api/dives/{id}'>;
 export type LeadEntry = Dive['lead'][number];
 export type LeadPlacement = NonNullable<LeadEntry['placement']>;
 export type WeightingFeedback = NonNullable<Dive['weightingFeedback']>;
@@ -14,7 +13,7 @@ export type SuitType = Suit['type'];
 export type SuitUndergarment = NonNullable<Suit['undergarment']>;
 /** What the Dive has of them, and what its edit takes. */
 export type WeightingValues = Pick<Dive, 'lead' | 'weightingFeedback' | 'suit'>;
-export type LastWeighting = Pick<Json<'/api/dives/{id}/same-as-last'>, 'lead' | 'suit'>;
+export type LastWeighting = Pick<Answer<'/api/dives/{id}/same-as-last'>, 'lead' | 'suit'>;
 
 export const LEAD_PLACEMENTS: LeadPlacement[] = ['belt', 'integrated', 'trim', 'ankle', 'backplate', 'other'];
 export const WEIGHTING_FELT: WeightingFelt[] = ['right', 'too_heavy', 'too_light'];

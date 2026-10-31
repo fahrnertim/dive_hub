@@ -1,21 +1,17 @@
-import { and, desc, eq, inArray, isNull, lt, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, inArray, lt, sql, type SQL } from 'drizzle-orm';
 import type { Readable } from 'node:stream';
 import type { Db } from '../db/client.js';
-import { DIVE_KINDS, duplicateCandidate, importJob, importOriginal, original, recording, type DiveKind, type ImportFound, type ImportOutcome } from '../db/schema.js';
-import { fillMissingCylinders } from '../dives/cylinders.js';
+import { DIVE_KINDS, duplicateCandidate, importJob, importOriginal, original, recording, type DiveKind, type ImportErrorCode, type ImportFound, type ImportOutcome } from '../db/schema.js';
+import { errorMessage } from '../errors.js';
 import type { Actor } from '../dives/revisions.js';
-import { positionColumns } from '../sites/dive-site-link.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { DEFAULT_LIMITS, eachFile, looksLikeZip, type ArchiveEntry } from './archive.js';
 import { createFileFormats, formatOf, type FileFormat } from './formats.js';
+import { DAY_MS } from './matching.js';
 import type { ParsedRecording } from './parsed-recording.js';
 import { placeRecording } from './placement.js';
 
 export const PROCESS_IMPORT_TASK = 'process_import';
-/** Reads positions for Recordings imported before they were kept (ADR 0020); queued at worker start. */
-export const BACKFILL_POSITIONS_TASK = 'backfill_positions';
-export const BACKFILL_GAS_FIGURES_TASK = 'backfill_gas_figures';
-export const FILL_CYLINDERS_TASK = 'fill_cylinders';
 
 /** An Import that waits for the User's choice of kinds is ended after this long, and its upload removed (ADR 0044). */
 export const CHOICE_WAIT_DAYS = 7;
@@ -28,10 +24,15 @@ export const kindOf = (rec: ParsedRecording): DiveKind => (rec.summary.diveMode 
 type UploadedFile = Pick<ArchiveEntry, 'index' | 'name' | 'read'>;
 interface FileToPlace { name: string; data: Buffer }
 
-/** The upload is neither a dive file in a format we read nor a zip archive. Stored as the Import's error code. */
+/** The upload is neither a dive file in a format we read nor a zip archive: the Import's error code `unsupported_file`. */
 export class UnsupportedFileError extends Error {
   constructor() { super('Unsupported file: expected a dive file (FIT, Suunto JSON) or a zip archive'); }
 }
+
+/** The error code and detail a failed Import keeps: only an unsupported upload has a code of its own. */
+const failureOf = (error: unknown): { errorCode: ImportErrorCode; errorDetail: string } => ({
+  errorCode: error instanceof UnsupportedFileError ? 'unsupported_file' : 'processing_failed', errorDetail: errorMessage(error),
+});
 
 export interface ImportServiceDeps {
   db: Db;
@@ -42,11 +43,12 @@ export interface ImportServiceDeps {
    * Runs an Import of a Provider's dives (ADR 0030; src/providers/dive-import.ts), whose Originals were stored when it
    * started. Without it, such an Import fails.
    */
-  providerImports?: () => { process(job: typeof importJob.$inferSelect): Promise<ImportOutcome> };
+  providerImports?: { process(job: typeof importJob.$inferSelect): Promise<ImportOutcome> };
   /** Runs once an Import is done, for its User: the dive assessment catches up (ADR 0036). */
   afterImport?: (userId: string) => Promise<void>;
 }
 
+/** Imports: making, running, starting and ending them. A lookup that may find nothing answers null; a failure throws. */
 export function createImportService({ db, blobs, formats = createFileFormats(), providerImports, afterImport }: ImportServiceDeps) {
   /** Stores the upload and creates the Import; its job is enqueued in the same transaction (ADR 0010). */
   async function createImport(userId: string, fileName: string, stream: Readable, maxBytes: number) {
@@ -82,12 +84,12 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
     if (job.provider) {
       try {
         if (!providerImports) throw new Error('This server runs no imports from Providers');
-        const outcome = await providerImports().process(job);
+        const outcome = await providerImports.process(job);
         await db.update(importJob).set({ status: 'done', outcome, finishedAt: new Date() }).where(eq(importJob.id, importId));
         await afterImport?.(job.userId);
         return outcome;
       } catch (error) {
-        await db.update(importJob).set({ status: 'failed', error: (error as Error).message, finishedAt: new Date() }).where(eq(importJob.id, importId));
+        await db.update(importJob).set({ status: 'failed', ...failureOf(error), finishedAt: new Date() }).where(eq(importJob.id, importId));
         throw error;
       }
     }
@@ -125,7 +127,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
         try {
           outcome.push(...(await processFile(job.userId, importId, { name: file.name, data: await file.read() }, actor, chosen)));
         } catch (error) {
-          outcome.push({ fileName: file.name, result: 'failed', reason: 'file_failed', message: (error as Error).message });
+          outcome.push({ fileName: file.name, result: 'failed', reason: 'file_failed', message: errorMessage(error) });
         }
       });
       if (outcome.length === 0) {
@@ -144,7 +146,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
     } catch (error) {
       await db
         .update(importJob)
-        .set({ status: 'failed', error: error instanceof UnsupportedFileError ? 'unsupported_file' : (error as Error).message, finishedAt: new Date() })
+        .set({ status: 'failed', ...failureOf(error), finishedAt: new Date() })
         .where(eq(importJob.id, importId));
       throw error;
     }
@@ -188,10 +190,10 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
   const recentImports = (userId: string) =>
     db.select().from(importJob).where(eq(importJob.userId, userId)).orderBy(desc(importJob.createdAt)).limit(50);
 
-  /** One of the User's Imports; undefined when there is none, or it is another User's. */
+  /** One of the User's Imports; null when there is none, or it is another User's. */
   async function findImport(userId: string, importId: string) {
     const [row] = await db.select().from(importJob).where(and(eq(importJob.id, importId), eq(importJob.userId, userId)));
-    return row;
+    return row ?? null;
   }
 
   /**
@@ -211,16 +213,16 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
 
   /** Worker task: Imports nobody answered for seven days are ended, so no upload lies here for good. Returns how many. */
   async function expireWaiting(now = new Date()): Promise<number> {
-    return (await endWaiting(lt(importJob.createdAt, new Date(now.getTime() - CHOICE_WAIT_DAYS * 86_400_000)), 'choice_expired')).length;
+    return (await endWaiting(lt(importJob.createdAt, new Date(now.getTime() - CHOICE_WAIT_DAYS * DAY_MS)), 'choice_expired')).length;
   }
 
-  async function endWaiting(which: SQL, error: 'choice_expired' | null) {
+  async function endWaiting(which: SQL, errorCode: 'choice_expired' | null) {
     const waiting = await db.select({ id: importJob.id, key: importJob.uploadStorageKey }).from(importJob)
       .where(and(eq(importJob.status, 'awaiting_choice'), which));
     const ended: (typeof importJob.$inferSelect)[] = [];
     for (const w of waiting) {
       // Only what still waits: a start that came first wins, and its upload stays.
-      const [row] = await db.update(importJob).set({ status: 'cancelled', error, finishedAt: new Date(), uploadStorageKey: null })
+      const [row] = await db.update(importJob).set({ status: 'cancelled', errorCode, finishedAt: new Date(), uploadStorageKey: null })
         .where(and(eq(importJob.id, w.id), eq(importJob.status, 'awaiting_choice'))).returning();
       if (!row) continue;
       if (w.key) await blobs.delete(w.key);
@@ -272,68 +274,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
     });
   }
 
-  /**
-   * Recordings imported before positions were kept get them from their Original (ADR 0020). Each
-   * Recording is read once: also when its Original fails to parse, it is marked as read.
-   * Returns how many Recordings were read.
-   */
-  async function backfillPositions(): Promise<number> {
-    let read = 0;
-    for (;;) {
-      const batch = await db.select({ id: recording.id, recordingKey: recording.recordingKey, storageKey: original.storageKey })
-        .from(recording).innerJoin(original, eq(original.id, recording.originalId))
-        .where(and(isNull(recording.positionsReadAt), isNull(recording.deletedAt)))
-        .limit(50);
-      if (batch.length === 0) return read;
-      for (const r of batch) {
-        let parsed: ParsedRecording | undefined;
-        try {
-          const data = await blobs.read(r.storageKey);
-          parsed = (await formatOf(formats, data)?.parse(data))?.find((p) => p.recordingKey === r.recordingKey);
-        } catch {
-          parsed = undefined; // a missing or unreadable Original: nothing to learn, don't try again
-        }
-        await db.update(recording)
-          .set(positionColumns(parsed ?? { entryPosition: undefined, exitPosition: undefined }))
-          .where(eq(recording.id, r.id));
-        read++;
-      }
-    }
-  }
-
-  /**
-   * Recordings imported before the summary kept the computer's gas consumption get it from their Original (ADR 0032).
-   * Each Recording is read once; a value the summary already has stays. Returns how many Recordings were read.
-   */
-  async function backfillGasFigures(): Promise<number> {
-    let read = 0;
-    for (;;) {
-      const batch = await db.select({ id: recording.id, recordingKey: recording.recordingKey, storageKey: original.storageKey, summary: recording.summary })
-        .from(recording).innerJoin(original, eq(original.id, recording.originalId))
-        .where(and(isNull(recording.gasFiguresReadAt), isNull(recording.deletedAt)))
-        .limit(50);
-      if (batch.length === 0) return read;
-      for (const r of batch) {
-        let found: { sacLpm?: number; rmvLpm?: number } = {};
-        try {
-          const data = await blobs.read(r.storageKey);
-          const parsed = (await formatOf(formats, data)?.parse(data))?.find((p) => p.recordingKey === r.recordingKey);
-          if (parsed) found = { ...(parsed.summary.sacLpm !== undefined && { sacLpm: parsed.summary.sacLpm }), ...(parsed.summary.rmvLpm !== undefined && { rmvLpm: parsed.summary.rmvLpm }) };
-        } catch {
-          // a missing or unreadable Original: nothing to learn, don't try again
-        }
-        await db.update(recording)
-          .set({ gasFiguresReadAt: new Date(), summary: { ...found, ...r.summary } })
-          .where(eq(recording.id, r.id));
-        read++;
-      }
-    }
-  }
-
-  /** Dives imported before Cylinders were kept get them from their tank pod's data (ADR 0045). Returns how many. */
-  const fillCylinders = () => fillMissingCylinders(db);
-
-  return { createImport, processImport, startImport, cancelImport, recentImports, findImport, decisionsOf, expireWaiting, backfillPositions, backfillGasFigures, fillCylinders };
+  return { createImport, processImport, startImport, cancelImport, recentImports, findImport, decisionsOf, expireWaiting };
 }
 
 export type ImportService = ReturnType<typeof createImportService>;

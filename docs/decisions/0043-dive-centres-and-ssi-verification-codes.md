@@ -76,8 +76,8 @@ Decided with the owner on 2026-10-08 while building:
 - **API:** `/api/dive-centres` (list, create, rename with `version`, delete), `PUT …/external-ids/{source}`,
   `PUT`/`DELETE …/sites/{siteId}`, and `POST /api/verification-codes/read` for a pasted text. A Dive carries
   `verificationCodes`. Setting the number and the links leaves the centre's `version` alone, as for sites (ADR 0029).
-- **The QR code is drawn by the client** with [`uqr`](https://github.com/unjs/uqr) (MIT, no dependencies), error
-  correction M, quiet zone 4, black on white in both colour schemes. The text is encoded as UTF-8 bytes. **Whether
+- **The QR code is drawn by the client** with [`uqr`](https://github.com/unjs/uqr) (MIT, no dependencies; since
+  2026-10-30 with `qr`, see [the amendment](#amendment-2026-10-30-one-qr-library)), error correction M, quiet zone 4, black on white in both colour schemes. The text is encoded as UTF-8 bytes. **Whether
   SSI's app reads a name with an umlaut this way is unknown: no code with one has been seen.** If one fails, look here
   first.
 - **The "Send update" warning** comes from the Push status (`current.updateRemovesVerification`): the SSI adapter
@@ -200,3 +200,16 @@ Decided with the owner on 2026-10-08 while building:
 - A Diver's row holds personal data of people who may never have signed up: their e-mail and leader number. Deleting
   the Diver, or merging it, removes them; nothing else keeps a copy.
 - SSI's dive centre field stays empty in a Push.
+
+## Amendment 2026-10-30: one QR library
+Decided by the owner on 2026-10-30 (desloppify review: two QR libraries for one job). The web client draws codes with
+[`qr`](https://github.com/paulmillr/qr) 0.7.2, the library that already reads them (scanner, above), and `uqr` is
+removed: one library to keep up to date and to trust, and the drawing and the reading tested against each other.
+
+What was checked before the switch: `encodeQR(text, 'raw', { ecc: 'medium', border: 4 })` gives the same version,
+size, data and quiet zone as `uqr`'s `encode(text, { ecc: 'M', border: 4 })`, as a `boolean[][]` the component draws
+unchanged. Given `uqr`'s mask, the modules were equal for a centre's code, one with umlauts, a buddy code, an
+alphanumeric and a numeric text and a 300-byte text. Only the mask that each library picks by itself can differ (both
+score the masks; `qr` follows ISO/IEC 18004:2024), so a code may look different from before and reads the same. The
+reader's tests and the browser tests of the scanner and the buddy codes draw with `qr` now. Not checked, as before:
+SSI's app reading a code drawn by Dive Hub.

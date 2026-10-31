@@ -12,30 +12,30 @@ date: 2026-10-24
 Each point below is fixed, with a test where it changes behaviour. Done: every point is done or, where the owner
 decides against it, struck out here with the reason; `pnpm check:full` is green.
 
-1. **A run's conflict count counts entries that no longer wait.** `apps/server/src/providers/push-run-service.ts:230-238`
+1. **A run's conflict count counts entries that no longer wait.** `apps/server/src/providers/push/push-run-service.ts:230-238`
    (`conflictsOf`) counts every entry with the run's id, also one whose Dive is soft-deleted or whose remote dive
-   changed. Apply the filter of `apps/server/src/providers/conflicts.ts:84` (Dive not deleted, the entry's remote dive
+   changed. Apply the filter of `apps/server/src/providers/conflicts/conflict-service.ts:84` (Dive not deleted, the entry's remote dive
    still the current one at that Connection), so the run's report counts what "Needs your decision" lists.
-2. **The Dive's page shows the entry's values as the run found them.** `apps/server/src/providers/push-service.ts:393`
+2. **The Dive's page shows the entry's values as the run found them.** `apps/server/src/providers/push/push-service.ts:393`
    (`statusAt`) answers the stored entry's fields; a Dive edited since still shows the old Dive Hub value. Either
    recompute the Dive Hub side on read, or say in the API description and the [client contract](../spec/clients.md)
    that the values are "as found by the run".
 3. **A Provider's Recording ignores the import directions of three values.** `asRecording`
-   (`apps/server/src/providers/dive-import.ts:286`, the summary at :296-313) takes the max temperature, the water
+   (`apps/server/src/providers/dive-import/dive-import.ts:286`, the summary at :296-313) takes the max temperature, the water
    temperature and the max depth without checking `importsField` for them, as it does for the other fields.
 4. **The `conflicts` body keys are listed by hand.** `apps/server/src/providers/routes.ts:799-803`: derive the object
-   from `SYNCED_FIELDS` (`apps/server/src/providers/three-way.ts`), so a new synced field can't be forgotten there.
+   from `SYNCED_FIELDS` (`apps/server/src/providers/dive-import/three-way.ts`), so a new synced field can't be forgotten there.
 5. **`provider_conflict` and its run.** No index on `run_id` (`conflictsOf` filters by it); the upsert
-   (`apps/server/src/providers/conflicts.ts:35`) overwrites an older run's id, so that run's count drops (say so in the
+   (`apps/server/src/providers/conflicts/conflict-service.ts:35`) overwrites an older run's id, so that run's count drops (say so in the
    run's report, or keep it as is and document it); and no test that a closed entry counts 0 in its run. The index
    needs a migration and a change to `apps/server/src/db/schema.ts`.
 6. **No browser test for the deferred notice nor for the disabled Send** on the Dive's page while a send waits.
-7. **`conflicts.ts` has two ways in.** The bare functions (`record`, `entryOf`, `openFields`, `close`, used by
+7. **`conflict-service.ts` has two ways in.** The bare functions (`record`, `entryOf`, `openFields`, `close`, used by
    `push-service.ts` with a raw `db`) and `createConflictService` (used by the routes). Give the send the service too, or
    say in the module's header comment why the bare functions are the seam the send uses.
 
 ## Done (2026-10-28, branch `two-way-follow-ups`)
-1. `waitingByRun` in `conflicts.ts` (the check "Needs your decision" uses); tests in `push-runs.test.ts`.
+1. `waitingByRun` in `conflict-service.ts` (the check "Needs your decision" uses); tests in `push-runs.test.ts`.
 2. `statusAt` says the Dive Hub side from the Dive now (`hubNow`); API description and client contract say so.
 3. `asRecording` takes the Provider's max depth, water and max temperature only where they import; the profile's values
    stay the fallback. The average depth has the same gap and was left as it is (not in this point).
@@ -44,11 +44,11 @@ decides against it, struck out here with the reason; `pnpm check:full` is green.
    belongs to the latest run that found it; a closed entry counts 0 (test).
 6. Two browser tests in `provider-conflicts.spec.ts`: the deferred notice (a site SSI has that Dive Hub doesn't know) and
    the Send that can't be pressed while the choice is being sent.
-7. The header comment of `conflicts.ts` says why the send uses the bare functions.
+7. The header comment of `conflict-service.ts` says why the send uses the bare functions.
 
 ## Read first
 - [ADR 0056](../decisions/0056-two-way-exchange-and-automation.md) (search for "Conflict").
-- `apps/server/src/providers/conflicts.ts` and `conflictsOf` in `push-run-service.ts`.
+- `apps/server/src/providers/conflicts/conflict-service.ts` and `conflictsOf` in `push-run-service.ts`.
 - `apps/server/test/ssi-target.test.ts`, the describe "the three-way send (ADR 0056)".
 - The "Sending a Dive" part of the [client contract](../spec/clients.md) (search for `deferred`).
 

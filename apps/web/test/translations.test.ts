@@ -109,8 +109,8 @@ describe('codes from the API', () => {
     ['outcome', 'provider.result', 'aiAccess.outcome'],
     ['notices', 'provider.notice'],
     // The dive assessment (ADR 0036): a finding's rule, severity and evidence, and what the computer noted; the rule of
-    // a logbook check (ADR 0038).
-    ['rule', 'assessment.title', 'checks.rule'],
+    // a logbook check (ADR 0038), and a gas plan's gas rule by its name (ADR 0033).
+    ['rule', 'assessment.title', 'checks.rule', 'tools.rules'],
     ['evidence', 'assessment.evidence'],
     ['event', 'assessment.event'],
     // A User's role on the instance, and a Participant's on a Dive (ADR 0028).
@@ -118,6 +118,6 @@ describe('codes from the API', () => {
   ])('every %s has an English text under %s', (property, ...prefixes) => {
     const codes = enumsOf(property);
     expect(codes.length).toBeGreaterThan(0);
-    for (const code of codes) expect(prefixes.some((prefix) => english.has(`${prefix}.${code}`)), `${prefixes.join(' or ')}.${code}`).toBe(true);
+    for (const code of codes) expect(prefixes.some((prefix) => english.has(`${prefix}.${code}`) || english.has(`${prefix}.${code}.name`)), `${prefixes.join(' or ')}.${code}`).toBe(true);
   });
 });

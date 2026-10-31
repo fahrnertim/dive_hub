@@ -1,4 +1,4 @@
-// Fits the compressibility factors in apps/server/src/dives/real-gas.ts (ADR 0045, slice 3): per gas a cubic in the
+// Fits the compressibility factors in apps/server/src/dives/calc/real-gas.ts (ADR 0045, slice 3): per gas a cubic in the
 // pressure, Z = 1 + a·p + b·p² + c·p³, by least squares through NIST's isotherm at 20 °C (293.15 K) from 1 to 351 bar.
 // Run it to see where the numbers come from: `node scripts/fit-compressibility.mjs`. It needs the network.
 // Source: NIST Chemistry WebBook, Thermophysical Properties of Fluid Systems, https://webbook.nist.gov/chemistry/fluid/

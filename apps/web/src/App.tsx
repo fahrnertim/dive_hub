@@ -1,28 +1,29 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './Account.tsx';
+import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './SignedOut.tsx';
 import { api, divesQuery, meQuery, setupQuery, type Me } from './api.ts';
 import { DiveList, LogbookHeader } from './DiveList.tsx';
 import { listOfDiveAddress, logbookParams, type LogbookParams } from './lib/logbook.ts';
 import { sitesParams } from './lib/sites-list.ts';
 import { toolsParams } from './lib/tools.ts';
-import { pickLanguage } from './i18n/index.ts';
+import { pickLanguage } from './i18n/languages.ts';
 import { DeletedNotices } from './DeletedDives.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
 import { PushRunStrip, RunMark } from './PushRun.tsx';
 import { ReviewLinks, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
+import { navSection, type NavSection } from './lib/nav.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
 import { accountHref, accountTab } from './lib/account-tabs.ts';
-import { reviewTab, useWaiting } from './lib/review.ts';
+import { reviewTab, useToDecideCounts } from './lib/review.ts';
 import { ActionMenu, BrandMark, ErrorBoundary, Icon, Muted, Notice, PageHeader } from './ui/index.ts';
 
 // Pages most visits don't need load on demand: the chart library, account settings, admin.
-const DiveDetail = lazy(() => import('./DiveDetail.tsx').then((m) => ({ default: m.DiveDetail })));
+const DivePage = lazy(() => import('./DivePage.tsx').then((m) => ({ default: m.DivePage })));
 const AccountPage = lazy(() => import('./AccountPage.tsx').then((m) => ({ default: m.AccountPage })));
-const Admin = lazy(() => import('./Admin.tsx').then((m) => ({ default: m.Admin })));
+const AdminPage = lazy(() => import('./AdminPage.tsx').then((m) => ({ default: m.AdminPage })));
 const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
 const SitesPage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
 const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
@@ -111,21 +112,22 @@ export function App() {
 function Navigation({ route, me }: { route: string; me: Me }) {
   const { t } = useTranslation();
   const signOut = useSignOut();
-  const current = (active: boolean) => (active ? { 'aria-current': 'page' as const } : {});
+  const section = navSection(route);
+  const current = (tab: NavSection) => (tab === section ? { 'aria-current': 'page' as const } : {});
   // What waits for a decision is counted beside the logbook, visible from every page (UI redesign 4.3).
-  const { total: waiting } = useWaiting();
+  const { total: toDecide } = useToDecideCounts();
   return (
     <>
       <nav className="app-nav" aria-label={t('nav.main')}>
-        <a href="#/" {...current(route === '/' || route.startsWith('/?') || route.startsWith('/dives/') || route.startsWith('/review'))}>
+        <a href="#/" {...current('logbook')}>
           <Icon name="logbook" />{t('nav.logbook')}
           <RunMark />
-          {waiting > 0 && <span className="count"><span aria-hidden="true">{waiting}</span><span className="visually-hidden">{t('nav.toDecide', { count: waiting })}</span></span>}
+          {toDecide > 0 && <span className="count"><span aria-hidden="true">{toDecide}</span><span className="visually-hidden">{t('nav.toDecide', { count: toDecide })}</span></span>}
         </a>
-        <a href="#/divers" {...current(route === '/divers')}><Icon name="divers" />{t('nav.divers')}</a>
-        <a href="#/sites" {...current(route === '/sites' || route.startsWith('/sites/') || route.startsWith('/sites?'))}><Icon name="site" />{t('nav.sites')}</a>
-        <a href="#/centres" {...current(route === '/centres' || route.startsWith('/centres/'))}><Icon name="centre" />{t('nav.centres')}</a>
-        <a href="#/tools" {...current(route === '/tools' || route.startsWith('/tools?') || route.startsWith('/tools/'))}><Icon name="tools" />{t('nav.tools')}</a>
+        <a href="#/divers" {...current('divers')}><Icon name="divers" />{t('nav.divers')}</a>
+        <a href="#/sites" {...current('sites')}><Icon name="site" />{t('nav.sites')}</a>
+        <a href="#/centres" {...current('centres')}><Icon name="centre" />{t('nav.centres')}</a>
+        <a href="#/tools" {...current('tools')}><Icon name="tools" />{t('nav.tools')}</a>
       </nav>
       {/* The account is a labelled menu, not a bare name link (UI review C6). */}
       <div className="user-menu">
@@ -162,7 +164,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const [path, query = ''] = route.split('?');
   const params = new URLSearchParams(query);
   const diveId = /^\/dives\/([\w-]+)$/.exec(path!)?.[1];
-  if (diveId) return <DiveDetail key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
+  if (diveId) return <DivePage key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
   if (path === '/account') return <AccountPage tab={accountTab(params)} connection={params.get('connection') ?? undefined} />;
   if (path === '/divers') return <DiversPage open={params.get('certifications') ?? undefined} />;
   if (path === '/review') return <ReviewPage tab={reviewTab(params)} />;
@@ -175,7 +177,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (centreId) return <CentrePage key={centreId} id={centreId} />;
   if (route === '/admin' || route === '/admin/site-imports') {
     if (me.user.role !== 'admin') return <><PageHeader title={t('nav.admin')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
-    return route === '/admin' ? <Admin /> : <SiteImportPage />;
+    return route === '/admin' ? <AdminPage /> : <SiteImportPage />;
   }
   return <Logbook params={logbookParams(params)} />;
 }

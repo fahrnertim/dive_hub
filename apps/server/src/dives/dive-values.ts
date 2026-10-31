@@ -50,10 +50,10 @@ export const valuesOfDive = (d: {
 });
 
 /** JSON-friendly form of a value, as Revisions and the API carry it. */
-export function plain<F extends OverridableField>(field: F, value: DiveValues[F]): unknown {
+export function jsonValueOf<F extends OverridableField>(field: F, value: DiveValues[F]): unknown {
   if (field !== 'startsAt') return value;
   const s = value as DiveValues['startsAt'];
   return { at: s.at.toISOString(), utcOffsetSeconds: s.utcOffsetSeconds };
 }
 
-export const sameValue = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+export const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);

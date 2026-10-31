@@ -4,8 +4,8 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../../db/client.js';
 import { diveSite, siteImport, type SiteImportFinding, type SiteImportProgress } from '../../db/schema.js';
-import { writeRevision, type Actor, type Changes } from '../../dives/revisions.js';
-import { noteSiteChange } from '../../providers/waiting-push-queue.js';
+import { changeListener, writeRevision, type Actor, type Changes } from '../../dives/revisions.js';
+import { errorMessage } from '../../errors.js';
 import type { ProblemCode } from '../../http/problems.js';
 import { isUniqueViolation } from '../site-error.js';
 import { allPublicIds, heldIds, insertImportedIds, publishIds, updateImported } from '../site-ids.js';
@@ -13,7 +13,7 @@ import { IMPORT_SOURCES, revisionKey, type ImportSource } from '../sources.js';
 import { planSiteImport, type ExistingSite, type Field, type PlannedCreate, type PlannedUpdate } from './import-plan.js';
 import { IMPORTED_FIELDS, SiteSourceError, type ImportArea, type ImportedValues, type SiteSourceAdapter, type SourceSite } from './site-source.js';
 
-export const IMPORT_SITES_TASK = 'import_dive_sites';
+export const IMPORT_DIVE_SITES_TASK = 'import_dive_sites';
 
 export class SiteImportError extends Error {
   constructor(readonly code: 'odbl_not_confirmed' | 'ssi_not_confirmed' | 'site_import_running' | 'site_import_not_found') {
@@ -115,7 +115,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
       .set({ ...columnsOf(set as Partial<ImportedValues>), version: sql`${diveSite.version} + 1`, updatedAt: new Date() })
       .where(eq(diveSite.id, u.siteId));
     const { at } = await writeRevision(tx, 'dive_site', u.siteId, actor, u.outcome === 'linked' ? 'link' : 'update', changes);
-    if (changes.name || changes.position) await noteSiteChange(tx, u.siteId, at);
+    if (changes.name || changes.position) await changeListener().siteChanged(tx, u.siteId, at);
   }
 
   return {
@@ -135,7 +135,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
             createSites: request.createSites,
           }).returning();
           // One attempt: a failed import says why and is started again by the admin, not retried behind their back.
-          await tx.execute(sql`select graphile_worker.add_job(${IMPORT_SITES_TASK}, json_build_object('siteImportId', ${row!.id}::text), max_attempts => 1)`);
+          await tx.execute(sql`select graphile_worker.add_job(${IMPORT_DIVE_SITES_TASK}, json_build_object('siteImportId', ${row!.id}::text), max_attempts => 1)`);
           return row!;
         });
       } catch (error) {
@@ -201,7 +201,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
           ? (error.reason === 'rate_limited' ? 'source_rate_limited' : 'source_unavailable')
           : 'internal_error';
         await db.update(siteImport).set({
-          status: 'failed', errorCode: code, errorDetail: (error instanceof Error ? error.message : String(error)).slice(0, 500), finishedAt: new Date(),
+          status: 'failed', errorCode: code, errorDetail: errorMessage(error).slice(0, 500), finishedAt: new Date(),
         }).where(eq(siteImport.id, id));
         if (!(error instanceof SiteSourceError)) throw error;
       }

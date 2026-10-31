@@ -1,68 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, centreQuery, centresQuery, keys, sitesQuery, unwrap, type CentreView, type DiveView, type SiteView } from './api.ts';
+import { api, ApiError, centreQuery, centresQuery, keys, sitesQuery, unwrap, type CentreView, type SiteView } from './api.ts';
 import { CodeScanner } from './CodeScanner.tsx';
+import { CodeFigure } from './DiveCodes.tsx';
 import { announce } from './lib/announce.ts';
+import { ssiNumber, useCentreRefresh, useDebounced } from './lib/centres.ts';
 import { useErrorText } from './lib/display.ts';
 import { usePageTitle } from './lib/page.ts';
+import { NewCentre, TakenNotice } from './NewCentre.tsx';
 import {
-  ActionMenu, BackLink, Button, ConfirmDialog, Dialog, Disclosure, Form, Icon, Muted, Notice, PageHeader, Panel, QrCode, SearchList, TextField,
+  ActionMenu, BackLink, Button, ConfirmDialog, Dialog, Form, Muted, NotFoundPage, Notice, PageHeader, Panel, SEARCH_SHOWN, SearchList, TextField,
   type SearchListItem,
 } from './ui/index.ts';
-
-/** Results shown at most in a picker; typing narrows them down. */
-const SHOWN = 10;
-
-/** The centre's SSI centre number, if it has one. */
-const ssiNumber = (c: CentreView) => c.externalIds.find((e) => e.source === 'ssi')?.externalId;
-
-/** What changes a centre changes the codes Dives show (ADR 0043). */
-function useCentreRefresh() {
-  const queryClient = useQueryClient();
-  return async (updated?: CentreView) => {
-    if (updated) queryClient.setQueryData(keys.centre(updated.id), updated);
-    await queryClient.invalidateQueries({ queryKey: keys.centres });
-    await queryClient.invalidateQueries({ queryKey: keys.dives });
-  };
-}
-
-function useDebounced(text: string) {
-  const [q, setQ] = useState('');
-  useEffect(() => {
-    const timer = setTimeout(() => setQ(text.trim()), 250);
-    return () => clearTimeout(timer);
-  }, [text]);
-  return q;
-}
-
-/** "Another centre already has this number", with the way to it. */
-function TakenNotice({ error }: { error: unknown }) {
-  const { t } = useTranslation();
-  const errorText = useErrorText();
-  if (!error) return null;
-  const centre = error instanceof ApiError ? error.details.centre : undefined;
-  return (
-    <Notice tone="danger">
-      {errorText(error)}{centre && <> <a href={`#/centres/${centre.id}`}>{t('centres.open', { name: centre.name })}</a></>}
-    </Notice>
-  );
-}
-
-/** A code drawn for scanning, with whose it is named beside it: a centre's, or with `caption` a person's. */
-export function CodeFigure({ name, text, caption, children }: { name: string; text: string; caption?: string; children?: ReactNode }) {
-  const { t } = useTranslation();
-  return (
-    <figure className="code-figure">
-      <QrCode text={text} label={caption ? `${caption}: ${name}` : t('centres.codeOf', { name })} />
-      <figcaption>
-        <strong translate="no">{name}</strong>
-        <span>{caption ?? t('centres.codeCaption')}</span>
-        {children}
-      </figcaption>
-    </figure>
-  );
-}
 
 /** The Dive centres of the instance (ADR 0043): every User sees, creates and edits them. */
 export function CentresPage() {
@@ -105,76 +55,6 @@ export function CentresPage() {
         )}
       </Panel>
     </>
-  );
-}
-
-/**
- * A new centre: typed, or from the text of its SSI code, which the server reads (the format is the server's, ADR 0043).
- * `siteId`: the Dive site it is created for, linked in the same step.
- */
-export function NewCentre({ siteId, onCreated, onCancel }: { siteId?: string; onCreated: (centre: CentreView) => void; onCancel: () => void }) {
-  const { t } = useTranslation();
-  const errorText = useErrorText();
-  const refresh = useCentreRefresh();
-  const [code, setCode] = useState('');
-  const [name, setName] = useState('');
-  const [number, setNumber] = useState('');
-  const [other, setOther] = useState<'buddy' | 'professional' | null>(null);
-  const [existing, setExisting] = useState<{ id: string; name: string } | null>(null);
-  const read = useMutation({
-    mutationFn: async (text: string) => unwrap(await api.POST('/api/verification-codes/read', { body: { text } })),
-    onMutate: () => { setOther(null); setExisting(null); },
-    onSuccess: (found) => {
-      if (found.kind !== 'centre') { setOther(found.kind); return; }
-      setName(found.name);
-      setNumber(found.centreNumber);
-      setExisting(found.existing);
-      announce(t('centres.codeRead', { name: found.name }));
-    },
-  });
-  const create = useMutation({
-    mutationFn: async () => unwrap(await api.POST('/api/dive-centres', {
-      body: {
-        name: name.trim(),
-        ...(number.trim() && { externalIds: [{ source: 'ssi' as const, externalId: number.trim() }] }),
-        ...(siteId && { siteIds: [siteId] }),
-      },
-    })),
-    onSuccess: async (created) => { await refresh(created); onCreated(created); },
-  });
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    create.mutate();
-  };
-
-  return (
-    <div className="form">
-      <Form className="form" onSubmit={(e) => { e.preventDefault(); if (code.trim()) read.mutate(code.trim()); }}>
-        <TextField
-          label={t('centres.pasteCode')} description={t('centres.pasteCodeHint')} name="code" maxLength={1000} autoComplete="off" spellCheck="false"
-          value={code} onChange={setCode}
-        />
-        {/* A scanned text goes to the server and not into the field: a diver's code holds an e-mail. */}
-        <CodeScanner onText={(text) => read.mutate(text)}>
-          <Button type="submit" icon="code" isPending={read.isPending} isDisabled={!code.trim()}>{t('centres.readCode')}</Button>
-        </CodeScanner>
-        {read.error && <Notice tone="danger">{errorText(read.error)}</Notice>}
-        {other && <Notice tone="danger">{t(`centres.otherCode.${other}`)}</Notice>}
-        {existing && <Notice>{t('centres.alreadyHere', { name: existing.name })} <a href={`#/centres/${existing.id}`}>{t('centres.open', { name: existing.name })}</a></Notice>}
-      </Form>
-      <Form className="form" onSubmit={submit}>
-        <TextField label={t('centres.name')} description={t('centres.nameHint')} name="name" isRequired maxLength={200} autoComplete="off" value={name} onChange={setName} />
-        <TextField
-          label={t('centres.ssiNumber')} description={t('centres.ssiNumberHint')} name="ssiNumber" inputMode="numeric" pattern="[0-9]*"
-          maxLength={10} autoComplete="off" value={number} onChange={setNumber}
-        />
-        <TakenNotice error={create.error} />
-        <div className="form-actions">
-          <Button type="submit" variant="primary" icon="add" isPending={create.isPending}>{t('centres.create')}</Button>
-          <Button onPress={onCancel}>{t('common.cancel')}</Button>
-        </div>
-      </Form>
-    </div>
   );
 }
 
@@ -230,19 +110,7 @@ export function CentrePage({ id }: { id: string }) {
 
   const back = { href: '#/centres', label: t('centres.back') };
   if (centre.isPending) return <Muted>{t('common.loading')}</Muted>;
-  if (notFound) {
-    return (
-      <>
-        <PageHeader title={t('centres.notFound')} />
-        <Panel>
-          <div className="empty-state">
-            <p>{errorText(centre.error)}</p>
-            <a href="#/centres" className="btn btn-secondary"><Icon name="back" />{t('centres.backToCentres')}</a>
-          </div>
-        </Panel>
-      </>
-    );
-  }
+  if (notFound) return <NotFoundPage title={t('centres.notFound')} message={errorText(centre.error)} back={{ href: '#/centres', label: t('centres.backToCentres') }} />;
   if (centre.error) return <><BackLink {...back} /><Notice tone="danger">{errorText(centre.error)}</Notice></>;
   const c = centre.data;
   const ssi = ssiNumber(c);
@@ -364,7 +232,7 @@ function AddSiteDialog({ centre: c, onClose }: { centre: CentreView; onClose: ()
   });
   const linked = new Set(c.sites.map((s) => s.id));
   const sites: SiteView[] = (found.data?.sites ?? []).filter((s) => !linked.has(s.id));
-  const items: SearchListItem[] = sites.slice(0, SHOWN).map((s) => ({ id: s.id, name: s.name, detail: s.waterBody ?? undefined }));
+  const items: SearchListItem[] = sites.slice(0, SEARCH_SHOWN).map((s) => ({ id: s.id, name: s.name, detail: s.waterBody ?? undefined }));
   return (
     <Dialog title={t('centres.addSiteTitle', { name: c.displayName })} isOpen onOpenChange={(open) => !open && onClose()}>
       <div className="form">
@@ -379,127 +247,4 @@ function AddSiteDialog({ centre: c, onClose }: { centre: CentreView; onClose: ()
       </div>
     </Dialog>
   );
-}
-
-/** On a Dive site's page: the Dive centres responsible for it (ADR 0043). Any User sets them, here or on the centre. */
-export function SiteCentres({ site }: { site: SiteView }) {
-  const { t } = useTranslation();
-  const errorText = useErrorText();
-  const refresh = useCentreRefresh();
-  const centres = useQuery(centresQuery({ siteId: site.id }));
-  const [adding, setAdding] = useState(false);
-  const unlink = useMutation({
-    mutationFn: async (id: string) => unwrap(await api.DELETE('/api/dive-centres/{id}/sites/{siteId}', { params: { path: { id, siteId: site.id } } })),
-    onSuccess: async (updated) => { await refresh(updated); announce(t('centres.centreRemoved', { name: updated.displayName })); },
-  });
-  const rows = centres.data?.centres ?? [];
-  return (
-    <Panel title={t('centres.title')} actions={<Button icon="add" onPress={() => setAdding(true)}>{t('centres.addCentre')}</Button>}>
-      <Muted>{t('centres.atSiteIntro')}</Muted>
-      {centres.error && <Notice tone="danger">{errorText(centres.error)}</Notice>}
-      {centres.data && rows.length === 0 && <Muted>{t('centres.noneAtSite')}</Muted>}
-      {rows.length > 0 && (
-        <ul className="diver-list">
-          {rows.map((c) => (
-            <li key={c.id} className="diver-row">
-              <a href={`#/centres/${c.id}`} className="diver-name" translate="no">{c.displayName}</a>
-              <span className="meta">{ssiNumber(c) ? t('centres.hasCode') : t('centres.noCodeShort')}</span>
-              <span className="actions">
-                <Button variant="quiet" aria-label={t('common.forItem', { action: t('centres.removeCentre'), item: c.displayName })}
-                  isPending={unlink.isPending && unlink.variables === c.id} isDisabled={unlink.isPending} onPress={() => unlink.mutate(c.id)}>
-                  {t('centres.removeCentre')}
-                </Button>
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {unlink.error && <Notice tone="danger">{errorText(unlink.error)}</Notice>}
-      {adding && <AddCentreDialog site={site} linked={rows} onClose={() => setAdding(false)} />}
-    </Panel>
-  );
-}
-
-/** Picks a centre for the site by name, or makes a new one for it. */
-function AddCentreDialog({ site, linked, onClose }: { site: SiteView; linked: CentreView[]; onClose: () => void }) {
-  const { t } = useTranslation();
-  const errorText = useErrorText();
-  const refresh = useCentreRefresh();
-  const [text, setText] = useState('');
-  const q = useDebounced(text);
-  const [creating, setCreating] = useState(false);
-  const found = useQuery(centresQuery({ q }));
-  const link = useMutation({
-    mutationFn: async (id: string) => unwrap(await api.PUT('/api/dive-centres/{id}/sites/{siteId}', { params: { path: { id, siteId: site.id } } })),
-    onSuccess: async (updated) => { await refresh(updated); announce(t('centres.centreAdded', { name: updated.displayName })); onClose(); },
-  });
-  const has = new Set(linked.map((c) => c.id));
-  const items: SearchListItem[] = (found.data?.centres ?? []).filter((c) => !has.has(c.id)).slice(0, SHOWN)
-    .map((c) => ({ id: c.id, name: c.displayName, detail: ssiNumber(c) ? t('centres.hasCode') : t('centres.noCodeShort') }));
-  return (
-    <Dialog title={t('centres.addCentreTitle', { name: site.name })} isOpen onOpenChange={(open) => !open && onClose()}>
-      {creating ? (
-        <NewCentre siteId={site.id} onCancel={() => setCreating(false)} onCreated={(c) => { announce(t('centres.centreAdded', { name: c.displayName })); onClose(); }} />
-      ) : (
-        <div className="form">
-          <SearchList
-            label={t('centres.search')} query={text} onQueryChange={setText} autoFocus items={items} onPick={(id) => link.mutate(id)}
-            listLabel={t('centres.title')} status={found.isPending ? t('common.loading') : null}
-            empty={q ? t('centres.noMatch', { q }) : t('centres.noneToAdd')}
-            isPending={link.isPending} pendingStatus={t('common.saving')}
-          />
-          {link.error && <Notice tone="danger">{errorText(link.error)}</Notice>}
-          <div className="form-actions">
-            <Button icon="add" isDisabled={link.isPending} onPress={() => setCreating(true)}>{t('centres.new')}</Button>
-            <Button onPress={onClose}>{t('common.cancel')}</Button>
-          </div>
-        </div>
-      )}
-    </Dialog>
-  );
-}
-
-/** The element the "Send update" card points to (ADR 0043). */
-export const DIVE_CODES_ID = 'verification-codes';
-
-/**
- * On a Dive: the verification codes of the centres of its site and of the professionals on it (ADR 0043), one line
- * until opened. Shown whenever the API gives any: to verify the dive at SSI, or to show to the others who were on it.
- */
-export function DiveCodes({ dive: d }: { dive: DiveView }) {
-  const { t } = useTranslation();
-  // Opened by the User, or from outside (the "Send update" card points here).
-  const [open, setOpen] = useState(false);
-  const section = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const show = () => { setOpen(true); section.current?.scrollIntoView({ block: 'nearest' }); };
-    const node = section.current;
-    node?.addEventListener('show-codes', show);
-    return () => node?.removeEventListener('show-codes', show);
-  }, [d.verificationCodes.length]);
-  if (d.verificationCodes.length === 0) return null;
-  return (
-    <section className="dive-line" id={DIVE_CODES_ID} ref={section}>
-      <Disclosure
-        level={2} title={t('centres.diveCodes', { count: d.verificationCodes.length })} isExpanded={open} onExpandedChange={setOpen}
-        summary={<p className="provider-state" translate="no">{d.verificationCodes.map((v) => v.centre?.displayName ?? v.diver?.name ?? '').join(', ')}</p>}
-      >
-        <div className="code-figures">
-          {d.verificationCodes.map((v) => (v.centre ? (
-            <CodeFigure key={v.centre.id} name={v.centre.displayName} text={v.text}>
-              <a href={`#/centres/${v.centre.id}`}>{t('centres.toCentre')}</a>
-            </CodeFigure>
-          ) : v.diver && (
-            <CodeFigure key={v.diver.id} name={v.diver.name} text={v.text} caption={t('diverCodes.diveCaption')} />
-          )))}
-        </div>
-        <Muted>{t('centres.diveCodesHint')}</Muted>
-      </Disclosure>
-    </section>
-  );
-}
-
-/** Opens the Dive's codes and brings them into view. */
-export function showDiveCodes() {
-  document.getElementById(DIVE_CODES_ID)?.dispatchEvent(new Event('show-codes'));
 }

@@ -309,6 +309,55 @@
       "when": 1793181733176,
       "tag": "0043_provider_conflict_run_index",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793380663960,
+      "tag": "0044_fill_pre_0027_credentials",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793381090320,
+      "tag": "0045_connection_credentials_not_null",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1793381355920,
+      "tag": "0046_retire_backfills",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793381563370,
+      "tag": "0047_drop_backfill_markers",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1793381833933,
+      "tag": "0048_import_error_code",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1793381836917,
+      "tag": "0049_split_import_error",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1793381858963,
+      "tag": "0050_drop_import_error",
+      "breakpoints": true
     }
   ]
 }

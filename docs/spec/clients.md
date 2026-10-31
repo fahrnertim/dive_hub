@@ -69,15 +69,19 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 ### Security
 - **Must forget everything about the previous User** when the User changes: after sign-in, sign-out, setup,
   accepting an Invitation, using a reset link, or ending the current session. Drop every cached response;
-  on a shared device the next person must see nothing. *Web:* `Account.tsx` (`useUserChanged`: `resetQueries`).
+  on a shared device the next person must see nothing. *Web:* `SignedOut.tsx` (`useUserChanged`: `resetQueries`).
 - **Must treat Invitation and password reset tokens as secrets.**
   - They travel in the URL fragment (`#/invite/<token>`, `#/reset/<token>`), never in a query string or a log
     ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md), [ADR 0013](../decisions/0013-account-management.md)).
   - Take them out of the address once used. *Web:* `useUserChanged` (`history.replaceState`).
   - Invitation and reset links an admin creates are shown once, to copy. Don't store them.
-  *Web:* `Admin.tsx` (`LinkToPassOn`), `ui/Overlay.tsx` (`CopyField`).
+  *Web:* `AdminPage.tsx` (`LinkToPassOn`), `ui/Overlay.tsx` (`CopyField`).
 - **Must not tell whether an e-mail address has an account.** A failed sign-in says "wrong e-mail or password".
-  Only "too many attempts" (429) and "disabled" (`BANNED_USER`) get their own message. *Web:* `Account.tsx` (`SignIn`).
+  Only "too many attempts" (429) and "disabled" (`BANNED_USER`) get their own message. *Web:* `SignedOut.tsx` (`SignIn`).
+- **Must show the "too many attempts" refusal on the token forms.** Setup, invitation and reset link routes count
+  attempts per client IP (30 per 15 minutes, [ADR 0061](../decisions/0061-attempt-limit-on-token-routes.md)) and
+  answer 429 `too_many_attempts` with `Retry-After` (seconds). Say to try again later; don't retry by itself.
+  *Web:* `SignedOut.tsx` (`Setup`, `AcceptInvitation`, `ResetPassword`, through `useErrorText`).
 - **Changing the password ends the User's other sessions.** The server enforces it, whatever
   `revokeOtherSessions` says. Tell the User afterwards that their other sessions were signed out. *Web:* `AccountPage.tsx` (`ChangePassword`).
 - **Must ask for the current password** to change it, and the server checks it (`INVALID_PASSWORD`).
@@ -92,26 +96,26 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Must send the version an edit started from:** the Dive's `version` for edits, moving it, the Primary
   recording, splitting off, deleting and restoring it; the site's `version`; both sites' versions for a merge. On 409 `dive_changed` or
   `site_changed`, **offer to reload instead of overwriting**
-  ([ADR 0015](../decisions/0015-overrides-vocabulary-and-browser-tests.md)). *Web:* `DiveEditForm.tsx`, `SiteForm.tsx`, `DiveDetail.tsx`.
+  ([ADR 0015](../decisions/0015-overrides-vocabulary-and-browser-tests.md)). *Web:* `DiveEditForm.tsx`, `SiteForm.tsx`, `DivePage.tsx`.
 - **Must confirm what can't be undone, and say what will happen:**
 
   | Action | Confirmation | *Web:* |
   |---|---|---|
-  | Deleting a User | type the User's e-mail (`confirmEmail`; the server checks it) | `Admin.tsx` (`DeleteUserDialog`) |
-  | Disabling a User; signing a User out everywhere | dialog | `Admin.tsx` |
-  | Taking one's own admin role away | dialog: the Admin page disappears | `Admin.tsx` |
+  | Deleting a User | type the User's e-mail (`confirmEmail`; the server checks it) | `AdminPage.tsx` (`DeleteUserDialog`) |
+  | Disabling a User; signing a User out everywhere | dialog | `AdminPage.tsx` |
+  | Taking one's own admin role away | dialog: the Admin page disappears | `AdminPage.tsx` |
   | Signing out everywhere else; ending the current session | dialog | `AccountPage.tsx` |
-  | Revoking an Invitation | dialog | `Admin.tsx` |
+  | Revoking an Invitation | dialog | `AdminPage.tsx` |
   | Deleting a Dive site | dialog | `SitesPage.tsx` |
   | Merging sites (no undo) | dialog with what moves and fills | `SitesPage.tsx` (`NearbySites`) |
-  | Splitting a Recording off | dialog | `DiveDetail.tsx` |
+  | Splitting a Recording off | dialog | `DivePage.tsx` |
   | Deleting a Dive | dialog: it leaves the logbook, can be restored, isn't imported again; asks about SSI too (see [Dives](#dives)) | `DeleteDive.tsx` |
   | Deleting a deleted Dive's copy at a Provider | dialog: SSI's app can't bring it back | `DeletedDives.tsx` |
 
   Discarding a Duplicate candidate is not confirmed. It offers **Undo** at once (reopen) and keeps a list of
   discarded ones ([ADR 0016](../decisions/0016-recording-decisions-and-divers.md)). *Web:* `Decisions.tsx`.
 - **Should guard unsaved changes** when leaving a form, including through the address, and release the guard
-  once saved before navigating. *Web:* `lib/leave-guard.ts` (`releaseLeaveGuard()`), `App.tsx` (`useRoute`).
+  once saved before navigating. *Web:* `lib/leave-guard.ts` (the release `useLeaveGuard` returns), `App.tsx` (`useRoute`).
 - **Must send `null` to clear a field, and leave a field out to keep it.** The two mean different things in every
   PATCH. A Dive edit sends only the fields the User changed (`set`) and the ones to give back to the recording
   (`reset`); see [Dives](#dives).
@@ -127,6 +131,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   stays the same. *Web:* `main.tsx`, `api.ts` (`shouldRetry`, `isUnauthorized`).
 - **Must show errors by their `code`,** translated (`errors.<code>`), never the English `error` text, which is
   for logs ([ADR 0014](../decisions/0014-design-system-and-localization.md)).
+  - A request with no answer at all (offline, server unreachable) has no code: say so as such, not as an unknown
+    error. *Web:* `api.ts` (`NetworkError`), `lib/display.ts` (`useErrorText`).
   - The same goes for Import `reason`/`errorCode`, a Site import's `failureCode`, Revision `cause` and the
     device vocabulary (water type, dive mode, deco model, gas circuit).
   - A device value without our word shows as recorded, under "other values from the device".
@@ -141,6 +147,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Lists page** with `limit`/`offset` and `total` (`/api/dives` [ADR 0017](../decisions/0017-logbook-list-paging.md),
   `/api/dive-sites` ADR 0022). Keep search, filters, sort and page in the client's navigation state (the web
   client uses the address), so back and reload keep them. *Web:* `lib/logbook.ts`, `lib/sites-list.ts`.
+- **A list's shape says whether it pages** ([ADR 0060](../decisions/0060-list-response-shapes.md)): a paged list
+  (`limit` and `offset`) is an object, the page under the resource's name and `total` beside it
+  (`{ dives, total }`, `{ sites, total }`, `{ centres, total }`, `{ divers, total }`, `{ entries, total }`); every
+  other list, also one with only a `limit` cap, is a bare array.
 - **The logbook's rows and "Show only" filters** ([ADR 0040](../decisions/0040-logbook-rows-and-filters.md)): a page is 25
   Dives. Offer `only` (`no-recording`, `no-site`, `with-findings`, `not-at-provider`, `changed-since-sent`; combined with "and") as toggles that
   show their `counts` (the numbers don't change when a filter is applied) and **hide a filter whose count is 0** unless it
@@ -160,7 +170,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   "Previous" is the row above in that list (with the newest first, the newer dive), "next" the row below; show the position
   (`position` of `total`), keep the control at the ends but say it is unavailable, and show nothing when `position` is
   `null`. "Back to the logbook" returns to the list as it was, on page `ceil(position / 25)`. Without a list, the whole
-  logbook newest first. *Web:* `DiveDetail.tsx` (`Neighbours`), `lib/logbook.ts` (`diveHref`, `neighbourParams`).
+  logbook newest first. *Web:* `DivePage.tsx` (`Neighbours`), `lib/logbook.ts` (`diveHref`, `neighbourParams`).
 - **Follow merged sites:** a site with `mergedInto` is gone. Open the kept site instead (ADR 0022).
 - **Render Providers from `GET /api/providers`** ([ADR 0027](../decisions/0027-providers-as-adapters.md)): its list is
   the instance's, and it changes only with the server (cache it for the session). Offer a Connection panel per Provider
@@ -175,7 +185,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 
 ### Signing in and the first start
 - **First start:** if `GET /api/setup` says `needed`, show the setup form. Whoever has the setup token from the
-  server log creates the first admin. Say where the token is (ADR 0012). *Web:* `Account.tsx` (`Setup`).
+  server log creates the first admin. Say where the token is (ADR 0012). *Web:* `SignedOut.tsx` (`Setup`).
 - **Invitations and reset links:** look the token up first (`/lookup`), then show for whom it is (the e-mail).
   An invalid, used or expired link says so and to ask the admin for a new one. *Web:* `AcceptInvitation`, `ResetPassword`.
 - **Passwords:** 15 to 128 characters, enforced by the server. Say the rule beside the field
@@ -275,7 +285,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - A value set by hand is marked "edited", with what the recording says, as visible text and not a tooltip.
   - The User can give a field back to the recording (`reset`).
   - While editing, mark a field as edited while typing, not on blur (nothing should move under a pointer about
-    to press Save). *Web:* `DiveDetail.tsx`, `DiveEditForm.tsx`.
+    to press Save). *Web:* `DivePage.tsx`, `DiveEditForm.tsx`.
 - **The number** ([ADR 0048](../decisions/0048-dive-numbers.md)): `values.number` on the detail and `number` in the list are the
   Dive's place in its Diver's logbook, worked out by the server: **never offer a field for it**; `PATCH` with `set.number` or
   `reset: ['number']` answers 400, and `overrides` never names it. It is `null` for a Deleted dive and for an apnea session of a
@@ -283,7 +293,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   merged, moved or re-timed, or when the Diver's settings change, **without** a new `version` or a Revision: don't treat a changed
   number as a conflict. The computer's own counter is `recordings[].summary.diveNumber`; show it as "Number on the computer"
   with the Recording, not as the Dive's number. A link or a note that says "Dive 57" can mean another Dive later: link by id.
-  *Web:* `DiveEditForm.tsx` (no field), `DiveDetail.tsx`.
+  *Web:* `DiveEditForm.tsx` (no field), `DivePage.tsx`.
 - **Time:** a Dive's start is UTC plus the UTC offset at the dive. Show and edit it as the local time at the dive.
   The offset is edited in quarter hours. Without a known offset, the device's time zone stands in.
   *Web:* `DiveEditForm.tsx`, `lib/units.ts`.
@@ -292,7 +302,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     in the browser's time zone. The Dive, the dive list and the deleted Dives carry `utcOffsetSource`.
   - **Must say where the time zone came from** when it isn't the device (`position`: where the dive was; `nearby`: the
     Diver's dives in the days around it; `unknown`: the time is shown as logged), unless the User set the start by hand
-    (`startsAt` in `overrides`). *Web:* `DiveDetail.tsx` (`TimeZoneNote`).
+    (`startsAt` in `overrides`). *Web:* `DivePage.tsx` (`TimeZoneNote`).
 - **Notes** are the Dive's own; an empty text clears them (`null`).
 - **Recordings:**
   - Name them by their Device ("Garmin Descent Mk3 (777)"), not "Recording 2" (ADR 0016).
@@ -300,13 +310,13 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - The Dive's last Recording can't be split off; the server refuses (`last_recording`).
   - **A Dive without a Recording** (`recordings` empty, ADR 0030) was made from a Provider's logbook entry
     (`fromProvider`): say so, naming the Provider, and that the dive computer's file adds its Recording, which then becomes
-    primary and its values replace these. There is no profile. *Web:* `DiveDetail.tsx` (`NoRecording`).
+    primary and its values replace these. There is no profile. *Web:* `DivePage.tsx` (`NoRecording`).
 - **Moving a Dive** to another Diver the User manages names that Diver; the Dive's site and values stay.
   - **A Dive linked to a Provider moves as a copy** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)):
     the answer of `POST /api/dives/{id}/move` then has another `id`. **Must say so before** (the Dive is at a Provider
     when `GET /api/dives/{id}/providers` has a `current`): it moves as a copy, the dive here goes to the deleted dives,
     so that Provider's next import doesn't bring it back. Afterwards show the Dive of the answer; the old one answers 404
-    and is listed in `GET /api/dives/deleted` with `movedTo`. *Web:* `DiveDetail.tsx` (`MoveDialog`).
+    and is listed in `GET /api/dives/deleted` with `movedTo`. *Web:* `DivePage.tsx` (`MoveDialog`).
 - **Merging two Dives** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)): the same descent logged twice
   (a logbook entry and its computer's file whose times didn't match at first, or two entries).
   - **Must offer to merge a Dive with another by hand,** for the pairs no rule finds:
@@ -419,10 +429,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Water type** (ADR 0025): the Dive's `waterType` is its site's and can't be edited on the Dive. Without a site,
   suggest choosing one; with a site that has none, say it isn't known for the site. Label the Recording's
   `summary.waterType` as the computer's water setting ("Water setting on the computer"), not as the Dive's water.
-  *Web:* `DiveDetail.tsx` (`WaterFact`, `RecordingDetails`).
+  *Web:* `DivePage.tsx` (`WaterFact`, `RecordingDetails`).
 - **Must say when the computer was set to other water** (`waterMismatch`): name both ("Your computer was set to salt
   water; this site is fresh water.") and how the depths read: `depthPercent` negative reads shallow, positive deep,
-  rounded ("about 2 % shallow"); `null` means they may read a little off. Depths are not corrected. *Web:* `DiveDetail.tsx`.
+  rounded ("about 2 % shallow"); `null` means they may read a little off. Depths are not corrected. *Web:* `DivePage.tsx`.
 
 ### The dive assessment
 Dive Hub comments on a diver's practice here, so the wording is part of the contract (ADR 0036). `GET /api/dives/{id}/assessment`
@@ -466,6 +476,8 @@ returns findings from fixed rules; the client words them.
 
 ### Sending a Dive to a Provider (SSI)
 From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities (ADR 0024, 0027). *Web:* `ProviderPanel.tsx`.
+Each change there answers the new status, so the panel needs no second fetch: "Set number" and the delete answer it as
+`GET` does; the send answers its own result with the status in `status`.
 - **A Provider's numbers** ([ADR 0048](../decisions/0048-dive-numbers.md)): a Provider whose `data.dives.export.numbers` isn't null can be
   made to number dives as Dive Hub does. Per Connection, `diveNumbers.follow` (off until the User turns it on; `PATCH
   /api/connections/{id}` with `{ diveNumbers: { follow } }`; turning it on sends nothing; `provider_unsupported` at a Provider that
@@ -687,7 +699,7 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
 - **Admins: sites from a Provider's site data** (`GET /api/admin/provider-site-data`; `PUT …/{provider}`): must show the
   Provider's missing licence and that allowing it is the operator's decision and risk, and send `confirm: true` only after
   the admin ticked that (`provider_site_data_not_confirmed`); show who allowed it and when, and offer stopping it.
-  *Web:* `Admin.tsx` (`ProviderSiteData`).
+  *Web:* `AdminPage.tsx` (`ProviderSiteData`).
 
 ### Dives gone at a Provider
 ([ADR 0051](../decisions/0051-dives-gone-at-a-provider.md); `GET /api/gone-dives`,
@@ -1012,9 +1024,9 @@ What a client **must** do, because these are limits from the Diver's own input a
 
 #### Gas plans
 
-([ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md).) `GET /api/tools/gas-plan` takes `levels` and `divers` as JSON in
-the query (`[{depth, minutes}]`, `[{name, volume, pressure, sac?, diverId?}]`, 1 to 8 each) and the same mix, water, altitude and
-rule inputs, and optionally `descentRate` and `ascentRate` in metres a minute (default 18 and 9; rock bottom follows a slower
+([ADR 0033](../decisions/0033-gas-plans-rules-and-groups.md).) `POST /api/tools/gas-plan` takes a JSON body
+([ADR 0059](../decisions/0059-tools-with-structured-input-take-post.md)): `levels` and `divers` (`[{depth, minutes}]`,
+`[{name, volume, pressure, sac?, diverId?}]`, 1 to 8 each) and the same mix, water, altitude and rule inputs, and optionally `descentRate` and `ascentRate` in metres a minute (default 18 and 9; rock bottom follows a slower
 ascent and never counts on a faster one); nothing is stored. Any Diver of the instance can be named by `diverId` (found with
 `GET /api/divers/search`, ADR 0028); only of a Diver the User manages the planning SAC and the last Dive are read, everyone
 else plans with the SAC sent or 20 L/min, and no logbook value of theirs is in the answer. A client **must**, besides the duties above:
@@ -1037,7 +1049,8 @@ else plans with the SAC sent or 20 L/min, and no logbook value of theirs is in t
   (no mix or no Diver yet) it may draw the levels' stretches by the same rule, with no gas and no limit, and never beyond 40 m.
 - **Say who a Diver is to the plan** where it lets the User pick one: a Diver the User manages brings their SAC, another Diver
   of the instance only their name, and anyone else is a guest who exists only in the request.
-- `outside_limits` gives the `reason` and `levelIndex` and no numbers.
+- `outside_limits` gives the `reason` and `levelIndex` and no numbers, with `gas`, `used` and `rule` as for a plan. The
+  OpenAPI document declares both answers in full; a client takes their types from it.
 The MCP tool `planning_gas_plan` returns the same with `assumptions`, `controlling_diver` and the notice.
 
 #### Lead estimate

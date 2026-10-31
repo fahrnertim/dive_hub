@@ -13,7 +13,7 @@ import { createImportService, type ImportService } from '../src/imports/import-s
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { makeSuuntoAppFit, makeSuuntoJson, type SuuntoDiveOptions } from './fixtures/suunto-dive.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
-import { createTestAuth, createTestDatabase, createUser, databaseReachable, type TestDatabase } from './support.js';
+import { createTestAuth, createTestDatabase, createUser, databaseReachable, listenToNoChanges, type TestDatabase } from './support.js';
 
 const zipOf = (entries: Record<string, Uint8Array>): Promise<Buffer> =>
   new Promise((resolve, reject) => {
@@ -47,6 +47,7 @@ describe.skipIf(!(await databaseReachable()))('Suunto files through the import p
   beforeAll(async () => {
     t = await createTestDatabase();
     ({ db, pool } = t);
+    listenToNoChanges();
     const auth = createTestAuth(db);
     tim = (await createUser(auth, 'tim@example.com')).id;
     bob = (await createUser(auth, 'bob@example.com')).id;
@@ -234,8 +235,16 @@ describe.skipIf(!(await databaseReachable()))('Suunto files through the import p
     it('a JSON file that is no Suunto log is an unsupported file', async () => {
       const created = await imports.createImport(tim, 'other.json', Readable.from([Buffer.from('{"a":1}')]), 1 << 20);
       await expect(imports.processImport(created.id)).rejects.toThrow(/Unsupported file/);
-      const [{ status, error }] = (await pool.query('select status, error from import where id = $1', [created.id])).rows;
-      expect([status, error]).toEqual(['failed', 'unsupported_file']);
+      const [row] = (await pool.query('select status, error_code, error_detail from import where id = $1', [created.id])).rows;
+      expect(row).toEqual({ status: 'failed', error_code: 'unsupported_file', error_detail: expect.stringMatching(/Unsupported file/) });
+    });
+
+    it('an Import that fails for another reason keeps processing_failed apart from what went wrong', async () => {
+      // A Provider's Import on a server that runs none: anything unexpected.
+      const [{ id }] = (await pool.query(`insert into import (user_id, upload_name, provider) values ($1, 'SSI', 'ssi') returning id`, [tim])).rows;
+      await expect(imports.processImport(id)).rejects.toThrow(/no imports from Providers/);
+      const [row] = (await pool.query('select status, error_code, error_detail from import where id = $1', [id])).rows;
+      expect(row).toEqual({ status: 'failed', error_code: 'processing_failed', error_detail: 'This server runs no imports from Providers' });
     });
 
     it('a Suunto log cut off in the middle fails as that file, not as the Import', async () => {

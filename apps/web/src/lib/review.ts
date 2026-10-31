@@ -20,7 +20,7 @@ export function reviewHref(tab: ReviewTab): string {
  * Dives that are probably no dive (ADR 0038), Dives gone at a Provider (ADR 0051), counted per Provider, and Dives a run
  * left with values changed in both places, or that the Provider already has a dive for (ADR 0056).
  */
-export function useWaiting() {
+export function useToDecideCounts() {
   const recordings = useQuery(candidatesQuery('open')).data?.length ?? 0;
   const checks = useQuery(logbookChecksQuery('open')).data ?? [];
   const pairs = checks.filter(isPairCheck).length;
@@ -38,7 +38,7 @@ export function useWaiting() {
 /** Counts that go into the tabs and the links under the logbook: what was decided and what was deleted. */
 export function useReviewCounts() {
   const decided = (useQuery(candidatesQuery('discarded')).data?.length ?? 0) + (useQuery(logbookChecksQuery('answered')).data?.length ?? 0);
-  const deleted = useQuery(deletedDivesQuery()).data?.dives.length ?? 0;
+  const deleted = useQuery(deletedDivesQuery()).data?.length ?? 0;
   return { decided, deleted };
 }
 

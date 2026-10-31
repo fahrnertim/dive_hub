@@ -1,7 +1,7 @@
 // Lead, weighting feedback and the exposure suit of a Dive (ADR 0031): the Dive's own values. Lead is set as one
 // list of placed entries: no entries means unknown, one entry of 0 means no lead.
 import { and, asc, eq, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable, Tx } from '../db/client.js';
 import { dive, lead, revision, type LeadPlacement, type SuitType, type SuitUndergarment, type WeightingFelt } from '../db/schema.js';
 import type { Changes } from './revisions.js';
 
@@ -14,7 +14,7 @@ export interface LeadEntry {
 export type LeadInput = Pick<LeadEntry, 'amountKg'> & Partial<LeadEntry>;
 
 /** A Dive's Lead entries in their order. */
-export async function leadOf(tx: Tx | Db, diveId: string): Promise<LeadEntry[]> {
+export async function leadOf(tx: Queryable, diveId: string): Promise<LeadEntry[]> {
   const rows = await tx.select().from(lead).where(eq(lead.diveId, diveId)).orderBy(asc(lead.position));
   return rows.map((r) => ({ amountKg: r.amountKg, placement: r.placement }));
 }

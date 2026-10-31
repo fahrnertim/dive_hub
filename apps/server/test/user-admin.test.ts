@@ -3,7 +3,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { eq, sql } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { original } from '../src/db/schema.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -123,6 +123,23 @@ describe.skipIf(!(await databaseReachable()))('managing Users', () => {
     expect(await status('/api/me', one)).toBe(401);
     expect(await status('/api/me', two)).toBe(401);
     expect(await canSignIn('member@example.com')).toBe(true);
+  });
+
+  it('logs every admin action with the acting admin, and not a refused one', async () => {
+    const info = vi.spyOn(ctx.app.log, 'info');
+    try {
+      await inject('PATCH', `/api/users/${ids.promoted}`, adminCookie, { role: 'user' });
+      await inject('POST', `/api/users/${ids.promoted}/disable`, adminCookie);
+      await inject('POST', `/api/users/${ids.promoted}/enable`, adminCookie);
+      await inject('DELETE', `/api/users/${ids.promoted}/sessions`, adminCookie);
+      await inject('POST', `/api/users/${ids.promoted}/password-reset`, adminCookie);
+      await inject('POST', `/api/users/${adminId}/disable`, adminCookie);
+      const logged = info.mock.calls.filter(([, message]) => message === 'admin action').map(([fields]) => fields);
+      expect(logged).toEqual(['role changed', 'disabled', 'enabled', 'sessions ended', 'reset link issued']
+        .map((action) => ({ action, userId: ids.promoted, by: adminId })));
+    } finally {
+      info.mockRestore();
+    }
   });
 
   describe('deleting a User', () => {

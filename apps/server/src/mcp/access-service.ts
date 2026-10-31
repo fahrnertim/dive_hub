@@ -9,6 +9,12 @@ import { aiAccessLog, aiAccessSetting, apikey, user } from '../db/schema.js';
 /** What an AI access may read. `logbook:read` is in every access; `logbook:positions` is the User's opt-in (ADR 0020). */
 export const AI_ACCESS_SCOPES = ['logbook:read', 'logbook:positions'] as const;
 export type AiAccessScope = (typeof AI_ACCESS_SCOPES)[number];
+const [READ, POSITIONS] = AI_ACCESS_SCOPES;
+/** The scope's name in the key's `logbook` permissions: `read` or `positions`. */
+const permissionOf = (scope: AiAccessScope) => scope.slice('logbook:'.length);
+
+/** The access may be given the Dives' own entry and exit positions (ADR 0020). */
+export const seesPositions = (access: Pick<VerifiedAccess, 'scopes'>): boolean => access.scopes.includes(POSITIONS);
 
 /** How long the log keeps a call (ADR 0035). */
 export const LOG_DAYS = 90;
@@ -45,7 +51,7 @@ export interface LoggedCall {
 }
 
 /** Scopes as the key's permissions: `{ logbook: ['read', 'positions'] }`. */
-const toPermissions = (scopes: readonly AiAccessScope[]) => ({ logbook: scopes.map((s) => s.slice('logbook:'.length)) });
+const toPermissions = (scopes: readonly AiAccessScope[]) => ({ logbook: scopes.map(permissionOf) });
 
 function toScopes(permissions: string | Record<string, string[]> | null | undefined): AiAccessScope[] {
   let parsed: unknown = permissions;
@@ -57,7 +63,7 @@ function toScopes(permissions: string | Record<string, string[]> | null | undefi
     }
   }
   const granted = (parsed as { logbook?: unknown } | null)?.logbook;
-  return AI_ACCESS_SCOPES.filter((s) => Array.isArray(granted) && granted.includes(s.slice('logbook:'.length)));
+  return AI_ACCESS_SCOPES.filter((s) => Array.isArray(granted) && granted.includes(permissionOf(s)));
 }
 
 type KeyRow = typeof apikey.$inferSelect;
@@ -111,7 +117,7 @@ export function createAiAccessService(db: Db, auth: Auth) {
      */
     async create(userId: string, name: string, positions: boolean) {
       if (!(await enabled())) throw new AiAccessError('ai_access_off');
-      const scopes: AiAccessScope[] = positions ? ['logbook:read', 'logbook:positions'] : ['logbook:read'];
+      const scopes = positions ? [READ, POSITIONS] : [READ];
       const created = await auth.api.createApiKey({ body: { name, userId, permissions: toPermissions(scopes) } });
       const [row] = await db.select().from(apikey).where(eq(apikey.id, created.id));
       return { ...toAccess(row!), key: created.key };

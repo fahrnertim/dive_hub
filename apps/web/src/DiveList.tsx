@@ -10,7 +10,7 @@ import {
 import { useAddressSearch } from './lib/address-search.ts';
 import { useNarrow } from './lib/narrow.ts';
 import { usePageTitle } from './lib/page.ts';
-import { useNames, useProviders } from './lib/providers.ts';
+import { useJoinNames, useProviders } from './lib/providers.ts';
 import { SendToProvider } from './PushRun.tsx';
 import { ProfileSketch } from './ProfileSketch.tsx';
 import { WaitingPushState } from './WaitingPush.tsx';
@@ -48,7 +48,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
-  const names = useNames();
+  const joinNames = useJoinNames();
   const dives = useQuery(divesQuery(params));
   const divers = useQuery(diversQuery());
   const providers = useProviders();
@@ -67,7 +67,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
   const to = Math.min(page * PAGE_SIZE, total);
   const range = t('logbook.range', { from, to, count: total });
   const pages = Math.ceil(total / PAGE_SIZE);
-  const filters = names((params.only ?? []).map(filterName));
+  const filters = joinNames((params.only ?? []).map(filterName));
   const nothing = params.only?.length
     ? (params.q ? t('logbook.noMatchBoth', { q: params.q, filters }) : t('logbook.noMatchOnly', { filters }))
     : params.q ? t('logbook.noMatch', { q: params.q }) : t('logbook.noneHere');
@@ -155,7 +155,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
         <div className="logbook-nothing">
           <Muted>{nothing}</Muted>
           {/* No dead end: with filters applied, all dives are one press away, and focus goes to the search. */}
-          {params.only?.length && (
+          {(params.only?.length ?? 0) > 0 && (
             <Button
               size="small"
               onPress={() => {
@@ -221,13 +221,13 @@ function Totals({ totals }: { totals: LogbookPage['totals'] }) {
 /** A filter's name; "Not in SSI" names the Providers the User is connected to (the API has no Provider of its own, ADR 0040). */
 function useFilterNames() {
   const { t } = useTranslation();
-  const names = useNames();
+  const joinNames = useJoinNames();
   const providers = useProviders();
   const connections = useQuery(connectionsQuery());
   return (filter: LogbookFilter): string => {
     if (filter !== 'not-at-provider') return t(`logbook.only.${COUNT_OF[filter]}`);
     const connected = (providers.data ?? []).filter((p) => connections.data?.some((c) => c.provider === p.id)).map((p) => p.name);
-    return t('logbook.only.notAtProvider', { names: connected.length > 0 ? names(connected) : t('provider.someService') });
+    return t('logbook.only.notAtProvider', { names: connected.length > 0 ? joinNames(connected) : t('provider.someService') });
   };
 }
 
@@ -348,7 +348,7 @@ function DiveRow({ dive: d, diver, from, providerName, year, scaleM, list }: {
  */
 function Buddies({ people }: { people: DiveSummary['participants'] }) {
   const { t } = useTranslation();
-  const names = useNames();
+  const joinNames = useJoinNames();
   if (people.length === 0) return <span className="dive-buddies" />;
   const more = people.length - CIRCLES;
   return (
@@ -358,7 +358,7 @@ function Buddies({ people }: { people: DiveSummary['participants'] }) {
         {more > 0 && <span className="avatar avatar-more">{t('logbook.morePeople', { count: more })}</span>}
       </span>
       <span className="visually-hidden">
-        {t('logbook.with', { people: names(people.map((p) => t('participants.withRole', { name: p.name, role: t(`participants.role.${p.role}`) }))) })}
+        {t('logbook.with', { people: joinNames(people.map((p) => t('participants.withRole', { name: p.name, role: t(`participants.role.${p.role}`) }))) })}
       </span>
     </span>
   );

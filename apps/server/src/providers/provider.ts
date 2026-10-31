@@ -1,10 +1,12 @@
 // The seam between Dive Hub and an outside service it talks to (ADR 0027): a Provider is one adapter that declares
 // its capabilities (how Users sign in, what it imports or exports, with which operations, how fast it may be called)
-// and does only what is its own. Connections, credentials, Pushes, leases, pacing, problem codes and the routes are
-// the generic layer's (connection-service.ts, push-service.ts, leases.ts, routes.ts).
+// and does only what is its own; the registry refuses an adapter without the method for something it declares. Connections,
+// credentials, Pushes, leases, pacing, problem codes and the routes are the generic layer's (connection-service.ts,
+// push-service.ts, lease-service.ts, routes.ts).
 import type { CylinderMaterial, ParticipantRole, ProviderImportPlan } from '../db/schema.js';
 import type { DiveMode, Position, SiteWaterType } from '../vocabulary.js';
 import type { SiteSource } from '../sites/sources.js';
+import { wallClockMs } from '../dives/time-zone.js';
 
 export type DiverSource = 'ssi' | 'padi';
 
@@ -100,7 +102,7 @@ export interface Capabilities {
     pauseMs: number;
     /**
      * Push runs (ADR 0047): the pause between two Dives of a run (at least `pauseMs`) and the most Dives one run sends.
-     * Null: no runs. A Provider whose delivery is `handed_over` must declare null.
+     * Null: no runs. A Provider whose delivery is `handed_over` must declare null (the registry checks it).
      */
     run: { pauseMs: number; maxDives: number } | null;
     /** The shortest interval of a scheduled fetch of the Provider's dives, in minutes; null for none. */
@@ -116,8 +118,8 @@ export interface Capabilities {
 export type ProviderErrorReason = 'wrong_credentials' | 'signed_out' | 'refused' | 'not_stored' | 'unavailable' | 'bad_response' | 'not_found';
 
 export class ProviderError extends Error {
-  constructor(readonly reason: ProviderErrorReason, detail: string) {
-    super(`${reason}: ${detail}`);
+  constructor(readonly reason: ProviderErrorReason, detail: string, options?: ErrorOptions) {
+    super(`${reason}: ${detail}`, options);
   }
 }
 
@@ -387,6 +389,16 @@ export interface ImportedDive extends ProviderDive {
   diverIds?: string[];
 }
 
+/**
+ * The dive's local start as milliseconds since 1970, read as if UTC. An adapter returns only dives with a readable
+ * start (parseSsiDive drops the rest), so an unreadable one is a broken invariant.
+ */
+export function localStartOf(d: ImportedDive): number {
+  const ms = wallClockMs(d.localStart);
+  if (ms === null) throw new Error(`Provider dive ${d.remoteId} has an unreadable local start: ${d.localStart}`);
+  return ms;
+}
+
 /** A Provider's single tank: what it keeps of a Cylinder. A value it doesn't have is null. */
 export interface ProviderCylinder {
   volumeL: number | null;
@@ -425,6 +437,10 @@ export interface ProviderAdapter {
      * From Dive Hub's data alone: the Provider isn't asked. Absent: the Provider has no such thing.
      */
     updateRemovesVerification?(dive: OutgoingDive, previous: Record<string, unknown> | null): boolean;
+    /**
+     * The operations of one action. Makes no call by itself: the registry opens one to check that each operation the
+     * Capabilities declare has its method (createProviderRegistry), so the generic layer calls them without asking again.
+     */
     open(context: ActionContext): DiveExportAction;
     /**
      * With `dives.import` `list` (ADR 0030): the account's dives as the Provider keeps them, read in one action. `recent`:

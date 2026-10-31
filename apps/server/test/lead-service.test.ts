@@ -2,7 +2,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { diver, user } from '../src/db/schema.js';
-import { createLeadService } from '../src/lead/service.js';
+import { DiverError } from '../src/divers/diver-error.js';
+import { createLeadService } from '../src/lead/lead-service.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';
 
 describe.skipIf(!(await databaseReachable()))('lead service', () => {
@@ -33,15 +34,15 @@ describe.skipIf(!(await databaseReachable()))('lead service', () => {
     await t?.drop();
   });
 
-  it('estimates for a Diver the User manages and says nothing for anyone else', async () => {
+  it('estimates for a Diver the User manages and refuses anyone else with diver_not_found', async () => {
     const own = await lead.estimate(annId, annDiver, plan, 'kg');
     expect(own).toMatchObject({ estimate: { unit: 'kg' }, noWaterType: 0 });
-    expect(await lead.estimate(otherId, annDiver, plan, 'kg')).toBeNull();
+    await expect(lead.estimate(otherId, annDiver, plan, 'kg')).rejects.toEqual(new DiverError('diver_not_found'));
   });
 
-  it('says nothing for a deleted Diver, though the User still has a management row for it', async () => {
+  it('refuses a deleted Diver, though the User still has a management row for it', async () => {
     await t.db.update(diver).set({ deletedAt: new Date() }).where(eq(diver.id, annDiver));
-    expect(await lead.estimate(annId, annDiver, plan, 'kg')).toBeNull();
+    await expect(lead.estimate(annId, annDiver, plan, 'kg')).rejects.toEqual(new DiverError('diver_not_found'));
     await t.db.update(diver).set({ deletedAt: null }).where(eq(diver.id, annDiver));
   });
 });

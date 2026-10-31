@@ -1,6 +1,7 @@
 // Requests to public open-data services, as their usage policies ask (ADR 0021): a User-Agent that names
 // Dive Hub and how to reach its makers (Wikimedia's policy), one request at a time, and after 429/406/504
 // a pause (Retry-After, else 30 s, as the Overpass guidance says) and one more try.
+import { errorMessage } from '../../errors.js';
 import type { ImportSource } from '../sources.js';
 import { SiteSourceError } from './site-source.js';
 
@@ -49,7 +50,7 @@ export function createPoliteHttp(options: PoliteHttpOptions = {}): PoliteHttp {
           ...init, headers: { ...init.headers, 'User-Agent': agent }, signal: AbortSignal.timeout(timeoutMs),
         });
       } catch (error) {
-        throw new SiteSourceError(source, 'unavailable', error instanceof Error ? error.message : String(error));
+        throw new SiteSourceError(source, 'unavailable', errorMessage(error), { cause: error });
       }
       if (response.status >= 200 && response.status < 300) return response;
       if (RETRY_STATUSES.has(response.status) && attempt === 1) {
@@ -65,7 +66,7 @@ export function createPoliteHttp(options: PoliteHttpOptions = {}): PoliteHttp {
       return await body();
     } catch (error) {
       // The connection broke or the timeout hit while the answer was arriving.
-      throw new SiteSourceError(source, 'unavailable', error instanceof Error ? error.message : String(error));
+      throw new SiteSourceError(source, 'unavailable', errorMessage(error), { cause: error });
     }
   };
   return Object.assign(

@@ -80,7 +80,7 @@ async function walk(
       if (state.totalBytes > limits.maxTotalBytes) throw new ArchiveLimitError('Archive too large when unpacked');
 
       // Never a path: what the zip calls its entries decides nothing about where anything is written.
-      const name = prefix + entry.fileName.split(/[\/]/).pop();
+      const name = prefix + entry.fileName.split('/').pop();
       if (nestedZip) {
         // Nested archives can be large: stream them to disk instead of memory.
         const nested = join(tempDir, `${randomUUID()}.zip`);

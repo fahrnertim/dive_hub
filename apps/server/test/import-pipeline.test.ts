@@ -12,7 +12,7 @@ import { dive, original, recording, revision, sampleSeries } from '../src/db/sch
 import { createImportService, type ImportService } from '../src/imports/import-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
-import { createTestAuth, createTestDatabase, createUser, databaseReachable, type TestDatabase } from './support.js';
+import { createTestAuth, createTestDatabase, createUser, databaseReachable, listenToNoChanges, type TestDatabase } from './support.js';
 
 const zipOf = (entries: Record<string, Uint8Array>): Promise<Buffer> =>
   new Promise((resolve, reject) => {
@@ -42,6 +42,7 @@ describe.skipIf(!(await databaseReachable()))('import pipeline (PostgreSQL)', ()
   beforeAll(async () => {
     t = await createTestDatabase();
     ({ db, pool, dataDir } = t);
+    listenToNoChanges();
     userId = (await createUser(createTestAuth(db), 'diver@example.com')).id;
     imports = createImportService({ db, blobs: createLocalBlobStore(dataDir) });
   });

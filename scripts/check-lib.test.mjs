@@ -99,6 +99,16 @@ test('documentation runs nothing; shared code of an app runs its tests and every
   assert.deepEqual([unknown.typecheck, unknown.lint, unknown.server, unknown.web, unknown.e2e], [true, 'all', 'all', 'all', 'all']);
 });
 
+test('a web unit or component test runs itself, without browser tests', () => {
+  for (const path of ['apps/web/test/units.test.ts', 'apps/web/test/dialogs.test.tsx']) {
+    const plan = planFor([path]);
+    assert.deepEqual([plan.web, plan.server, plan.e2e], ['changed', 'none', 'none'], path);
+  }
+  // No test imports the component tests' set-up, so all web tests run.
+  const setup = planFor(['apps/web/test/dom-setup.ts']);
+  assert.deepEqual([setup.web, setup.server, setup.e2e], ['all', 'none', 'none']);
+});
+
 test('a changed source file is linted itself; the CI workflow and the git hooks run nothing', () => {
   assert.equal(planFor(['apps/web/src/SitesPage.tsx']).lint, 'changed');
   assert.equal(planFor(['apps/server/test/dive-list.test.ts']).lint, 'changed');
@@ -143,6 +153,17 @@ test('a baseline may not swap a fixed problem for a new one, even at the same si
     ['known.json has new entries: no-cycles: c → d: fix the new problems instead of adding them to the baseline']);
   // Fewer of the same problem is a shrink.
   assert.deepEqual(baselineGrowth([['eslint-suppressions.json', suppressions([['a.ts', 'r', 3]]), suppressions([['a.ts', 'r', 2]])]]), []);
+});
+
+test('a renamed file keeps its suppressions, and only those it had', () => {
+  const suppressions = (entries) => JSON.stringify(Object.fromEntries(entries.map(([file, rule, count]) => [file, { [rule]: { count } }])));
+  const renames = new Map([['a.ts', 'dir/a.ts']]);
+
+  assert.deepEqual(baselineGrowth([['eslint-suppressions.json', suppressions([['a.ts', 'r', 2]]), suppressions([['dir/a.ts', 'r', 2]])]], renames), []);
+  assert.deepEqual(baselineGrowth([['eslint-suppressions.json', suppressions([['a.ts', 'r', 2]]), suppressions([['dir/a.ts', 'r', 3]])]], renames),
+    ['eslint-suppressions.json has new entries: dir/a.ts (r): fix the new problems instead of adding them to the baseline']);
+  // Without the rename the moved entry is new.
+  assert.equal(baselineGrowth([['eslint-suppressions.json', suppressions([['a.ts', 'r', 2]]), suppressions([['dir/a.ts', 'r', 2]])]]).length, 1);
 });
 
 test('a change to the edit hook runs the check script tests and lints everything', () => {

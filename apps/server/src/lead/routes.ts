@@ -4,13 +4,15 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
 import { Value } from 'typebox/value';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireUser, userOf } from '../auth/fastify.js';
 import { CYLINDER_MATERIALS, SUIT_TYPES, SUIT_UNDERGARMENTS } from '../db/schema.js';
+import { replyDiverError } from '../divers/diver-answers.js';
 import type { Suit } from '../dives/weighting.js';
-import { Problem, problem } from '../http/problems.js';
+import { answerErrors, Problem, problem } from '../http/problems.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
-import type { LeadService } from './service.js';
+import type { LeadService } from './lead-service.js';
 import type { EstimateBasis } from './types.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface LeadRouteDeps {
   auth: Auth;
@@ -20,7 +22,6 @@ export interface LeadRouteDeps {
 /** The weight check every answer asks for: what to do, as codes clients translate (research note, "Safety"). */
 const WEIGHT_CHECK_STEPS = ['eye_level_empty_bc', 'neutral_at_5m_at_reserve'] as const;
 
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const Water = Type.Enum([...SITE_WATER_TYPES]);
 
 const PlannedCylinders = Type.Array(Type.Object({
@@ -52,7 +53,7 @@ const EstimateView = Type.Object({
       kind: Type.Literal('dives'),
       dives: Type.Array(Type.Object({
         diveId: Type.String({ description: 'Link to the Dive: GET /dives/{id}' }),
-        startsAt: Type.String({ format: 'date-time' }),
+        startsAt: DateTime,
         number: Nullable(Type.Integer()),
         carried: Amount,
         needed: Type.Number({ description: 'What it needed: carried, corrected by its feedback; in the answer\'s `unit`' }),
@@ -94,6 +95,7 @@ const EstimateView = Type.Object({
 
 export const leadRoutes: FastifyPluginAsyncTypebox<LeadRouteDeps> = async (app, deps) => {
   app.addHook('onRequest', requireUser(deps.auth));
+  app.setErrorHandler(answerErrors(replyDiverError));
 
   app.get('/divers/:id/lead-estimate', {
     schema: {
@@ -103,7 +105,7 @@ export const leadRoutes: FastifyPluginAsyncTypebox<LeadRouteDeps> = async (app, 
         + 'Never certain: the answer always carries `range`, `basis`, `adjustments`, `missing` and the `weightCheck`; `total` and `range` are '
         + 'null when there is no Dive with the suit and no body weight. Nothing is stored. 400 `suit_invalid` for a thickness on a suit that has none, '
         + 'or an undergarment under anything but a drysuit.',
-      params: Type.Object({ id: Type.String({ format: 'uuid' }) }),
+      params: IdParams,
       querystring: EstimateQuery,
       response: { 200: EstimateView, 400: Problem, 404: Problem },
     },
@@ -117,10 +119,9 @@ export const leadRoutes: FastifyPluginAsyncTypebox<LeadRouteDeps> = async (app, 
     if (!Value.Check(PlannedCylinders, planned)) return reply.code(400).send(problem('invalid_input'));
 
     const plannedSuit: Suit = { type: suit, thicknessMm: suitThicknessMm ?? null, hood: suitHood ?? null, undergarment: suitUndergarment ?? null };
-    const answer = await deps.lead.estimate(request.user!.id, request.params.id, {
+    const answer = await deps.lead.estimate(userOf(request).id, request.params.id, {
       water, suit: plannedSuit, cylinders: planned.map((c) => ({ volumeL: c.volumeL, material: c.material ?? null })),
     }, unit);
-    if (!answer) return reply.code(404).send(problem('diver_not_found'));
     const { estimate } = answer;
 
     const basis = estimate.basis && withDiveLinks(estimate.basis, answer.dives);

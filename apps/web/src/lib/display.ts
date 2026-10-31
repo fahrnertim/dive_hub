@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ApiError, meQuery, type ProblemCode } from '../api.ts';
+import { ApiError, meQuery, NetworkError, type ProblemCode } from '../api.ts';
 import { countryName, formatDistance, formatPosition, type Position } from './geo.ts';
 import {
   formatDate, formatDateTime, formatDepth, formatDiveDay, formatDiveTime, formatDuration, formatGasRate, formatMonth, formatPressure, formatPressureRate, formatTemperature, formatMass, formatThickness, formatVolume, pickUnits, unitLabel,
@@ -65,6 +65,6 @@ export function useErrorText() {
   const problemText = useProblemText();
   return (error: unknown): string => {
     if (error instanceof ApiError && error.code) return problemText(error.code, error.provider, error.message);
-    return t('errors.unknown');
+    return t(error instanceof NetworkError ? 'errors.network' : 'errors.unknown');
   };
 }

@@ -1,11 +1,12 @@
 // What every MCP tool shares (ADR 0035): its definition, input checks with messages that say what to do, a read-only
 // transaction with a time limit, the size cap, and the AI access log.
 import { sql } from 'drizzle-orm';
-import { Type, type Static, type TSchema } from 'typebox';
+import { Type, type Static, type TObject, type TSchema } from 'typebox';
 import { Value } from 'typebox/value';
 import type { Db, Tx } from '../db/client.js';
-import { managedDiverIds } from '../dives/dive-service.js';
-import type { AiAccessScope, AiAccessService, VerifiedAccess } from './access-service.js';
+import { Nullable } from '../http/schemas.js';
+import { managedDiverIds } from '../divers/management.js';
+import { seesPositions, type AiAccessScope, type AiAccessService, type VerifiedAccess } from './access-service.js';
 
 /** A tool result's JSON is kept under this many characters: about 10,000 tokens, well under clients' 25,000 (ADR 0035). */
 export const MAX_RESULT_CHARS = 40_000;
@@ -30,7 +31,7 @@ export interface ToolContext {
   positions: boolean;
 }
 
-export interface ToolDefinition<I extends TSchema = TSchema> {
+export interface ToolDefinition<I extends TObject = TObject> {
   name: string;
   title: string;
   /** Static text, reviewed in code; never built from data (ADR 0035). */
@@ -41,14 +42,15 @@ export interface ToolDefinition<I extends TSchema = TSchema> {
   output: (positions: boolean) => TSchema;
   /** Arguments that hold free text: logged as "[text]", never as typed. */
   freeText?: readonly string[];
-  run: (ctx: ToolContext, args: Static<I>) => Promise<{ output: Record<string, unknown>; rows: number }>;
+  // A method, so every tool fits ToolDefinition[]: runTool checks the arguments against `input` before it calls `run`.
+  run(ctx: ToolContext, args: Static<I>): Promise<{ output: Record<string, unknown>; rows: number }>;
 }
 
-export const defineTool = <I extends TSchema>(tool: ToolDefinition<I>): ToolDefinition<I> => tool;
+export const defineTool = <I extends TObject>(tool: ToolDefinition<I>): ToolDefinition<I> => tool;
 
 // --- Schema fragments -------------------------------------------------------------------------------------------
 
-export const Nullable = <T extends TSchema>(t: T) => Type.Union([t, Type.Null()]);
+export { Nullable };
 export const Id = (description: string) => Type.String({ pattern: '^[0-9a-fA-F-]{36}$', description });
 export const DateOnly = (description: string) => Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: `${description} (YYYY-MM-DD)` });
 export const Detail = Type.Optional(Type.Enum(['concise', 'detailed'], {
@@ -64,6 +66,19 @@ export const Paging = {
   count: Type.Integer({ description: 'How many this answer holds' }),
   next_cursor: Type.Optional(Type.String({ description: 'Pass as cursor to get the next page; absent on the last page' })),
 };
+
+/**
+ * The User's Divers a tool reads: the one `diverId` names, or all of them. A `diverId` that is not one of theirs is
+ * refused with what to do instead.
+ */
+export function diversAsked(ctx: ToolContext, diverId: string | undefined): string[] {
+  if (!diverId) return ctx.diverIds;
+  const divers = ctx.diverIds.filter((id) => id === diverId.toLowerCase());
+  if (divers.length === 0) {
+    throw new ToolError('diver_not_found', 'No Diver of the user has this diver_id. Call divers_list for the Divers whose Dives this access can read.');
+  }
+  return divers;
+}
 
 // --- Paging and caps --------------------------------------------------------------------------------------------
 
@@ -99,12 +114,6 @@ export function excerpt(text: string | null, max: number): { text: string | null
 
 // --- Dive times -------------------------------------------------------------------------------------------------
 
-/**
- * A Dive's start as local wall-clock time, in SQL (ADR 0030): shifted by its offset; kept as it is when the offset is
- * unknown (then the stored time already is the wall clock); the UTC time when only the instant is known.
- */
-export const LOCAL_START = sql.raw(`(case when d.utc_offset_seconds is not null then d.starts_at + make_interval(secs => d.utc_offset_seconds) else d.starts_at end) at time zone 'UTC'`);
-
 const minute = (date: Date) => date.toISOString().slice(0, 16);
 
 /** `start_local` (wall clock where the dive was, null when unknown) and `start_utc` (null when only the wall clock is known). */
@@ -122,8 +131,6 @@ export const StartTimes = {
 
 export const round = (value: number | null, digits = 1) => (value === null ? null : Math.round(value * 10 ** digits) / 10 ** digits);
 export const minutes = (seconds: number | null) => (seconds === null ? null : Math.round(seconds / 60));
-/** Words for a case-insensitive "contains" search. */
-export const like = (text: string) => `%${text.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
 // --- Running a tool ---------------------------------------------------------------------------------------------
 
@@ -140,7 +147,7 @@ function loggable(tool: ToolDefinition, args: unknown): Record<string, unknown> 
   if (typeof args !== 'object' || args === null) return {};
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(args)) {
-    if (!(key in (tool.input as unknown as { properties: Record<string, unknown> }).properties)) continue;
+    if (!(key in tool.input.properties)) continue;
     if (tool.freeText?.includes(key)) out[key] = '[text]';
     else if (key === 'cursor') out[key] = '[cursor]';
     else if (typeof value === 'number' || typeof value === 'boolean') out[key] = value;
@@ -161,7 +168,7 @@ function inputProblem(tool: ToolDefinition, args: unknown): string | null {
       if (extra) return `unknown argument${extra.length > 1 ? 's' : ''} ${extra.join(', ')}`;
       return `${e.instancePath.replace(/^\//, '').replace(/\//g, '.') || 'arguments'} ${e.message}`;
     });
-  const known = Object.keys((tool.input as unknown as { properties: Record<string, unknown> }).properties).join(', ');
+  const known = Object.keys(tool.input.properties).join(', ');
   return `Invalid arguments for ${tool.name}: ${problems.join('; ')}. Its arguments are: ${known || 'none'}.`;
 }
 
@@ -201,7 +208,7 @@ export async function runTool(runner: ToolRunner, tool: ToolDefinition, rawArgs:
       // The access mode makes PostgreSQL refuse any write; the timeout ends a query that takes too long.
       await tx.execute(sql.raw(`set local statement_timeout = ${Math.round(runner.timeoutMs ?? TOOL_TIMEOUT_MS)}`));
       const diverIds = [...(await managedDiverIds(tx, access.userId))];
-      return tool.run({ tx, userId: access.userId, diverIds, positions: access.scopes.includes('logbook:positions') }, args);
+      return tool.run({ tx, userId: access.userId, diverIds, positions: seesPositions(access) }, args);
     }, { accessMode: 'read only' });
     await log(result.rows);
     return { content: [{ type: 'text', text: JSON.stringify(result.output) }], structuredContent: result.output };

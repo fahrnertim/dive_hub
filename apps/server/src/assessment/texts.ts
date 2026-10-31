@@ -1,7 +1,8 @@
 // A finding in English sentences, for the MCP tool (ADR 0035, 0036): what was measured, the guidance it is held
 // against, and a recommendation. The web client renders its own from the same values, in the User's language and
 // units. Wording rules: facts first, guidance with its source, no blame, no medical claims.
-import type { FindingValues, NoFly, RuleId } from './rules.js';
+import type { FindingValues, RuleId } from './rules.js';
+import type { NoFly } from './series-rules.js';
 
 /** Said with every assessment, wherever it is shown. */
 export const ASSESSMENT_NOTE = 'Findings compare a logged dive with published guidance. They are not medical advice and no measure of how safe the dive was: '

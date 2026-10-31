@@ -1,5 +1,5 @@
 // Shared helpers for tests against PostgreSQL: a throwaway database per test file, the app with
-// real Better Auth, and signing in through the HTTP API. Skipped when PostgreSQL is unreachable.
+// real Better Auth, and signing in through the HTTP API. Skipped when PostgreSQL is unreachable (see databaseReachable).
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -8,36 +8,41 @@ import pg from 'pg';
 import type { LightMyRequestResponse } from 'fastify';
 import { createAuth, type Auth } from '../src/auth/auth.js';
 import { buildApp } from '../src/app.js';
+import { createServices } from '../src/compose.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
-import { createImportService, type ImportService } from '../src/imports/import-service.js';
-import { createSiteImportService } from '../src/sites/import/site-import-service.js';
+import { listenToChanges } from '../src/dives/revisions.js';
 import type { SiteSourceAdapter } from '../src/sites/import/site-source.js';
 import type { ImportSource } from '../src/sites/sources.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
-import { createProviderLayer } from '../src/providers/layer.js';
 import type { ProviderAdapter } from '../src/providers/provider.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
-import { createAiAccessService } from '../src/mcp/access-service.js';
-import { createAssessmentService } from '../src/assessment/assessment-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createFakeSsi, type FakeSsi } from './fake-ssi.js';
-import { createInvitations } from '../src/users/invitations.js';
-import { createSetup, type Setup } from '../src/users/setup.js';
 
 const baseDbUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? 'postgres://divehub:divehub-dev@127.0.0.1:5432/divehub';
 export const BASE_URL = 'http://localhost:3000';
 /** A password that satisfies the length rule (ADR 0011). */
 export const PASSWORD = 'correct horse battery staple';
 
+let skipWarned = false;
+
+/**
+ * Whether the database tests can run. Without PostgreSQL they are skipped with a warning; with REQUIRE_DATABASE=1
+ * (CI) an unreachable database fails the file instead, so a broken DATABASE_URL never passes as skipped tests.
+ */
 export async function databaseReachable(): Promise<boolean> {
   const client = new pg.Client({ connectionString: baseDbUrl, connectionTimeoutMillis: 2000 });
   try {
     await client.connect();
     await client.end();
     return true;
-  } catch {
+  } catch (error) {
+    if (process.env.REQUIRE_DATABASE === '1') throw new Error(`REQUIRE_DATABASE is set but PostgreSQL is unreachable at ${new URL(baseDbUrl).host}`, { cause: error });
+    // Straight to stderr: Vitest doesn't print the console of a file whose tests were all skipped.
+    if (!skipWarned) process.stderr.write(`\nPostgreSQL is unreachable at ${new URL(baseDbUrl).host}: the database tests are SKIPPED, not passed.\n`);
+    skipWarned = true;
     return false;
   }
 }
@@ -83,13 +88,18 @@ export const unreachable = (source: ImportSource): SiteSourceAdapter => ({
 /** A key for DIVEHUB_ENCRYPTION_KEY in tests (32 bytes). */
 export const TEST_ENCRYPTION_KEY = Buffer.alloc(32, 7);
 
-/** A clock that only skips forward, until a test sets it back to real time with `reset`. */
-export function resettableClock() {
+/**
+ * The app's clock in tests and the browser tests' server: sleeping skips ahead instead of waiting and is recorded in
+ * `slept`. It runs with real time and only skips forward, until a test sets it back with `reset`; a `stopped` clock
+ * moves only by skips and sleeps, for a test that checks how long something waited.
+ */
+export function resettableClock({ stopped = false } = {}) {
+  const start = Date.now();
   let skipped = 0;
   const slept: number[] = [];
   return {
     slept,
-    now: () => Date.now() + skipped,
+    now: () => (stopped ? start : Date.now()) + skipped,
     async sleep(ms: number) { slept.push(ms); skipped += ms; },
     skip(ms: number) {
       if (ms < 0) throw new Error('the clock only skips forward; use reset() for real time');
@@ -115,17 +125,12 @@ export async function createTestApp(t: TestDatabase, options: {
     webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = resettableClock(), ssi = (a) => a,
     ...authOptions
   } = options;
-  const auth = createTestAuth(t.db, authOptions);
-  const setup: Setup = createSetup(t.db);
-  const blobs = createLocalBlobStore(t.dataDir);
-  const assessments = createAssessmentService(t.db);
-  const imports: ImportService = createImportService({ db: t.db, blobs, providerImports: () => providers.diveImports, afterImport: (userId) => assessments.refreshUser(userId) });
-  const siteImports = createSiteImportService({ db: t.db, sources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') } });
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
   const ssiClock = { now: 0, advance(ms: number) { this.now += ms; } };
-  const providers = createProviderLayer({
-    db: t.db, blobs, secrets: createSecretBox(encryptionKey ?? undefined),
+  const services = createServices({
+    db: t.db, auth: createTestAuth(t.db, authOptions), blobs: createLocalBlobStore(t.dataDir), secrets: createSecretBox(encryptionKey ?? undefined),
+    siteSources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') },
     adapters: [
       ssi(createSsiAdapter({
         client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }),
@@ -135,12 +140,15 @@ export async function createTestApp(t: TestDatabase, options: {
     ],
     clock,
   });
-  const aiAccesses = createAiAccessService(t.db, auth);
-  const app = await buildApp({
-    db: t.db, imports, siteImports, providers, blobs, auth, aiAccesses, assessments, setup, invitations: createInvitations(t.db), baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir,
-  });
-  return { app, auth, aiAccesses, assessments, setup, imports, siteImports, providers, fakeSsi, ssiClock, clock, pauses: clock.slept, blobs };
+  const app = await buildApp({ ...services, baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir });
+  return { ...services, app, fakeSsi, ssiClock, clock, pauses: clock.slept };
 }
+
+/**
+ * For a test that builds services without createTestApp: its Revisions are written, and no Provider queue hears them.
+ * Without it the test passes only when an earlier file in the shared pool built a provider layer.
+ */
+export const listenToNoChanges = () => listenToChanges({ diveChanged: async () => {}, siteChanged: async () => {} });
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */
 export async function createUser(auth: Auth, email: string, role: 'user' | 'admin' = 'user') {

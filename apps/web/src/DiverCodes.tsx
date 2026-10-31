@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, diverDetailsQuery, keys, unwrap, type DiverDetailsView, type ReadCodeView } from './api.ts';
-import { CodeFigure } from './CentresPage.tsx';
+import { CodeFigure } from './DiveCodes.tsx';
 import { CodeScanner } from './CodeScanner.tsx';
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';

@@ -4,8 +4,9 @@
 // wall-clock time is kept as if it were UTC.
 import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { find } from 'geo-tz';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable } from '../db/client.js';
 import { dive, type UtcOffsetSource } from '../db/schema.js';
+import { DAY_MS, MAX_OFFSET_MS } from '../imports/matching.js';
 
 export interface Position {
   latitude: number;
@@ -21,9 +22,6 @@ export interface PlacedTime {
 
 /** How far the nearest Dive may be for its offset to count (ADR 0030). */
 export const NEARBY_DAYS = 7;
-const DAY_MS = 24 * 3600_000;
-/** The widest offsets there are: a wall-clock time is at most this far from its instant. */
-const MAX_OFFSET_MS = 14 * 3600_000;
 
 /** "YYYY-MM-DD HH:MM[:SS]" (or with a T) as milliseconds since 1970, read as if it were UTC; null when it isn't one. */
 export function wallClockMs(local: string): number | null {
@@ -71,7 +69,7 @@ export function inZone(localMs: number, zone: string): { startsAt: Date; utcOffs
  * site's), else the offset of the Diver's closest Dive within 7 days whose offset is known, else unknown (kept as if UTC).
  */
 export async function placeLocalTime(
-  tx: Tx | Db, diverId: string, localMs: number, positions: (Position | null | undefined)[],
+  tx: Queryable, diverId: string, localMs: number, positions: (Position | null | undefined)[],
 ): Promise<PlacedTime> {
   for (const p of positions) {
     const zone = p ? zoneAt(p) : null;
@@ -83,7 +81,7 @@ export async function placeLocalTime(
 }
 
 /** The offset of the Diver's live Dive closest to this wall-clock time, within NEARBY_DAYS, whose offset is known. */
-async function nearbyOffset(tx: Tx | Db, diverId: string, localMs: number): Promise<number | null> {
+async function nearbyOffset(tx: Queryable, diverId: string, localMs: number): Promise<number | null> {
   const from = new Date(localMs - NEARBY_DAYS * DAY_MS - MAX_OFFSET_MS);
   const to = new Date(localMs + NEARBY_DAYS * DAY_MS + MAX_OFFSET_MS);
   const local = sql`${dive.startsAt} + make_interval(secs => ${dive.utcOffsetSeconds})`;

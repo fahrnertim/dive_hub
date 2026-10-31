@@ -39,8 +39,8 @@ export interface SiteSourceAdapter {
 }
 
 export class SiteSourceError extends Error {
-  constructor(readonly source: ImportSource, readonly reason: 'unavailable' | 'rate_limited' | 'bad_response', detail: string) {
-    super(`${source}: ${reason} (${detail})`);
+  constructor(readonly source: ImportSource, readonly reason: 'unavailable' | 'rate_limited' | 'bad_response', detail: string, options?: ErrorOptions) {
+    super(`${source}: ${reason} (${detail})`, options);
   }
 }
 

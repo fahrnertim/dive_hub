@@ -12,7 +12,7 @@ From piece 4's final review (branch `ssi-private-sites`, 2026-10-26; [design](..
 [architecture](../spec/architecture.md)). Not ready: needs the owner's look first.
 
 ## Goal
-- **The send's site lock** (`apps/server/src/providers/site-for-send.ts`, `locked`): waiters no longer hold a pool
+- **The send's site lock** (`apps/server/src/providers/push/site-for-send.ts`, `locked`): waiters no longer hold a pool
   connection (try-lock with polling, 2026-10-26), but the holder still holds one across the whole find-or-make, SSI calls
   included (60 s timeout each); about ten holders for different sites at once would still exhaust the pool (max 10), each
   needing another connection for its queries. It also brings `pg` into `providers/`. A row lease keyed on (site, account),

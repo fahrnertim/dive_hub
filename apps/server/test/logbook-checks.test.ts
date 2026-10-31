@@ -241,7 +241,7 @@ describe.skipIf(!(await databaseReachable()))('logbook checks', () => {
       const gone = await ctx.app.inject({ method: 'DELETE', url: `/api/dives/${falseStart}`, headers: { cookie: tim, origin: BASE_URL }, payload: { version: await versionOf(falseStart) } });
       expect(gone.statusCode).toBe(200);
       expect(await shortDives()).toEqual([]);
-      const deleted = ((await call('GET', '/api/dives/deleted')).json() as { dives: { id: string; version: number }[] }).dives.find((d) => d.id === falseStart)!;
+      const deleted = ((await call('GET', '/api/dives/deleted')).json() as { id: string; version: number }[]).find((d) => d.id === falseStart)!;
       expect((await call('POST', `/api/dives/${falseStart}/restore`, { version: deleted.version })).statusCode).toBe(200);
       expect(await shortDives()).toEqual([]);
       expect((await shortDives('answered')).map((c) => c.dive.id)).toEqual([falseStart]);

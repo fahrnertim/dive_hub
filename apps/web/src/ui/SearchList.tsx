@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { Autocomplete, Input, Label, ListBox, ListBoxItem, SearchField, Text } from 'react-aria-components';
 
+/** Results a SearchList shows at most, without scrolling (ux-search); typing narrows them down. */
+export const SEARCH_SHOWN = 10;
+
 export interface SearchListItem {
   id: string;
   /** The item's name, as shown; the part matching the query is marked. */

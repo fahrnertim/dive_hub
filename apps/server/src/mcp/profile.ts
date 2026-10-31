@@ -1,5 +1,6 @@
 // A Recording's depth profile in a few numbers, for answers that shouldn't carry hundreds of samples (ADR 0035).
 import { Type } from 'typebox';
+import { Nullable } from '../http/schemas.js';
 
 export interface Series {
   offsetsMs: number[];
@@ -20,10 +21,10 @@ export const ProfileSummary = Type.Object({
   avg_depth_m: Type.Number({ description: 'Weighted by time' }),
   minutes_by_depth: Type.Array(Type.Object({
     from_m: Type.Integer(),
-    to_m: Type.Union([Type.Integer(), Type.Null()], { description: 'null: this depth and deeper' }),
+    to_m: Nullable(Type.Integer(), { description: 'null: this depth and deeper' }),
     minutes: Type.Number(),
   }), { description: 'Time spent in each 10 m band; bands without time are left out' }),
-  temperature_c: Type.Union([Type.Object({ min: Type.Number(), max: Type.Number() }), Type.Null()], {
+  temperature_c: Nullable(Type.Object({ min: Type.Number(), max: Type.Number() }), {
     description: 'Lowest and highest water temperature recorded; null when the Recording has none',
   }),
 }, { description: 'The depth profile in a few numbers. Ask for include_samples only when the shape of the dive itself matters' });

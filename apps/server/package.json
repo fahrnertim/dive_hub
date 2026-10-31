@@ -20,7 +20,7 @@
     "@fastify/type-provider-typebox": "^6.1.0",
     "@modelcontextprotocol/server": "^2.3.1",
     "@node-rs/argon2": "^2.2.1",
-    "better-auth": "^1.7.7",
+    "better-auth": "1.7.7",
     "drizzle-orm": "^0.45.3",
     "fastify": "^5.12.5",
     "fit-file-parser": "^6.1.2",

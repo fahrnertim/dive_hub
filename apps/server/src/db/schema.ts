@@ -218,11 +218,12 @@ export const OUTCOME_REASONS = [
 export type OutcomeReason = (typeof OUTCOME_REASONS)[number];
 
 /**
- * Why a whole Import failed; anything unexpected is 'processing_failed', with details in `error`. `choice_expired`: it
- * waited seven days for the User's choice and its upload was removed (ADR 0044).
+ * Why a whole Import failed; anything unexpected is 'processing_failed', with what went wrong in `errorDetail`.
+ * `choice_expired`: it waited seven days for the User's choice and its upload was removed (ADR 0044).
  */
 export const IMPORT_ERROR_CODES = ['unsupported_file', 'processing_failed', 'choice_expired'] as const;
 export type ImportErrorCode = (typeof IMPORT_ERROR_CODES)[number];
+export const importErrorCode = pgEnum('import_error_code', [...IMPORT_ERROR_CODES]);
 
 export type ImportOutcome = {
   fileName: string;
@@ -295,7 +296,9 @@ export const importJob = pgTable(
     /** The kinds of dive the User chose to import; null while nobody was asked (then all of them). */
     kinds: jsonb('kinds').$type<DiveKind[]>(),
     outcome: jsonb('outcome').$type<ImportOutcome>().notNull().default([]),
-    error: text('error'),
+    errorCode: importErrorCode('error_code'),
+    /** What went wrong, in English for the server log and the operator; never sent to clients (client contract §6). */
+    errorDetail: text('error_detail'),
     createdAt: createdAt(),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
   },
@@ -644,10 +647,6 @@ export const recording = pgTable(
     entryLongitude: doublePrecision('entry_longitude'),
     exitLatitude: doublePrecision('exit_latitude'),
     exitLongitude: doublePrecision('exit_longitude'),
-    /** Set once the Original was read for positions (imported with them, or backfilled). */
-    positionsReadAt: timestamp('positions_read_at', { withTimezone: true }),
-    /** Set once the Original was read for the gas consumption the summary keeps (ADR 0032; backfilled). */
-    gasFiguresReadAt: timestamp('gas_figures_read_at', { withTimezone: true }),
     summary: jsonb('summary').$type<RecordingSummary>().notNull().default({}),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -829,7 +828,7 @@ export const connection = pgTable(
     accountLabel: text('account_label').notNull(),
     /** Dive Hub may sign in again by itself (the password is kept). */
     keepSignedIn: boolean('keep_signed_in').notNull(),
-    credentials: text('credentials'),
+    credentials: text('credentials').notNull(),
     state: connectionState('state').notNull().default('active'),
     /**
      * Pacing (src/providers/leases.ts): the next action may start from then on. An action holds its turn by setting
@@ -867,6 +866,9 @@ export const connection = pgTable(
     check('connection_fetch_every_ck', sql`${t.fetchEveryMinutes} in (60, 360, 1440)`),
   ],
 );
+
+/** A Connection as stored: the one row type every provider module uses. */
+export type ConnectionRow = typeof connection.$inferSelect;
 
 /**
  * An admin's permission (ADR 0030) to create Dive sites from a Provider's site data when Users import their dives: the

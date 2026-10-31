@@ -177,9 +177,9 @@ describe.skipIf(!(await databaseReachable()))('gas numbers and bottom time', () 
         pressuresBar: number[];
       }[];
     };
-    const q = (params: Record<string, unknown>) => Object.entries(params)
-      .map(([k, v]) => `${k}=${encodeURIComponent(typeof v === 'object' ? JSON.stringify(v) : String(v))}`).join('&');
-    const plan = async (who: string, params: Record<string, unknown>) => get(who, `/api/tools/gas-plan?${q({ o2: 21, water: 'fresh', ...params })}`);
+    const plan = async (who: string, body: Record<string, unknown>) => ctx.app.inject({
+      method: 'POST', url: '/api/tools/gas-plan', headers: { cookie: cookies[who]!, origin: BASE_URL }, payload: { o2: 21, water: 'fresh', ...body },
+    });
     const levels = [{ depth: 20, minutes: 20 }];
     const typed = (name: string, extra: Record<string, unknown> = {}) => ({ name, volume: 12, pressure: 200, sac: 20, ...extra });
 
@@ -246,6 +246,11 @@ describe.skipIf(!(await databaseReachable()))('gas numbers and bottom time', () 
       expect((await plan('tim', { levels: [], divers: [typed('Tim')] })).statusCode).toBe(400);
       expect((await plan('tim', { levels, divers: [] })).statusCode).toBe(400);
       expect((await plan('tim', { levels: 'nonsense', divers: [typed('Tim')] })).statusCode).toBe(400);
+    });
+
+    it('takes the plan as a JSON body, not in the query', async () => {
+      const query = `levels=${encodeURIComponent(JSON.stringify(levels))}&divers=${encodeURIComponent(JSON.stringify([typed('Tim')]))}&o2=21`;
+      expect((await get('tim', `/api/tools/gas-plan?${query}`)).statusCode).toBe(404);
     });
   });
 });

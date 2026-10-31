@@ -1,11 +1,13 @@
 // The Sources of Dive site data and site IDs (ADR 0021), defined once: name, license, Attribution and
 // how to link an External ID. Nothing of this is stored per site; the API hands it out with each ID.
 
+import { siteSource } from '../db/schema.js';
 import { IMPORT_SOURCES as IMPORT_SOURCE_VALUES, type ImportSource } from '../vocabulary.js';
 
 export type { ImportSource };
 
-export const SITE_SOURCES = ['osm', 'wikidata', 'ssi'] as const;
+/** Every Source of site IDs, as the database's site_source enum lists them. */
+export const SITE_SOURCES = siteSource.enumValues;
 export type SiteSource = (typeof SITE_SOURCES)[number];
 
 /** Sources a Site import fetches from, in the order a run asks them. Which value wins per field: `FIELD_PRECEDENCE`. */

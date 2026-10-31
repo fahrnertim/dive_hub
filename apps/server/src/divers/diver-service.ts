@@ -3,23 +3,18 @@
 // Diver's SSI buddy code says about them, with the codes built from it and a scanned code finding its Diver (ADR 0043).
 import { and, eq, ilike, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { personCodes, readVerificationCode, type VerificationCode } from '../centres/verification-code.js';
-import type { Db, Tx } from '../db/client.js';
+import type { Db, Queryable, Tx } from '../db/client.js';
+import type { Caller } from '../http/caller.js';
 import {
   connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, participant, recording,
 } from '../db/schema.js';
-import { managedDiverIds } from '../dives/dive-service.js';
+import { managedDiverIds, managementOf } from './management.js';
 import { renumber } from '../dives/dive-numbers.js';
-import { writeRevision } from '../dives/revisions.js';
+import { userActor, writeRevision } from '../dives/revisions.js';
 import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
 import { tidyName } from './diver-name.js';
 import type { DiverSource } from '../providers/provider.js';
-
-/** The signed-in User as far as shared Divers care (as for Dive sites). */
-export interface DiverActor {
-  userId: string;
-  isAdmin: boolean;
-}
 
 /** What an account at each service looks like (ADR 0024): SSI's user master ID; PADI's isn't known yet. */
 const ACCOUNT_PATTERN: Record<DiverSource, RegExp> = { ssi: /^[1-9]\d{0,9}$/, padi: /^[A-Za-z0-9-]{1,40}$/ };
@@ -64,7 +59,7 @@ const isCalendarDate = (text: string) => {
   return /^\d{4}-\d{2}-\d{2}$/.test(text) && !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(text);
 };
 
-const like = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+const like = (text: string) => `%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
 /** Not deleted. */
 const live = isNull(diver.deletedAt);
@@ -77,22 +72,21 @@ const diverId = sql.raw('"diver"."id"');
 const unmanaged = sql`not exists (select 1 from ${diverManagement} m where m.diver_id = ${diverId})`;
 
 export function createDiverService(db: Db) {
-  async function managedOrThrow(userId: string, diverId: string) {
-    const [row] = await db.select({ isOwn: diverManagement.isOwn }).from(diverManagement)
-      .innerJoin(diver, eq(diver.id, diverManagement.diverId))
-      .where(and(eq(diverManagement.userId, userId), eq(diverManagement.diverId, diverId), live));
+  async function requireManagedDiver(userId: string, diverId: string) {
+    const row = await managementOf(db, userId, diverId);
     if (!row) throw new DiverError('diver_not_found');
     return row;
   }
 
-  async function externalOrThrow(id: string) {
-    const [row] = await db.select().from(diver).where(and(eq(diver.id, id), live, unmanaged));
+  /** Locks an external Diver for the transaction: a Dive that takes it as a Participant waits (setParticipants). */
+  async function lockExternal(tx: Tx, id: string) {
+    const [row] = await tx.select().from(diver).where(and(eq(diver.id, id), live, unmanaged)).for('update');
     if (!row) throw new DiverError('diver_not_found');
     return row;
   }
 
   /** External Divers with what a User may see of them: their name, which services they have accounts at, use. */
-  const externalColumns = (actor: DiverActor) => ({
+  const externalColumns = (actor: Caller) => ({
     id: diver.id,
     name: diver.name,
     accounts: sql<DiverSource[]>`coalesce((select array_agg(e.source::text order by e.source) from ${diverExternalId} e where e.diver_id = ${diverId}), '{}')`,
@@ -101,13 +95,13 @@ export function createDiverService(db: Db) {
   });
 
   /** Who keeps the Diver's logbook; none for an external Diver. The actor may change it when it is external or theirs. */
-  async function editable(tx: Tx | Db, actor: DiverActor, id: string) {
+  async function editable(tx: Queryable, actor: Caller, id: string) {
     const managers = await tx.select({ userId: diverManagement.userId }).from(diverManagement).where(eq(diverManagement.diverId, id));
     return { external: managers.length === 0, canEdit: managers.length === 0 || managers.some((m) => m.userId === actor.userId) };
   }
 
   /** A Diver as every User sees it since ADR 0043: its name, its details, its accounts and the codes built from them. */
-  async function detailsOf(tx: Tx | Db, actor: DiverActor, id: string) {
+  async function detailsOf(tx: Queryable, actor: Caller, id: string) {
     const [row] = await tx.select({
       id: diver.id, name: diver.name, firstName: diver.firstName, lastName: diver.lastName, email: diver.email, leaderNumber: diver.leaderNumber,
     }).from(diver).where(and(eq(diver.id, id), live));
@@ -124,7 +118,7 @@ export function createDiverService(db: Db) {
    * Sets the given details of a Diver in the caller's transaction: an external Diver's by any User, one with a logbook
    * by its Users. One Revision for what changed; of the e-mail it holds only whether there is one, never the address.
    */
-  async function applyDetails(tx: Tx, actor: DiverActor, id: string, patch: Partial<DiverDetails>) {
+  async function applyDetails(tx: Tx, actor: Caller, id: string, patch: Partial<DiverDetails>) {
     const [current] = await tx.select().from(diver).where(and(eq(diver.id, id), live)).for('update');
     if (!current) throw new DiverError('diver_not_found');
     if (!(await editable(tx, actor, id)).canEdit) throw new DiverError('diver_not_editable');
@@ -140,11 +134,11 @@ export function createDiverService(db: Db) {
     }
     if (Object.keys(set).length === 0) return;
     await tx.update(diver).set({ ...set, updatedAt: new Date() }).where(eq(diver.id, id));
-    await writeRevision(tx, 'diver', id, { type: 'user', id: actor.userId }, 'edit', changes);
+    await writeRevision(tx, 'diver', id, userActor(actor.userId), 'edit', changes);
   }
 
   /** The live Diver that has this account at a service. */
-  async function holderOf(tx: Tx | Db, source: DiverSource, externalId: string) {
+  async function holderOf(tx: Queryable, source: DiverSource, externalId: string) {
     const [row] = await tx.select({ id: diver.id, name: diver.name }).from(diverExternalId)
       .innerJoin(diver, eq(diver.id, diverExternalId.diverId))
       .where(and(eq(diverExternalId.source, source), eq(diverExternalId.externalId, externalId), live));
@@ -152,7 +146,7 @@ export function createDiverService(db: Db) {
   }
 
   /** Sets or clears a Diver's account in the caller's transaction (the rules of `setExternalId`). */
-  async function applyExternalId(tx: Tx, actor: DiverActor, diverId: string, source: DiverSource, externalId: string | null) {
+  async function applyExternalId(tx: Tx, actor: Caller, diverId: string, source: DiverSource, externalId: string | null) {
     const [target] = await tx.select({ id: diver.id }).from(diver).where(and(eq(diver.id, diverId), live)).for('update');
     if (!target) throw new DiverError('diver_not_found');
     if (!(await editable(tx, actor, diverId)).canEdit) throw new DiverError('diver_not_editable');
@@ -173,16 +167,16 @@ export function createDiverService(db: Db) {
     }
     await tx.delete(diverExternalId).where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, source)));
     if (externalId !== null) await tx.insert(diverExternalId).values({ diverId, source, externalId });
-    await writeRevision(tx, 'diver', diverId, { type: 'user', id: actor.userId }, 'edit', { [accountKey(source)]: { from, to: externalId } });
+    await writeRevision(tx, 'diver', diverId, userActor(actor.userId), 'edit', { [accountKey(source)]: { from, to: externalId } });
   }
 
   /** An external Diver with an account and details, in the caller's transaction. */
   async function insertExternal(
-    tx: Tx, actor: DiverActor, name: string, account?: { source: DiverSource; externalId: string }, details: Partial<Record<DetailField, string>> = {},
+    tx: Tx, actor: Caller, name: string, account?: { source: DiverSource; externalId: string }, details: Partial<Record<DetailField, string>> = {},
   ) {
     const [created] = await tx.insert(diver).values({ name, createdBy: actor.userId, ...details }).returning({ id: diver.id });
     if (account) await tx.insert(diverExternalId).values({ diverId: created!.id, ...account });
-    await writeRevision(tx, 'diver', created!.id, { type: 'user', id: actor.userId }, 'create', {
+    await writeRevision(tx, 'diver', created!.id, userActor(actor.userId), 'create', {
       name: { from: null, to: name }, ...(account && { [accountKey(account.source)]: { from: null, to: account.externalId } }),
       ...Object.fromEntries(Object.entries(details).map(([field, value]) => [field, { from: null, to: field === 'email' ? true : value }])),
     });
@@ -191,12 +185,12 @@ export function createDiverService(db: Db) {
 
   return {
     /** A Diver's details, accounts and codes, as every User sees them (ADR 0043, amending ADR 0028). */
-    async details(actor: DiverActor, id: string) {
+    async details(actor: Caller, id: string) {
       return detailsOf(db, actor, id);
     },
 
     /** Sets the given details (null clears one); the others stay. */
-    async setDetails(actor: DiverActor, id: string, patch: Partial<DiverDetails>) {
+    async setDetails(actor: Caller, id: string, patch: Partial<DiverDetails>) {
       await db.transaction((tx) => applyDetails(tx, actor, id, patch));
       return detailsOf(db, actor, id);
     },
@@ -205,7 +199,7 @@ export function createDiverService(db: Db) {
      * Whom a person's code is about here (ADR 0043): the Diver that has its SSI account, with what the code would
      * change on it; without one, the Divers of the code's name that the User could give the account to.
      */
-    async readPersonCode(actor: DiverActor, code: Exclude<VerificationCode, { kind: 'centre' }>) {
+    async readPersonCode(actor: Caller, code: Exclude<VerificationCode, { kind: 'centre' }>) {
       const holder = await holderOf(db, 'ssi', code.accountId);
       const said = detailsInCode(code);
       if (holder) {
@@ -230,7 +224,7 @@ export function createDiverService(db: Db) {
      * Diver the User chose gets the account too, or a new external Diver is made. Never a second Diver for an account.
      * A buddy code says nothing about a leader number, so one that is there stays.
      */
-    async takeCode(actor: DiverActor, text: string, choice: { diverId?: string | undefined; create?: boolean | undefined }) {
+    async takeCode(actor: Caller, text: string, choice: { diverId?: string | undefined; create?: boolean | undefined }) {
       const code = readVerificationCode(text);
       if (!code) throw new DiverError('code_not_recognised');
       if (code.kind === 'centre') throw new DiverError('code_not_a_person');
@@ -298,8 +292,8 @@ export function createDiverService(db: Db) {
      * Every Diver of the instance whose name matches (ADR 0028), the User's own first: id, name, whether the User
      * manages it and whether it is external. Nothing else of another User's Diver.
      */
-    async search(userId: string, q: string | undefined, limit: number) {
-      const text = q?.trim();
+    async search(userId: string, words: string | undefined, limit: number) {
+      const text = words?.trim();
       const managed = sql<boolean>`exists (select 1 from ${diverManagement} m where m.diver_id = ${diverId} and m.user_id = ${userId})`;
       return db.select({ id: diver.id, name: diver.name, managed, external: sql<boolean>`${unmanaged}` }).from(diver)
         .where(and(live, text ? ilike(diver.name, like(text)) : undefined))
@@ -309,11 +303,11 @@ export function createDiverService(db: Db) {
 
     /**
      * Admins: merges an external Diver into another Diver, the same person (ADR 0028, amended), e.g. a buddy without an
-     * account at a Provider who became a User. Its places on Dives and its accounts move; it is deleted.
+     * account at a Provider who became a User. Its places on Dives and its accounts move; it is deleted. Its route is
+     * the admin gate (requireAdmin); the service does not check again.
      */
-    async mergeExternal(actor: DiverActor, fromId: string, intoId: string) {
-      if (!actor.isAdmin) throw new DiverError('diver_not_editable');
-      return db.transaction((tx) => mergeExternalDiver(tx, fromId, intoId, { type: 'user', id: actor.userId }));
+    async mergeExternal(adminId: string, fromId: string, intoId: string) {
+      return db.transaction((tx) => mergeExternalDiver(tx, fromId, intoId, userActor(adminId)));
     },
 
     /** A Diver whose logbook the User keeps (e.g. their child). */
@@ -330,7 +324,7 @@ export function createDiverService(db: Db) {
      * Diver's Dives again, in the same transaction.
      */
     async update(userId: string, diverId: string, change: { name?: string; divesBefore?: number; apneaCounts?: boolean }) {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       await db.transaction(async (tx) => {
         await tx.update(diver).set({ ...change, updatedAt: new Date() }).where(eq(diver.id, diverId));
         if (change.divesBefore !== undefined || change.apneaCounts !== undefined) await renumber(tx, [diverId]);
@@ -339,21 +333,21 @@ export function createDiverService(db: Db) {
 
     /** A Diver's body weights, newest first; only for a User who manages the Diver (ADR 0031). */
     async bodyWeights(userId: string, diverId: string) {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       return db.select({ date: diverBodyWeight.date, kg: diverBodyWeight.kg }).from(diverBodyWeight)
         .where(eq(diverBodyWeight.diverId, diverId)).orderBy(sql`${diverBodyWeight.date} desc`);
     },
 
     /** Sets the weight on a date, replacing the one there. */
     async setBodyWeight(userId: string, diverId: string, date: string, kg: number) {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       if (!isCalendarDate(date)) throw new DiverError('invalid_input');
       await db.insert(diverBodyWeight).values({ diverId, date, kg })
         .onConflictDoUpdate({ target: [diverBodyWeight.diverId, diverBodyWeight.date], set: { kg } });
     },
 
     async removeBodyWeight(userId: string, diverId: string, date: string) {
-      await managedOrThrow(userId, diverId);
+      await requireManagedDiver(userId, diverId);
       const gone = await db.delete(diverBodyWeight).where(and(eq(diverBodyWeight.diverId, diverId), eq(diverBodyWeight.date, date)))
         .returning({ date: diverBodyWeight.date });
       if (gone.length === 0) throw new DiverError('body_weight_not_found');
@@ -361,7 +355,7 @@ export function createDiverService(db: Db) {
 
     /** Only empty Divers go: no Dives, no Devices, on no Dive. The User's own Diver stays. */
     async remove(userId: string, diverId: string) {
-      const { isOwn } = await managedOrThrow(userId, diverId);
+      const { isOwn } = await requireManagedDiver(userId, diverId);
       if (isOwn) throw new DiverError('own_diver');
       await db.transaction(async (tx) => {
         const [used] = await tx.select({ n: sql<number>`count(*)::int` }).from(dive).where(eq(dive.diverId, diverId));
@@ -377,7 +371,7 @@ export function createDiverService(db: Db) {
     },
 
     /** One page of external Divers whose name matches, and how many match. */
-    async externals(actor: DiverActor, options: { q?: string | undefined; limit: number; offset: number }) {
+    async externals(actor: Caller, options: { q?: string | undefined; limit: number; offset: number }) {
       const text = options.q?.trim();
       const where = and(live, unmanaged, text ? ilike(diver.name, like(text)) : undefined);
       const [rows, [count]] = await Promise.all([
@@ -388,14 +382,14 @@ export function createDiverService(db: Db) {
       return { divers: rows, total: count?.total ?? 0 };
     },
 
-    async external(actor: DiverActor, id: string) {
+    async external(actor: Caller, id: string) {
       const [row] = await db.select(externalColumns(actor)).from(diver).where(and(eq(diver.id, id), live, unmanaged));
       if (!row) throw new DiverError('diver_not_found');
       return row;
     },
 
     /** Someone a User dived with, not managed by anyone (ADR 0028); any User may. */
-    async createExternal(actor: DiverActor, name: string, account?: { source: DiverSource; externalId: string }, details: Partial<DiverDetails> = {}) {
+    async createExternal(actor: Caller, name: string, account?: { source: DiverSource; externalId: string }, details: Partial<DiverDetails> = {}) {
       const stored = Object.fromEntries(DETAIL_FIELDS.flatMap((f) => {
         const value = detailValue(f, details[f] ?? null);
         return value ? [[f, value]] : [];
@@ -407,7 +401,7 @@ export function createDiverService(db: Db) {
      * Fills the details a Diver doesn't have yet from what a Provider's list says (ADR 0043); what is there stays. Only
      * where the User may change the Diver; how many fields it set.
      */
-    async fillDetails(actor: DiverActor, id: string, details: Partial<DiverDetails>) {
+    async fillDetails(actor: Caller, id: string, details: Partial<DiverDetails>) {
       return db.transaction(async (tx) => {
         const [current] = await tx.select().from(diver).where(and(eq(diver.id, id), live));
         if (!current || !(await editable(tx, actor, id)).canEdit) return 0;
@@ -421,20 +415,20 @@ export function createDiverService(db: Db) {
     },
 
     /** Any User renames an external Diver, with a Revision. */
-    async renameExternal(actor: DiverActor, id: string, name: string) {
-      const current = await externalOrThrow(id);
-      if (current.name === name) return;
+    async renameExternal(actor: Caller, id: string, name: string) {
       await db.transaction(async (tx) => {
+        const current = await lockExternal(tx, id);
+        if (current.name === name) return;
         await tx.update(diver).set({ name, updatedAt: new Date() }).where(eq(diver.id, id));
-        await writeRevision(tx, 'diver', id, { type: 'user', id: actor.userId }, 'edit', { name: { from: current.name, to: name } });
+        await writeRevision(tx, 'diver', id, userActor(actor.userId), 'edit', { name: { from: current.name, to: name } });
       });
     },
 
     /** Its creator or an admin, while no Dive lists it. */
-    async removeExternal(actor: DiverActor, id: string) {
-      const current = await externalOrThrow(id);
-      if (!actor.isAdmin && current.createdBy !== actor.userId) throw new DiverError('diver_not_deletable');
+    async removeExternal(actor: Caller, id: string) {
       await db.transaction(async (tx) => {
+        const current = await lockExternal(tx, id);
+        if (!actor.isAdmin && current.createdBy !== actor.userId) throw new DiverError('diver_not_deletable');
         const [on] = await tx.select({ diveId: participant.diveId }).from(participant).where(eq(participant.diverId, id)).limit(1);
         if (on) throw new DiverError('diver_in_use');
         // Its accounts go, so another Diver can have them; the row stays for the history.
@@ -442,7 +436,7 @@ export function createDiverService(db: Db) {
         const at = new Date();
         // The row stays for the history, without the personal data its code held.
         await tx.update(diver).set({ deletedAt: at, updatedAt: at, firstName: null, lastName: null, email: null, leaderNumber: null }).where(eq(diver.id, id));
-        await writeRevision(tx, 'diver', id, { type: 'user', id: actor.userId }, 'delete', { deletedAt: { from: null, to: at.toISOString() } });
+        await writeRevision(tx, 'diver', id, userActor(actor.userId), 'delete', { deletedAt: { from: null, to: at.toISOString() } });
       });
     },
 
@@ -450,7 +444,7 @@ export function createDiverService(db: Db) {
      * Sets or clears a Diver's account at a service (ADR 0028): an external Diver's by any User, a managed one's by
      * its Users. Refused while a Connection of the Diver uses the account, and when another Diver has it.
      */
-    async setExternalId(actor: DiverActor, diverId: string, source: DiverSource, externalId: string | null) {
+    async setExternalId(actor: Caller, diverId: string, source: DiverSource, externalId: string | null) {
       if (externalId !== null && !ACCOUNT_PATTERN[source].test(externalId)) throw new DiverError('invalid_input');
       await db.transaction((tx) => applyExternalId(tx, actor, diverId, source, externalId));
     },
@@ -499,7 +493,7 @@ export function createDiverService(db: Db) {
         if (!current || !managed.has(current.diverId)) throw new DiverError('device_not_found');
         if (current.diverId === diverId) return;
         await tx.update(device).set({ diverId, updatedAt: new Date() }).where(eq(device.id, deviceId));
-        await writeRevision(tx, 'device', deviceId, { type: 'user', id: userId }, 'assign-device', {
+        await writeRevision(tx, 'device', deviceId, userActor(userId), 'assign-device', {
           diverId: { from: current.diverId, to: diverId },
         });
       });

@@ -4,36 +4,42 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
-import { requireUser } from '../auth/fastify.js';
+import { requireUser, userOf } from '../auth/fastify.js';
 import {
-  CYLINDER_MATERIALS, LEAD_PLACEMENTS, OVERRIDABLE_FIELDS, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive,
+  CYLINDER_MATERIALS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive,
   type RecordingSummary,
 } from '../db/schema.js';
-import { Problem, problem } from '../http/problems.js';
-import { DECO_MODELS, DIVE_MODES, GAS_CIRCUITS, SITE_WATER_TYPES, WATER_TYPES } from '../vocabulary.js';
+import { answerErrors, answers, Problem, problem } from '../http/problems.js';
+import { Copies, DeleteProblemSchema } from './deletion-view.js';
+import {
+  CylinderInput, CylinderValues, CylinderView, DiveView, Field, LeadEntry, LeadInput, Role, SuitInput, SuitValues, valueProperties, ValuesSchema,
+  WeightingFeedbackInput, WeightingFeedbackValues,
+} from './dive-view.js';
 import { CYLINDER_CATALOGUE } from './cylinder-catalogue.js';
 import { CylinderError, withoutPressures } from './cylinders.js';
 import { DiveError, type DiveService } from './dive-service.js';
+import { DiveSummaryFields, diveSummaryOf, providersOf } from './dive-summary-view.js';
 import { WeightingError, leadTotalKg, suitOf, weightingFeedbackOf } from './weighting.js';
-import type { Merging } from './merging.js';
+import type { MergingService } from './merging-service.js';
 import type { LogbookService } from './logbook-service.js';
-import { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
-import type { LogbookChecks } from './logbook-checks.js';
+import type { DeletionService } from './deletion-service.js';
+import type { MergeService } from './merge-service.js';
+import { LOGBOOK_CHECK_RULES } from './checks/logbook-check-rules.js';
+import type { LogbookCheckService } from './checks/logbook-check-service.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
 import { REVISION_CAUSES } from './revisions.js';
-import { SAC_MISSING, sacOfDive } from './sac.js';
-import { waterMismatch } from './water.js';
+import { sacOfDive } from './calc/sac.js';
+import { waterMismatch } from './calc/water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
-import { PositionSchema } from '../sites/routes.js';
 import type { CentreService } from '../centres/centre-service.js';
 import type { DiverService } from '../divers/diver-service.js';
-import { VerificationCodeView } from '../centres/routes.js';
-import type { PushService } from '../providers/push-service.js';
-import type { WaitingPushService } from '../providers/waiting-push-service.js';
+import type { PushService } from '../providers/push/push-service.js';
+import type { WaitingPushService } from '../providers/waiting-push/waiting-push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
-import { ProviderServiceError } from '../providers/registry.js';
-import { WaitingPushViewSchema } from '../providers/waiting-push-view.js';
-import { replyProviderError } from '../providers/routes.js';
+import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
+import { WaitingPushView } from './waiting-push-view.js';
+import type { ProviderAnswers } from '../providers/route-parts.js';
+import { Change, Changes, DateTime, historyRoute, IdParams, Made, Nullable, refTo } from '../http/schemas.js';
 
 export interface DiveRouteDeps {
   auth: Auth;
@@ -42,204 +48,20 @@ export interface DiveRouteDeps {
   divers: DiverService;
   centres: CentreService;
   /** Merging two Dives and moving one to another Diver (ADR 0038). */
-  merging: Merging;
+  merging: MergingService;
   /** What in a logbook can't be right as it stands (ADR 0038). */
-  checks: LogbookChecks;
-  /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
+  checks: LogbookCheckService;
   pushes: PushService;
-  waitingPushes: Pick<WaitingPushService, 'deletingItself' | 'waitingOf'>;
+  waitingPushes: Pick<WaitingPushService, 'deletingItself'>;
+  /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
+  deletion: DeletionService;
+  /** Merging two Dives deletes the one not kept at the Providers asked first (ADR 0038). */
+  merge: MergeService;
   assessments: AssessmentService;
+  /** How a refusal about a Provider is answered (providers/route-parts.ts). */
+  providerAnswers: ProviderAnswers;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-const DateTime = Type.String({ format: 'date-time' });
-/**
- * Null first: Fastify's validator coerces types and tries union members in order, so with the
- * value type first a null in a request would become 0 or "" (caught by the dive editing tests).
- */
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
-
-const Field = Type.Enum([...OVERRIDABLE_FIELDS], { description: 'A Dive value that can be overridden' });
-/** Start time with the local UTC offset at the dive (gap A8). */
-const StartsAt = Type.Object({
-  at: DateTime,
-  utcOffsetSeconds: Nullable(Type.Integer({ minimum: -12 * 3600, maximum: 14 * 3600, multipleOf: 900 })),
-});
-
-const valueProperties = {
-  startsAt: StartsAt,
-  durationSeconds: Type.Number({ minimum: 0, maximum: 48 * 3600 }),
-  maxDepthM: Nullable(Type.Number({ minimum: 0, maximum: 400 })),
-  avgDepthM: Nullable(Type.Number({ minimum: 0, maximum: 400 })),
-  waterTemperatureC: Nullable(Type.Number({ minimum: -5, maximum: 50 })),
-};
-/** The values a User can set or a Recording gives. The Dive's number is neither (ADR 0048): a request naming it is 400. */
-const ValuesSchema = Type.Object(valueProperties, { additionalProperties: false });
-/** The values in effect: the Dive's number is computed, shown with them. */
-const DiveValuesView = Type.Object({
-  number: Nullable(Type.Integer({ description: "The Dive's place in its Diver's logbook plus the Diver's dives before it (ADR 0048): computed, never set; null for a Dive that doesn't count" })),
-  ...valueProperties,
-});
-
-const SummaryView = Type.Object({
-  diveNumber: Type.Optional(Type.Integer()),
-  diveMode: Type.Optional(Type.Enum([...DIVE_MODES])),
-  decoModel: Type.Optional(Type.Enum([...DECO_MODELS])),
-  gfLow: Type.Optional(Type.Number()),
-  gfHigh: Type.Optional(Type.Number()),
-  waterType: Type.Optional(Type.Enum([...WATER_TYPES], { description: 'The computer\'s salinity setting, not the water of the Dive (that is the site\'s)' })),
-  waterDensity: Type.Optional(Type.Number({ description: 'Density the computer computed depths with, kg/m³' })),
-  gases: Type.Optional(Type.Array(Type.Object({
-    o2: Type.Number(), he: Type.Number(), circuit: Type.Optional(Type.Enum([...GAS_CIRCUITS])),
-    tankVolumeL: Type.Optional(Type.Number({ description: 'With a tank pod: the size of the tank, litres' })),
-    startPressureBar: Type.Optional(Type.Number()),
-    endPressureBar: Type.Optional(Type.Number()),
-  }))),
-  minTemperatureC: Type.Optional(Type.Number()),
-  maxTemperatureC: Type.Optional(Type.Number()),
-  avgHeartRate: Type.Optional(Type.Number()),
-  surfaceIntervalSeconds: Type.Optional(Type.Number()),
-  cnsStart: Type.Optional(Type.Number()),
-  cnsEnd: Type.Optional(Type.Number()),
-  otuStart: Type.Optional(Type.Number({ description: 'Oxygen dose, OTU' })),
-  otuEnd: Type.Optional(Type.Number()),
-  sacLpm: Type.Optional(Type.Number({ description: 'Gas consumption at the surface as a tank pod measured it, L/min' })),
-  conservatism: Type.Optional(Type.Number({ description: 'The personal setting of the computer where its model has one (Suunto: -2 to +2)' })),
-  surfacePressureBar: Type.Optional(Type.Number()),
-  extras: Type.Optional(Type.Record(Type.String(), Type.String(), {
-    description: 'Source values without a word in our vocabulary, by source field name',
-  })),
-});
-
-const Role = Type.Enum([...PARTICIPANT_ROLES], { description: 'buddy: dived together; guide: led the dive; instructor: taught on it' });
-const Participant = Type.Object({
-  diverId: Type.String(),
-  name: Type.String({ description: 'The Diver\'s name, as every User sees it' }),
-  role: Role,
-});
-
-const SeriesRef = Type.Object({
-  recordingId: Type.String({ format: 'uuid' }),
-  channel: Type.String({ maxLength: 40, description: 'A tank pod\'s pressure channel of that Recording: tankPressure, further pods tankPressure:<n>' }),
-}, { additionalProperties: false, description: 'The pressure series of one of the Dive\'s Recordings that measured this Cylinder' });
-const CylinderValues = {
-  volumeL: Nullable(Type.Number({ exclusiveMinimum: 0, maximum: 100, description: 'Water volume in litres' })),
-  workingPressureBar: Nullable(Type.Number({ exclusiveMinimum: 0, maximum: 500 })),
-  material: Nullable(Type.Enum([...CYLINDER_MATERIALS])),
-  gas: Nullable(Type.Object({
-    o2: Type.Number({ minimum: 1, maximum: 100 }), he: Type.Number({ minimum: 0, maximum: 99 }),
-  }, { additionalProperties: false, description: 'Oxygen and helium in percent' })),
-  startPressureBar: Nullable(Type.Number({ minimum: 0, maximum: 500 })),
-  endPressureBar: Nullable(Type.Number({ minimum: 0, maximum: 500, description: 'Not above the start pressure' })),
-};
-const CylinderView = Type.Object({
-  ...CylinderValues,
-  fromPod: Type.Boolean({ description: 'An import made it from a tank pod\'s data and it still has the pod\'s series: clients say so (docs/spec/clients.md)' }),
-  series: Nullable(SeriesRef),
-});
-const CylinderInput = Type.Object({
-  ...Type.Partial(Type.Object(CylinderValues)).properties,
-  series: Type.Optional(Nullable(SeriesRef)),
-}, { additionalProperties: false });
-
-const LeadEntry = Type.Object({
-  amountKg: Type.Number({ minimum: 0, maximum: 60, description: 'In kilograms; 0 as the only entry means no lead' }),
-  placement: Nullable(Type.Enum([...LEAD_PLACEMENTS], { description: 'Where it was carried; null when not given' })),
-});
-const LeadInput = Type.Object({
-  amountKg: LeadEntry.properties.amountKg, placement: Type.Optional(LeadEntry.properties.placement),
-}, { additionalProperties: false });
-const WeightingFeedbackValues = {
-  felt: Type.Enum([...WEIGHTING_FELT], { description: 'How the weighting felt' }),
-  amountKg: Nullable(Type.Number({ exclusiveMinimum: 0, maximum: 30, description: 'By how many kilograms it was too heavy or too light, where the User said' })),
-};
-const SuitValues = {
-  type: Type.Enum([...SUIT_TYPES], { description: '`none` is a dive without a suit' }),
-  thicknessMm: Nullable(Type.Number({ exclusiveMinimum: 0, maximum: 20, description: 'For a wetsuit or a semidry suit' })),
-  // One `type` with both names, not Nullable: null first would turn a request's `false` into null (the validator coerces).
-  hood: Type.Unsafe<boolean | null>({ type: ['boolean', 'null'], description: 'Whether a hood was worn; null when not said' }),
-  undergarment: Nullable(Type.Enum([...SUIT_UNDERGARMENTS], { description: 'Under a drysuit' })),
-};
-const WeightingFeedbackInput = Type.Object({
-  felt: WeightingFeedbackValues.felt, amountKg: Type.Optional(WeightingFeedbackValues.amountKg),
-}, {
-  additionalProperties: false,
-  description: 'How the weighting felt, or null for nothing said. 400 weighting_feedback_invalid for an amount with `right`',
-});
-const SuitInput = Type.Object({
-  type: SuitValues.type, thicknessMm: Type.Optional(SuitValues.thicknessMm), hood: Type.Optional(SuitValues.hood),
-  undergarment: Type.Optional(SuitValues.undergarment),
-}, {
-  additionalProperties: false,
-  description: 'The exposure suit, or null for unknown; a value left out is unknown. 400 suit_invalid for a thickness on anything but a wetsuit '
-    + 'or a semidry suit, or an undergarment under anything but a drysuit',
-});
-
-const RecordingView = Type.Object({
-  id: Type.String(),
-  isPrimary: Type.Boolean(),
-  device: Nullable(Type.Object({ manufacturer: Type.String(), product: Nullable(Type.String()), serialNumber: Type.String() })),
-  startsAt: DateTime,
-  durationSeconds: Type.Number(),
-  maxDepthM: Nullable(Type.Number()),
-  parser: Type.String(),
-  summary: SummaryView,
-  channels: Type.Array(Type.String()),
-});
-
-const DiveView = Type.Object({
-  id: Type.String(),
-  diverId: Type.String({ description: 'The Diver whose logbook this Dive is in' }),
-  version: Type.Integer({ description: 'Send it back with an edit; it changes with every change' }),
-  values: DiveValuesView,
-  overrides: Type.Array(Field, { description: 'Values the User set by hand' }),
-  utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES], {
-    description: 'Where the start\'s UTC offset came from (ADR 0030): device, position (the time zone where the dive was), nearby (the '
-      + 'Diver\'s Dives within 7 days) or unknown (startsAt is the local wall-clock time kept as if UTC: show it in UTC without an '
-      + 'offset). Clients say where it came from when it isn\'t the device (docs/spec/clients.md)',
-  }),
-  fromProvider: Nullable(Type.String({
-    description: 'The Provider whose logbook entry this Dive was made from (ADR 0030); with no recordings, its values are that entry\'s',
-  })),
-  fromRecording: Nullable(ValuesSchema, ),
-  notes: Nullable(Type.String()),
-  site: Nullable(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'The Dive site (ADR 0020)' })),
-  waterType: Nullable(Type.Enum([...SITE_WATER_TYPES], {
-    description: 'The Dive site\'s water type (ADR 0025); null without a site, or when the site has none. Not editable on the Dive',
-  })),
-  waterMismatch: Nullable(Type.Object({
-    computer: Type.Enum([...WATER_TYPES], { description: 'What the Primary recording\'s computer was set to' }),
-    site: Type.Enum([...SITE_WATER_TYPES]),
-    depthPercent: Nullable(Type.Number({ description: 'Recorded vs true depth in percent: negative reads shallow, positive deep; null where a density is unknown' })),
-  }, { description: 'Set when the computer was set to other water than the site\'s: clients say so (docs/spec/clients.md)' })),
-  position: Nullable(Type.Object(PositionSchema.properties, {
-    description: 'Where the Device of the Primary recording placed the dive: its exit, else its entry. Private like the Dive',
-  })),
-  recordings: Type.Array(RecordingView),
-  cylinders: Type.Array(CylinderView, { description: 'The Dive\'s Cylinders in their order (ADR 0045)' }),
-  lead: Type.Array(LeadEntry, { description: 'The Lead the Dive was dived with, as placed entries in their order (ADR 0031); none means unknown' }),
-  leadTotalKg: Nullable(Type.Number({ description: 'The sum of the Lead entries; null when there are none (unknown), 0 for a Dive without lead' })),
-  weightingFeedback: Nullable(Type.Object(WeightingFeedbackValues, { description: 'How the weighting felt on this Dive (ADR 0031); null when nothing was said' })),
-  suit: Nullable(Type.Object(SuitValues, { description: 'The exposure suit (ADR 0031); null when unknown' })),
-  sac: Nullable(Type.Object({
-    litresPerMinute: Type.Number({ description: 'Litres per minute at the surface, summed over all the Dive\'s Cylinders, with real gas' }),
-    barPerMinute: Nullable(Type.Number({ description: 'The pressure drop per minute at the surface; only for a Dive with exactly one Cylinder' })),
-  }, { description: 'SAC on this dive, computed from its Cylinders, its average depth and its duration, never stored (ADR 0045)' })),
-  sacMissing: Nullable(Type.Enum([...SAC_MISSING], {
-    description: 'Why a Dive with Cylinders has no SAC: shorter than 15 minutes, no average depth, or a Cylinder without both pressures and a volume',
-  })),
-  participants: Type.Array(Participant, { description: 'Buddies first, then guides and instructors (ADR 0028)' }),
-  verificationCodes: Type.Array(Type.Object({
-    kind: Type.Enum(['centre', 'professional'], { description: 'Whose code it is: a Dive centre\'s (centre is set) or a professional\'s (diver is set)' }),
-    centre: Nullable(Type.Object({ id: Type.String(), name: Type.String(), displayName: Type.String({ description: 'The name to show' }) }, { description: 'The Dive centre the code belongs to; name it beside the code' })),
-    diver: Nullable(Type.Object({ id: Type.String(), name: Type.String() }, { description: 'The professional the code belongs to, a Participant of the Dive; name them beside the code' })),
-    ...VerificationCodeView.properties,
-  }), {
-    description: 'The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, '
-      + 'then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. '
-      + 'Draw each text as a QR code (docs/spec/clients.md)',
-  }),
-});
 
 const EditBody = Type.Object({
   version: Type.Integer(),
@@ -266,6 +88,25 @@ const EditBody = Type.Object({
   suit: Type.Optional(Nullable(SuitInput)),
 });
 
+const SiteRef = Type.Object({ id: Type.String(), name: Type.String({ description: 'The name it had then' }) });
+/** The fields a Dive's history names with their shapes; the overridable values have the same shape as in `values`. */
+const DiveChanges = Changes({
+  overrides: Change(Type.Array(Field)),
+  site: Change(Nullable(SiteRef)),
+  utcOffsetSource: Change(Type.Enum([...UTC_OFFSET_SOURCES])),
+  fromProvider: Made(Type.String({ description: 'The Provider the Dive was made from (ADR 0030)' })),
+  providers: Change(Type.Array(Type.Object({ provider: Type.String(), remoteId: Type.String(), remoteNumber: Nullable(Type.Integer()) }), {
+    description: 'Links to Providers a merge moved onto this Dive (ADR 0038)',
+  })),
+  cylinders: Change(Type.Array(CylinderView)),
+  lead: Change(Type.Array(LeadEntry)),
+  weightingFeedback: Change(Nullable(Type.Object(WeightingFeedbackValues))),
+  suit: Change(Nullable(Type.Object(SuitValues))),
+  participants: Change(Type.Array(Type.Object({
+    diverId: Type.String(), name: Type.String({ description: 'The name the Diver had then' }), role: Type.Enum([...PARTICIPANT_ROLES]),
+  }))),
+}, 'Field → { from, to }; a field not named here has a value of any shape');
+
 const RevisionView = Type.Object({
   id: Type.String(),
   at: DateTime,
@@ -276,9 +117,9 @@ const RevisionView = Type.Object({
     name: Nullable(Type.String({ description: 'User name or uploaded file name' })),
   }),
   cause: Type.Enum([...REVISION_CAUSES]),
-  /** Field → { from, to }. Values of overridable fields have the same shape as in `values`. */
-  changes: Type.Record(Type.String(), Type.Object({ from: Type.Unknown(), to: Type.Unknown() })),
+  changes: DiveChanges,
 });
+type StoredDiveChanges = Static<typeof DiveChanges>;
 
 const toValues = (v: DiveValues): Static<typeof ValuesSchema> => ({
   ...v, startsAt: { at: v.startsAt.at.toISOString(), utcOffsetSeconds: v.startsAt.utcOffsetSeconds },
@@ -293,18 +134,14 @@ const STATUS: Record<DiveError['code'], number> = {
   recording_not_found: 404, last_recording: 409, diver_not_found: 404, site_not_found: 404, participant_invalid: 400,
   merge_not_possible: 400, check_not_found: 404,
 };
+const CYLINDER_STATUS: Record<CylinderError['code'], number> = { cylinder_invalid: 400, cylinder_series_not_found: 400 };
+const WEIGHTING_STATUS: Record<WeightingError['code'], number> = { weighting_feedback_invalid: 400, suit_invalid: 400 };
 
 const DeletedDiveView = Type.Object({
   id: Type.String(),
   diverId: Type.String(),
   version: Type.Integer({ description: 'Send it back to restore the Dive' }),
-  number: Nullable(Type.Integer()),
-  startsAt: DateTime,
-  utcOffsetSeconds: Nullable(Type.Integer()),
-  utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
-  durationSeconds: Type.Number(),
-  maxDepthM: Nullable(Type.Number()),
-  site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+  ...DiveSummaryFields,
   deletedAt: DateTime,
   mergedInto: Nullable(Type.String({ description: 'The Dive it was merged into (ADR 0038): clients say so and link there' })),
   movedTo: Nullable(Type.String({ description: 'The Dive it became in another Diver\'s logbook when it was moved while linked to a Provider (ADR 0038)' })),
@@ -312,7 +149,7 @@ const DeletedDiveView = Type.Object({
     provider: Type.String(),
     remoteNumber: Nullable(Type.Integer({ description: 'The Provider\'s own dive number' })),
   }), { description: 'Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md)' }),
-  waiting: Type.Array(WaitingPushViewSchema, {
+  waiting: Type.Array(WaitingPushView, {
     description: 'The Dive\'s entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here '
       + '(Undo cancels it), or one that is held or stopped, with its reason',
   }),
@@ -334,13 +171,7 @@ const Rule = Type.Enum([...LOGBOOK_CHECK_RULES], {
 const PairedDive = {
   id: Type.String(),
   version: Type.Integer({ description: 'Send it when merging' }),
-  number: Nullable(Type.Integer()),
-  startsAt: DateTime,
-  utcOffsetSeconds: Nullable(Type.Integer()),
-  utcOffsetSource: Type.Enum([...UTC_OFFSET_SOURCES]),
-  durationSeconds: Type.Number(),
-  maxDepthM: Nullable(Type.Number()),
-  site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
+  ...DiveSummaryFields,
   fromProvider: Nullable(Type.String()),
   recordings: Type.Integer({ description: 'How many Recordings it has' }),
   at: At,
@@ -377,41 +208,28 @@ const CheckView = Type.Object({
   })),
 });
 
-const Copies = Type.Array(Type.Object({
-  provider: Type.String(),
-  copy: Type.Enum(['deleted', 'kept'], { description: 'What happened to the copy there' }),
-}), { description: 'Each Provider the Dive was at' });
-
-/** A refusal while deleting; after a provider_* code, which copies at Providers are gone already. */
-const DeleteProblem = Type.Object({
-  ...Problem.properties,
-  providers: Type.Optional(Type.Array(Copies.items, {
-    description: 'With a provider_* code: each Provider the Dive is at, and whether its copy there was deleted before the refusal (the Dive stays here)',
-  })),
-});
+const DeleteProblem = refTo(DeleteProblemSchema);
 
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, assessments }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, merge, assessments, providerAnswers }) => {
   app.addHook('onRequest', requireUser(auth));
-  // Whatever changed a Dive may change its findings and those of the dives around it (ADR 0036): brought up to date
-  // before the answer goes out, so the client's next read sees them. A failure here never fails the change itself.
-  app.addHook('onSend', async (request, reply) => {
-    if (request.method === 'GET' || reply.statusCode >= 300 || !request.user) return;
-    await assessments.refreshUser(request.user.id).catch((error) => request.log.error({ err: error }, 'dive assessment failed'));
-  });
+  refreshAssessmentsAfterChange(app, assessments);
 
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof DiveError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    if (error instanceof CylinderError || error instanceof WeightingError) return reply.code(400).send(problem(error.code));
-    if (error instanceof ProviderServiceError) return replyProviderError(error, reply);
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(
+    answers(DiveError, STATUS), answers(CylinderError, CYLINDER_STATUS), answers(WeightingError, WEIGHTING_STATUS), providerAnswers.answer,
+  ));
 
 
   /** The Dive if the signed-in User manages its Diver. */
-  const findDive = (request: FastifyRequest, id: string) => logbook.findManagedDive(request.user!.id, id);
+  const findDive = (request: FastifyRequest, id: string) => logbook.findManagedDive(userOf(request).id, id);
+  /** The view of a Dive a change just kept: it must exist, so its absence is a bug, not a 404. */
+  const viewOfKept = async (request: FastifyRequest, id: string) => {
+    const row = await findDive(request, id);
+    if (!row) throw new Error(`Dive ${id} is gone right after its change`);
+    return view(row);
+  };
 
   const view = async (row: typeof dive.$inferSelect): Promise<Static<typeof DiveView>> => {
     const { recordings: recs, site } = await logbook.recordingsAndSite(row);
@@ -475,12 +293,12 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request) => {
     const { version, set, reset, notes, siteId, cylinders, lead, weightingFeedback, suit } = request.body;
-    await dives.edit(request.user!.id, request.params.id, {
+    await dives.edit(userOf(request).id, request.params.id, {
       version, ...(set && { set: fromValues(set) }), ...(reset && { reset }), ...(notes !== undefined && { notes }),
       ...(siteId !== undefined && { siteId }), ...(cylinders && { cylinders }), ...(lead && { lead }),
       ...(weightingFeedback !== undefined && { weightingFeedback }), ...(suit !== undefined && { suit }),
     });
-    return view((await findDive(request, request.params.id))!);
+    return viewOfKept(request, request.params.id);
   });
 
   app.get('/cylinder-catalogue', {
@@ -542,8 +360,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    await dives.setParticipants(request.user!.id, request.params.id, request.body.version, request.body.participants);
-    return view((await findDive(request, request.params.id))!);
+    await dives.setParticipants(userOf(request).id, request.params.id, request.body.version, request.body.participants);
+    return viewOfKept(request, request.params.id);
   });
 
   app.put('/dives/:id/primary-recording', {
@@ -553,8 +371,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    await dives.setPrimary(request.user!.id, request.params.id, request.body.recordingId, request.body.version);
-    return view((await findDive(request, request.params.id))!);
+    await dives.setPrimary(userOf(request).id, request.params.id, request.body.recordingId, request.body.version);
+    return viewOfKept(request, request.params.id);
   });
 
   app.post('/dives/:id/move', {
@@ -567,8 +385,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       response: { 200: DiveView, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    const id = await merging.move(request.user!.id, request.params.id, request.body.diverId, request.body.version);
-    return view((await findDive(request, id))!);
+    const id = await merging.move(userOf(request).id, request.params.id, request.body.diverId, request.body.version);
+    return viewOfKept(request, id);
   });
 
   app.get('/dives/:id/merge-candidates', {
@@ -582,10 +400,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       querystring: Type.Object({ scope: Type.Optional(Type.Enum(['rule', 'nearby'], { default: 'rule' })) }),
       response: { 200: Type.Array(MergeCandidate), 404: Problem },
     },
-  }, async (request) => (await merging.candidates(request.user!.id, request.params.id, request.query.scope)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, deletesItself, rule, answered }) => ({
-    id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
-    utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
-    site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null, fromProvider: d.fromProvider, recordings, at, keeps, bothAt, deletesItself,
+  }, async (request) => (await merging.mergeCandidates(userOf(request).id, request.params.id, request.query.scope)).map(({ dive: d, siteName, recordings, at, keeps, bothAt, deletesItself, rule, answered }) => ({
+    id: d.id, version: d.version, ...diveSummaryOf(d, siteName), fromProvider: d.fromProvider, recordings, at, keeps, bothAt, deletesItself,
     rule, answered,
   })));
 
@@ -609,15 +425,14 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request) => {
     const status = request.query.status ?? 'open';
-    const list = await checks.list(request.user!.id, status);
-    const short = await checks.shortDives(request.user!.id, atProvider, status);
-    const remote = await pushes.currentOf([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
-    const at = (id: string) => [...(remote.get(id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber }));
-    const itself = await waitingPushes.deletingItself([...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))]);
+    const list = await checks.list(userOf(request).id, status);
+    const short = await checks.shortDives(userOf(request).id, atProvider, status);
+    const ids = [...new Set(list.flatMap((c) => c.dives.map((d) => d.id)))];
+    const remote = await pushes.currentOf(ids);
+    const at = (id: string) => providersOf(remote, id);
+    const itself = await waitingPushes.deletingItself(ids);
     const paired = (d: (typeof list)[number]['dives'][number]) => ({
-      id: d.id, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(), utcOffsetSeconds: d.utcOffsetSeconds,
-      utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
-      site: d.siteId && d.siteName !== null ? { id: d.siteId, name: d.siteName } : null, fromProvider: d.fromProvider, recordings: d.recordings, at: at(d.id),
+      id: d.id, version: d.version, ...diveSummaryOf(d, d.siteName), fromProvider: d.fromProvider, recordings: d.recordings, at: at(d.id),
     });
     return [...list.map(({ rule, obvious, dives: [a, b] }) => {
       const bothAt = at(b.id).filter((t) => at(a.id).some((m) => m.provider === t.provider)).map((t) => t.provider);
@@ -652,8 +467,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request, reply) => {
     const { diveIds: [a, b], answer } = request.body;
     // The schema lets `keep` through only with one Dive, `two_dives` only with two.
-    if (b === undefined) await checks.keep(request.user!.id, a, atProvider, answer && 'keep');
-    else await checks.answer(request.user!.id, [a, b], answer && 'two_dives');
+    if (b === undefined) await checks.keep(userOf(request).id, a, atProvider, answer && 'keep');
+    else await checks.answer(userOf(request).id, [a, b], answer && 'two_dives');
     return reply.code(204).send(null);
   });
 
@@ -677,21 +492,9 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request, reply) => {
     const { version, otherId, otherVersion, alsoAt = [] } = request.body;
-    const userId = request.user!.id;
-    const candidate = (await merging.candidates(userId, request.params.id).catch(() => [])).find((c) => c.dive.id === otherId);
-    // Deleted at the Provider before anything changes here, as when deleting a Dive: only the copy of the Dive not kept,
-    // and only where the kept one has its own.
-    // Where the Dive's Connection deletes by itself, the queue does it after 5 minutes, not asked.
-    const asked = candidate ? candidate.bothAt.filter((provider) => alsoAt.includes(provider) && !candidate.deletesItself.includes(provider)) : [];
-    if (asked.length > 0) {
-      const leaving = candidate!.keeps === otherId ? request.params.id : otherId;
-      if (await logbook.versionOf(leaving) !== (leaving === otherId ? otherVersion : version)) return reply.code(409).send(problem('dive_changed'));
-      const { copies, failure } = await pushes.removeAt(userId, leaving, asked);
-      if (failure) return replyProviderError(failure, reply, { providers: asked.map((provider) => ({ provider, copy: copies.find((c) => c.provider === provider)?.copy ?? 'kept' as const })) });
-    }
-    // Deleting there recorded a Push, not a change of the Dive: its version is the one sent.
-    const { kept } = await merging.merge(userId, { id: request.params.id, version }, { id: otherId, version: otherVersion });
-    return view((await findDive(request, kept))!);
+    const merged = await merge.merge(userOf(request).id, { id: request.params.id, version }, { id: otherId, version: otherVersion }, alsoAt);
+    if (merged.failure) return providerAnswers.reply(merged.failure, reply, { providers: merged.providers });
+    return viewOfKept(request, merged.kept);
   });
 
   app.post('/recordings/:id/detach', {
@@ -701,7 +504,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       params: IdParams, body: Type.Object({ version: Type.Integer() }),
       response: { 200: Type.Object({ diveId: Type.String({ description: 'The new Dive' }) }), 404: Problem, 409: Problem },
     },
-  }, async (request) => ({ diveId: await dives.detach(request.user!.id, request.params.id, request.body.version) }));
+  }, async (request) => ({ diveId: await dives.detach(userOf(request).id, request.params.id, request.body.version) }));
 
   app.delete('/dives/:id', {
     schema: {
@@ -722,41 +525,17 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request, reply) => {
     const { version, alsoAt = [] } = request.body;
-    const row = await findDive(request, request.params.id);
-    if (!row) return reply.code(404).send(problem('dive_not_found'));
-    // Checked before any Provider is asked, so a changed Dive isn't deleted there and then kept here.
-    if (row.version !== version) return reply.code(409).send(problem('dive_changed'));
-    const at = [...((await pushes.currentOf([row.id])).get(row.id)?.keys() ?? [])];
-    // Where the Dive's Connection deletes by itself, the queue does it after 5 minutes, even when `alsoAt` names it (Undo cancels it).
-    const itself = (await waitingPushes.deletingItself([row.id])).get(row.id);
-    const asked = at.filter((provider) => alsoAt.includes(provider) && !itself?.has(provider));
-    const { copies, failure } = asked.length > 0 ? await pushes.removeAt(request.user!.id, row.id, asked) : { copies: [], failure: null };
-    const providers = at.map((provider) => ({ provider, copy: copies.find((c) => c.provider === provider)?.copy ?? 'kept' as const }));
-    if (failure) return replyProviderError(failure, reply, { providers });
-    await dives.remove(request.user!.id, row.id, version);
+    const { providers, failure } = await deletion.remove(userOf(request).id, request.params.id, version, alsoAt);
+    if (failure) return providerAnswers.reply(failure, reply, { providers });
     return { providers };
   });
 
   app.get('/dives/deleted', {
     schema: {
       summary: 'The User\'s deleted Dives, most recently deleted first (at most 100), to restore them; which Providers they are still at',
-      response: { 200: Type.Object({ dives: Type.Array(DeletedDiveView) }) },
+      response: { 200: Type.Array(DeletedDiveView) },
     },
-  }, async (request) => {
-    const rows = await logbook.deletedDives(request.user!.id, DELETED_SHOWN);
-    const remote = await pushes.currentOf(rows.map((r) => r.d.id));
-    const waiting = await waitingPushes.waitingOf(rows.map((r) => r.d.id));
-    return {
-      dives: rows.map(({ d, siteName, mergedInto, movedTo }) => ({
-        id: d.id, diverId: d.diverId, version: d.version, number: d.number, startsAt: d.startsAt.toISOString(),
-        utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds, maxDepthM: d.maxDepthM,
-        site: d.siteId && siteName !== null ? { id: d.siteId, name: siteName } : null,
-        deletedAt: d.deletedAt!.toISOString(), mergedInto, movedTo,
-        stillAt: [...(remote.get(d.id)?.entries() ?? [])].map(([provider, p]) => ({ provider, remoteNumber: p.remoteNumber })),
-        waiting: waiting.get(d.id) ?? [],
-      })),
-    };
-  });
+  }, async (request) => deletion.deleted(userOf(request).id, DELETED_SHOWN));
 
   app.post('/dives/:id/restore', {
     schema: {
@@ -766,11 +545,12 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       response: { 200: DiveView, 404: Problem, 409: Problem },
     },
   }, async (request) => {
-    await dives.restore(request.user!.id, request.params.id, request.body.version);
-    return view((await findDive(request, request.params.id))!);
+    await dives.restore(userOf(request).id, request.params.id, request.body.version);
+    return viewOfKept(request, request.params.id);
   });
 
   app.get('/dives/:id/revisions', {
+    ...historyRoute,
     schema: {
       summary: 'The Dive\'s history, newest first: its own Revisions and those of its Recordings',
       params: IdParams, response: { 200: Type.Array(RevisionView), 404: Problem },
@@ -783,7 +563,8 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       id: r.id, at: r.at.toISOString(),
       actor: { type: r.actorType, id: r.actorId, name: r.actorType === 'user' ? userName : r.actorType === 'import' ? uploadName : null },
       cause: r.cause as (typeof REVISION_CAUSES)[number],
-      changes: r.changes,
+      // Stored as written: today's shapes for the named fields, older Revisions as they were (see Changes).
+      changes: r.changes as StoredDiveChanges,
     }));
   });
 };

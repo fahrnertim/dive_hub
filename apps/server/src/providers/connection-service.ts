@@ -1,20 +1,19 @@
 // Connections to Providers (ADR 0024, 0027): one per User, Diver and Provider. Connecting signs in once; the
 // credentials are sealed in one field shaped by the Provider's sign-in kind, the password only when the User chose to
 // keep it. When the Provider no longer accepts the access, a kept password signs in again silently; otherwise the
-// Connection needs the User to sign in again. Every action on a Connection waits its turn (leases.ts).
+// Connection needs the User to sign in again. Every action on a Connection waits its turn (lease-service.ts).
 import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, diver, diverExternalId } from '../db/schema.js';
-import { managedDiverIds } from '../dives/dive-service.js';
+import { connection, diver, diverExternalId, type ConnectionRow } from '../db/schema.js';
+import { managedDiverIds } from '../divers/management.js';
 import { DiverError } from '../divers/diver-error.js';
 import { externalDiver, mergeExternalDiver, participations } from '../divers/merge.js';
 import type { SecretBox } from '../secrets/secret-box.js';
-import { realClock, TurnTimeout, type Clock, type Leases } from './leases.js';
+import { realClock, TurnTimeout, type Clock, type LeaseService } from './lease-service.js';
 import { ProviderError, type ActionContext, type ProviderAdapter, type SignInInput } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
-export type ConnectionRow = typeof connection.$inferSelect;
 
 /** What the User typed; which fields count depends on the Provider's sign-in kind. */
 export interface SignInFields {
@@ -65,7 +64,7 @@ export interface AutomationSettings {
   fetchEveryMinutes?: FetchInterval | null;
 }
 
-export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: Leases; clock?: Clock }) {
+export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: LeaseService; clock?: Clock }) {
   const { db, registry, secrets, leases } = deps;
   const clock = deps.clock ?? realClock;
   /** When the Provider last answered the Connection: a stopped Waiting push wakes on any later answer (ADR 0056). */
@@ -76,14 +75,12 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
     try {
       return await leases.turn(connectionId, adapter.capabilities.limits.pauseMs, fn);
     } catch (error) {
-      throw error instanceof TurnTimeout ? new ProviderServiceError('provider_busy', named(adapter)) : error;
+      throw error instanceof TurnTimeout ? new ProviderServiceError('provider_busy', named(adapter), undefined, { cause: error }) : error;
     }
   }
 
   const seal = (id: string, c: Credentials) => secrets.seal(JSON.stringify(c), purpose(id));
-  /** The Connection's credentials; a row from before ADR 0027 has none, and signs in with its account label. */
-  const credentialsOf = (row: ConnectionRow): Credentials | null =>
-    row.credentials ? JSON.parse(secrets.open(row.credentials, purpose(row.id))) as Credentials : null;
+  const credentialsOf = (row: ConnectionRow) => JSON.parse(secrets.open(row.credentials, purpose(row.id))) as Credentials;
 
   /** What the User typed, checked against the Provider's sign-in kind. */
   function signInInput(adapter: ProviderAdapter, fields: SignInFields, login?: string): SignInInput {
@@ -220,7 +217,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
             await tx.delete(diverExternalId).where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, source)));
             await mergeExternalDiver(tx, held.id, diverId, { type: 'user', id: userId }).catch((error: unknown) => {
               // The two can't be merged (another account at a service each): the account stays the external Diver's.
-              throw error instanceof DiverError ? new ProviderServiceError('provider_account_taken', named(adapter)) : error;
+              throw error instanceof DiverError ? new ProviderServiceError('provider_account_taken', named(adapter), undefined, { cause: error }) : error;
             });
           } else if (!taken) {
             // A Diver has one account per Source: connecting another replaces the one it had.
@@ -242,7 +239,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const row = await ownConnection(userId, connectionId);
       const adapter = registry.get(row.provider);
       const kept = credentialsOf(row);
-      const input = signInInput(adapter, fields, kept?.kind === 'password' ? kept.login : row.accountLabel);
+      const input = signInInput(adapter, fields, kept.kind === 'password' ? kept.login : undefined);
       const signedIn = await onTurn(adapter, row.id, () => signInAt(adapter, input));
       if (signedIn.account.id !== row.accountId) throw new ProviderServiceError('provider_other_account', named(adapter));
       await db.update(connection).set({
@@ -268,19 +265,19 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       return onTurn(adapter, given.id, async (row) => {
         if (!row) throw new ProviderServiceError('provider_not_connected', named(adapter));
         let credentials = credentialsOf(row);
-        const password = credentials?.kind === 'password' ? credentials.password : null;
+        const password = credentials.kind === 'password' ? credentials.password : null;
         const needsSignIn = async () => {
-          if (credentials) credentials = { ...credentials, access: null };
+          credentials = { ...credentials, access: null };
           await db.update(connection).set({
-            state: 'needs_sign_in', credentials: credentials && seal(row.id, credentials), updatedAt: new Date(),
+            state: 'needs_sign_in', credentials: seal(row.id, credentials), updatedAt: new Date(),
           }).where(eq(connection.id, row.id));
           return new ProviderServiceError('provider_sign_in_needed', named(adapter));
         };
         if (row.state === 'needs_sign_in' && !password) throw new ProviderServiceError('provider_sign_in_needed', named(adapter));
-        let access = credentials?.access ?? null;
+        let access = credentials.access;
         for (let attempt = 1; ; attempt++) {
           if (!access) {
-            if (!password || credentials?.kind !== 'password') throw await needsSignIn();
+            if (!password || credentials.kind !== 'password') throw await needsSignIn();
             try {
               access = (await adapter.signIn({ kind: 'password', login: credentials.login, password })).access;
             } catch (error) {

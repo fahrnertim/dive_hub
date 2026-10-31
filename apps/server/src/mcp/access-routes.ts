@@ -3,9 +3,10 @@
 import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import { AI_ACCESS_NAME_MAX, type Auth } from '../auth/auth.js';
-import { requireAdmin, requireUser } from '../auth/fastify.js';
-import { Problem, problem } from '../http/problems.js';
+import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
+import { answerErrors, answers, Problem } from '../http/problems.js';
 import { AI_ACCESS_SCOPES, AiAccessError, LOG_DAYS, LOG_PAGE_MAX, type AiAccessService } from './access-service.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface AiAccessRouteDeps {
   auth: Auth;
@@ -13,9 +14,6 @@ export interface AiAccessRouteDeps {
   baseUrl: string;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-const DateTime = Type.String({ format: 'date-time' });
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
 const Scope = Type.Enum([...AI_ACCESS_SCOPES], {
   description: 'logbook:read: the User\'s Dives, sites, Divers and buddies\' names. logbook:positions: also the Dives\' own entry and exit positions',
 });
@@ -52,10 +50,7 @@ const STATUS: Record<AiAccessError['code'], number> = { ai_access_not_found: 404
 export const aiAccessRoutes: FastifyPluginAsyncTypebox<AiAccessRouteDeps> = async (scope, { auth, accesses, baseUrl }) => {
   const app = scope.withTypeProvider<TypeBoxTypeProvider>();
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof AiAccessError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(AiAccessError, STATUS)));
 
   app.get('/me/ai-access', {
     schema: {
@@ -69,7 +64,7 @@ export const aiAccessRoutes: FastifyPluginAsyncTypebox<AiAccessRouteDeps> = asyn
       },
     },
   }, async (request) => ({
-    enabled: await accesses.enabled(), endpoint: `${baseUrl}/mcp`, accesses: (await accesses.list(request.user!.id)).map(toAccessView),
+    enabled: await accesses.enabled(), endpoint: `${baseUrl}/mcp`, accesses: (await accesses.list(userOf(request).id)).map(toAccessView),
   }));
 
   app.post('/me/ai-accesses', {
@@ -90,14 +85,14 @@ export const aiAccessRoutes: FastifyPluginAsyncTypebox<AiAccessRouteDeps> = asyn
       },
     },
   }, async (request, reply) => {
-    const { key, ...created } = await accesses.create(request.user!.id, request.body.name.trim(), request.body.positions === true);
+    const { key, ...created } = await accesses.create(userOf(request).id, request.body.name.trim(), request.body.positions === true);
     return reply.code(201).send({ access: toAccessView(created), key });
   });
 
   app.delete('/me/ai-accesses/:id', {
     schema: { summary: 'Revoke an AI access: its key stops working at once; its log stays', params: IdParams, response: { 204: Type.Null(), 404: Problem } },
   }, async (request, reply) => {
-    await accesses.revoke(request.user!.id, request.params.id);
+    await accesses.revoke(userOf(request).id, request.params.id);
     return reply.code(204).send(null);
   });
 
@@ -113,7 +108,7 @@ export const aiAccessRoutes: FastifyPluginAsyncTypebox<AiAccessRouteDeps> = asyn
     },
   }, async (request) => {
     const { accessId, limit = 25, offset = 0 } = request.query;
-    const { entries, total } = await accesses.logOf(request.user!.id, { accessId, limit, offset });
+    const { entries, total } = await accesses.logOf(userOf(request).id, { accessId, limit, offset });
     return {
       total,
       entries: entries.map((e) => ({
@@ -150,8 +145,8 @@ export const aiAccessRoutes: FastifyPluginAsyncTypebox<AiAccessRouteDeps> = asyn
       response: { 200: SettingView, 403: Problem },
     },
   }, async (request) => {
-    await accesses.setEnabled(request.user!.id, request.body.enabled);
-    request.log.info({ enabled: request.body.enabled, by: request.user!.id }, 'MCP endpoint switched');
+    await accesses.setEnabled(userOf(request).id, request.body.enabled);
+    request.log.info({ enabled: request.body.enabled, by: userOf(request).id }, 'MCP endpoint switched');
     return settingView();
   });
 
@@ -163,7 +158,7 @@ export const aiAccessRoutes: FastifyPluginAsyncTypebox<AiAccessRouteDeps> = asyn
     },
   }, async (request) => {
     const revoked = await accesses.revokeAll();
-    request.log.info({ revoked, by: request.user!.id }, 'all AI accesses revoked');
+    request.log.info({ revoked, by: userOf(request).id }, 'all AI accesses revoked');
     return { revoked };
   });
 };

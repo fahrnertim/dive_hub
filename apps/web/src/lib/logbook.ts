@@ -62,7 +62,7 @@ export function listOfDiveAddress(query: URLSearchParams): string {
   return listQuery(logbookParams(new URLSearchParams(query.get('list') ?? '')));
 }
 
-/** What the API's neighbours ask takes of a list: everything but the page. */
+/** A list's query to the API, everything but the page: the neighbours ask takes it as is, the logbook's page adds limit and offset. */
 export function neighbourParams(p: LogbookParams) {
   return {
     ...(p.diverId && { diverId: p.diverId }), ...(p.siteId && { siteId: p.siteId }), ...(p.q && { q: p.q }),

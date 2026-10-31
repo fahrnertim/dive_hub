@@ -3,9 +3,11 @@
 import { REFERENCE_PREFIX, type DiveOrigin, type ImportContext, type ImportedDive, type ProviderCylinder, type Series } from '../provider.js';
 import type { SsiBuddy, SsiLogbook, SsiRecord } from './ssi-client.js';
 import { alpha2Of } from '../../sites/countries.js';
+import { wallClockMs } from '../../dives/time-zone.js';
 import { buddyIdsOf, SAMPLE_INTERVAL_MS } from './ssi-record.js';
 import { asBool } from './ssi-dive-row.js';
 import { diveModeOfSsi } from './ssi-dive-type.js';
+import { storedList } from './ssi-json.js';
 
 /** The parser a Recording made from an SSI dive names (data model: Recording). */
 export const SSI_PARSER = { name: 'ssi-app-api', version: '1' };
@@ -43,17 +45,6 @@ function position(lat: unknown, lon: unknown) {
   return latitude !== null && longitude !== null && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180 ? { latitude, longitude } : null;
 }
 
-/** A JSON string SSI keeps (`diveSamples`, `…Dataset`) as what it holds; null when empty or unreadable. */
-function json(v: unknown): unknown {
-  if (Array.isArray(v)) return v;
-  if (typeof v !== 'string' || v.trim() === '') return null;
-  try {
-    return JSON.parse(v) as unknown;
-  } catch {
-    return null;
-  }
-}
-
 /** The tank pressure of the lowest tank index among the samples (`pr: {t, v}`); other tanks are left out. */
 function tankPressureOf(samples: unknown[]): Series | undefined {
   const readings = samples.flatMap((s, i) => {
@@ -78,8 +69,8 @@ function samplesOf(r: SsiRecord): ImportedDive['samples'] {
   const heartRate = series();
   const cns = series();
   let tankPressure: Series | undefined;
-  const samples = json(r.odin_user_log_diveSamples);
-  if (Array.isArray(samples) && samples.length > 0) {
+  const samples = storedList(r.odin_user_log_diveSamples);
+  if (samples && samples.length > 0) {
     samples.forEach((s: unknown, i) => {
       if (typeof s !== 'object' || s === null) return;
       const o = s as Record<string, unknown>;
@@ -103,10 +94,10 @@ function samplesOf(r: SsiRecord): ImportedDive['samples'] {
       values.forEach((v, i) => { const n = read(v); if (n !== null) { target.offsetsMs.push(i * SAMPLE_INTERVAL_MS); target.values.push(n); } });
     };
     const pressure = series();
-    fill(depth, json(r.odin_user_log_depthDataset));
-    fill(temperature, json(r.odin_user_log_tempDataset));
-    fill(pressure, json(r.odin_user_log_tankPressureDataset), aboveZero);
-    fill(heartRate, json(r.odin_user_log_heartRateDataset), aboveZero);
+    fill(depth, storedList(r.odin_user_log_depthDataset));
+    fill(temperature, storedList(r.odin_user_log_tempDataset));
+    fill(pressure, storedList(r.odin_user_log_tankPressureDataset), aboveZero);
+    fill(heartRate, storedList(r.odin_user_log_heartRateDataset), aboveZero);
     tankPressure = pressure;
   }
   const some = (s: Series | undefined) => (s && s.values.length > 0 ? s : undefined);
@@ -181,7 +172,8 @@ function cylinderOf(r: SsiRecord, gas: ProviderCylinder['gas']): ProviderCylinde
 export function parseSsiDive(r: SsiRecord, context: ImportContext, givenId?: string): ImportedDive | null {
   const remoteId = text(r.odin_user_log_id) ?? givenId ?? null;
   const start = text(r.odin_user_log_datetime)?.replace('T', ' ').replace('+', ' ');
-  if (!remoteId || !start || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(start)) return null;
+  // The local start must be readable (localStartOf relies on it).
+  if (!remoteId || !start || wallClockMs(start) === null) return null;
   const reference = text(r.odin_user_log_divecomputer_dive_ref);
   const samples = samplesOf(r);
   const device = deviceOf(r);

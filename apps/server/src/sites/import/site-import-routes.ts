@@ -1,30 +1,18 @@
 // The admin's Site import over HTTP (ADR 0021, 0025): start one, follow its progress, see the latest.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { Type, type Static } from 'typebox';
+import { Type } from 'typebox';
 import type { Auth } from '../../auth/auth.js';
-import { requireAdmin, requireUser } from '../../auth/fastify.js';
-import type { siteImport } from '../../db/schema.js';
-import { Problem, problem, PROBLEMS, type ProblemCode } from '../../http/problems.js';
+import { requireAdmin, requireUser, userOf } from '../../auth/fastify.js';
+import { answerErrors, answers, Problem, problem } from '../../http/problems.js';
+import { IdParams } from '../../http/schemas.js';
 import { IMPORT_SOURCES } from '../sources.js';
 import { SiteImportError, type SiteImportService } from './site-import-service.js';
+import { Area, SiteImportView, Source, toSiteImportView } from './site-import-view.js';
 
 export interface SiteImportRouteDeps {
   auth: Auth;
   siteImports: SiteImportService;
 }
-
-const Latitude = Type.Number({ minimum: -90, maximum: 90 });
-const Longitude = Type.Number({ minimum: -180, maximum: 180 });
-
-const Area = Type.Union([
-  Type.Object({ kind: Type.Literal('country'), country: Type.String({ pattern: '^[A-Z]{2}$', description: 'ISO 3166-1 alpha-2' }) }, { additionalProperties: false }),
-  Type.Object({ kind: Type.Literal('box'), south: Latitude, west: Longitude, north: Latitude, east: Longitude }, {
-    additionalProperties: false, description: 'Degrees; west may be greater than east across the date line',
-  }),
-  Type.Object({ kind: Type.Literal('world') }, { additionalProperties: false }),
-], { description: 'Where to import: a country, a box, or everywhere' });
-
-const Source = Type.Enum([...IMPORT_SOURCES]);
 
 const StartBody = Type.Object({
   sources: Type.Array(Source, { minItems: 1, maxItems: IMPORT_SOURCES.length, uniqueItems: true }),
@@ -37,52 +25,12 @@ const StartBody = Type.Object({
   createSites: Type.Optional(Type.Boolean({ default: true, description: 'false: only match and fill sites already in the hub, create none' })),
 }, { additionalProperties: false });
 
-const Counts = Type.Object({
-  created: Type.Integer(), updated: Type.Integer(), unchanged: Type.Integer(), kept: Type.Integer(), linked: Type.Integer(),
-  skippedNoName: Type.Integer(), skippedDeleted: Type.Integer(), skippedMerged: Type.Integer(),
-  skippedNew: Type.Integer(), offered: Type.Integer(), gone: Type.Integer(),
-}, { description: 'Sites created, updated, unchanged, kept (only fields Users changed differed), linked (references on hand-made sites); objects skipped without a name, because their site was deleted in the hub, because it was merged into another, or because the run created no sites; hand-made sites whose page now offers the data; objects gone from the Source' });
-
-export const SiteImportView = Type.Object({
-  id: Type.String(),
-  status: Type.Union([Type.Literal('queued'), Type.Literal('running'), Type.Literal('done'), Type.Literal('failed')]),
-  sources: Type.Array(Source),
-  area: Area,
-  language: Type.String(),
-  createSites: Type.Boolean({ description: 'false: the run only matched and filled sites already in the hub' }),
-  progress: Type.Object({
-    step: Type.Union([Type.Literal('waiting'), Type.Literal('osm'), Type.Literal('wikidata'), Type.Literal('ssi'), Type.Literal('saving')]),
-    done: Type.Integer(), total: Type.Integer(),
-  }),
-  counts: Type.Union([Type.Null(), Counts]),
-  findings: Type.Array(Type.Union([
-    Type.Object({
-      kind: Type.Literal('near'), siteId: Type.String(), name: Type.String(), nearSiteId: Type.String(), nearName: Type.String(), distanceM: Type.Integer(),
-    }, { description: 'A new site within 200 m of one that was there before' }),
-    Type.Object({
-      kind: Type.Literal('offer'), siteId: Type.String(), name: Type.String(), source: Source,
-    }, { description: 'A hand-made site the Source describes: its page offers the Source\'s data' }),
-  ])),
-  failureCode: Type.Union([Type.Null(), Type.Enum(Object.keys(PROBLEMS) as ProblemCode[])], { description: 'Why it failed (a problem code)' }),
-  createdAt: Type.String({ format: 'date-time' }),
-  finishedAt: Type.Union([Type.Null(), Type.String({ format: 'date-time' })]),
-});
-
-const toView = (r: typeof siteImport.$inferSelect): Static<typeof SiteImportView> => ({
-  id: r.id, status: r.status, sources: r.sources, area: r.area, language: r.language, createSites: r.createSites, progress: r.progress,
-  counts: r.counts, findings: r.findings, failureCode: (r.errorCode as ProblemCode | null) ?? null,
-  createdAt: r.createdAt.toISOString(), finishedAt: r.finishedAt?.toISOString() ?? null,
-});
-
 const STATUS: Record<SiteImportError['code'], number> = { odbl_not_confirmed: 400, ssi_not_confirmed: 400, site_import_running: 409, site_import_not_found: 404 };
 
 export const siteImportRoutes: FastifyPluginAsyncTypebox<SiteImportRouteDeps> = async (app, { auth, siteImports }) => {
   app.addHook('onRequest', requireUser(auth));
   app.addHook('onRequest', requireAdmin);
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof SiteImportError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(SiteImportError, STATUS)));
 
   app.post('/admin/site-imports', {
     schema: {
@@ -93,20 +41,20 @@ export const siteImportRoutes: FastifyPluginAsyncTypebox<SiteImportRouteDeps> = 
   }, async (request, reply) => {
     const { sources, area, language, confirmOdbl, confirmSsi, createSites } = request.body;
     if (area.kind === 'box' && area.south >= area.north) return reply.code(400).send(problem('invalid_input', 'south must be less than north'));
-    const row = await siteImports.start(request.user!.id, {
+    const row = await siteImports.start(userOf(request).id, {
       sources, area, language, confirmOdbl: confirmOdbl ?? false, confirmSsi: confirmSsi ?? false, createSites: createSites ?? true,
     });
-    return reply.code(202).send(toView(row));
+    return reply.code(202).send(toSiteImportView(row));
   });
 
   app.get('/admin/site-imports', {
-    schema: { summary: 'The latest Site imports, newest first (admins)', response: { 200: Type.Object({ imports: Type.Array(SiteImportView) }), 403: Problem } },
-  }, async () => ({ imports: (await siteImports.list()).map(toView) }));
+    schema: { summary: 'The latest Site imports, newest first (admins)', response: { 200: Type.Array(SiteImportView), 403: Problem } },
+  }, async () => (await siteImports.list()).map(toSiteImportView));
 
   app.get('/admin/site-imports/:id', {
     schema: {
       summary: 'One Site import with its progress, counts and findings (admins)',
-      params: Type.Object({ id: Type.String({ format: 'uuid' }) }), response: { 200: SiteImportView, 403: Problem, 404: Problem },
+      params: IdParams, response: { 200: SiteImportView, 403: Problem, 404: Problem },
     },
-  }, async (request) => toView(await siteImports.get(request.params.id)));
+  }, async (request) => toSiteImportView(await siteImports.get(request.params.id)));
 };

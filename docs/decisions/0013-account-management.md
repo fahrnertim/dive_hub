@@ -8,7 +8,8 @@ date: 2026-10-03
 # ADR 0013: Account management: reset links, disable vs delete, our routes in front of Better Auth
 
 ## Status
-Accepted – 2026-10-03
+Accepted – 2026-10-03. Amended by [ADR 0061](0061-attempt-limit-on-token-routes.md) (2026-10-30): the reset link
+routes count attempts per client IP (30 per 15 minutes) and answer 429 `too_many_attempts` over it.
 
 ## Context
 After slice 2 ([ADR 0011](0011-better-auth.md), [ADR 0012](0012-invitations-and-admin-bootstrap.md)),

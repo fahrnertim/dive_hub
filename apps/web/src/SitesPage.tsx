@@ -1,22 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, diversQuery, keys, meQuery, siteQuery, sitesQuery, unwrap, type ExternalIdView, type Position, type SiteView } from './api.ts';
+import { api, ApiError, diversQuery, keys, meQuery, siteQuery, sitesQuery, unwrap, type ExternalIdView, type Position, type ProviderView, type SiteView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
-import { mapsUrl } from './lib/geo.ts';
+import { countryOptions, mapsUrl } from './lib/geo.ts';
 import { logbookHref } from './lib/logbook.ts';
 import { useAddressSearch } from './lib/address-search.ts';
 import { usePageTitle } from './lib/page.ts';
-import { countryOptions } from './lib/geo.ts';
+import { useFocusBackWhenClosed } from './lib/focus.ts';
 import { needsOsmAttribution, siteOrigin } from './lib/site-origin.ts';
 import { SITES_PAGE, sitesHref, type SiteSort, type SitesParams } from './lib/sites-list.ts';
 import { SiteForm, typedSources } from './SiteForm.tsx';
 import { useProviders, useProviderText } from './lib/providers.ts';
-import type { ProviderView } from './api.ts';
 import { SiteHistory } from './SiteHistory.tsx';
-import { SiteCentres } from './CentresPage.tsx';
-import { ActionMenu, BackLink, Button, Checkbox, ConfirmDialog, Icon, Muted, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
+import { SiteCentres } from './SiteCentres.tsx';
+import { ActionMenu, BackLink, Button, Checkbox, ConfirmDialog, Icon, Muted, NotFoundPage, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
 
 /** "Egypt · Red Sea": where a site is, in words. */
 function useSitePlace() {
@@ -205,12 +204,7 @@ export function SitePage({ id }: { id: string }) {
   const typed = typedSources(useProviders().data);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const editButton = useRef<HTMLButtonElement>(null);
-  const wasEditing = useRef(false);
-  useEffect(() => {
-    if (wasEditing.current && !editing) editButton.current?.focus();
-    wasEditing.current = editing;
-  }, [editing]);
+  const editButton = useFocusBackWhenClosed(editing);
   const notFound = site.error instanceof ApiError && site.error.status === 404;
   // A merged site is gone: its links lead to the site it was merged into (ADR 0022).
   const mergedInto = site.data?.mergedInto;
@@ -226,19 +220,7 @@ export function SitePage({ id }: { id: string }) {
 
   const back = { href: '#/sites', label: t('sites.back') };
   if (site.isPending || mergedInto) return <Muted>{t('common.loading')}</Muted>;
-  if (notFound) {
-    return (
-      <>
-        <PageHeader title={t('sites.notFound')} />
-        <Panel>
-          <div className="empty-state">
-            <p>{errorText(site.error)}</p>
-            <a href="#/sites" className="btn btn-secondary"><Icon name="back" />{t('sites.backToSites')}</a>
-          </div>
-        </Panel>
-      </>
-    );
-  }
+  if (notFound) return <NotFoundPage title={t('sites.notFound')} message={errorText(site.error)} back={{ href: '#/sites', label: t('sites.backToSites') }} />;
   if (site.error) return <><BackLink {...back} /><Notice tone="danger">{errorText(site.error)}</Notice></>;
   const s = site.data;
   const deletable = s.canDelete && !s.inUse;
@@ -351,7 +333,7 @@ function SiteOrigin({ site }: { site: SiteView }) {
   const [adopting, setAdopting] = useState<ExternalIdView | null>(null);
   const adopt = useMutation({
     mutationFn: async (e: ExternalIdView) => unwrap(await api.POST('/api/dive-sites/{id}/adopt', {
-      params: { path: { id: site.id } }, body: { source: e.source as 'osm' | 'wikidata' | 'ssi', version: site.version },
+      params: { path: { id: site.id } }, body: { source: e.source, version: site.version },
     })),
     onSuccess: async (saved) => {
       queryClient.setQueryData(keys.site(saved.id), saved);

@@ -127,6 +127,12 @@ describe('OpenStreetMap through Overpass', () => {
     expect(net.sent).toHaveLength(2);
   });
 
+  it('keeps the network failure as the cause when no answer comes', async () => {
+    const down = new TypeError('fetch failed');
+    const http = createPoliteHttp({ fetch: async () => { throw down; }, contact: 'ops@example.org', sleep: async () => {} });
+    await expect(createOverpassSource(http).fetch({ kind: 'world' }, 'en')).rejects.toMatchObject({ source: 'osm', reason: 'unavailable', cause: down });
+  });
+
   it('treats the HTML page an overloaded Overpass sends as unavailable', async () => {
     const page = '<?xml version="1.0"?><html><body><p><strong>Error</strong>: runtime error: Dispatcher_Client::request_read_and_idx::timeout</p></body></html>';
     const net = replay({ body: page });

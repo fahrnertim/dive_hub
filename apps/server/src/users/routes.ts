@@ -1,44 +1,38 @@
-// Users: who am I, first-admin setup, invitations (ADR 0011, 0012).
+// Users: who am I, first-admin setup, accepting an invitation (ADR 0011, 0012); admins invite in admin-routes.ts.
 import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { Type, type Static } from 'typebox';
+import { Type } from 'typebox';
 import { APIError } from 'better-auth/api';
 import type { Auth } from '../auth/auth.js';
-import { authHeaders, forwardCookies, requireAdmin, requireUser } from '../auth/fastify.js';
-import { EmailTakenError, invitationStatus, type InvitationRow, type Invitations, type Role } from './invitations.js';
+import { authHeaders, forwardCookies, requireUser, userOf } from '../auth/fastify.js';
+import type { InvitationService, Role } from './invitation-service.js';
 import type { ProfileService } from './profile-service.js';
-import type { Setup } from './setup.js';
+import type { SetupService } from './setup-service.js';
+import { limitAttempts, type AttemptLimit } from '../http/attempt-limit.js';
 import { problem } from '../http/problems.js';
-import { DateTime, IdParams, LinkView, Password, PreferencesView, Problem, RoleSchema, Token, UserView, toUserView } from './views.js';
+import { Email, Password, PreferencesView, Problem, Token, UserView, toUserView } from './views.js';
+import { DateTime } from '../http/schemas.js';
 
 export interface UserRouteDeps {
   auth: Auth;
   profiles: ProfileService;
-  setup: Setup;
-  invitations: Invitations;
-  baseUrl: string;
+  setup: SetupService;
+  invitations: InvitationService;
+  /** Counts attempts at the token routes per client IP (ADR 0061); shared with accountRoutes. */
+  tokenAttempts: AttemptLimit;
 }
 
-const Email = Type.String({ format: 'email', maxLength: 254 });
-const Name = Type.String({ minLength: 1, maxLength: 100 });
+const Name = Type.String({ minLength: 1, maxLength: 100, pattern: '\\S' });
 
 const MeView = Type.Object({
   user: UserView,
   ownDiver: Type.Object({ id: Type.String(), name: Type.String() }),
   preferences: PreferencesView,
 });
-const InvitationView = Type.Object({
-  id: Type.String(), email: Type.String(), role: RoleSchema, createdAt: DateTime, expiresAt: DateTime,
-  status: Type.Union([Type.Literal('pending'), Type.Literal('accepted'), Type.Literal('revoked'), Type.Literal('expired')]),
-});
-const CreatedInvitationView = Type.Intersect([InvitationView, LinkView]);
 
-const toInvitationView = (i: InvitationRow): Static<typeof InvitationView> => ({
-  id: i.id, email: i.email, role: i.role, createdAt: i.createdAt.toISOString(),
-  expiresAt: i.expiresAt.toISOString(), status: invitationStatus(i),
-});
+export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, { auth, profiles, setup, invitations, tokenAttempts }) => {
+  const limited = limitAttempts(tokenAttempts);
 
-export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, { auth, profiles, setup, invitations, baseUrl }) => {
   /** Creates the User through Better Auth (which hashes the password), then signs them in. */
   async function createAndSignIn(
     request: FastifyRequest, reply: FastifyReply,
@@ -62,10 +56,11 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
   }, async () => ({ needed: await setup.isNeeded() }));
 
   app.post('/setup', {
+    onRequest: limited,
     schema: {
       summary: 'Create the first admin with the setup token printed to the server log',
       body: Type.Object({ token: Token, email: Email, name: Name, password: Password }),
-      response: { 201: UserView, 403: Problem, 409: Problem },
+      response: { 201: UserView, 403: Problem, 409: Problem, 429: Problem },
     },
   }, async (request, reply) => {
     if (!(await setup.isNeeded())) return reply.code(409).send(problem('setup_done'));
@@ -83,10 +78,11 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
   });
 
   app.post('/invitations/lookup', {
+    onRequest: limited,
     schema: {
       summary: 'The open invitation behind an invitation token',
       body: Type.Object({ token: Token }),
-      response: { 200: Type.Object({ email: Type.String(), expiresAt: DateTime }), 404: Problem },
+      response: { 200: Type.Object({ email: Type.String(), expiresAt: DateTime }), 404: Problem, 429: Problem },
     },
   }, async (request, reply) => {
     const found = await invitations.find(request.body.token);
@@ -96,10 +92,11 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
   });
 
   app.post('/invitations/accept', {
+    onRequest: limited,
     schema: {
       summary: 'Accept an invitation: become a User and get signed in',
       body: Type.Object({ token: Token, name: Name, password: Password }),
-      response: { 201: UserView, 404: Problem, 409: Problem },
+      response: { 201: UserView, 404: Problem, 409: Problem, 429: Problem },
     },
   }, async (request, reply) => {
     const claimed = await invitations.claim(request.body.token);
@@ -125,7 +122,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
     signedIn.get('/me', {
       schema: { summary: 'The signed-in User and their own Diver', response: { 200: MeView } },
     }, async (request) => {
-      const me = request.user!;
+      const me = userOf(request);
       return { user: toUserView(me), ...(await profiles.read(me.id)) };
     });
 
@@ -136,44 +133,7 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
         response: { 200: PreferencesView },
       },
     }, async (request) => {
-      return profiles.savePreferences(request.user!.id, request.body);
-    });
-
-    // --- Admins ----------------------------------------------------------------------------------
-
-    await signedIn.register(async (scope) => {
-      const admins = scope.withTypeProvider<TypeBoxTypeProvider>();
-      admins.addHook('onRequest', requireAdmin);
-
-      admins.get('/invitations', {
-        schema: { summary: 'Invitations, newest first (admins only)', response: { 200: Type.Array(InvitationView) } },
-      }, async () => (await invitations.list()).map(toInvitationView));
-
-      admins.post('/invitations', {
-        schema: {
-          summary: 'Invite a person by e-mail; returns the link to pass on (admins only)',
-          body: Type.Object({ email: Email, role: Type.Optional(RoleSchema) }),
-          response: { 201: CreatedInvitationView, 409: Problem },
-        },
-      }, async (request, reply) => {
-        try {
-          const { invitation, token } = await invitations.create({
-            email: request.body.email, role: request.body.role ?? 'user', createdBy: request.user!.id,
-          });
-          // The token travels in the URL fragment, which browsers never send to the server or in Referer.
-          return reply.code(201).send({ ...toInvitationView(invitation), url: `${baseUrl}/#/invite/${token}` });
-        } catch (error) {
-          if (error instanceof EmailTakenError) return reply.code(409).send(problem('email_taken'));
-          throw error;
-        }
-      });
-
-      admins.delete('/invitations/:id', {
-        schema: { summary: 'Revoke an open invitation (admins only)', params: IdParams, response: { 204: Type.Null(), 404: Problem } },
-      }, async (request, reply) =>
-        (await invitations.revoke(request.params.id))
-          ? reply.code(204).send(null)
-          : reply.code(404).send(problem('invitation_not_found')));
+      return profiles.savePreferences(userOf(request).id, request.body);
     });
   });
 };

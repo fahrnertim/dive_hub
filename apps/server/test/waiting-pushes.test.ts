@@ -5,10 +5,10 @@ import { runOnce } from 'graphile-worker';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, diveSiteExternalId, importJob, providerConflict, push, revision, waitingPush } from '../src/db/schema.js';
 import { writeRevision } from '../src/dives/revisions.js';
-import { record } from '../src/providers/conflicts.js';
-import { mark, QUIET_MS, settle, WAITING_PUSHES_TASK, waitingPushesKey } from '../src/providers/waiting-push-queue.js';
+import { record } from '../src/providers/conflicts/conflict-service.js';
+import { clearIfUnchanged, QUIET_MS, stampOf, WAITING_PUSHES_TASK, waitingPushesKey } from '../src/providers/waiting-push/waiting-push-queue.js';
 import { ProviderError } from '../src/providers/provider.js';
-import { createWaitingPushService, GIVE_UP_MS, RETRY_AFTER_MS } from '../src/providers/waiting-push-service.js';
+import { createWaitingPushService, GIVE_UP_MS, RETRY_AFTER_MS } from '../src/providers/waiting-push/waiting-push-service.js';
 import type { ImportedValues, SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { handTypedDive } from './fake-ssi.js';
@@ -61,7 +61,7 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     }).returning({ id: importJob.id }))[0]!.id;
   const unsent = () => ctx.providers.waitingPushes.unsentDives(connectionId);
   const deletedVersion = async (id: string) =>
-    (await json<{ dives: { id: string; version: number }[] }>('GET', '/api/dives/deleted')).dives.find((d) => d.id === id)!.version;
+    (await json<{ id: string; version: number }[]>('GET', '/api/dives/deleted')).find((d) => d.id === id)!.version;
   const version = async (id: string) => (await json<{ version: number }>('GET', `/api/dives/${id}`)).version;
   const edit = async (id: string, notes: string, cookie = ann) =>
     call('PATCH', `/api/dives/${id}`, { version: await version(id), notes }, cookie);
@@ -392,23 +392,23 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
     expect(await rows()).toEqual([]);
   });
 
-  it('settle keeps an entry changed after the send began', async () => {
+  it('clearIfUnchanged keeps an entry changed after the send began', async () => {
     const id = await upload(day(1));
     await send(id);
     // Marked before the change, as a send that began then: the change may not have gone out.
-    const before = await mark(t.db, id, 'ledger');
+    const before = await stampOf(t.db, id, 'ledger');
     expect(before).toBeNull();
     await edit(id, 'Turtle');
     const [row] = await rows();
     await t.db.update(waitingPush).set({ state: 'held', reason: 'exists', attempts: 2, options: { onExisting: 'link', conflicts: { notes: 'hub' } } })
       .where(eq(waitingPush.diveId, id));
-    await settle(t.db, id, 'ledger', before);
+    await clearIfUnchanged(t.db, id, 'ledger', before);
     // The confirmed send applied the decisions: the send of the change carries none.
     expect(await rows()).toMatchObject([{ diveId: id, state: 'waiting', reason: null, attempts: 0 }]);
     expect((await rows())[0]!.options).toEqual({});
     expect((await rows())[0]!.dueAt.getTime()).toBe(row!.changedAt.getTime() + QUIET_MS);
     // Marked after it: the send carried it.
-    await settle(t.db, id, 'ledger', await mark(t.db, id, 'ledger'));
+    await clearIfUnchanged(t.db, id, 'ledger', await stampOf(t.db, id, 'ledger'));
     expect(await rows()).toEqual([]);
   });
 
@@ -572,21 +572,24 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       expect(await unsentTo()).toEqual([]);
     }, 60_000);
 
-    it('an offer drops the Imports whose Dives were all sent', async () => {
+    it('the tick drops from an offer the Imports whose Dives were all sent; reading it changes nothing', async () => {
       const first = await upload(day(1), 101);
       const second = await upload(day(2), 102);
       const third = await upload(day(3), 103);
       const [one, other] = [await importOf([first, second]), await importOf([third])];
       await settings({ unsentImportIds: [one, other] });
+      const stored = async () => (await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.unsentImportIds;
       const offered = async () => {
-        await json('GET', '/api/connections');
-        return (await t.db.select().from(connection).where(eq(connection.id, connectionId)))[0]!.unsentImportIds;
+        await ctx.providers.waitingPushes.tick();
+        return stored();
       };
       expect(await offered()).toEqual([one, other]);
       // Some of the first Import's Dives are sent: it stays. All of them: it leaves, and the other Import stays.
       expect((await call('POST', `/api/dives/${first}/providers/ledger`, {})).statusCode).toBeLessThan(300);
       expect(await offered()).toEqual([one, other]);
       expect((await call('POST', `/api/dives/${second}/providers/ledger`, {})).statusCode).toBeLessThan(300);
+      await json('GET', '/api/connections');
+      expect(await stored()).toEqual([one, other]);
       expect(await offered()).toEqual([other]);
     });
 

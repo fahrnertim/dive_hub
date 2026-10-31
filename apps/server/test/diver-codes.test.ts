@@ -170,8 +170,8 @@ describe.skipIf(!(await databaseReachable()))('buddy and professional codes', ()
       expect(taken.statusCode).toBe(200);
       expect(taken.json()).toMatchObject({ id: kai, name: 'Kai L.', email: 'kai.lund@example.com', leaderNumber: '54321' });
       expect((taken.json() as Details).codes.map((c) => c.kind)).toEqual(['buddy', 'professional']);
-      const found = await json<{ divers: { id: string }[] }>('GET', '/api/divers/search?q=Kai%20L', tim);
-      expect(found.divers.filter((d) => d.id === kai)).toHaveLength(1);
+      const found = await json<{ id: string }[]>('GET', '/api/divers/search?q=Kai%20L', tim);
+      expect(found.filter((d) => d.id === kai)).toHaveLength(1);
     });
 
     it('keeps a leader number when a buddy code, which has none, is taken later', async () => {
@@ -219,7 +219,7 @@ describe.skipIf(!(await databaseReachable()))('buddy and professional codes', ()
 
     it('shows a professional\'s code on every Dive they are a Participant on, whatever their role', async () => {
       expect((await getDive()).verificationCodes).toEqual([]);
-      const mia = (await json<{ divers: { id: string; name: string }[] }>('GET', '/api/divers/search?q=Mia', tim)).divers.find((d) => d.name === 'Mia')!.id;
+      const mia = (await json<{ id: string; name: string }[]>('GET', '/api/divers/search?q=Mia', tim)).find((d) => d.name === 'Mia')!.id;
       await call('PUT', `/api/dives/${diveId}/participants`, tim, {
         version: (await getDive()).version, participants: [{ diverId: kai, role: 'buddy' }, { diverId: mia, role: 'guide' }],
       });

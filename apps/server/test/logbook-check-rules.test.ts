@@ -1,7 +1,7 @@
 // The rules of the logbook checks (ADR 0038), pure: which pairs of Dives can't both be right as they stand, and which
 // of them an import would have put together by itself.
 import { describe, expect, it } from 'vitest';
-import { findChecks, probablyNoDive, ruleFor, suggestsDeleting, type CheckedDive, type DeletableDive } from '../src/dives/logbook-check-rules.js';
+import { findChecks, probablyNoDive, ruleFor, suggestsDeleting, type CheckedDive, type DeletableDive } from '../src/dives/checks/logbook-check-rules.js';
 
 const at = (time: string) => new Date(`2026-03-12T${time}Z`);
 const dive = (id: string, time: string, minutes: number, more: Partial<CheckedDive> = {}): CheckedDive => ({

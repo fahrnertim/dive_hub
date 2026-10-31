@@ -1,28 +1,24 @@
 // Dive sites, shared by every User (ADR 0020).
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
-import { Problem, problem } from '../http/problems.js';
+import { callerOf } from '../http/caller.js';
+import { answerErrors, answers, Problem, problem } from '../http/problems.js';
 import { REVISION_CAUSES } from '../dives/revisions.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
-import { NEARBY_M, SITE_SORTS, SiteError, type ExternalIdRow, type SiteActor, type SiteService } from './site-service.js';
-import { IMPORT_SOURCES, SITE_SOURCES, SOURCE_INFO } from './sources.js';
+import { NEARBY_M, SITE_SORTS, SiteError, type SiteService } from './site-service.js';
+import { SiteView, toSiteView } from './site-view.js';
+import { PositionSchema } from './position-view.js';
+import { IMPORT_SOURCES, SITE_SOURCES } from './sources.js';
+import { Change, Changes, DateTime, historyRoute, IdParams, Made, Nullable } from '../http/schemas.js';
 
 export interface SiteRouteDeps {
   auth: Auth;
   sites: SiteService;
 }
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
 /** Null first, so Fastify's coercion keeps a null a null (ADR 0015). */
-const Nullable = <T extends Parameters<typeof Type.Union>[0][number]>(t: T) => Type.Union([Type.Null(), t]);
-
-export const PositionSchema = Type.Object({
-  latitude: Type.Number({ minimum: -90, maximum: 90 }),
-  longitude: Type.Number({ minimum: -180, maximum: 180 }),
-}, { additionalProperties: false, description: 'WGS84 degrees' });
 
 const Name = Type.String({ minLength: 1, maxLength: 120, pattern: '\\S' });
 const Country = Nullable(Type.String({ pattern: '^[A-Z]{2}$', description: 'ISO 3166-1 alpha-2, e.g. "EG"' }));
@@ -54,50 +50,6 @@ const EditBody = Type.Object({
   waterType: Type.Optional(WaterType),
 }, { additionalProperties: false });
 
-/** A Source's values for a site, as offered beside a reference. */
-const OfferedValues = Type.Object({
-  name: Nullable(Type.String()),
-  position: Nullable(PositionSchema),
-  country: Nullable(Type.String()),
-  waterBody: Nullable(Type.String()),
-  description: Nullable(Type.String()),
-  maxDepthM: Nullable(Type.Number()),
-  waterType: Nullable(Type.Enum([...SITE_WATER_TYPES])),
-});
-
-const ExternalIdView = Type.Object({
-  source: Type.Enum([...SITE_SOURCES]),
-  name: Type.String({ description: 'The Source\'s name, e.g. "OpenStreetMap"' }),
-  externalId: Type.String({ description: 'e.g. "node/123", "Q42", "3314"' }),
-  url: Nullable(Type.String({ description: 'The object\'s page at the Source' })),
-  providesData: Type.Boolean({ description: 'The site was created or filled from this Source ("From OpenStreetMap"); otherwise a reference only ("Also in …")' }),
-  attribution: Nullable(Type.Object({ text: Type.String(), url: Type.String() }, { description: 'What the Source\'s license asks to show with its data' })),
-  offered: Nullable(Type.Object(OfferedValues.properties, {
-    description: 'A reference\'s values from its Source, which any User can take up with POST …/adopt (ADR 0025): empty fields take them',
-  })),
-  privateTo: Nullable(Type.Object({ diverId: Type.String() }, {
-    description: 'Set: private to this Diver\'s account at the Source (ADR 0057), seen only by Users who manage the Diver and used only by sends for the Diver. Null: public',
-  })),
-}, { description: 'Where a site comes from, or where else it is known (ADR 0021)' });
-
-export const SiteView = Type.Object({
-  id: Type.String(),
-  name: Type.String(),
-  position: Nullable(PositionSchema),
-  country: Nullable(Type.String()),
-  waterBody: Nullable(Type.String()),
-  description: Nullable(Type.String()),
-  maxDepthM: Nullable(Type.Number({ description: 'Metres' })),
-  waterType: Nullable(Type.Enum([...SITE_WATER_TYPES], { description: 'The water type of every Dive at the site (ADR 0025)' })),
-  externalIds: Type.Array(ExternalIdView),
-  version: Type.Integer({ description: 'Send it back with an edit; it changes with every change' }),
-  diveCount: Type.Integer({ description: 'How many of the signed-in User\'s Dives are at the site' }),
-  inUse: Type.Boolean({ description: 'Whether any Dive (of any User) is at the site; then it can\'t be deleted' }),
-  canDelete: Type.Boolean({ description: 'Whether the signed-in User may delete it: its creator or an admin' }),
-  distanceM: Type.Optional(Type.Number({ description: 'Metres from the position asked for (with latitude/longitude)' })),
-  mergedInto: Nullable(Type.String({ description: 'Set when this site was merged into another (ADR 0022): open that one instead' })),
-});
-
 const ListQuery = Type.Object({
   q: Type.Optional(Type.String({ maxLength: 100, description: 'Words from the name or body of water' })),
   latitude: Type.Optional(Type.Number({ minimum: -90, maximum: 90, description: 'With longitude: only sites near here, nearest first' })),
@@ -122,9 +74,19 @@ const AdoptBody = Type.Object({
   version: Type.Integer({ description: 'The version the User saw' }),
 }, { additionalProperties: false });
 
+const SiteRef = Type.Object({ id: Type.String(), name: Type.String({ description: 'The name it had then' }) });
+/** The fields a site's history names with their shapes. */
+const SiteChanges = Changes({
+  position: Change(Nullable(PositionSchema)),
+  mergedSite: Made(SiteRef),
+  mergedInto: Made(SiteRef),
+  adopted: Made(Type.Object({ source: Type.Enum([...IMPORT_SOURCES]), externalId: Type.String() }, { description: 'The Source offer taken up (ADR 0025)' })),
+}, 'Field → { from, to }; a field not named here has a value of any shape');
+type StoredSiteChanges = Static<typeof SiteChanges>;
+
 const SiteRevisionView = Type.Object({
   id: Type.String(),
-  at: Type.String({ format: 'date-time' }),
+  at: DateTime,
   actor: Type.Object({
     type: Type.Enum(['you', 'user', 'site_import', 'import', 'system'], {
       description: 'you: the signed-in User; user: another User, never named (ADR 0020); site_import: named by its Sources',
@@ -132,30 +94,7 @@ const SiteRevisionView = Type.Object({
     name: Nullable(Type.String()),
   }),
   cause: Type.Enum([...REVISION_CAUSES]),
-  changes: Type.Record(Type.String(), Type.Object({ from: Type.Unknown(), to: Type.Unknown() })),
-});
-
-export const externalIdView = (e: ExternalIdRow) => {
-  const info = SOURCE_INFO[e.source];
-  return {
-    source: e.source, name: info.name, externalId: e.externalId, url: info.link?.(e.externalId) ?? null,
-    providesData: e.providesData, attribution: e.providesData ? info.attribution : null,
-    offered: e.offered && {
-      name: e.offered.name ?? null, position: e.offered.position ?? null, country: e.offered.country ?? null,
-      waterBody: e.offered.waterBody ?? null, description: e.offered.description ?? null,
-      maxDepthM: e.offered.maxDepthM ?? null, waterType: e.offered.waterType ?? null,
-    },
-    privateTo: e.privateTo,
-  };
-};
-
-type Row = Awaited<ReturnType<SiteService['get']>> & { distanceM?: number };
-export const toSiteView = ({ site: s, diveCount, inUse, canDelete, externalIds, distanceM }: Row): Static<typeof SiteView> => ({
-  id: s.id, name: s.name,
-  position: s.latitude === null || s.longitude === null ? null : { latitude: s.latitude, longitude: s.longitude },
-  country: s.country, waterBody: s.waterBody, description: s.description, maxDepthM: s.maxDepthM, waterType: s.waterType,
-  externalIds: externalIds.map(externalIdView), version: s.version,
-  diveCount, inUse, canDelete, mergedInto: s.mergedInto, ...(distanceM !== undefined && { distanceM: Math.round(distanceM) }),
+  changes: SiteChanges,
 });
 
 const STATUS: Record<SiteError['code'], number> = {
@@ -164,16 +103,12 @@ const STATUS: Record<SiteError['code'], number> = {
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
 
-const actorOf = (request: FastifyRequest): SiteActor => ({ userId: request.user!.id, isAdmin: request.user!.role === 'admin' });
 /** Blank text is no text. */
 const text = (v: string | null | undefined) => (v === undefined ? undefined : v?.trim() || null);
 
 export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, { auth, sites }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof SiteError) return reply.code(STATUS[error.code]).send(problem(error.code));
-    throw error;
-  });
+  app.setErrorHandler(answerErrors(answers(SiteError, STATUS)));
 
   app.get('/dive-sites', {
     schema: {
@@ -187,24 +122,24 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       return reply.code(400).send(problem('invalid_input', 'latitude and longitude go together'));
     }
     const near = latitude !== undefined && longitude !== undefined ? { position: { latitude, longitude }, withinM: within } : undefined;
-    const page = await sites.list(actorOf(request), { q, near, country, mine, sort, order, limit, offset });
+    const page = await sites.list(callerOf(request), { q, near, country, mine, sort, order, limit, offset });
     return { sites: page.sites.map(toSiteView), total: page.total };
   });
 
   app.get('/dive-sites/:id', {
     schema: { summary: 'One Dive site', params: IdParams, response: { 200: SiteView, 404: Problem } },
-  }, async (request) => toSiteView(await sites.get(actorOf(request), request.params.id)));
+  }, async (request) => toSiteView(await sites.get(callerOf(request), request.params.id)));
 
   app.post('/dive-sites', {
     schema: { summary: 'Create a Dive site; every User of the instance sees it', body: CreateBody, response: { 201: SiteView, ...errors } },
   }, async (request, reply) => {
     const b = request.body;
-    const id = await sites.create(actorOf(request), {
+    const id = await sites.create(callerOf(request), {
       name: b.name.trim(), position: b.position ?? null, country: b.country ?? null,
       waterBody: text(b.waterBody) ?? null, description: text(b.description) ?? null,
       maxDepthM: b.maxDepthM ?? null, waterType: b.waterType ?? null,
     });
-    return reply.code(201).send(toSiteView(await sites.get(actorOf(request), id)));
+    return reply.code(201).send(toSiteView(await sites.get(callerOf(request), id)));
   });
 
   app.patch('/dive-sites/:id', {
@@ -215,7 +150,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
     },
   }, async (request) => {
     const { version, name, position, country, waterBody, description, maxDepthM, waterType } = request.body;
-    await sites.edit(actorOf(request), request.params.id, version, {
+    await sites.edit(callerOf(request), request.params.id, version, {
       ...(name !== undefined && { name: name.trim() }),
       ...(position !== undefined && { position }),
       ...(country !== undefined && { country }),
@@ -224,7 +159,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       ...(maxDepthM !== undefined && { maxDepthM }),
       ...(waterType !== undefined && { waterType }),
     });
-    return toSiteView(await sites.get(actorOf(request), request.params.id));
+    return toSiteView(await sites.get(callerOf(request), request.params.id));
   });
 
   app.put('/dive-sites/:id/external-ids/:source', {
@@ -240,8 +175,8 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       response: { 200: SiteView, ...errors },
     },
   }, async (request) => {
-    await sites.setExternalId(actorOf(request), request.params.id, request.params.source, request.body.externalId);
-    return toSiteView(await sites.get(actorOf(request), request.params.id));
+    await sites.setExternalId(callerOf(request), request.params.id, request.params.source, request.body.externalId);
+    return toSiteView(await sites.get(callerOf(request), request.params.id));
   });
 
   app.post('/dive-sites/:id/merge', {
@@ -252,8 +187,8 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
     },
   }, async (request) => {
     const { intoId, version, intoVersion } = request.body;
-    await sites.merge(actorOf(request), request.params.id, version, intoId, intoVersion);
-    return toSiteView(await sites.get(actorOf(request), intoId));
+    await sites.merge(callerOf(request), request.params.id, version, intoId, intoVersion);
+    return toSiteView(await sites.get(callerOf(request), intoId));
   });
 
   app.post('/dive-sites/:id/adopt', {
@@ -263,18 +198,20 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       params: IdParams, body: AdoptBody, response: { 200: SiteView, ...errors },
     },
   }, async (request) => {
-    await sites.adopt(actorOf(request), request.params.id, request.body.version, request.body.source);
-    return toSiteView(await sites.get(actorOf(request), request.params.id));
+    await sites.adopt(callerOf(request), request.params.id, request.body.version, request.body.source);
+    return toSiteView(await sites.get(callerOf(request), request.params.id));
   });
 
   app.get('/dive-sites/:id/revisions', {
+    ...historyRoute,
     schema: {
       summary: 'The Dive site\'s history, newest first',
       description: 'Every User may read it. Other Users are never named; a Site import is named by its Sources.',
       params: IdParams, response: { 200: Type.Array(SiteRevisionView), 404: Problem },
     },
-  }, async (request) => (await sites.revisions(actorOf(request), request.params.id)).map((r) => ({
-    ...r, cause: r.cause as (typeof REVISION_CAUSES)[number],
+  }, async (request) => (await sites.revisions(callerOf(request), request.params.id)).map((r) => ({
+    // Stored as written: today's shapes for the named fields, older Revisions as they were (see Changes).
+    ...r, cause: r.cause as (typeof REVISION_CAUSES)[number], changes: r.changes as StoredSiteChanges,
   })));
 
   app.delete('/dive-sites/:id', {
@@ -283,7 +220,7 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       params: IdParams, response: { 204: Type.Null(), ...errors },
     },
   }, async (request, reply) => {
-    await sites.remove(actorOf(request), request.params.id);
+    await sites.remove(callerOf(request), request.params.id);
     return reply.code(204).send(null);
   });
 };

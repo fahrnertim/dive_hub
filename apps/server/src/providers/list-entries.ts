@@ -1,21 +1,20 @@
 // Which entry of an account's own list (SSI's buddy list) stands for which Diver (ADR 0057, piece 5). This is the only
 // module that reads and writes `account_list_entry`. Writing it writes no Revision.
 import { and, eq, inArray, isNotNull, ne } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable } from '../db/client.js';
 import { accountListEntry, diver, diverExternalId } from '../db/schema.js';
 import type { DiverSource, ImportContext } from './provider.js';
 
-type Q = Db | Tx;
 
 /** The Diver's account at a source (its `diver_external_id` row id), the list owner. The buddies lock key is `buddies:<this id>`. */
-export async function listAccountOf(q: Q, diverId: string, source: DiverSource): Promise<string | null> {
+export async function listAccountOf(q: Queryable, diverId: string, source: DiverSource): Promise<string | null> {
   const [r] = await q.select({ id: diverExternalId.id }).from(diverExternalId)
     .where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, source)));
   return r?.id ?? null;
 }
 
 /** The context with the entries remembered for the Diver's account at the source (none without an account), for parsing. */
-export async function withRemembered(q: Q, diverId: string, source: DiverSource | undefined, context: ImportContext): Promise<ImportContext> {
+export async function withRemembered(q: Queryable, diverId: string, source: DiverSource | undefined, context: ImportContext): Promise<ImportContext> {
   const accountId = source ? await listAccountOf(q, diverId, source) : null;
   return { ...context, remembered: accountId ? Object.fromEntries(await rememberedEntries(q, accountId)) : {} };
 }
@@ -25,7 +24,7 @@ export async function withRemembered(q: Q, diverId: string, source: DiverSource 
  * `merged_into`, divers/merge.ts keeps its rows) stands for the live Diver at the end of its chain. `own`: the row is
  * the Diver's own, not one it got by a merge.
  */
-async function resolvedRows(q: Q, accountId: string): Promise<{ diverId: string; entryId: string; own: boolean }[]> {
+async function resolvedRows(q: Queryable, accountId: string): Promise<{ diverId: string; entryId: string; own: boolean }[]> {
   const rows = await q.select({ diverId: accountListEntry.diverId, entryId: accountListEntry.entryId }).from(accountListEntry)
     .where(eq(accountListEntry.accountId, accountId));
   const into = new Map<string, string>();
@@ -48,7 +47,7 @@ async function resolvedRows(q: Q, accountId: string): Promise<{ diverId: string;
 }
 
 /** Diver ID to entry ID, for those of `diverIds` the account's list has an entry remembered for (their own before a merged one's). */
-export async function rememberedFor(q: Q, accountId: string, diverIds: string[]): Promise<Map<string, string>> {
+export async function rememberedFor(q: Queryable, accountId: string, diverIds: string[]): Promise<Map<string, string>> {
   if (diverIds.length === 0) return new Map();
   const wanted = new Set(diverIds);
   const result = new Map<string, string>();
@@ -58,12 +57,12 @@ export async function rememberedFor(q: Q, accountId: string, diverIds: string[])
 }
 
 /** Entry ID to Diver ID, every entry remembered for the account's list; a merged-away Diver's entries stand for its survivor. */
-export async function rememberedEntries(q: Q, accountId: string): Promise<Map<string, string>> {
+export async function rememberedEntries(q: Queryable, accountId: string): Promise<Map<string, string>> {
   return new Map((await resolvedRows(q, accountId)).map((r) => [r.entryId, r.diverId]));
 }
 
 /** Sets the Diver's entry. Another Diver's row for that entry goes first, so the last link wins. */
-export async function remember(q: Q, accountId: string, diverId: string, entryId: string): Promise<void> {
+export async function remember(q: Queryable, accountId: string, diverId: string, entryId: string): Promise<void> {
   await q.transaction(async (tx) => {
     await tx.delete(accountListEntry).where(and(
       eq(accountListEntry.accountId, accountId), eq(accountListEntry.entryId, entryId), ne(accountListEntry.diverId, diverId),
@@ -73,11 +72,11 @@ export async function remember(q: Q, accountId: string, diverId: string, entryId
   });
 }
 
-export async function forget(q: Q, accountId: string, diverId: string): Promise<void> {
+export async function forget(q: Queryable, accountId: string, diverId: string): Promise<void> {
   await q.delete(accountListEntry).where(and(eq(accountListEntry.accountId, accountId), eq(accountListEntry.diverId, diverId)));
 }
 
 /** Forgets the entry, whichever Diver's row holds it (it may be a merged-away Diver's). */
-export async function forgetEntry(q: Q, accountId: string, entryId: string): Promise<void> {
+export async function forgetEntry(q: Queryable, accountId: string, entryId: string): Promise<void> {
   await q.delete(accountListEntry).where(and(eq(accountListEntry.accountId, accountId), eq(accountListEntry.entryId, entryId)));
 }

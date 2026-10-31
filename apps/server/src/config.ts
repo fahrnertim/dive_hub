@@ -31,34 +31,41 @@ export interface Config {
   ssiUrl: string | undefined;
 }
 
-function required(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable ${name}`);
-  return value;
-}
-
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
+  // An empty variable counts as unset (Compose's `VAR=` gives one).
+  const get = (name: string): string | undefined => env[name]?.trim() || undefined;
+  const required = (name: string): string => {
+    const value = get(name);
+    if (!value) throw new Error(`Missing required environment variable ${name}`);
+    return value;
+  };
+  const count = (name: string, fallback: number): number => {
+    const value = Number(get(name) ?? fallback);
+    if (!Number.isInteger(value) || value < 0) throw new Error(`${name} must be a whole number, not ${env[name]}`);
+    return value;
+  };
   const production = env.NODE_ENV === 'production';
-  const port = Number(env.DIVEHUB_PORT ?? 3000);
-  const baseUrl = env.DIVEHUB_BASE_URL ?? (production ? required('DIVEHUB_BASE_URL') : `http://localhost:${port}`);
+  const port = count('DIVEHUB_PORT', 3000);
+  const baseUrl = get('DIVEHUB_BASE_URL') ?? (production ? required('DIVEHUB_BASE_URL') : `http://localhost:${port}`);
+  const webDir = get('DIVEHUB_WEB_DIR');
   return {
-    databaseUrl: env.DATABASE_URL ?? required('DATABASE_URL'),
-    dataDir: resolve(env.DIVEHUB_DATA_DIR ?? './data'),
-    host: env.DIVEHUB_HOST ?? '127.0.0.1',
+    databaseUrl: required('DATABASE_URL'),
+    dataDir: resolve(get('DIVEHUB_DATA_DIR') ?? './data'),
+    host: get('DIVEHUB_HOST') ?? '127.0.0.1',
     port,
-    inProcessWorker: (env.DIVEHUB_WORKER ?? 'in-process') === 'in-process',
-    webDir: env.DIVEHUB_WEB_DIR ? resolve(env.DIVEHUB_WEB_DIR) : undefined,
-    maxUploadBytes: Number(env.DIVEHUB_MAX_UPLOAD_MB ?? 512) * 1024 * 1024,
-    logLevel: env.DIVEHUB_LOG_LEVEL ?? 'info',
+    inProcessWorker: (get('DIVEHUB_WORKER') ?? 'in-process') === 'in-process',
+    webDir: webDir ? resolve(webDir) : undefined,
+    maxUploadBytes: count('DIVEHUB_MAX_UPLOAD_MB', 512) * 1024 * 1024,
+    logLevel: get('DIVEHUB_LOG_LEVEL') ?? 'info',
     production,
     baseUrl: new URL(baseUrl).origin,
-    authSecret: env.DIVEHUB_AUTH_SECRET || undefined,
-    trustedProxies: (env.DIVEHUB_TRUSTED_PROXIES ?? '').split(',').map((s) => s.trim()).filter(Boolean),
-    contact: env.DIVEHUB_CONTACT?.trim() || undefined,
-    overpassUrl: env.DIVEHUB_OVERPASS_URL || undefined,
-    wikidataSparqlUrl: env.DIVEHUB_WIKIDATA_SPARQL_URL || undefined,
-    ssiSitesUrl: env.DIVEHUB_SSI_SITES_URL || undefined,
+    authSecret: get('DIVEHUB_AUTH_SECRET'),
+    trustedProxies: (get('DIVEHUB_TRUSTED_PROXIES') ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    contact: get('DIVEHUB_CONTACT'),
+    overpassUrl: get('DIVEHUB_OVERPASS_URL'),
+    wikidataSparqlUrl: get('DIVEHUB_WIKIDATA_SPARQL_URL'),
+    ssiSitesUrl: get('DIVEHUB_SSI_SITES_URL'),
     encryptionKey: parseEncryptionKey(env.DIVEHUB_ENCRYPTION_KEY),
-    ssiUrl: env.DIVEHUB_SSI_URL || undefined,
+    ssiUrl: get('DIVEHUB_SSI_URL'),
   };
 }

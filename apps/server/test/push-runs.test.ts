@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { diveLease, push, pushRun, pushRunItem } from '../src/db/schema.js';
 import { referenceOf } from '../src/providers/provider.js';
+import { createPushRunService } from '../src/providers/push/push-run-service.js';
 import { createFakeHandover } from './fake-handover-provider.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { createFakeSsi, handTypedDive } from './fake-ssi.js';
@@ -26,7 +27,7 @@ type Preview = {
   inScope: number;
   dives: { diveId: string; number: number | null; startsAt: string; siteId: string | null; siteName: string | null; action: string }[];
 };
-type Status = { provider: string; current: { remoteId: string; remoteNumber: number | null; upToDate: boolean } | null };
+type Status = { provider: string; unmet: unknown[]; current: { remoteId: string; remoteNumber: number | null; upToDate: boolean } | null };
 
 // A year per test: a Dive deleted earlier is not imported again.
 let year = 2000;
@@ -220,6 +221,8 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect(view.counts).toMatchObject({ create: 1, requirementsUnmet: 1 });
     expect(view.blocked.total).toBe(1);
     expect(view.blocked.dives[0]).toMatchObject({ diveId: blocked, unmet: [{ type: 'site_external_id' }] });
+    // The same items, in the same shape, as the Dive's own status at the Provider.
+    expect(view.blocked.dives[0]!.unmet).toEqual((await statusOf(blocked, 'ssi')).unmet);
     const created = (await start({ dives: all }, ssiConnectionId).then((r) => r.json())) as Run;
     await runToEnd(created.id);
     const done = await run(created.id);
@@ -251,8 +254,8 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect(done).toMatchObject({ status: 'done', conflicts: 1, counts: { sent: 1 } });
     expect(done.items[0]).toMatchObject({ state: 'sent', outcome: 'updated' });
     expect(remote.odin_user_log_comment).toBe('Reef in SSI');
-    const waiting = await json<{ connections: { connectionId: string; entries: { diveId: string; fields: object[] }[] }[] }>('GET', '/api/provider-conflicts');
-    expect(waiting.connections.find((c) => c.connectionId === ssiConnectionId)!.entries).toMatchObject([
+    const waiting = await json<{ connectionId: string; entries: { diveId: string; fields: object[] }[] }[]>('GET', '/api/provider-conflicts');
+    expect(waiting.find((c) => c.connectionId === ssiConnectionId)!.entries).toMatchObject([
       { diveId: id, fields: [{ field: 'notes', hub: 'Reef here', provider: 'Reef in SSI' }] },
     ]);
     expect((await json<Run[]>('GET', '/api/push-runs')).find((r) => r.id === second.id)!.conflicts).toBe(1);
@@ -269,8 +272,8 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     await edit(id, 'Reef in SSI');
     expect((await run(second.id)).conflicts).toBe(0);
     expect((await json<Run[]>('GET', '/api/push-runs')).find((r) => r.id === second.id)!.conflicts).toBe(0);
-    const waiting = await json<{ connections: { entries: { diveId: string }[] }[] }>('GET', '/api/provider-conflicts');
-    expect(waiting.connections.flatMap((c) => c.entries).filter((e) => e.diveId === id)).toEqual([]);
+    const waiting = await json<{ entries: { diveId: string }[] }[]>('GET', '/api/provider-conflicts');
+    expect(waiting.flatMap((c) => c.entries).filter((e) => e.diveId === id)).toEqual([]);
   });
 
   it('an entry a later send closed counts 0 in its run', async () => {
@@ -414,6 +417,26 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect(done).toMatchObject({ status: 'done', counts: { sent: 3, failed: 0 } });
     expect(ledger.dives.size).toBe(3);
     expect((await call('POST', `/api/push-runs/${created.id}/continue`)).json()).toMatchObject({ code: 'push_run_not_stopped' });
+  });
+
+  it('logs a fault of its own for the operator; the run shows only internal_error', async () => {
+    const id = await upload(day(1));
+    const created = await started();
+    const bug = new Error('a bug in Dive Hub');
+    ledger.beforeSave = async () => { throw bug; };
+    // The worker as main.ts builds it, with a logger.
+    const logged: { detail: object; message: string }[] = [];
+    const logging = createPushRunService({
+      db: t.db, registry: ctx.providers.providers, pushes: ctx.providers.pushes, conflicts: ctx.providers.conflicts,
+      log: { error: (detail, message) => logged.push({ detail, message }), warn: () => {} },
+    });
+    try {
+      await logging.step(created.id);
+    } finally {
+      ledger.beforeSave = null;
+    }
+    expect((await run(created.id)).items).toMatchObject([{ diveId: id, state: 'failed', reason: 'internal_error' }]);
+    expect(logged).toEqual([{ detail: { err: bug, runId: created.id, diveId: id, provider: 'ledger' }, message: 'a Push run step failed with an internal error' }]);
   });
 
   it('stops at once when the Provider wants a sign-in, keeps the Dive waiting, and continues after signing in', async () => {

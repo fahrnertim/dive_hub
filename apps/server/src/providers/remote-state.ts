@@ -1,6 +1,6 @@
 // The remote dive a Dive has at a Provider now, and the fingerprint it would get (ADR 0024, 0030). Apart from the push
 // service so that the import, the send and the gone-dive check can all use it without importing one another (ADR 0053).
-import type { loadOutgoingDive } from './outgoing-dive.js';
+import type { loadOutgoingDive } from './push/outgoing-dive.js';
 import type { ProviderAdapter } from './provider.js';
 import { forProvider, offersListEntries, unmetRequirements } from './requirements.js';
 

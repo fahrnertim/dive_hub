@@ -4,8 +4,6 @@
 import { request as playwrightRequest, expect, test } from '@playwright/test';
 import { E2E_BASE_URL, connectSsi, disconnectSsi, leaveSsi, openLine, readyForSsi, resetDive } from './support.ts';
 
-test.describe.configure({ mode: 'serial' });
-
 const headers = { origin: E2E_BASE_URL };
 type Site = { id: string; externalIds: { source: string; externalId: string; privateTo: { diverId: string } | null }[] };
 const siteOf = async (api: import('@playwright/test').APIRequestContext, diveId: string) => {

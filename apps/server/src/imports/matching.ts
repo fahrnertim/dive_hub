@@ -73,9 +73,16 @@ export function decideMatch(
   return { kind: 'attach', diveId: dive.id };
 }
 
+export const DAY_MS = 24 * 3600_000;
+/** The widest offsets there are: a wall-clock time is at most this far from its instant. */
+export const MAX_OFFSET_MS = 14 * 3600_000;
+
 /** A Dive's start as its local wall-clock time, in ms as if UTC (ADR 0030). Without an offset, its stored time. */
 export const localStartMs = (d: { startsAt: Date; utcOffsetSeconds: number | null }) =>
   d.startsAt.getTime() + (d.utcOffsetSeconds ?? 0) * 1000;
+
+/** The local day a Dive starts on, as a day number (days since 1970-01-01 on its wall clock). */
+export const localDay = (d: { startsAt: Date; utcOffsetSeconds: number | null }) => Math.floor(localStartMs(d) / DAY_MS);
 
 /**
  * The Dives a Provider's logbook entry may be (ADR 0030): on the same local day, starting within the window, compared in
@@ -84,10 +91,10 @@ export const localStartMs = (d: { startsAt: Date; utcOffsetSeconds: number | nul
 export function entryMatches<D extends { id: string; startsAt: Date; utcOffsetSeconds: number | null }>(
   entryLocalMs: number, dives: D[], windowMinutes: number,
 ): D[] {
-  const day = (ms: number) => Math.floor(ms / 86_400_000);
+  const entryDay = Math.floor(entryLocalMs / DAY_MS);
   return dives
     .map((d) => ({ d, apart: Math.abs(localStartMs(d) - entryLocalMs) }))
-    .filter(({ d, apart }) => day(localStartMs(d)) === day(entryLocalMs) && apart <= windowMinutes * 60_000)
+    .filter(({ d, apart }) => localDay(d) === entryDay && apart <= windowMinutes * 60_000)
     .sort((a, b) => a.apart - b.apart)
     .map(({ d }) => d);
 }

@@ -7,7 +7,7 @@
 // What the app sends (5.0.43 [R]): `save_buddy` with its whole buddy row as `json_data` (keys of `Buddy.toJson`), and it
 // reads the saved entry back from `result.buddy`. The account of the buddy is `master_id` in that row.
 import type { SsiClient } from '../../../src/providers/ssi/ssi-client.js';
-import { createRecord, deleteRecord, withBuddies, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
+import { buildCreateRecord, buildDeleteRecord, withBuddies, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
 import { findDive, makeAsk, outcome, VISIBLE_SITE_ID, type Ask, type Raw } from './site-checks.js';
 
 type Row = Record<string, unknown>;
@@ -192,7 +192,7 @@ export async function runBuddyDive(o: { client: SsiClient; access: string; accou
   if (ids.length === 0) throw new Error('No test entries: run `buddy add` first.');
   const before = await o.client.logbook(o.access);
   const number = Math.max(0, ...before.dives.map((d) => Number(d.odin_user_log_nr) || 0)) + 1;
-  const record = withBuddies(createRecord(testDive(), { number, accountId: o.accountId, reference: 'divehub-buddy-test' }), ids);
+  const record = withBuddies(buildCreateRecord(testDive(), { number, accountId: o.accountId, reference: 'divehub-buddy-test' }), ids);
   const { id } = await o.client.save(o.access, record);
   const stored = await findDive(o.client, o.access, id);
   o.log(`created SSI dive ${id} as number ${number}; sent buddy IDs ${JSON.stringify(ids)}; stored ${stored ? JSON.stringify(stored.odin_user_log_buddy_ids) : '(dive NOT in the logbook)'}`);
@@ -275,7 +275,7 @@ async function deleteTestDive(client: SsiClient, access: string, id: string, log
   }
   const dated = String(stored.odin_user_log_date ?? stored.odin_user_log_datetime ?? '').startsWith(TEST_DATE);
   if (String(stored.odin_user_log_comment ?? '') !== NOTES || !dated) throw new Error(`Refused: dive ${id} is not a test dive.`);
-  await client.save(access, deleteRecord(stored));
+  await client.save(access, buildDeleteRecord(stored));
   log(await findDive(client, access, id) ? `dive ${id} is STILL there` : `dive ${id} is gone`);
 }
 

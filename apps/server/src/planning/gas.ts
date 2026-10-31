@@ -9,7 +9,8 @@ export interface GasMix {
   he: number;
 }
 
-export type PlanningWater = 'fresh' | 'salt' | 'en13319';
+export const PLANNING_WATERS = ['fresh', 'salt', 'en13319'] as const;
+export type PlanningWater = (typeof PLANNING_WATERS)[number];
 
 export interface Conditions {
   water: PlanningWater;

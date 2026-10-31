@@ -4,9 +4,9 @@
 // transaction is held open while a Provider is called.
 import { randomUUID } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { connection, diveLease } from '../src/db/schema.js';
-import { LEASE_MS, MAX_WAIT_MS, POLL_MS } from '../src/providers/leases.js';
+import { LEASE_MS, MAX_WAIT_MS, POLL_MS, createLeaseService } from '../src/providers/lease-service.js';
 import { createFakeHandover, type FakeHandover } from './fake-handover-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -18,7 +18,8 @@ describe.skipIf(!(await databaseReachable()))('leases across app instances', () 
   /** Two app instances on one database, sharing a clock and the outside service, as two processes would. */
   let one: Awaited<ReturnType<typeof createTestApp>>;
   let two: Awaited<ReturnType<typeof createTestApp>>;
-  const clock = resettableClock();
+  // Stopped: time moves only by the leases' sleeps and the test's skips, so the waits are checked exactly.
+  const clock = resettableClock({ stopped: true });
   let fake: FakeHandover;
   let tim: string;
   let dives: string[];
@@ -91,11 +92,11 @@ describe.skipIf(!(await databaseReachable()))('leases across app instances', () 
     // Waiting while the first runs (looking again every so often), then its pause, then it runs.
     const slept = clock.slept.length;
     const waiting = send(two, dives[1]!);
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // Released once the second is seen waiting: it sleeps between its looks.
+    await vi.waitFor(() => expect(clock.slept.length).toBeGreaterThan(slept), { interval: 5 });
     release();
     expect((await first).json()).toMatchObject({ outcome: 'created' });
     expect((await waiting).json()).toMatchObject({ outcome: 'created' });
-    expect(clock.slept.length).toBeGreaterThan(slept);
 
     // A crashed action still holds the turn: the request waits no longer than MAX_WAIT_MS, then is refused.
     const [conn] = await t.db.select().from(connection);
@@ -106,11 +107,10 @@ describe.skipIf(!(await databaseReachable()))('leases across app instances', () 
     const elapsed = clock.now() - startedAt;
     expect(refused.statusCode).toBe(409);
     expect(refused.json()).toMatchObject({ code: 'provider_busy', provider: 'handover' });
-    const waited = clock.slept.slice(from).reduce((sum, ms) => sum + ms, 0);
-    // The clock moves with real time as well as with each sleep: under load each poll's query takes longer and fewer
-    // sleeps fit, so the bound is checked on the time that passed, not on the sum of the sleeps.
+    // All the time that passed was spent sleeping between looks, and it stopped short of MAX_WAIT_MS by less than one.
+    expect(clock.slept.slice(from).reduce((sum, ms) => sum + ms, 0)).toBe(elapsed);
     expect(elapsed).toBeGreaterThan(MAX_WAIT_MS - POLL_MS);
-    expect(waited).toBeLessThanOrEqual(MAX_WAIT_MS);
+    expect(elapsed).toBeLessThanOrEqual(MAX_WAIT_MS);
     // Its turn runs out by itself.
     clock.skip(LEASE_MS);
     expect((await send(two, dives[2]!)).json()).toMatchObject({ outcome: 'created' });
@@ -134,5 +134,15 @@ describe.skipIf(!(await databaseReachable()))('leases across app instances', () 
     expect((await send(one, dives[2]!)).json()).toMatchObject({ outcome: 'created' });
     fake.during = null;
     expect(open).toBe(0);
+  });
+
+  it("keeps the action's answer when giving a lease back fails: the lease runs out by itself", async () => {
+    const lost = new Error('connection lost');
+    const failing = new Proxy(t.db, { get: (target, key, receiver) => (key === 'delete' ? () => { throw lost; } : Reflect.get(target, key, receiver)) });
+    const logged: object[] = [];
+    const leases = createLeaseService({ db: failing, clock, log: { error: (detail) => logged.push(detail), warn: () => {} } });
+    expect(await leases.dive(dives[1]!, ['handover'], async () => 'sent')).toBe('sent');
+    expect(logged).toEqual([{ err: lost, diveId: dives[1], provider: 'handover' }]);
+    await t.db.delete(diveLease);
   });
 });

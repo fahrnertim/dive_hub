@@ -79,7 +79,7 @@ import { finishValuesChecks, startValuesChecks } from './values-checks.js';
 import { runAnswerChecks } from './answer-checks.js';
 import { userAgent } from '../../../src/sites/import/polite-http.js';
 import { createSsiClient, SsiError, type SsiRecord } from '../../../src/providers/ssi/ssi-client.js';
-import { compareReadBack, createRecord, deleteRecord, updateRecord, writableRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
+import { compareReadBack, buildCreateRecord, buildDeleteRecord, buildUpdateRecord, writableRecord, type DiveForSsi } from '../../../src/providers/ssi/ssi-record.js';
 
 const out = fileURLToPath(new URL('../../../../../samples/private/ssi/', import.meta.url));
 const tokenFile = `${out}token.json`;
@@ -171,7 +171,7 @@ if (mode === 'read') {
   if (!dive.siteSsiId) throw new Error('Set SSI_SITE_ID to a site ID from your SSI logbook (see logbook.json after "read")');
   const before = await client.logbook(account.token);
   const number = Math.max(0, ...before.dives.map((d) => Number(d.odin_user_log_nr) || 0)) + 1;
-  const sent = createRecord(dive, { number, accountId: account.accountId, reference: 'divehub-round-trip-test' });
+  const sent = buildCreateRecord(dive, { number, accountId: account.accountId, reference: 'divehub-round-trip-test' });
   const { id } = await client.save(account.token, sent);
   console.log(`created SSI dive ${id} as number ${number}`);
   const find = async () => (await client.logbook(account.token)).dives.find((d) => String(d.odin_user_log_id) === id);
@@ -179,11 +179,11 @@ if (mode === 'read') {
   await save('created', stored ?? null);
   console.log(stored ? `read back: ${JSON.stringify(compareReadBack(sent, stored))}` : 'read back: not found');
   await wait('Look at the dive in the MySSI app (pull to refresh): listed as unconfirmed? Does it open, with the chart? Does the list stay?');
-  const updated = updateRecord(stored as SsiRecord, { ...dive, notes: 'Dive Hub test – updated, delete me' });
+  const updated = buildUpdateRecord(stored as SsiRecord, { ...dive, notes: 'Dive Hub test – updated, delete me' });
   await client.save(account.token, updated);
   await save('updated', (await find()) ?? null);
   await wait('Check the notes changed in the app.');
-  await client.save(account.token, deleteRecord((await find()) as SsiRecord));
+  await client.save(account.token, buildDeleteRecord((await find()) as SsiRecord));
   console.log((await find()) ? 'still there after deleting!' : 'deleted');
   await wait('Check the dive is gone from the app.');
 } else if (mode === 'number') {
@@ -202,7 +202,7 @@ if (mode === 'read') {
   if (!dive.siteSsiId) throw new Error('Set SSI_SITE_ID to a site ID from your SSI logbook (see logbook.json after "read")');
   const before = await client.logbook(account.token);
   const number = Math.max(0, ...before.dives.map((d) => Number(d.odin_user_log_nr) || 0)) + 1;
-  const { id } = await client.save(account.token, createRecord(dive, { number, accountId: account.accountId, reference: 'divehub-omitted-test' }));
+  const { id } = await client.save(account.token, buildCreateRecord(dive, { number, accountId: account.accountId, reference: 'divehub-omitted-test' }));
   await save('omitted', { id });
   console.log(`created SSI dive ${id} as number ${number}`);
   console.log(`Add a gear note to dive ${id} in the MySSI app, then run \`omitted finish\`.`);
@@ -218,11 +218,11 @@ if (mode === 'read') {
   if (!stored) throw new Error(`dive ${id} is not in the logbook`);
   await save('omitted-before', stored);
   console.log(`gear note set before the update: ${gearSet(stored) ? 'yes' : 'no'}`);
-  await client.save(account.token, updateRecord(stored, { ...testDive('Dive Hub test – updated'), notes: 'Dive Hub test – updated' }));
+  await client.save(account.token, buildUpdateRecord(stored, { ...testDive('Dive Hub test – updated'), notes: 'Dive Hub test – updated' }));
   const after = await find();
   await save('omitted-after', after ?? null);
   console.log(`gear note set after the update: ${gearSet(after) ? 'yes' : 'no'}`);
-  await client.save(account.token, deleteRecord((after ?? stored) as SsiRecord));
+  await client.save(account.token, buildDeleteRecord((after ?? stored) as SsiRecord));
   console.log((await find()) ? 'still there' : 'deleted');
 } else if (mode === 'values' && process.argv[3] === 'start') {
   const account = await access();

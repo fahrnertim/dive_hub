@@ -110,7 +110,7 @@ describe.skipIf(!(await databaseReachable()))('the provider layer', () => {
   it('deletes a Dive here without asking a Provider that has no copy it could delete', async () => {
     const { version } = (await call('GET', `/api/dives/${diveId}`)).json();
     expect((await call('DELETE', `/api/dives/${diveId}`, { version, alsoAt: ['handover'] })).json()).toEqual({ providers: [] });
-    expect((await call('GET', '/api/dives/deleted')).json().dives[0]).toMatchObject({ id: diveId, stillAt: [] });
+    expect((await call('GET', '/api/dives/deleted')).json()[0]).toMatchObject({ id: diveId, stillAt: [] });
   });
 
   it('never answers with a token', () => {

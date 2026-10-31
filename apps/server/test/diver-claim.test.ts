@@ -72,8 +72,8 @@ describe.skipIf(!(await databaseReachable()))('claiming an external Diver', () =
     expect(others.divers.map((d) => d.id)).not.toContain(samuelExternal);
     // Tim's buddy list now finds Samuel's own Diver by the account.
     const [connection] = (await as('tim')('GET', '/api/connections')).json() as { id: string }[];
-    const buddies = (await as('tim')('GET', `/api/connections/${connection!.id}/buddies`)).json() as { buddies: { diver: { id: string } | null }[] };
-    expect(buddies.buddies[0]!.diver?.id).toBe(samuel);
+    const buddies = (await as('tim')('GET', `/api/connections/${connection!.id}/buddies`)).json() as { diver: { id: string } | null }[];
+    expect(buddies[0]!.diver?.id).toBe(samuel);
   });
 
   it('never takes a Diver another User keeps', async () => {
@@ -91,8 +91,12 @@ describe.skipIf(!(await databaseReachable()))('claiming an external Diver', () =
     const samuel = await ownDiver('samuel');
     expect((await as('tim')('POST', `/api/admin/divers/${ulla}/merge`, { into: samuel })).statusCode).toBe(403);
     expect((await as('admin')('POST', `/api/admin/divers/${samuel}/merge`, { into: ulla })).json()).toMatchObject({ code: 'diver_not_external' });
+    // Ulla is on the dive Samuel is already on: the merge brings him no dive.
+    const version = ((await as('tim')('GET', `/api/dives/${diveId}`)).json() as { version: number }).version;
+    await as('tim')('PUT', `/api/dives/${diveId}/participants`, { version, participants: [{ diverId: samuel, role: 'buddy' }, { diverId: ulla, role: 'buddy' }] });
     expect((await as('admin')('POST', `/api/admin/divers/${ulla}/merge`, { into: samuel })).json()).toEqual({ dives: 0 });
-    const found = (await as('tim')('GET', '/api/divers/search?q=Ulla')).json() as { divers: unknown[] };
-    expect(found.divers).toEqual([]);
+    expect(((await as('tim')('GET', `/api/dives/${diveId}`)).json() as { participants: { diverId: string }[] }).participants.map((p) => p.diverId)).toEqual([samuel]);
+    const found = (await as('tim')('GET', '/api/divers/search?q=Ulla')).json() as unknown[];
+    expect(found).toEqual([]);
   });
 });

@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { user } from '../src/db/schema.js';
 import { createPlanningService } from '../src/planning/planning-service.js';
+import { PlanningError } from '../src/planning/planning-error.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';
 
 describe.skipIf(!(await databaseReachable()))('planning service', () => {
@@ -35,16 +36,16 @@ describe.skipIf(!(await databaseReachable()))('planning service', () => {
 
   it('plans a bottom time for a Diver the User manages and says diver_not_found for anyone else', async () => {
     const own = await planning.bottomTime(annId, { depth: 20, o2: 32, diverId: annDiver });
-    expect(own).toMatchObject({ ok: true });
-    expect(await planning.bottomTime(otherId, { depth: 20, o2: 32, diverId: annDiver })).toEqual({ ok: false, code: 'diver_not_found' });
+    expect(own).toMatchObject({ status: 'ok' });
+    await expect(planning.bottomTime(otherId, { depth: 20, o2: 32, diverId: annDiver })).rejects.toThrow(new PlanningError('diver_not_found'));
   });
 
   it('plans a gas plan, reading a Diver only where the User manages them', async () => {
     const divers = [{ name: 'Ann', diverId: annDiver, volume: 12, pressure: 200 }];
     const own = await planning.gasPlan(annId, { o2: 32, levels, divers });
     const other = await planning.gasPlan(otherId, { o2: 32, levels, divers });
-    expect(own).toMatchObject({ ok: true });
-    expect(other).toMatchObject({ ok: true });
+    expect(own).toMatchObject({ status: 'ok' });
+    expect(other).toMatchObject({ status: 'ok' });
     expect(JSON.stringify(other)).not.toBe(JSON.stringify(own));
   });
 });

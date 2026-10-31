@@ -1,17 +1,17 @@
 // Reading a QR code from a picture (ADR 0043, the scanner). The pictures are drawn here with the library the client
 // draws codes with; the centre is made up.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { encode } from 'uqr';
+import encodeQR from 'qr';
 import { readQr, type Picture } from '../src/lib/qr-reader.ts';
 
 /** A text as the client draws it (error correction M, quiet zone 4), `scale` pixels per module. */
 function drawn(text: string, scale = 4): Picture {
-  const code = encode(text, { ecc: 'M', border: 4 });
-  const side = code.size * scale;
+  const rows = encodeQR(text, 'raw', { ecc: 'medium', border: 4 });
+  const side = rows.length * scale;
   const data = new Uint8ClampedArray(side * side * 4);
   for (let y = 0; y < side; y++) {
     for (let x = 0; x < side; x++) {
-      const value = code.data[Math.floor(y / scale)]![Math.floor(x / scale)] ? 0 : 255;
+      const value = rows[Math.floor(y / scale)]![Math.floor(x / scale)] ? 0 : 255;
       data.set([value, value, value, 255], (y * side + x) * 4);
     }
   }

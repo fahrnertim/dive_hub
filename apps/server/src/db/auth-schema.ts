@@ -104,7 +104,7 @@ export const verification = pgTable(
 
 /**
  * An AI access (ADR 0035): the api-key plugin's table. `reference_id` is the User's id as text (the plugin can also
- * reference organizations), so there is no foreign key: deleting a User deletes their keys in src/users/user-admin.ts.
+ * reference organizations), so there is no foreign key: deleting a User deletes their keys in src/users/user-admin-service.ts.
  * `key` is the SHA-256 of the key; `permissions` is JSON (`{"logbook":["read","positions"]}`).
  */
 export const apikey = pgTable(

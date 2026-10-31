@@ -1,0 +1,111 @@
+// Duplicate candidates: what waits for the User's decision, and the decisions (ADR 0016).
+import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+import { Type } from 'typebox';
+import type { AssessmentService } from '../../assessment/assessment-service.js';
+import { refreshAssessmentsAfterChange } from '../assessment-refresh.js';
+import type { Auth } from '../../auth/auth.js';
+import { requireUser, userOf } from '../../auth/fastify.js';
+import { UTC_OFFSET_SOURCES } from '../../db/schema.js';
+import { answerErrors, answers, Problem } from '../../http/problems.js';
+import type { DuplicateReason } from '../../imports/matching.js';
+import { CandidateError, type CandidateService } from './candidate-service.js';
+import { DateTime, IdParams, Nullable } from '../../http/schemas.js';
+
+export interface CandidateRouteDeps {
+  auth: Auth;
+  candidates: CandidateService;
+  assessments: AssessmentService;
+}
+
+
+
+/** unknown: a local time logged without a time zone, kept as if UTC; shown as logged (ADR 0030). */
+const OffsetSource = Type.Enum([...UTC_OFFSET_SOURCES]);
+
+const DiveBrief = Type.Object({
+  id: Type.String(),
+  number: Nullable(Type.Integer()),
+  startsAt: DateTime,
+  utcOffsetSeconds: Nullable(Type.Integer()),
+  utcOffsetSource: OffsetSource,
+  durationSeconds: Type.Number(),
+  maxDepthM: Nullable(Type.Number()),
+});
+
+const CandidateView = Type.Object({
+  id: Type.String(),
+  reason: Type.Enum(['overlaps_several_dives', 'max_depth_differs', 'probably_no_dive']),
+  status: Type.Enum(['open', 'discarded']),
+  createdAt: DateTime,
+  recording: Type.Object({
+    id: Type.String(),
+    startsAt: DateTime,
+    utcOffsetSeconds: Nullable(Type.Integer()),
+    utcOffsetSource: OffsetSource,
+    durationSeconds: Type.Number(),
+    maxDepthM: Nullable(Type.Number()),
+    device: Nullable(Type.Object({ manufacturer: Type.String(), product: Nullable(Type.String()), serialNumber: Type.String() })),
+  }),
+  dives: Type.Array(DiveBrief, { description: 'The Dives it might belong to (only those the User may see)' }),
+});
+
+const Decided = Type.Object({ diveId: Nullable(Type.String({ description: 'The Dive the Recording now belongs to' })) });
+
+const STATUS: Record<CandidateError['code'], number> = {
+  candidate_not_found: 404, candidate_resolved: 409, not_a_candidate: 400, dive_not_found: 404,
+};
+
+export const candidateRoutes: FastifyPluginAsyncTypebox<CandidateRouteDeps> = async (app, { auth, candidates, assessments }) => {
+  app.addHook('onRequest', requireUser(auth));
+  refreshAssessmentsAfterChange(app, assessments);
+  app.setErrorHandler(answerErrors(answers(CandidateError, STATUS)));
+
+  app.get('/duplicate-candidates', {
+    schema: {
+      summary: 'Recordings from the User\'s Imports that wait for a decision (or were discarded)',
+      querystring: Type.Object({ status: Type.Optional(Type.Enum(['open', 'discarded'], { default: 'open' })) }),
+      response: { 200: Type.Array(CandidateView) },
+    },
+  }, async (request) => {
+    const status = request.query.status ?? 'open';
+    return (await candidates.list(userOf(request).id, status)).map(({ candidate: c, recording: r, device: d, dives }) => ({
+      id: c.id,
+      reason: c.reason as DuplicateReason,
+      status,
+      createdAt: c.createdAt.toISOString(),
+      recording: {
+        id: r.id, startsAt: r.startsAt.toISOString(), utcOffsetSeconds: r.utcOffsetSeconds, utcOffsetSource: r.utcOffsetSource,
+        durationSeconds: r.durationSeconds, maxDepthM: r.maxDepthM,
+        device: d ? { manufacturer: d.manufacturer, product: d.product, serialNumber: d.serialNumber } : null,
+      },
+      dives: dives.map((v) => ({
+        id: v.id, number: v.number, startsAt: v.startsAt.toISOString(), utcOffsetSeconds: v.utcOffsetSeconds, utcOffsetSource: v.utcOffsetSource,
+        durationSeconds: v.durationSeconds, maxDepthM: v.maxDepthM,
+      })),
+    }));
+  });
+
+  const decision = { params: IdParams, response: { 200: Decided, 400: Problem, 404: Problem, 409: Problem } };
+
+  app.post('/duplicate-candidates/:id/attach', {
+    schema: { summary: 'Add the Recording to one of the candidate Dives', ...decision, body: Type.Object({ diveId: Type.String({ format: 'uuid' }) }) },
+  }, async (request) => ({ diveId: await candidates.attach(userOf(request).id, request.params.id, request.body.diveId) }));
+
+  app.post('/duplicate-candidates/:id/new-dive', {
+    schema: { summary: 'Make the Recording a Dive of its own', ...decision },
+  }, async (request) => ({ diveId: await candidates.newDive(userOf(request).id, request.params.id) }));
+
+  app.post('/duplicate-candidates/:id/discard', {
+    schema: { summary: 'Put the Recording aside; it stays, detached, and can be reopened', ...decision },
+  }, async (request) => {
+    await candidates.discard(userOf(request).id, request.params.id);
+    return { diveId: null };
+  });
+
+  app.post('/duplicate-candidates/:id/reopen', {
+    schema: { summary: 'Decide about a discarded Recording again', ...decision },
+  }, async (request) => {
+    await candidates.reopen(userOf(request).id, request.params.id);
+    return { diveId: null };
+  });
+};

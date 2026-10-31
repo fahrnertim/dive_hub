@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, diveProvidersQuery, keys, unwrap, type DiveView, type ProviderView } from './api.ts';
+import { allButDive, api, ApiError, diveProvidersQuery, keys, unwrap, type DiveView } from './api.ts';
 import { deleteChoice, updateDeletion, type CopyAt } from './lib/deletion.ts';
 import { useErrorText } from './lib/display.ts';
-import { useNames, useProviders, useProviderText } from './lib/providers.ts';
+import { useJoinNames, useProviderOf, useProviderText, type ProviderRef } from './lib/providers.ts';
 import { Button, Dialog, Muted, Notice } from './ui/index.ts';
 
 /** What the dialog says about one copy: delete it there too, or it stays there (in the Provider's words where it has them). */
-function CopySentence({ provider: p, copy, how }: { provider: ProviderView; copy: CopyAt; how: 'ask' | 'cannot' | 'itself' }) {
+function CopySentence({ provider: p, copy, how }: { provider: ProviderRef; copy: CopyAt; how: 'ask' | 'cannot' | 'itself' }) {
   const pt = useProviderText(p);
   const key = { ask: 'deleteAsk', cannot: 'deleteCannot', itself: 'deletesItself' } as const;
   return <p>{pt(key[how], { number: copy.remoteNumber ?? '' })}</p>;
@@ -21,13 +21,12 @@ function CopySentence({ provider: p, copy, how }: { provider: ProviderView; copy
 export function DeleteDiveDialog({ dive: d, name, onClose }: { dive: Pick<DiveView, 'id' | 'version'>; name: string; onClose: () => void }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
-  const names = useNames();
+  const joinNames = useJoinNames();
   const queryClient = useQueryClient();
-  const providers = useProviders();
+  const providerOf = useProviderOf();
   const statuses = useQuery(diveProvidersQuery(d.id));
   // Without the state at the Providers the server still knows: a copy then stays there, with the reminder.
   const choice = deleteChoice(statuses.data) ?? (statuses.error ? { ask: [], cannot: [], itself: [] } : undefined);
-  const providerOf = (id: string) => providers.data?.find((p) => p.id === id) ?? { id, name: id } as ProviderView;
   const remove = useMutation({
     mutationFn: async (alsoThere: boolean) => unwrap(await api.DELETE('/api/dives/{id}', {
       params: { path: { id: d.id } }, body: { version: d.version, alsoAt: alsoThere ? choice!.ask.map((c) => c.provider) : [] },
@@ -42,7 +41,7 @@ export function DeleteDiveDialog({ dive: d, name, onClose }: { dive: Pick<DiveVi
       });
       location.hash = '#/';
       // Every list and count changes; the deleted Dive itself would only answer "not found" now.
-      await queryClient.invalidateQueries({ predicate: (q) => !(q.queryKey[0] === 'dives' && q.queryKey[1] === d.id) });
+      await queryClient.invalidateQueries(allButDive(d.id));
       queryClient.removeQueries({ queryKey: keys.dive(d.id) });
     },
   });
@@ -65,7 +64,7 @@ export function DeleteDiveDialog({ dive: d, name, onClose }: { dive: Pick<DiveVi
       <div className="form-actions">
         {asking && (
           <Button variant="danger" icon="delete" isPending={remove.isPending && remove.variables} isDisabled={remove.isPending && !remove.variables} onPress={() => remove.mutate(true)}>
-            {t('dive.deleteBoth', { name: names(choice!.ask.map((c) => providerOf(c.provider).name)) })}
+            {t('dive.deleteBoth', { name: joinNames(choice!.ask.map((c) => providerOf(c.provider).name)) })}
           </Button>
         )}
         {choice && (

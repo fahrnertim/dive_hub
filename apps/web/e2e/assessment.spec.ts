@@ -93,7 +93,7 @@ test('puts a finding aside on the dive and mutes a rule for the Diver; the logbo
   const id = await assessedDive(request);
   const n = await diveNumber(request, id);
   await page.goto(`/#/?q=${n}`);
-  const row = diveRows(page).filter({ hasText: new RegExp(`Number ${n}(?!\d)`) });
+  const row = diveRows(page).filter({ hasText: new RegExp(`Number ${n}(?!\\d)`) });
   await expect(row).toContainText('2 findings');
 
   await page.goto(`/#/dives/${id}`);

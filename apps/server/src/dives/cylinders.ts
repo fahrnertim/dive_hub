@@ -1,7 +1,7 @@
 // The Cylinders of a Dive (ADR 0031, 0045): the Dive's own values, set as one list. A Cylinder may be tied to one
 // pressure series of one of the Dive's Recordings; an import makes them from a tank pod's data where the Dive has none.
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import type { Db, Tx } from '../db/client.js';
+import type { Queryable, Tx } from '../db/client.js';
 import { cylinder, dive, recording, revision, sampleSeries, type CylinderMaterial } from '../db/schema.js';
 import type { ProviderCylinder } from '../providers/provider.js';
 import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
@@ -36,7 +36,7 @@ const sameSeries = (a: Cylinder['series'], b: Cylinder['series']) =>
   !!a && !!b && a.recordingId === b.recordingId && a.channel === b.channel;
 
 /** A Dive's Cylinders in their order. */
-export async function cylindersOf(tx: Tx | Db, diveId: string): Promise<Cylinder[]> {
+export async function cylindersOf(tx: Queryable, diveId: string): Promise<Cylinder[]> {
   const rows = await tx.select().from(cylinder).where(eq(cylinder.diveId, diveId)).orderBy(asc(cylinder.position));
   return rows.map((r) => ({
     volumeL: r.volumeL, workingPressureBar: r.workingPressureBar, material: r.material,
@@ -122,40 +122,6 @@ export async function fillCylindersFromRecording(tx: Tx, diveId: string, rec: Pi
 export async function reviseDive(tx: Tx, diveId: string, actor: Actor, cause: RevisionCause, changes: Changes): Promise<void> {
   await tx.update(dive).set({ version: sql`${dive.version} + 1`, updatedAt: new Date() }).where(eq(dive.id, diveId));
   await writeRevision(tx, 'dive', diveId, actor, cause, changes);
-}
-
-/**
- * Dives imported before Cylinders were kept get them from what their Recordings know of their tanks (ADR 0045): every
- * Dive without Cylinders whose history never spoke of any, so one a User emptied stays empty. By the hub itself, one Revision each.
- * Returns how many Dives got Cylinders.
- */
-export async function fillMissingCylinders(db: Db): Promise<number> {
-  const candidates = await db.selectDistinct({ id: dive.id }).from(dive)
-    .innerJoin(recording, and(eq(recording.diveId, dive.id), isNull(recording.deletedAt)))
-    .where(and(
-      isNull(dive.deletedAt),
-      sql`(exists (select 1 from ${sampleSeries} where ${sampleSeries.recordingId} = ${recording.id} and ${sampleSeries.channel} ~ '^tankPressure(:[0-9]+)?$')
-        or exists (select 1 from jsonb_array_elements(case when jsonb_typeof(${recording.summary} -> 'gases') = 'array' then ${recording.summary} -> 'gases' else '[]'::jsonb end) g
-          where jsonb_exists(g, 'startPressureBar') or jsonb_exists(g, 'endPressureBar')))`,
-      sql`not exists (select 1 from ${cylinder} where ${cylinder.diveId} = ${dive.id})`,
-      sql`not exists (select 1 from ${revision} where ${revision.entityType} = 'dive' and ${revision.entityId} = ${dive.id} and jsonb_exists(${revision.changes}, 'cylinders'))`,
-    ));
-  let filled = 0;
-  for (const { id } of candidates) {
-    filled += await db.transaction(async (tx) => {
-      await tx.select({ id: dive.id }).from(dive).where(eq(dive.id, id)).for('update');
-      const recordings = await tx.select().from(recording)
-        .where(and(eq(recording.diveId, id), isNull(recording.deletedAt))).orderBy(asc(recording.createdAt));
-      for (const rec of recordings) {
-        const changes = await fillCylindersFromRecording(tx, id, rec);
-        if (Object.keys(changes).length === 0) continue;
-        await reviseDive(tx, id, { type: 'system', id: 'fill-cylinders' }, 'fill', changes);
-        return 1;
-      }
-      return 0;
-    });
-  }
-  return filled;
 }
 
 /** A Cylinder in the values a Provider's logbook keeps for its one tank (ADR 0031). */

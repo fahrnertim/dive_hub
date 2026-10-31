@@ -2,10 +2,11 @@
 // owner's logbook (2026-10-07): a logbook entry whose time is corrected at the Provider after its computer's file came
 // in stands beside the file's Dive, and two logbook entries of one dive become two Dives. Merging resolves both; links
 // are followed at two Providers (SSI's fake and the test-only ledger). Finding such pairs unasked is slice 18c.
+import { randomUUID } from 'node:crypto';
 import { and, eq, gte, isNull, lt } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, waitingPush } from '../src/db/schema.js';
-import { DELETE_QUIET_MS } from '../src/providers/waiting-push-queue.js';
+import { DELETE_QUIET_MS } from '../src/providers/waiting-push/waiting-push-queue.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { createFakeSsi, handTypedDive } from './fake-ssi.js';
 import { makeSuuntoJson } from './fixtures/suunto-dive.js';
@@ -67,7 +68,7 @@ describe.skipIf(!(await databaseReachable()))('merging two Dives, and moving a l
   });
   const at = async (id: string, provider: string) =>
     (await json<{ current: { remoteId: string } | null }>('GET', `/api/dives/${id}/providers/${provider}`)).current?.remoteId ?? null;
-  const deleted = async (id: string) => (await json<{ dives: Deleted[] }>('GET', '/api/dives/deleted')).dives.find((d) => d.id === id);
+  const deleted = async (id: string) => (await json<Deleted[]>('GET', '/api/dives/deleted')).find((d) => d.id === id);
   const openCandidates = () => json<unknown[]>('GET', '/api/duplicate-candidates');
 
   beforeAll(async () => {
@@ -228,6 +229,9 @@ describe.skipIf(!(await databaseReachable()))('merging two Dives, and moving a l
       expect((await merge(mine, hers)).json()).toMatchObject({ code: 'merge_not_possible' });
       const stale = await call('POST', `/api/dives/${mine}/merge`, { version: (await diveOf(mine)).version - 1, otherId: hers, otherVersion: 1 });
       expect(stale.statusCode).toBe(409);
+      const missing = await call('POST', `/api/dives/${randomUUID()}/merge`, { version: 1, otherId: mine, otherVersion: 1 });
+      expect(missing.statusCode).toBe(404);
+      expect(missing.json()).toMatchObject({ code: 'dive_not_found' });
     });
   });
 

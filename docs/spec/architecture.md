@@ -197,7 +197,7 @@ Implemented:
 
 Deliberate simplifications, to revisit:
 - **Deleting** keeps Divers someone else also manages; this needs revisiting with Diver sharing.
-- **No audit log** of admin actions beyond the server log ("user deleted").
+- **No audit log** of admin actions beyond one server log line per done action ("admin action", with the acting admin).
 
 **Slice 4 (2026-10-03): UI foundation** ([ADR 0014](../decisions/0014-design-system-and-localization.md), [design system](design-system.md)).
 
@@ -255,8 +255,8 @@ Implemented:
 - Dive sites shared by every User: `/api/dive-sites` (list by name or near a position, one, create, edit with
   version, delete). Any User edits (Revisions on `dive_site`); the creator or an admin deletes while no Dive is there.
 - Entry and exit positions on Recordings from FIT (`session.start_position_*`, `end_position_*`); a Dive shows
-  its Primary recording's (exit, else entry). Older Recordings are backfilled from their Originals by the
-  `backfill_positions` worker job, queued once per start (job key).
+  its Primary recording's (exit, else entry). Older Recordings were backfilled from their Originals by a
+  worker job at each start, retired by migrations 0046 and 0047 once every instance had run it.
 - An Import links a new Dive to the only site within 200 m (Revision cause `auto-site`).
 - A Dive's site in `PATCH /api/dives/:id` (`siteId`, under the Dive's version); the logbook shows it, filters
   by it (`siteId`, `#/?site=`) and searches its name.
@@ -267,7 +267,7 @@ Implemented:
 Found in the screenshot review and fixed:
 - With a fourth section the phone navigation, a sideways-scrolling strip, hid "Admin" at 320 px; it wraps now.
 - A form's unsaved-changes guard stayed on after saving, so moving to the new site's page asked first;
-  `releaseLeaveGuard()` (`lib/leave-guard.ts`) ends it once saved.
+  the release `useLeaveGuard` returns (`lib/leave-guard.ts`) ends it once saved.
 - Removing a form message on blur moved the buttons under a pressing pointer; such messages now change only on submit.
 
 Deliberate simplifications, to revisit:
@@ -405,7 +405,7 @@ Implemented:
 - **Water type on the Dive site:** column `dive_site.water_type` (the `water_type` enum, limited to fresh, salt, brackish
   by `dive_site_water_type_ck`), in the site API, form (with its note), page, merge and Revisions. The Dive's column is
   gone (migration 0011) and its Overrides too (custom migration 0012). The Dive's API has `waterType` (the site's) and
-  `waterMismatch` (`src/dives/water.ts`); the dive page shows both, and the device data shows "Water setting on the
+  `waterMismatch` (`src/dives/calc/water.ts`); the dive page shows both, and the device data shows "Water setting on the
   computer". SSI sending reads the site's water type.
 
 Found in the browser tests and fixed:
@@ -472,7 +472,7 @@ Implemented:
   (Connections, one sealed `credentials` value, renewal with a kept password, "sign in again"), `push-service.ts` (Pushes,
   the current remote dive, outdated by fingerprint, one action per Dive), `pacing.ts` (one action at a time per Connection
   with the Provider's pause; a second request waits), `outgoing-dive.ts` (the Dive as it leaves Dive Hub), `routes.ts`, and
-  `layer.ts` that builds them. `main.ts` registers the SSI adapter only.
+  `layer.ts` that builds them. `start.ts` registers the SSI adapter only.
 - **SSI as an adapter** (`src/providers/ssi/`): `ssi-adapter.ts` (capabilities, sign-in, the logbook read, the ±2 min match,
   SSI's numbers, the site ID), with `ssi-client.ts`, `ssi-record.ts` and `ssi-sites.ts` moved in. No `odin_*` field is read
   outside it. Its fingerprint is unchanged, so earlier Pushes stay up to date.
@@ -521,7 +521,7 @@ Deliberate simplifications, to revisit:
 the [follow-ups](../research/2026-10-05-provider-layer-follow-ups.md)). Users see no change in behaviour or texts.
 
 Implemented:
-- **Leases in PostgreSQL** (`src/providers/leases.ts`, replacing the in-memory `pacing.ts` and Dive lock): `dive_lease`
+- **Leases in PostgreSQL** (`src/providers/lease-service.ts`, replacing the in-memory `pacing.ts` and Dive lock): `dive_lease`
   (one action per Dive and Provider, one conditional upsert) and `connection.next_action_at` (pacing per Connection; a
   request waits what is left of the pause, or looks again every 250 ms, for at most 30 s, then `provider_busy`). Leases
   hold at most 5 minutes, so a crashed process frees them by itself. No advisory locks, no transaction around a Provider
@@ -576,7 +576,7 @@ Implemented:
   leaves out one not in the list (`not_at_provider`), keeps buddies set in SSI's app on update (SSI's IDs minus those
   sent before, from the current Push's payload), counts the Participants' SSI accounts in the fingerprint and reads the
   buddy IDs back. `GET /api/connections/{id}/buddies` and `POST …/buddies/import` read the list live and create external
-  Divers with name and SSI account (`src/providers/buddy-service.ts`).
+  Divers with name and SSI account (`src/providers/buddies/buddy-service.ts`).
 - **Web client:** `Participants.tsx` (buddies, guides and instructors on the dive page; a role radio group and a live
   search over every Diver, or a new one by the typed name, when adding; a role dropdown per row that saves at once); `ProviderPanel.tsx` renders one resolver per requirement type
   (the site picker takes its ID forms from the capabilities; "Find … in your SSI buddy list" sets the Diver's account), an
@@ -597,7 +597,7 @@ Implemented:
   doesn't block. A typed ID through the old route still counts.
 - **Storage:** `dive_site_external_id.account_id` is the Diver's provider account; null = public. Only
   `apps/server/src/sites/site-ids.ts` touches the table.
-- **The site step of a send** (manual or Push run; `providers/site-for-send.ts`): the ID sent is the remote dive's ID if
+- **The site step of a send** (manual or Push run; `providers/push/site-for-send.ts`): the ID sent is the remote dive's ID if
   usable, else the public one, else the Diver's own private one, never another account's. With none, the send finds a
   nearby same-name site in the account's SSI logbook whose ID no site here holds, else creates a private site
   (`save_divesite`). One find-or-make per site and account, under an advisory lock.
@@ -633,7 +633,7 @@ Implemented:
   context)` and `dives.parser`; SSI's are in `src/providers/ssi/ssi-import.ts` (evidence, local start, values, profile,
   Device, site ID and position, buddies as SSI accounts, notes). `ImportedDive`, `ImportContext` and `REFERENCE_PREFIX`
   are in `provider.ts`.
-- **The import** (`src/providers/dive-import.ts`, part of the provider layer): the Connection's settings (`import_mode`
+- **The import** (`src/providers/dive-import/dive-import.ts`, part of the provider layer): the Connection's settings (`import_mode`
   off / add / create, `import_window_minutes` 5–60, `import_computers`), `PATCH /api/connections/{id}`, the preview
   (`GET /api/connections/{id}/dive-import`: computers with choice and suggestion, counts, the entries to decide) and the
   start (`POST`: one JSON Original per dive, an Import with `provider`, `connection_id` and its `plan`: the context,
@@ -696,9 +696,9 @@ Implemented:
 **Slice 15b (2026-10-06): changes made at the Provider come back** (ADR 0030, amended by the owner).
 
 Implemented:
-- `src/providers/three-way.ts` (pure): the fields, comparing as the Provider keeps values, and the decision per field
-  (take, conflict, nothing). `dive-import.ts`: the base (`baseOf`: the last finished Import's Original or the last Push
-  that sent values, the newer), the Dive's side (`hubOf`), taking values (`takeChanges`: one Revision `update`, the site
+- `src/providers/dive-import/three-way.ts` (pure): the fields, comparing as the Provider keeps values, and the decision per field
+  (take, conflict, nothing). `dive-changes.ts`: the base (`baseDiveOf`: the last finished Import's Original or the last Push
+  that sent values, the newer), the Dive's side (`hubSideOf`), taking values (`takeChanges`: one Revision `update`, the site
   through `siteForProvider`, Participants with an account replaced, values and their Overrides on Dives without a
   Recording, and a new up-to-date `link` Push when the Dive was up to date), for linked dives, Recordings' Dives and dives
   Dive Hub sent. `parse` takes the remote ID for a record that doesn't name it (what was sent before SSI gave one).
@@ -752,7 +752,8 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   log), `access-routes.ts`, `endpoint.ts` (`/mcp`: Origin check, bearer key, 401/429 that say what to do, the SDK's
   stateless handler for both protocol eras), `server.ts` (the tools an access's scopes allow, the instructions),
   `tool.ts` (what every tool shares: argument checks, a read-only transaction with a time limit, paging, the size cap,
-  logging), `tools-logbook.ts`, `tools-sites.ts`, `tools-divers.ts`, `profile.ts` (the profile summary).
+  logging), `tools-logbook.ts`, `tools-sites.ts`, `tools-divers.ts`, `read-service.ts` (every query those tools make), `profile.ts`
+  (the profile summary).
 - Tools: `logbook_search_dives`, `logbook_get_dive`, `logbook_stats`, `sites_search`, `sites_get`, `divers_buddies`,
   `divers_list`. Schemas are TypeBox, handed to the SDK as JSON Schema; no Zod in our code.
 - Migration `0019_ai_access.sql`: `apikey` (Better Auth), `ai_access_setting`, `ai_access_log`. A daily worker job
@@ -772,16 +773,17 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 
 **Slice 18 (2026-10-06): the dive assessment** ([ADR 0036](../decisions/0036-dive-assessment.md), its
 [amendment](../decisions/0036-dive-assessment.md#amendment-2026-10-06-as-built-slice-18-engine-version-1), [client contract](clients.md#the-dive-assessment)).
-- `apps/server/src/assessment/`: `rules.ts` (pure: spike cleaning, splitting at the surface, 15 s windows, fourteen rules
-  with their thresholds, evidence labels and sources, `ENGINE_VERSION` 1), `assessment-service.ts` (stored findings,
+- `apps/server/src/assessment/`: `rules.ts` (the fourteen rules with their thresholds, evidence labels and sources,
+  `ENGINE_VERSION`), `signals.ts` (pure: spike cleaning, splitting at the surface, 15 s windows), `profile-rules.ts` and
+  `series-rules.ts` (pure: one function per rule, listed in `PROFILE_RULES` / `SERIES_RULES`), `assessment-service.ts` (stored findings,
   refreshed per Diver by a stamp of engine version and Primary recording; dismissals, muted rules), `routes.ts`,
   `texts.ts` (English sentences and the fixed note, for MCP).
 - Migration `0020_dive_assessment.sql`: `dive_assessment`, `dive_finding`, `finding_dismissal`, `muted_rule`.
 - Refreshed after every Import (`afterImport`), after every change through `dives/routes.ts` and
-  `dives/candidate-routes.ts` (an `onSend` hook), when read, and by the worker at start (`assess-dives`).
+  `dives/candidates/candidate-routes.ts` (an `onSend` hook), when read, and by the worker at start (`assess-dives`).
 - Routes: `GET /api/dives/{id}/assessment`, `PUT /api/dives/{id}/findings/{rule}/dismissal`,
   `PUT /api/divers/{id}/muted-rules/{rule}`; `GET /api/dives` carries `findings` per Dive. Code `finding_not_found`.
-- Computer events: `COMPUTER_EVENTS` in `vocabulary.ts`, Garmin's `dive_alert` codes in `fit/fit-vocabulary.ts`.
+- Computer events: `COMPUTER_EVENTS` in `vocabulary.ts`, Garmin's `dive_alert` codes in `imports/formats/fit/fit-vocabulary.ts`.
 - MCP: `logbook_get_dive_assessment` (eight tools now).
 - Web: `Assessment.tsx` (the panel under the Recordings, the findings' lane, a context shared with the profile),
   `DepthProfile.tsx` (the ascent coloured by speed with a legend in words, the selected finding's stretch),
@@ -799,10 +801,10 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - `apps/server/src/imports/formats.ts`: the registry (`FileFormat`: `format`, `mediaType`, `parser`, `parserVersion`,
   `detect`, `parse`). `import-service.ts`, `archive.ts` (`extractFiles` with a predicate) and the position backfill ask
   it; none names a format. `parsed-recording.ts` holds what every adapter delivers (moved out of `src/fit/`).
-- `apps/server/src/suunto/`: `suunto-json.ts` (the app's JSON export: Device, offset, summary, channels `depth`,
+- `apps/server/src/imports/formats/suunto/`: `suunto-json.ts` (the app's JSON export: Device, offset, summary, channels `depth`,
   `temperature`, `ndl`, `tts`, `ceiling`, `tankPressure`, events), `suunto-vocabulary.ts` (dive modes, RGBM models,
   computer events).
-- `fit/fit-adapter.ts`: a Suunto dialect (the summary from `session`, the developer field `dive_mode`, the key
+- `formats/fit/fit-adapter.ts`: a Suunto dialect (the summary from `session`, the developer field `dive_mode`, the key
   `suunto:fit:…` without a serial). Garmin files read as before, plus `otuEnd`.
 - `placement.ts`: `replacesKey` (a JSON takes over the FIT's Recording in place, with a `reimport` Revision) and
   `fullerCopyLike` (a FIT finds the JSON's Recording by key pattern, duration and maximum depth: `skipped`,
@@ -825,7 +827,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 
 **Slice 18b (2026-10-07): merging two Dives; a linked Dive moves as a copy** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md),
 [Logbook housekeeping](../research/2026-10-07-logbook-housekeeping.md)).
-- `apps/server/src/dives/merging.ts` (`createMerging`): `candidates` (the Dives of the same Diver that overlap one, by
+- `apps/server/src/dives/merging-service.ts` (`createMergingService`): `candidates` (the Dives of the same Diver that overlap one, by
   the import's `overlaps` and tolerance, local times where an offset is unknown; with their Recordings, the Providers
   they are at, which a merge keeps), `merge` (both Dives locked in id order; the other's Recordings attached, Participants
   added, links moved, gaps filled, notes appended, then the other deleted) and `move` (as before for an unlinked Dive; a
@@ -849,11 +851,11 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - Not yet: finding such pairs unasked, in "Needs your decision" (slice 18c, below).
 
 **Slice 18c (2026-10-07): logbook checks** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)).
-- `apps/server/src/dives/logbook-check-rules.ts` (pure, `LOGBOOK_CHECKS_VERSION` 2; the third rule `entry_apart_from_recording` is in the ADR's last amendment): `ruleFor` two Dives
+- `apps/server/src/dives/checks/logbook-check-rules.ts` (pure, `LOGBOOK_CHECKS_VERSION` 2; the third rule `entry_apart_from_recording` is in the ADR's last amendment): `ruleFor` two Dives
   (`recording_beside_entry` with the import's tolerance when exactly one has a Recording, `overlapping_dives` on a real
   overlap otherwise; local times where an offset is unknown) and `findChecks` over a logbook (each pair once; `obvious`
   when an import would have attached them: one partner each, depths agreeing).
-- `logbook-checks.ts` (`createLogbookChecks`): `list` (the User's Divers' live Dives, the pairs, without those answered),
+- `logbook-check-service.ts` (`createLogbookCheckService`): `list` (the User's Divers' live Dives, the pairs, without those answered),
   `against` (one Dive's pairs, for the dive page's merge candidates, which follow the same rules now) and `answer`.
   `logbook-check-answers.ts`: `keepApart`, called when a Recording is split off (`detach`) or a Duplicate candidate
   becomes a Dive of its own.
@@ -866,7 +868,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - The same test in matching (rule version 4, [ADR 0030, amended](../decisions/0030-importing-dives-from-providers.md)):
   `decideMatch` gets `probablyNoDive` for the Recording and each candidate from `placement.ts` (never attached by itself:
   a Duplicate candidate with the reason `probably_no_dive`; such a Dive is no candidate for a real Recording), `assess` in
-  `providers/dive-import.ts` leaves such Dives out of an entry's matches and asks when nothing else is in the window, and
+  `providers/dive-import/dive-import.ts` leaves such Dives out of an entry's matches and asks when nothing else is in the window, and
   `findChecks` never calls such a pair `obvious`. Tests: `matching.test.ts`, `false-start-import.test.ts`.
 - Routes: `GET /api/logbook-checks?status=open|answered`, `PUT /api/logbook-checks/answer`; `merge-candidates` gains
   `rule` and `answered`. Problem `check_not_found`.
@@ -882,7 +884,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   per pair from the client; no rule looks at Dives of two Divers (a dive filed under the wrong Diver shows up as an
   overlap only in its own logbook).
 - Afterwards (2026-10-07): the import follows a dive Dive Hub sent to the Dive it is linked to now (`assess` in
-  `providers/dive-import.ts`: the current link before our reference), so a Dive merged into another keeps taking changes
+  `providers/dive-import/dive-import.ts`: the current link before our reference), so a Dive merged into another keeps taking changes
   made at the Provider; and the web client says which of two Dives a merge keeps (the hint, the pair, the dialog).
 - Not yet: rules beyond overlaps (a number twice, a dive inside a no-fly time), telling by e-mail, the checks over MCP.
 
@@ -909,7 +911,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   server gives the seeded Divers `dives_before` 41 and 500 so the fixtures keep their numbers (42, 501 to 504).
 
 **Slice 22c (2026-10-10): Push runs** ([ADR 0047](../decisions/0047-push-runs.md)).
-- `providers/push-run-service.ts` (`preview`, `start`, `list`, `get`, `cancel`, `continue`, `step`, `requeueActive`), the pure planner
+- `providers/push/push-run-service.ts` (`preview`, `start`, `list`, `get`, `cancel`, `continue`, `step`, `requeueActive`), the pure planner
   `push-run-plan.ts` (`planItem`, `orderItems`) and the routes `push-run-routes.ts`, registered inside `providerRoutes`. The logbook's list
   filter moved to `dives/list-filter.ts` so `GET /api/dives` and a run's `list` share it.
 - The worker has one task, `push_run_step`, one job per Dive: `step(runId)` sends one Dive through `pushes.send` / `pushes.setNumber` and
@@ -941,7 +943,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - `pushes.send(userId, diveId, provider, options)` with `SendOptions` (`onExisting`, `conflicts`, `onConflict: 'ask' | 'defer'`,
   `runId`). An update, under the lease and `withAccess`, where the adapter offers `current` and `parse` (`updateThere` in
   `push-service.ts`): the Provider's record now (the same read the update writes from), the base and the Dive's side
-  (`dive-changes.ts`: `baseOf`, `hubOf`), the fields that travel both ways, the open entry (`conflicts.ts`) and the choices go
+  (`dive-changes.ts`: `baseDiveOf`, `hubSideOf`), the fields that travel both ways, the open entry (`conflict-service.ts`) and the choices go
   into `planSend` (`three-way.ts`). A Conflict to ask answers `conflicts` and writes nothing; otherwise what changed only at the
   Provider is taken first (`takeChanges`, one Revision `update` by the User), the Dive is read again, and the adapter's `update`
   gets `leave` (`keep`: deferred Conflicts and fields without `export`; `clear`: removed here). The Push carries the fingerprint of
@@ -952,7 +954,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 
 **Piece 6 (2026-10-27): automation for every Provider** ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md),
 [plan](../superpowers/plans/2026-10-27-provider-automation.md)).
-- The Waiting push queue: one `waiting_push` row per Dive and Connection (`providers/waiting-push-queue.ts`: `noteDiveChange`,
+- The Waiting push queue: one `waiting_push` row per Dive and Connection (`providers/waiting-push/waiting-push-queue.ts`: `noteDiveChange`,
   `noteSiteChange`, `queueNow`, `settle`), written in the same transaction as the change; quiet periods 30 s (edit) and 5 min
   (delete). An Import from the same Provider is not sent back.
 - Worker tasks: `waiting_pushes` (one job per Connection, job key `waiting-pushes:<connectionId>`; `step` sends one due entry and
@@ -960,6 +962,6 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   sign-in or the Provider's return, retries after 5 min / 30 min / 2 h / 6 h until 24 h, queues due fetches) and
   `scheduled_fetch` (one Connection's fetch as an unattended Import; `last_fetched_at` is claimed atomically). Intervals 60, 360
   or 1440 minutes; more than 20 new Dives from one Import wait as an offer.
-- `providers/waiting-push-service.ts` (`step`, `tick`, `retry`, `afterImport`, `unsentDives`, `dismissOffer`, `decide`),
-  `providers/scheduled-fetch.ts`; the API's settings, waiting states, Retry and decisions are in the
+- `providers/waiting-push/waiting-push-service.ts` (`step`, `tick`, `retry`, `afterImport`, `unsentDives`, `dismissOffer`, `decide`),
+  `providers/dive-import/scheduled-fetch.ts`; the API's settings, waiting states, Retry and decisions are in the
   [client contract](clients.md) ("Sending by itself").

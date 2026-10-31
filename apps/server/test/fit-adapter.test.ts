@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Decoder, Stream } from '@garmin/fitsdk';
 import { describe, expect, it } from 'vitest';
-import { createFitAdapter, looksLikeFit } from '../src/fit/fit-adapter.js';
+import { createFitAdapter, looksLikeFit } from '../src/imports/formats/fit/fit-adapter.js';
 import type { ParsedRecording } from '../src/imports/parsed-recording.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 

@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 // Where keyboard focus goes when the element that had it disappears (WCAG 2.4.3). Without this the
 // browser drops focus to <body>, and a keyboard or screen reader user starts over at the top.
 
@@ -35,4 +37,18 @@ export function refocusAfterRemoval(list: HTMLElement | null, index: number, bef
     if (!focusFirstIn(items[index]) && !focusFirstIn(items[index - 1])) focusHeading(list.isConnected ? list : null);
   };
   requestAnimationFrame(attempt);
+}
+
+/**
+ * The button that opened an inline form gets focus back when the form closes (the form had it; UI review B1). Returns
+ * the ref for that button; `open` is whether the form is shown.
+ */
+export function useFocusBackWhenClosed(open: boolean) {
+  const opener = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (wasOpen.current && !open) opener.current?.focus();
+    wasOpen.current = open;
+  }, [open]);
+  return opener;
 }

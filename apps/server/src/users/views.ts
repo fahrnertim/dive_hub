@@ -1,27 +1,30 @@
 // API shapes shared by the user, account and admin routes.
 import { Type, type Static } from 'typebox';
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from '../auth/password.js';
-import type { Role } from './invitations.js';
+import type { Role } from './invitation-service.js';
+import { DateTime, Nullable, refTo } from '../http/schemas.js';
+import { userRole } from '../db/schema.js';
 
 export { Problem } from '../http/problems.js';
-export const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) });
-export const DateTime = Type.String({ format: 'date-time' });
-export const RoleSchema = Type.Union([Type.Literal('user'), Type.Literal('admin')]);
+export const RoleSchema = Type.Enum([...userRole.enumValues]);
 export const Password = Type.String({
   minLength: MIN_PASSWORD_LENGTH, maxLength: MAX_PASSWORD_LENGTH,
   description: `At least ${MIN_PASSWORD_LENGTH} characters`,
 });
 export const Token = Type.String({ minLength: 16, maxLength: 128 });
+export const Email = Type.String({ format: 'email', maxLength: 254 });
 
-export const UserView = Type.Object({
+/** Registered with app.addSchema; routes answer UserView, the reference. */
+export const UserViewSchema = Type.Object({
   id: Type.String(), email: Type.String(), name: Type.String(), role: RoleSchema,
   disabled: Type.Boolean({ description: 'Disabled Users can\'t sign in; their data stays' }),
   createdAt: DateTime,
-});
+}, { $id: 'UserView' });
+export const UserView = refTo(UserViewSchema);
 
 export const PreferencesView = Type.Object({
   // Null first, so the validator's type coercion never turns null into a string (see dives/routes.ts).
-  language: Type.Union([Type.Null(), Type.String({ pattern: '^[a-z]{2,3}(-[A-Z]{2})?$', description: 'BCP 47 tag, e.g. "de"' })], {
+  language: Nullable(Type.String({ pattern: '^[a-z]{2,3}(-[A-Z]{2})?$', description: 'BCP 47 tag, e.g. "de"' }), {
     description: 'Null: follow the browser',
   }),
   units: Type.Union([Type.Null(), Type.Literal('metric'), Type.Literal('imperial')], {

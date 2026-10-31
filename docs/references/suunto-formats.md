@@ -18,7 +18,7 @@ time of the exporting phone, not of the dive.
 
 ## What we take from it
 Both are import formats ([ADR 0037](../decisions/0037-suunto-file-import-and-file-formats.md)); the adapters are
-`apps/server/src/suunto/suunto-json.ts` and the Suunto dialect in `apps/server/src/fit/fit-adapter.ts`, the words in
+`apps/server/src/imports/formats/suunto/suunto-json.ts` and the Suunto dialect in `apps/server/src/imports/formats/fit/fit-adapter.ts`, the words in
 `suunto-vocabulary.ts`.
 
 ### JSON (`{"DeviceLog": {"Header", "Samples", "Windows", "Device"}}`)

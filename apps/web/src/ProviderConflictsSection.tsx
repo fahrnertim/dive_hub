@@ -68,7 +68,7 @@ function Group({ group: g, diver, onTold }: { group: ConflictsOfConnection; dive
       onTold({ key: entry.diveId, text: t(`conflicts.queued.${key}`, { dive, name: g.providerName }) });
       await queryClient.invalidateQueries({ queryKey: keys.providerConflicts });
       // The Dive's state at the Provider now says it waits.
-      await queryClient.invalidateQueries({ queryKey: ['dives'] });
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
     },
   });
   const choosing = (e: ConflictEntryView) => decide.isPending && decide.variables?.entry.diveId === e.diveId;
