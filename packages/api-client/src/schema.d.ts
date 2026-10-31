@@ -8359,6 +8359,11 @@ export interface paths {
                         login?: string;
                         password?: string;
                         token?: string;
+                        /**
+                         * Format: date
+                         * @description Token sign-in at a Provider whose key expires (signIn.expires): the day it does, YYYY-MM-DD, not in the past. Without it, none is kept
+                         */
+                        keyExpiresOn?: string;
                         /** @description Keep the password, sealed, so Dive Hub signs in again by itself when the Provider asks. Only for password sign-in, and only when canKeepPassword */
                         keepSignedIn: boolean;
                         /** @description An external Diver here with this account is this person: merge it into the Diver (ADR 0028). Ask the User first: provider_account_held names it */
@@ -8453,6 +8458,11 @@ export interface paths {
                     "application/json": {
                         password?: string;
                         token?: string;
+                        /**
+                         * Format: date
+                         * @description Token sign-in at a Provider whose key expires (signIn.expires): the day it does, YYYY-MM-DD, not in the past. Without it, none is kept
+                         */
+                        keyExpiresOn?: string;
                         /** @description Keep the password, sealed, so Dive Hub signs in again by itself when the Provider asks. Only for password sign-in, and only when canKeepPassword */
                         keepSignedIn: boolean;
                     };
@@ -12190,6 +12200,9 @@ export interface components {
             };
             /** @description The kinds of dive an import fetches (both by default); a dive of another kind is skipped with the reason kind_not_chosen */
             fetchKinds: ("scuba" | "apnea")[];
+            keyExpiresOn: null | string;
+            /** @description Today is within 7 days of keyExpiresOn or past it: say the key expires, with the way to sign in again */
+            keyExpiresSoon: boolean;
             /** @description Send a changed Dive by itself, 30 seconds after its last change (ADR 0056) */
             sendChanges: boolean;
             /** @description Send a new Dive of the Diver by itself */

@@ -858,6 +858,8 @@ export const connection = pgTable(
     followNumbers: boolean('follow_numbers').notNull().default(false),
     /** The kinds of dive an import fetches (ADR 0062): both unless the User narrows it; a dive of another kind is skipped. */
     fetchKinds: text('fetch_kinds').array().$type<DiveKind[]>().notNull().default(sql`'{scuba,apnea}'`),
+    /** When the User's API key expires, as they gave it (ADR 0062); only for a Provider whose token sign-in declares `expires`. */
+    keyExpiresOn: date('key_expires_on', { mode: 'string' }),
     /** Automation (ADR 0056): send a changed Dive, send a new one, delete at the Provider when deleted here; all off until chosen. */
     sendChanges: boolean('send_changes').notNull().default(false),
     sendNewDives: boolean('send_new_dives').notNull().default(false),

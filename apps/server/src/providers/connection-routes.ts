@@ -19,6 +19,9 @@ import type { ScheduledFetch } from './dive-import/scheduled-fetch.js';
 import type { WaitingPushService } from './waiting-push/waiting-push-service.js';
 
 const Secret = Type.String({ minLength: 1, maxLength: 4000 });
+const KeyExpiresOn = Type.Optional(Type.String({
+  format: 'date', description: 'Token sign-in at a Provider whose key expires (signIn.expires): the day it does, YYYY-MM-DD, not in the past. Without it, none is kept',
+}));
 const KeepSignedIn = Type.Boolean({
   description: 'Keep the password, sealed, so Dive Hub signs in again by itself when the Provider asks. Only for password sign-in, and only when canKeepPassword',
 });
@@ -159,7 +162,7 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
       const { fetchMinimum: __, ...offers } = automationOffers(providers.get(c.provider));
       return {
         // The column's check keeps it to the three intervals.
-        ...rest, fetchEveryMinutes: c.fetchEveryMinutes as 60 | 360 | 1440 | null, lastUsedAt: c.lastUsedAt?.toISOString() ?? null, createdAt: c.createdAt.toISOString(),
+        ...rest, keyExpiresSoon: connections.keyExpiresSoon(c.keyExpiresOn), fetchEveryMinutes: c.fetchEveryMinutes as 60 | 360 | 1440 | null, lastUsedAt: c.lastUsedAt?.toISOString() ?? null, createdAt: c.createdAt.toISOString(),
         diveNumbers: hasNumbers(c.provider) ? { follow: followNumbers } : null,
         diveImport: importsDives(c.provider) ? { mode: importMode, windowMinutes: importWindowMinutes } : null,
         offers, waiting, unsentDives,
@@ -199,6 +202,7 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
         login: Type.Optional(Type.String({ minLength: 1, maxLength: 320, description: 'E-mail or user name (password sign-in)' })),
         password: Type.Optional(Secret),
         token: Type.Optional(Secret),
+        keyExpiresOn: KeyExpiresOn,
         keepSignedIn: KeepSignedIn,
         claim: Type.Optional(Type.Boolean({
           description: 'An external Diver here with this account is this person: merge it into the Diver (ADR 0028). Ask the User first: provider_account_held names it',
@@ -216,7 +220,7 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
     schema: {
       summary: 'Sign in to the Provider again with the Connection\'s login (after the access expired), and choose again whether to keep the password',
       params: IdParams,
-      body: Type.Object({ password: Type.Optional(Secret), token: Type.Optional(Secret), keepSignedIn: KeepSignedIn }, { additionalProperties: false }),
+      body: Type.Object({ password: Type.Optional(Secret), token: Type.Optional(Secret), keyExpiresOn: KeyExpiresOn, keepSignedIn: KeepSignedIn }, { additionalProperties: false }),
       response: { 200: ConnectionView, ...errors },
     },
   }, async (request) => {

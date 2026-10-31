@@ -1,0 +1,1 @@
+ALTER TABLE "connection" ADD COLUMN "key_expires_on" date;

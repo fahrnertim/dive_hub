@@ -27,6 +27,8 @@ export const ConnectionViewSchema = Type.Object({
   fetchKinds: Type.Array(Type.Enum([...DIVE_KINDS]), {
     description: 'The kinds of dive an import fetches (both by default); a dive of another kind is skipped with the reason kind_not_chosen',
   }),
+  keyExpiresOn: Nullable(Type.String({ format: 'date', description: 'The day the API key expires, if the User gave it (a Provider whose sign-in has one); YYYY-MM-DD' })),
+  keyExpiresSoon: Type.Boolean({ description: 'Today is within 7 days of keyExpiresOn or past it: say the key expires, with the way to sign in again' }),
   sendChanges: Type.Boolean({ description: 'Send a changed Dive by itself, 30 seconds after its last change (ADR 0056)' }),
   sendNewDives: Type.Boolean({ description: 'Send a new Dive of the Diver by itself' }),
   deleteAtProvider: Type.Boolean({

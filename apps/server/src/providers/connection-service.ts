@@ -22,6 +22,8 @@ export interface SignInFields {
   token?: string | undefined;
   /** Keep the password (sealed) so Dive Hub signs in again by itself. Only for password sign-in, only with a key. */
   keepSignedIn: boolean;
+  /** Token sign-in at a Provider whose key expires: the day it does, `YYYY-MM-DD`. */
+  keyExpiresOn?: string | undefined;
   /**
    * Connecting only: an external Diver here holding this account is the same person (ADR 0028, amended): merge it into
    * the Diver being connected. Without it, such an account answers `provider_account_held`.
@@ -64,6 +66,9 @@ export interface AutomationSettings {
   fetchEveryMinutes?: FetchInterval | null;
 }
 
+/** The key's expiry is noticed from this many days before the date. */
+const KEY_NOTICE_DAYS = 7;
+
 export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: LeaseService; clock?: Clock }) {
   const { db, registry, secrets, leases } = deps;
   const clock = deps.clock ?? realClock;
@@ -91,6 +96,16 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
     if (kind === 'password' && theLogin && fields.password) return { kind, login: theLogin, password: fields.password };
     if (kind === 'token' && fields.token) return { kind, token: fields.token };
     throw new ProviderServiceError('invalid_input', named(adapter));
+  }
+
+  /** The key's expiry date: only where the Provider's token sign-in declares it, and not already past (today in the clock's UTC day). */
+  function expiryOf(adapter: ProviderAdapter, fields: SignInFields): string | null {
+    if (fields.keyExpiresOn === undefined) return null;
+    const signIn = adapter.capabilities.signIn;
+    if (signIn.kind !== 'token' || !signIn.expires || fields.keyExpiresOn < new Date(clock.now()).toISOString().slice(0, 10)) {
+      throw new ProviderServiceError('invalid_input', named(adapter));
+    }
+    return fields.keyExpiresOn;
   }
 
   function credentialsFrom(input: SignInInput, access: string, keep: boolean): Credentials {
@@ -138,6 +153,11 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
   }
 
   return {
+    /** Whether a key expiring on this day is within a week of today (the clock's UTC day): the Connection says so. */
+    keyExpiresSoon(keyExpiresOn: string | null): boolean {
+      return keyExpiresOn !== null && Date.parse(keyExpiresOn) - KEY_NOTICE_DAYS * 86_400_000 <= Date.parse(new Date(clock.now()).toISOString().slice(0, 10));
+    },
+
     /** Whether the server can keep passwords (DIVEHUB_ENCRYPTION_KEY is set). */
     canKeepPasswords: secrets.available,
 
@@ -146,7 +166,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const rows = await db.select({
         id: connection.id, provider: connection.provider, diverId: connection.diverId, diverName: diver.name,
         accountId: connection.accountId, accountLabel: connection.accountLabel, keepSignedIn: connection.keepSignedIn,
-        importMode: connection.importMode, importWindowMinutes: connection.importWindowMinutes, followNumbers: connection.followNumbers, fetchKinds: connection.fetchKinds,
+        importMode: connection.importMode, importWindowMinutes: connection.importWindowMinutes, followNumbers: connection.followNumbers, fetchKinds: connection.fetchKinds, keyExpiresOn: connection.keyExpiresOn,
         state: connection.state, lastUsedAt: connection.lastUsedAt, createdAt: connection.createdAt,
         sendChanges: connection.sendChanges, sendNewDives: connection.sendNewDives, deleteAtProvider: connection.deleteAtProvider,
         fetchEveryMinutes: connection.fetchEveryMinutes, lastFetchImportId: connection.lastFetchImportId,
@@ -199,6 +219,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const adapter = registry.get(provider);
       if (!(await managedDiverIds(db, userId)).has(diverId)) throw new ProviderServiceError('diver_not_found');
       const input = signInInput(adapter, fields);
+      const keyExpiresOn = expiryOf(adapter, fields);
       if (await forDiver(userId, diverId, provider)) throw new ProviderServiceError('provider_already_connected', named(adapter));
       const signedIn = await signInAt(adapter, input);
       const id = randomUUID();
@@ -228,7 +249,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
         await tx.insert(connection).values({
           id, userId, diverId, provider, accountId: signedIn.account.id, accountLabel: signedIn.account.label,
           keepSignedIn: fields.keepSignedIn, credentials: seal(id, credentialsFrom(input, signedIn.access, fields.keepSignedIn)),
-          lastUsedAt: usedNow(),
+          lastUsedAt: usedNow(), keyExpiresOn,
         });
       });
       return id;
@@ -240,11 +261,12 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const adapter = registry.get(row.provider);
       const kept = credentialsOf(row);
       const input = signInInput(adapter, fields, kept.kind === 'password' ? kept.login : undefined);
+      const keyExpiresOn = expiryOf(adapter, fields);
       const signedIn = await onTurn(adapter, row.id, () => signInAt(adapter, input));
       if (signedIn.account.id !== row.accountId) throw new ProviderServiceError('provider_other_account', named(adapter));
       await db.update(connection).set({
         credentials: seal(row.id, credentialsFrom(input, signedIn.access, fields.keepSignedIn)),
-        keepSignedIn: fields.keepSignedIn, state: 'active', lastUsedAt: usedNow(), updatedAt: new Date(),
+        keepSignedIn: fields.keepSignedIn, keyExpiresOn, state: 'active', lastUsedAt: usedNow(), updatedAt: new Date(),
       }).where(eq(connection.id, row.id));
     },
 

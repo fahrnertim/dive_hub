@@ -3642,6 +3642,8 @@
           "diveNumbers",
           "diveImport",
           "fetchKinds",
+          "keyExpiresOn",
+          "keyExpiresSoon",
           "sendChanges",
           "sendNewDives",
           "deleteAtProvider",
@@ -3757,6 +3759,22 @@
               ]
             },
             "description": "The kinds of dive an import fetches (both by default); a dive of another kind is skipped with the reason kind_not_chosen"
+          },
+          "keyExpiresOn": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "format": "date",
+                "description": "The day the API key expires, if the User gave it (a Provider whose sign-in has one); YYYY-MM-DD"
+              }
+            ]
+          },
+          "keyExpiresSoon": {
+            "type": "boolean",
+            "description": "Today is within 7 days of keyExpiresOn or past it: say the key expires, with the way to sign in again"
           },
           "sendChanges": {
             "type": "boolean",
@@ -19789,6 +19807,11 @@
                     "minLength": 1,
                     "maxLength": 4000
                   },
+                  "keyExpiresOn": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Token sign-in at a Provider whose key expires (signIn.expires): the day it does, YYYY-MM-DD, not in the past. Without it, none is kept"
+                  },
                   "keepSignedIn": {
                     "type": "boolean",
                     "description": "Keep the password, sealed, so Dive Hub signs in again by itself when the Provider asks. Only for password sign-in, and only when canKeepPassword"
@@ -19901,6 +19924,11 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 4000
+                  },
+                  "keyExpiresOn": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Token sign-in at a Provider whose key expires (signIn.expires): the day it does, YYYY-MM-DD, not in the past. Without it, none is kept"
                   },
                   "keepSignedIn": {
                     "type": "boolean",
