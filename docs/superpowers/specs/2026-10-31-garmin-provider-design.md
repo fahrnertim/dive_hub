@@ -1,7 +1,7 @@
 ---
 title: Garmin as a Provider - fetching a User's dives with their own Garmin Connect personal API key
 summary: An import-only `garmin` Provider adapter on the existing Provider layer (ADR 0027), dive import (ADR 0030) and scheduled fetch (ADR 0056) - token sign-in with the User's own personal API key (link to Garmin's key page, optional expiry date), the original FIT file of each dive stored as the Original and read by the FIT adapter, idempotent with the same dive uploaded as a file, and a generic per-Connection choice of which kinds of dive to fetch (scuba, apnea) that SSI gets as well.
-status: draft
+status: accepted
 date: 2026-10-31
 ---
 
