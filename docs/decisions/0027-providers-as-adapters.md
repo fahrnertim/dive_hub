@@ -16,6 +16,8 @@ every Provider the Dive is at, not SSI by name). Amended on 2026-10-05 by the [c
 replacing `needsSiteIdFrom` and `provider_site_id_missing`); adapters get Participants and may declare `buddies`.
 Amended by [ADR 0056](0056-two-way-exchange-and-automation.md) (built 2026-10-24 and 2026-10-27): the send is
 three-way, and an adapter declares `limits.fetchEveryMinutes`; unattended sends go through the same pacing.
+Amended by [ADR 0062](0062-garmin-import-only-provider.md) (built 2026-10-31): `dives.mode`, `fingerprint` and `open`
+are optional (required only with an export), and an adapter may declare `dives.file`, the dive's original file.
 
 ## Context
 The [SSI integration review](../research/2026-10-05-ssi-integration-review.md) found the SSI code sound but not generic:
