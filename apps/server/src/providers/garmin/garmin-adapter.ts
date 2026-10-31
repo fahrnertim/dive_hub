@@ -60,14 +60,15 @@ export function createGarminAdapter(deps: {
   }
 
   /**
-   * A call with the key's token. When a kept token fails, it is dropped and the call runs once more with a new one, so a
-   * key revoked at Garmin is found at once (`signed_out`) and not as an unreadable answer.
+   * A call with the key's token. When Garmin refuses a kept token (`signed_out`), it is dropped and the call runs once more
+   * with a new one, so a key revoked at Garmin is found at once. Any other failure (429, 5xx, unreadable) is not retried.
    */
   async function withToken<T>(context: ActionContext, run: (jwt: string) => Promise<T>): Promise<T> {
     const { jwt, reused } = await tokenOf(context.access);
     try {
       return await called(() => run(jwt));
     } catch (error) {
+      if (!(error instanceof ProviderError && error.reason === 'signed_out')) throw error;
       tokens.delete(context.access);
       if (!reused) throw error;
       return withToken(context, run);

@@ -34,7 +34,7 @@ describe('the Garmin adapter', () => {
     expect(await adapter.signIn({ kind: 'token', token: KEY })).toEqual({ account: { id: 'guid-1', label: 'Ida Diver' }, access: KEY });
   });
 
-  it('names an account without dives Garmin, and refuses a wrong key without telling it', async () => {
+  it('names an account without dives "Garmin", and refuses a wrong key without telling it', async () => {
     const adapter = setUp([]);
     expect((await adapter.signIn({ kind: 'token', token: KEY })).account.label).toBe('Garmin');
     const error = await adapter.signIn({ kind: 'token', token: 'GCDC_wrong' }).catch((e: Error) => e);
@@ -75,6 +75,27 @@ describe('the Garmin adapter', () => {
     const error = await adapter.dives!.list!(ctx).catch((e: Error) => e);
     expect(error).toMatchObject({ reason: 'signed_out' });
     expect((error as Error).message).not.toContain(KEY);
+  });
+
+  it('does not retry a kept token on 429 or 5xx, nor skip the pause before a download', async () => {
+    garmin.addAccount({ key: KEY, guid: 'guid-1', displayName: 'Ida Diver', dives: [dive(1)] });
+    let status = 0;
+    const flaky: typeof fetch = async (input, init) =>
+      (status && !new URL(String(input instanceof Request ? input.url : input)).pathname.includes('personalapitoken'))
+        ? new Response('{}', { status }) : fetch(input, init);
+    const sleep = vi.fn(async (_ms: number) => {});
+    const adapter = createGarminAdapter({ client: createGarminClient({ url: garmin.url, fetch: flaky }), sleep, now: () => 0 });
+    const ctx = { connectionId: 'c1', accountId: 'guid-1', access: KEY };
+    await adapter.dives!.list!(ctx);
+    for (const s of [429, 503]) {
+      status = s;
+      const before = garmin.calls.length;
+      await expect(adapter.dives!.list!(ctx)).rejects.toMatchObject({ reason: 'unavailable' });
+      await expect(adapter.dives!.file!(ctx, '1001')).rejects.toMatchObject({ reason: 'unavailable' });
+      // Nothing reached Garmin again, and no token was traded anew.
+      expect(garmin.calls.length).toBe(before);
+    }
+    expect(tokenCalls()).toBe(1);
   });
 
   it('gives the original file of a dive', async () => {

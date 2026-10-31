@@ -56,7 +56,7 @@ export function createGarminClient(opts: { url: string; fetch?: typeof fetch }):
       throw new GarminError('unavailable', 'Garmin could not be reached');
     }
     if (res.ok) return res;
-    if (isTokenCall && (res.status === 401 || res.status === 403)) throw new GarminError('wrong_credentials', `Garmin refused the key (${res.status})`);
+    if (res.status === 401 || res.status === 403) throw new GarminError('wrong_credentials', `Garmin refused the ${isTokenCall ? 'key' : 'token'} (${res.status})`);
     if (res.status === 429 || res.status >= 500) throw new GarminError('unavailable', `Garmin answered ${res.status}`);
     throw new GarminError('bad_response', `Garmin answered ${res.status}`);
   }
