@@ -80,7 +80,7 @@ describe.skipIf(!(await databaseReachable()))('Suunto files through the import p
       const channels = (await db.select().from(sampleSeries).where(eq(sampleSeries.recordingId, recordingId))).map((s) => s.channel).sort();
       expect(channels).toEqual(['ceiling', 'depth', 'ndl', 'tankPressure', 'temperature', 'tts']);
       expect((await db.select().from(recordingEvent).where(eq(recordingEvent.recordingId, recordingId))).length).toBeGreaterThan(10);
-      const [o] = await db.select().from(original).where(eq(original.id, rec!.originalId));
+      const [o] = await db.select().from(original).where(eq(original.id, rec!.originalId!));
       expect(o).toMatchObject({ mediaType: 'application/json', fileName: 'ScubaDiving_2026-03-01T16_00_00.json' });
     });
 
@@ -129,7 +129,7 @@ describe.skipIf(!(await databaseReachable()))('Suunto files through the import p
       expect(recs[0]).toMatchObject({ parser: 'suunto-json', recordingKey: `suunto:900000000001:${Math.floor(day(2).getTime() / 1000)}` });
       expect(recs[0]!.deviceId).not.toBeNull();
       expect(recs[0]!.originalId).not.toBe(thin!.originalId);
-      expect(await db.select().from(original).where(eq(original.id, thin!.originalId))).toHaveLength(1);
+      expect(await db.select().from(original).where(eq(original.id, thin!.originalId!))).toHaveLength(1);
       const channels = (await db.select().from(sampleSeries).where(eq(sampleSeries.recordingId, recs[0]!.id))).map((s) => s.channel);
       expect(channels).toContain('tankPressure');
       // The Dive follows its Primary recording, and the change is in the Recording's history.

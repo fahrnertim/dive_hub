@@ -261,6 +261,7 @@ async function recordingIsManaged(tx: Tx, rec: RecordingRow, userId: string, man
     const [d] = await tx.select({ diverId: device.diverId }).from(device).where(eq(device.id, rec.deviceId));
     return !!d && managed.has(d.diverId);
   }
+  if (!rec.originalId) return false;
   const [o] = await tx.select({ userId: original.userId }).from(original).where(eq(original.id, rec.originalId));
   return o?.userId === userId;
 }
