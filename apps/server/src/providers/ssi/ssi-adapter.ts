@@ -3,7 +3,7 @@
 // read outside this folder. Connections, Pushes, pacing and the routes are the generic layer's.
 import {
   DIVE_FIELDS, ProviderError, type ActionContext, type Capabilities, type Delivered, type DiveExportAction, type OutgoingDive,
-  type ProviderAdapter, type RemoteDive,
+  type ExportingProvider, type RemoteDive,
 } from '../provider.js';
 import { accountOnlyRow, newEntryRow, withAccountRow } from './ssi-buddy-row.js';
 import { SsiError, type SsiBuddy, type SsiClient, type SsiLogbook, type SsiRecord } from './ssi-client.js';
@@ -135,7 +135,7 @@ function showsSent(stored: SsiRecord, sent: SsiRecord, expect: { reference?: str
 /** SSI's maintenance (HTTP 503) is, for the generic layer, SSI being unavailable. */
 const providerReason = (error: SsiError) => (error.reason === 'maintenance' ? 'unavailable' : error.reason);
 
-export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; onCall?: (call: SsiCallLog) => void }): ProviderAdapter {
+export function createSsiAdapter(deps: { client: SsiClient; now?: () => number; onCall?: (call: SsiCallLog) => void }): ExportingProvider {
   const { client } = deps;
   const now = deps.now ?? Date.now;
 

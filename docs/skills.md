@@ -90,7 +90,9 @@ Where a skill and this project disagree, these rules win. They lived in AGENTS.m
   3. **Tests first.** `test-driven-development` replaces mattpocock `tdd`. Our test rules win over its `npm test`,
      `jest.fn` and `vi.mock` examples: tests against a real PostgreSQL, at most one `vi.fn`, no `vi.mock`, browser tests
      carry an area tag; commands are `pnpm check` and the ones in [development.md](development.md). `pnpm`, never `npm`,
-     wherever a skill says `npm install` or `npm test`.
+     wherever a skill says `npm install` or `npm test`. Every implementer dispatch carries: after a failing check, iterate
+     with `pnpm check --failed` or `--tests <filter>`; one full `pnpm check` at the end, after the last edit (comments
+     too), then commit at once (owner, 2026-10-31: three full browser runs of ~12 min each while fixing one task).
   4. **Reviews.** The plan's "Global Constraints" name the rules of [ADR 0053](decisions/0053-module-boundaries.md),
      the ADRs the plan touches and, for a plan that changes code, `karpathy-guidelines` (load it before the first task;
      every changed line traces to a task), so task reviewers check them. After the final whole-branch review, the

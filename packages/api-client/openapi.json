@@ -883,7 +883,11 @@
                     "no_match",
                     "ambiguous",
                     "left_out",
-                    "no_computer_choice"
+                    "no_computer_choice",
+                    "already_here",
+                    "entered_by_hand",
+                    "unavailable",
+                    "kind_not_chosen"
                   ],
                   "description": "Why; clients translate it. A failure’s detail stays in the server log"
                 },
@@ -3637,6 +3641,9 @@
           "createdAt",
           "diveNumbers",
           "diveImport",
+          "fetchKinds",
+          "keyExpiresOn",
+          "keyExpiresSoon",
           "sendChanges",
           "sendNewDives",
           "deleteAtProvider",
@@ -3742,6 +3749,32 @@
                 "description": "What importing this account's dives may do (ADR 0030); null when the Provider imports no dives"
               }
             ]
+          },
+          "fetchKinds": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "scuba",
+                "apnea"
+              ]
+            },
+            "description": "The kinds of dive an import fetches (both by default); a dive of another kind is skipped with the reason kind_not_chosen"
+          },
+          "keyExpiresOn": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "format": "date",
+                "description": "The day the API key expires, if the User gave it (a Provider whose sign-in has one); YYYY-MM-DD"
+              }
+            ]
+          },
+          "keyExpiresSoon": {
+            "type": "boolean",
+            "description": "Today is within 7 days of keyExpiresOn or past it: say the key expires, with the way to sign in again"
           },
           "sendChanges": {
             "type": "boolean",
@@ -19149,7 +19182,9 @@
                         "required": [
                           "kind",
                           "login",
-                          "canKeepPassword"
+                          "canKeepPassword",
+                          "createUrl",
+                          "expires"
                         ],
                         "properties": {
                           "kind": {
@@ -19176,6 +19211,21 @@
                           "canKeepPassword": {
                             "type": "boolean",
                             "description": "Offer \"Keep me signed in\": password sign-in, and this server can keep passwords (DIVEHUB_ENCRYPTION_KEY)"
+                          },
+                          "createUrl": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "Token sign-in: where the User makes the token at the Provider; link to it from the form"
+                              }
+                            ]
+                          },
+                          "expires": {
+                            "type": "boolean",
+                            "description": "Token sign-in: the User may give the date the token expires; shown from a week before"
                           }
                         }
                       },
@@ -19433,6 +19483,10 @@
                                         }
                                       }
                                     ]
+                                  },
+                                  "asFiles": {
+                                    "type": "boolean",
+                                    "description": "true: the dives come as the original files of the dive computer (each is placed like an uploaded file), so the import only decides whether to fetch: no add-or-create choice and no matching window apply. Absent: the dives come as entries to match"
                                   },
                                   "fields": {
                                     "type": "object",
@@ -19757,6 +19811,11 @@
                     "minLength": 1,
                     "maxLength": 4000
                   },
+                  "keyExpiresOn": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Token sign-in at a Provider whose key expires (signIn.expires): the day it does, YYYY-MM-DD, not in the past. Without it, none is kept"
+                  },
                   "keepSignedIn": {
                     "type": "boolean",
                     "description": "Keep the password, sealed, so Dive Hub signs in again by itself when the Provider asks. Only for password sign-in, and only when canKeepPassword"
@@ -19869,6 +19928,11 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 4000
+                  },
+                  "keyExpiresOn": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Token sign-in at a Provider whose key expires (signIn.expires): the day it does, YYYY-MM-DD, not in the past. Without it, none is kept"
                   },
                   "keepSignedIn": {
                     "type": "boolean",
@@ -20033,6 +20097,19 @@
                       }
                     },
                     "additionalProperties": false
+                  },
+                  "fetchKinds": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "scuba",
+                        "apnea"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "uniqueItems": true,
+                    "description": "The kinds of dive an import fetches: scuba, apnea, or both. A dive of another kind is skipped (kind_not_chosen); turning one on takes in its older dives with the next fetch. 400 provider_unsupported at a Provider that imports no dives"
                   },
                   "diveNumbers": {
                     "type": "object",
@@ -21314,6 +21391,8 @@
                         "decide",
                         "create",
                         "noMatch",
+                        "kindNotChosen",
+                        "enteredByHand",
                         "changed"
                       ],
                       "properties": {
@@ -21355,6 +21434,14 @@
                         "noMatch": {
                           "type": "integer",
                           "description": "No Dive here, and the mode only adds: left out"
+                        },
+                        "kindNotChosen": {
+                          "type": "integer",
+                          "description": "Of a kind the Connection does not fetch (fetchKinds): skipped, and not downloaded"
+                        },
+                        "enteredByHand": {
+                          "type": "integer",
+                          "description": "Entered by hand at a Provider whose dives come as files: no file behind it, skipped"
                         },
                         "changed": {
                           "type": "integer",

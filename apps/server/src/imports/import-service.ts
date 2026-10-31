@@ -3,6 +3,7 @@ import type { Readable } from 'node:stream';
 import type { Db } from '../db/client.js';
 import { DIVE_KINDS, duplicateCandidate, importJob, importOriginal, original, recording, type DiveKind, type ImportErrorCode, type ImportFound, type ImportOutcome } from '../db/schema.js';
 import { errorMessage } from '../errors.js';
+import type { DiveMode } from '../vocabulary.js';
 import type { Actor } from '../dives/revisions.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { DEFAULT_LIMITS, eachFile, looksLikeZip, type ArchiveEntry } from './archive.js';
@@ -18,7 +19,8 @@ export const CHOICE_WAIT_DAYS = 7;
 export const EXPIRE_WAITING_IMPORTS_TASK = 'expire_waiting_imports';
 
 /** The kind a User chooses by (ADR 0044): an apnea session, or a dive with a gas. */
-export const kindOf = (rec: ParsedRecording): DiveKind => (rec.summary.diveMode === 'apnea' ? 'apnea' : 'scuba');
+export const kindOfMode = (mode: DiveMode | null | undefined): DiveKind => (mode === 'apnea' ? 'apnea' : 'scuba');
+export const kindOf = (rec: ParsedRecording): DiveKind => kindOfMode(rec.summary.diveMode);
 
 /** One file of an upload: the upload itself, or a file inside the archive it is. */
 type UploadedFile = Pick<ArchiveEntry, 'index' | 'name' | 'read'>;

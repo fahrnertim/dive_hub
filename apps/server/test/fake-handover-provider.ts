@@ -2,10 +2,10 @@
 // dives over without an ID back, like a QR code would. It proves the provider layer generic: another sign-in kind,
 // another delivery, no update, delete, link or find.
 import { createHash } from 'node:crypto';
-import { ProviderError, type ProviderAdapter } from '../src/providers/provider.js';
+import { ProviderError, type ExportingProvider } from '../src/providers/provider.js';
 
 export interface FakeHandover {
-  adapter: ProviderAdapter;
+  adapter: ExportingProvider;
   /** Tokens the "service" accepts, by account. */
   tokens: Map<string, { accountId: string; label: string }>;
   /** Every dive handed over: what it received, in order. */

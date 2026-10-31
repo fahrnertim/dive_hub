@@ -1,7 +1,7 @@
 // The registry refuses an adapter whose declared Capabilities its methods don't back (ADR 0027): the generic layer
 // trusts the declaration and calls the method.
 import { describe, expect, it } from 'vitest';
-import { ProviderError, type ProviderAdapter } from '../src/providers/provider.js';
+import { ProviderError, type ExportingProvider, type ProviderAdapter } from '../src/providers/provider.js';
 import { asProblem, createProviderRegistry } from '../src/providers/registry.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import type { SsiClient } from '../src/providers/ssi/ssi-client.js';
@@ -9,7 +9,7 @@ import { createFakeHandover } from './fake-handover-provider.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 
 const ledger = () => createFakeLedger({ imports: true }).adapter;
-const withoutAction = (adapter: ProviderAdapter, method: 'update' | 'remove' | 'exists' | 'setNumber'): ProviderAdapter => ({
+const withoutAction = (adapter: ExportingProvider, method: 'update' | 'remove' | 'exists' | 'setNumber'): ProviderAdapter => ({
   ...adapter, dives: { ...adapter.dives!, open: (ctx) => ({ ...adapter.dives!.open(ctx), [method]: undefined }) },
 });
 
@@ -26,6 +26,18 @@ describe('createProviderRegistry', () => {
   it('refuses an import of dives without list and parse', () => {
     const { list: _list, ...dives } = ledger().dives!;
     expect(() => createProviderRegistry([{ ...ledger(), dives }])).toThrow('ledger: list');
+  });
+
+  it('accepts an adapter with dives import only and no open', () => {
+    const { mode: _mode, fingerprint: _fingerprint, open: _open, ...dives } = ledger().dives;
+    const { export: _export, ...data } = ledger().capabilities.data.dives!;
+    const importer = { ...ledger(), dives, capabilities: { ...ledger().capabilities, data: { dives: data } } };
+    expect(createProviderRegistry([importer]).get('ledger')).toBe(importer);
+  });
+
+  it.each(['open', 'mode', 'fingerprint'] as const)('refuses one declaring export without %s', (member) => {
+    const { [member]: _dropped, ...dives } = ledger().dives;
+    expect(() => createProviderRegistry([{ ...ledger(), dives }])).toThrow(`ledger: ${member}`);
   });
 
   it('refuses runs for a Provider that hands dives over', () => {

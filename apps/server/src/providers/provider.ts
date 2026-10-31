@@ -18,8 +18,11 @@ export type SignIn =
   | { kind: 'none' }
   /** E-mail (or user name) and password. The User may let Dive Hub keep the password, sealed, to renew by itself. */
   | { kind: 'password'; login: 'email' | 'username' }
-  /** A token the User copies from the Provider. */
-  | { kind: 'token' };
+  /**
+   * A token the User copies from the Provider. `createUrl`: where the User makes one (the form links to it). `expires`:
+   * the User may give the date the token expires; the Connection shows it from a week before.
+   */
+  | { kind: 'token'; createUrl?: string; expires?: boolean };
 
 export const OPERATIONS = ['create', 'update', 'delete', 'link', 'find', 'list', 'readBack'] as const;
 export type Operation = (typeof OPERATIONS)[number];
@@ -427,10 +430,10 @@ export interface ProviderAdapter {
   /** Signs in with what the User typed. Throws ProviderError. */
   signIn(input: SignInInput): Promise<SignedIn>;
   dives?: {
-    /** How dives get there, as recorded on each Push. */
-    mode: 'api' | 'qr';
-    /** What decides "outdated": a hash of what this Provider receives of the Dive. */
-    fingerprint(dive: OutgoingDive): string;
+    /** How dives get there, as recorded on each Push. With `dives.export` (the registry checks). */
+    mode?: 'api' | 'qr';
+    /** What decides "outdated": a hash of what this Provider receives of the Dive. With `dives.export`. */
+    fingerprint?(dive: OutgoingDive): string;
     /**
      * Whether updating the remote dive with this Dive would remove a verification it has at the Provider (ADR 0043; SSI:
      * a changed start time). `previous` is the payload the current Push recorded, null for a dive linked and never sent.
@@ -440,8 +443,9 @@ export interface ProviderAdapter {
     /**
      * The operations of one action. Makes no call by itself: the registry opens one to check that each operation the
      * Capabilities declare has its method (createProviderRegistry), so the generic layer calls them without asking again.
+     * With `dives.export`.
      */
-    open(context: ActionContext): DiveExportAction;
+    open?(context: ActionContext): DiveExportAction;
     /**
      * With `dives.import` `list` (ADR 0030): the account's dives as the Provider keeps them, read in one action. `recent`:
      * a read the adapter kept from moments ago may answer (the start right after a preview); otherwise it reads afresh.
@@ -454,6 +458,12 @@ export interface ProviderAdapter {
     parse?(record: Record<string, unknown>, context: ImportContext, remoteId?: string): ImportedDive | null;
     /** How one of those records came about (who made and who confirmed it). Pure: no calls, no names of people or places. */
     origin?(record: Record<string, unknown>): DiveOrigin;
+    /**
+     * A dive that comes as a file (Garmin): the original file of the dive `remoteId`, to be read like an uploaded one. The
+     * generic import then places it from the file instead of from `parse`'s values. Null: the Provider has no readable
+     * file of it (Garmin: a zip without a FIT), which ends that dive for good. Throws a ProviderError.
+     */
+    file?(context: ActionContext, remoteId: string): Promise<{ bytes: Uint8Array; mediaType: string; fileName: string } | null>;
     /** The parser name and version a Recording made from a Provider's dive carries, e.g. `ssi-app-api`. */
     parser?: { name: string; version: string };
   };
@@ -491,3 +501,17 @@ export interface ProviderAdapter {
     image(url: string): Promise<{ bytes: Uint8Array; mediaType: string }>;
   };
 }
+
+/** An adapter that declares `dives.export`: the registry has checked that it offers what sending needs. */
+export type ExportingProvider = ProviderAdapter & {
+  dives: Required<Pick<NonNullable<ProviderAdapter['dives']>, 'mode' | 'fingerprint' | 'open'>>;
+};
+export const isExporting = (adapter: ProviderAdapter): adapter is ExportingProvider =>
+  !!adapter.dives?.open && !!adapter.dives.mode && !!adapter.dives.fingerprint;
+
+/**
+ * The mode of a Push Dive Hub records without sending (a link to a remote dive, a remote dive found gone): how the
+ * Provider takes dives; an import-only Provider (ADR 0062) takes none and is only read, through its API. Such a Push
+ * sends nothing: sending needs `isExporting` and a sending setting, which an import-only Provider never offers.
+ */
+export const recordedMode = (adapter: ProviderAdapter): 'api' | 'qr' => adapter.dives?.mode ?? 'api';

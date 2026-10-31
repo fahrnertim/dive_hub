@@ -13,7 +13,11 @@ fills lead and the cylinder and takes them back three-way). Amends [ADR 0027](00
 [ADR 0016](0016-recording-decisions-and-divers.md) (a Recording that attaches to a Dive without one becomes its
 primary). Designed in [Importing dives from SSI](../research/2026-10-06-ssi-import.md). Amended by
 [ADR 0056](0056-two-way-exchange-and-automation.md) (built 2026-10-24 and 2026-10-27): the send takes the import's
-three-way rule, an Import can run unattended on a schedule, and its clashes wait in "Needs your decision".
+three-way rule, an Import can run unattended on a schedule, and its clashes wait in "Needs your decision". Amended by
+[ADR 0062](0062-garmin-import-only-provider.md) (built 2026-10-31): dives that come as files skip the per-computer
+choice and are placed like uploads, never replacing a Recording already here; each Connection chooses the kinds of
+dive to fetch (`fetchKinds`); new reasons `entered_by_hand`, `kind_not_chosen`, `already_here` (skipped) and
+`unavailable` (failed).
 
 ## Context
 The owner's SSI logbook holds about 90 dives, typed by hand, with rounded times and depths. Another User may have synced

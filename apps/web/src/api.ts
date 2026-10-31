@@ -109,6 +109,7 @@ export type FoundDiverView = Ok<'/api/divers/search'>[number];
 export type ExternalDiverView = Ok<'/api/external-divers'>['divers'][number];
 export type BuddyView = Ok<'/api/connections/{id}/buddies'>[number];
 export type DiveImportPreview = Ok<'/api/connections/{id}/dive-import'>;
+export type DiveKind = ConnectionView['fetchKinds'][number];
 export type DiveImportMode = NonNullable<ConnectionView['diveImport']>['mode'];
 export type UtcOffsetSource = DiveView['utcOffsetSource'];
 

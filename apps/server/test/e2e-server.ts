@@ -16,9 +16,12 @@ import { createSiteSources } from '../src/site-sources.js';
 import type { Fetch } from '../src/sites/import/polite-http.js';
 import { ssiSitesZip } from './zip.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
+import { createGarminAdapter } from '../src/providers/garmin/garmin-adapter.js';
+import { createGarminClient } from '../src/providers/garmin/garmin-client.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
+import { createFakeGarmin } from './fake-garmin.js';
 import { computerDive, createFakeSsi, fakeCard, handTypedDive, type FakeSsiSite } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { resettableClock } from './support.js';
@@ -102,6 +105,16 @@ const fakeSsi = createFakeSsi({
     fakeCard(5_012_047, { uid: 'E2ECARD-0002', course: 'Advanced Adventurer', short: 'aa', courseId: 102, issued: '2021-04-02', dives: 40 }),
   ],
 });
+// Garmin as the fake answers it: one account with the key below.
+const fakeGarmin = await createFakeGarmin();
+// Two dives in it (garmin.spec.ts): a scuba dive and an apnea session, on days no other seeded dive has.
+const garminDive = (activityId: number, typeKey: string, startTimeLocal: string) => ({
+  activityId, typeKey, startTimeLocal, fit: makeSyntheticDive({ serialNumber: 9000 + activityId, start: new Date(`${startTimeLocal.replace(' ', 'T')}Z`) }),
+});
+fakeGarmin.addAccount({
+  key: 'GCDC_e2e-key-0001', guid: 'e2e-garmin-guid', displayName: 'Erika Garmin',
+  dives: [garminDive(7001, 'single_gas_diving', '2026-09-05 10:00:00'), garminDive(7002, 'apnea_diving', '2026-09-06 10:00:00')],
+});
 const quick = <A extends { capabilities: { limits: { pauseMs: number; run: unknown } } }>(adapter: A): A => ({
   ...adapter, capabilities: { ...adapter.capabilities, limits: { ...adapter.capabilities.limits, pauseMs: 0, run: { pauseMs: 150, maxDives: 100 } } },
 });
@@ -113,7 +126,8 @@ const services = createServices({
     ssiSitesUrl: 'https://ssi.invalid/app/APP_CACHE_SITES.zip',
   }),
   // SSI's pauses between Dives are for the real SSI (5 s in a run); the fake takes them as fast as the browser tests go.
-  adapters: [quick(createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }) }))],
+  adapters: [quick(createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: fakeSsi.fetch }) })),
+    createGarminAdapter({ client: createGarminClient({ url: fakeGarmin.url }), pauseMs: 0 })],
   // The fake needs no pause between actions; the browser tests would only wait, so the pauses are skipped.
   clock: resettableClock(),
 });

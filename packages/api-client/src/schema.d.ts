@@ -8191,6 +8191,9 @@ export interface paths {
                                 login: null | ("email" | "username");
                                 /** @description Offer "Keep me signed in": password sign-in, and this server can keep passwords (DIVEHUB_ENCRYPTION_KEY) */
                                 canKeepPassword: boolean;
+                                createUrl: null | string;
+                                /** @description Token sign-in: the User may give the date the token expires; shown from a week before */
+                                expires: boolean;
                             };
                             data: {
                                 dives: null | {
@@ -8235,6 +8238,8 @@ export interface paths {
                                         /** @description How find finds a record: by our reference, by a time window, near a position */
                                         findBy: ("reference" | "time" | "position")[];
                                     };
+                                    /** @description true: the dives come as the original files of the dive computer (each is placed like an uploaded file), so the import only decides whether to fetch: no add-or-create choice and no matching window apply. Absent: the dives come as entries to match */
+                                    asFiles?: boolean;
                                     /** @description Which way each value of a dive travels; absent: every value travels both ways as far as the Provider's operations allow (imported if it imports, sent if it exports); present: a value missing from the map is not imported */
                                     fields?: {
                                         [key: string]: ("import" | "export")[];
@@ -8356,6 +8361,11 @@ export interface paths {
                         login?: string;
                         password?: string;
                         token?: string;
+                        /**
+                         * Format: date
+                         * @description Token sign-in at a Provider whose key expires (signIn.expires): the day it does, YYYY-MM-DD, not in the past. Without it, none is kept
+                         */
+                        keyExpiresOn?: string;
                         /** @description Keep the password, sealed, so Dive Hub signs in again by itself when the Provider asks. Only for password sign-in, and only when canKeepPassword */
                         keepSignedIn: boolean;
                         /** @description An external Diver here with this account is this person: merge it into the Diver (ADR 0028). Ask the User first: provider_account_held names it */
@@ -8450,6 +8460,11 @@ export interface paths {
                     "application/json": {
                         password?: string;
                         token?: string;
+                        /**
+                         * Format: date
+                         * @description Token sign-in at a Provider whose key expires (signIn.expires): the day it does, YYYY-MM-DD, not in the past. Without it, none is kept
+                         */
+                        keyExpiresOn?: string;
                         /** @description Keep the password, sealed, so Dive Hub signs in again by itself when the Provider asks. Only for password sign-in, and only when canKeepPassword */
                         keepSignedIn: boolean;
                     };
@@ -8591,6 +8606,8 @@ export interface paths {
                                 choice: "recordings" | "entries";
                             }[];
                         };
+                        /** @description The kinds of dive an import fetches: scuba, apnea, or both. A dive of another kind is skipped (kind_not_chosen); turning one on takes in its older dives with the next fetch. 400 provider_unsupported at a Provider that imports no dives */
+                        fetchKinds?: ("scuba" | "apnea")[];
                         diveNumbers?: {
                             follow: boolean;
                         };
@@ -9463,6 +9480,10 @@ export interface paths {
                                 create: number;
                                 /** @description No Dive here, and the mode only adds: left out */
                                 noMatch: number;
+                                /** @description Of a kind the Connection does not fetch (fetchKinds): skipped, and not downloaded */
+                                kindNotChosen: number;
+                                /** @description Entered by hand at a Provider whose dives come as files: no file behind it, skipped */
+                                enteredByHand: number;
                                 /** @description Linked dives changed at the Provider since Dive Hub last saw them: the Dive takes the changes */
                                 changed: number;
                             };
@@ -11625,7 +11646,7 @@ export interface components {
                  * @description Why; clients translate it. A failure’s detail stays in the server log
                  * @enum {unknown}
                  */
-                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out" | "no_computer_choice";
+                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out" | "no_computer_choice" | "already_here" | "entered_by_hand" | "unavailable" | "kind_not_chosen";
                 /**
                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                  * @enum {unknown}
@@ -12179,6 +12200,11 @@ export interface components {
                 /** @description How far apart in local time a logbook entry and a Dive here may start, on the same day */
                 windowMinutes: number;
             };
+            /** @description The kinds of dive an import fetches (both by default); a dive of another kind is skipped with the reason kind_not_chosen */
+            fetchKinds: ("scuba" | "apnea")[];
+            keyExpiresOn: null | string;
+            /** @description Today is within 7 days of keyExpiresOn or past it: say the key expires, with the way to sign in again */
+            keyExpiresSoon: boolean;
             /** @description Send a changed Dive by itself, 30 seconds after its last change (ADR 0056) */
             sendChanges: boolean;
             /** @description Send a new Dive of the Diver by itself */

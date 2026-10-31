@@ -5,11 +5,11 @@
 // every Participant needs a PADI account, or nothing is sent.
 import { createHash } from 'node:crypto';
 import {
-  ProviderError, type Delivered, type ImportContext, type ImportedDive, type OutgoingDive, type ProviderAdapter, type RemoteDive,
+  ProviderError, type Delivered, type ImportContext, type ImportedDive, type OutgoingDive, type ExportingProvider, type RemoteDive,
 } from '../src/providers/provider.js';
 
 export interface FakeLedger {
-  adapter: ProviderAdapter;
+  adapter: ExportingProvider;
   /** Tokens the "service" accepts, by account. */
   tokens: Map<string, { accountId: string; label: string }>;
   /** The dives it keeps, by ID; a dive from a computer carries the computer (`imports` only). */

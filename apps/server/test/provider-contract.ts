@@ -6,13 +6,13 @@
 import { describe, expect, it } from 'vitest';
 import { PARTICIPANT_ROLES } from '../src/db/schema.js';
 import {
-  DIVE_FIELDS, FIND_BY, OPERATIONS, ProviderError, type ActionContext, type OutgoingDive, type OutgoingParticipant, type ProviderAdapter,
+  DIVE_FIELDS, FIND_BY, OPERATIONS, ProviderError, type ActionContext, type OutgoingDive, type OutgoingParticipant, type ExportingProvider,
   type SignInInput,
 } from '../src/providers/provider.js';
 import { SITE_SOURCES } from '../src/sites/sources.js';
 
 export interface ContractHarness {
-  adapter: ProviderAdapter;
+  adapter: ExportingProvider;
   /** A sign-in the fake accepts, and one it refuses. */
   signIn: SignInInput;
   wrongSignIn: SignInInput;
@@ -35,7 +35,7 @@ export interface ContractHarness {
 const later = (dive: OutgoingDive, minutes: number): OutgoingDive => ({ ...dive, startsAt: new Date(dive.startsAt.getTime() + minutes * 60_000) });
 
 /** Every operation an adapter declares, as `kind.direction.operation`. */
-function declared(adapter: ProviderAdapter): string[] {
+function declared(adapter: ExportingProvider): string[] {
   return Object.entries(adapter.capabilities.data).flatMap(([kind, directions]) =>
     Object.entries(directions ?? {}).filter(([direction]) => direction !== 'fields').flatMap(([direction, d]) => (d as { operations: string[] }).operations.map((op) => `${kind}.${direction}.${op}`)));
 }
@@ -44,7 +44,7 @@ function declared(adapter: ProviderAdapter): string[] {
  * What is wrong with an adapter's `numbers` (ADR 0048): it holds only operations the export has, `update` in it goes with
  * `setNumber` (and `setNumber` without it is wrong), and a Provider that hands dives over has no number to set.
  */
-export function numbersProblems(adapter: ProviderAdapter): string[] {
+export function numbersProblems(adapter: ExportingProvider): string[] {
   const exports = adapter.capabilities.data.dives?.export;
   const numbers = exports?.numbers;
   const hasSetNumber = !!adapter.dives && !!adapter.dives.open({ connectionId: 'x', accountId: 'x', access: 'x' }).setNumber;
@@ -60,7 +60,7 @@ export function numbersProblems(adapter: ProviderAdapter): string[] {
 }
 
 /** What a Provider's `limits.run` must satisfy (ADR 0047): a run's pause is at least the Connection's, and a hand-over takes no runs. */
-export function runProblems(adapter: ProviderAdapter): string[] {
+export function runProblems(adapter: ExportingProvider): string[] {
   const { limits, data } = adapter.capabilities;
   if (!limits.run) return [];
   const problems: string[] = [];

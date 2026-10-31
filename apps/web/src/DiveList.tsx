@@ -10,7 +10,7 @@ import {
 import { useAddressSearch } from './lib/address-search.ts';
 import { useNarrow } from './lib/narrow.ts';
 import { usePageTitle } from './lib/page.ts';
-import { useJoinNames, useProviders } from './lib/providers.ts';
+import { diveTargets, useJoinNames, useProviders } from './lib/providers.ts';
 import { SendToProvider } from './PushRun.tsx';
 import { ProfileSketch } from './ProfileSketch.tsx';
 import { WaitingPushState } from './WaitingPush.tsx';
@@ -226,7 +226,7 @@ function useFilterNames() {
   const connections = useQuery(connectionsQuery());
   return (filter: LogbookFilter): string => {
     if (filter !== 'not-at-provider') return t(`logbook.only.${COUNT_OF[filter]}`);
-    const connected = (providers.data ?? []).filter((p) => connections.data?.some((c) => c.provider === p.id)).map((p) => p.name);
+    const connected = diveTargets(providers.data).filter((p) => connections.data?.some((c) => c.provider === p.id)).map((p) => p.name);
     return t('logbook.only.notAtProvider', { names: connected.length > 0 ? joinNames(connected) : t('provider.someService') });
   };
 }

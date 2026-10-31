@@ -5,7 +5,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import { userOf } from '../auth/fastify.js';
 import { Problem } from '../http/problems.js';
-import { DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES } from '../db/schema.js';
+import { DIVE_IMPORT_MODES, DIVE_KINDS, MATCHING_WINDOWS, PARTICIPANT_ROLES } from '../db/schema.js';
 import { SOURCE_INFO } from '../sites/sources.js';
 import { IdParams, Nullable } from '../http/schemas.js';
 import { automationOffers, type ConnectionService } from './connection-service.js';
@@ -19,6 +19,9 @@ import type { ScheduledFetch } from './dive-import/scheduled-fetch.js';
 import type { WaitingPushService } from './waiting-push/waiting-push-service.js';
 
 const Secret = Type.String({ minLength: 1, maxLength: 4000 });
+const KeyExpiresOn = Type.Optional(Type.String({
+  format: 'date', description: 'Token sign-in at a Provider whose key expires (signIn.expires): the day it does, YYYY-MM-DD, not in the past. Without it, none is kept',
+}));
 const KeepSignedIn = Type.Boolean({
   description: 'Keep the password, sealed, so Dive Hub signs in again by itself when the Provider asks. Only for password sign-in, and only when canKeepPassword',
 });
@@ -52,6 +55,8 @@ const ProviderView = Type.Object({
     kind: Type.Enum(['none', 'password', 'token']),
     login: Nullable(Type.Enum(['email', 'username'], { description: 'What the login field asks for (password sign-in)' })),
     canKeepPassword: Type.Boolean({ description: 'Offer "Keep me signed in": password sign-in, and this server can keep passwords (DIVEHUB_ENCRYPTION_KEY)' }),
+    createUrl: Nullable(Type.String({ description: 'Token sign-in: where the User makes the token at the Provider; link to it from the form' })),
+    expires: Type.Boolean({ description: 'Token sign-in: the User may give the date the token expires; shown from a week before' }),
   }),
   data: Type.Object({
     dives: Nullable(Type.Object({
@@ -66,6 +71,9 @@ const ProviderView = Type.Object({
         }, { description: 'ADR 0048: null when the Provider numbers by itself. Else a Connection can be set to number dives here as in Dive Hub (diveNumbers.follow)' })),
       })),
       import: Nullable(Direction),
+      asFiles: Type.Optional(Type.Boolean({
+        description: 'true: the dives come as the original files of the dive computer (each is placed like an uploaded file), so the import only decides whether to fetch: no add-or-create choice and no matching window apply. Absent: the dives come as entries to match',
+      })),
       fields: Type.Optional(Type.Record(Type.String(), Type.Array(Type.Union([Type.Literal('import'), Type.Literal('export')])), {
         description: 'Which way each value of a dive travels; absent: every value travels both ways as far as the Provider\'s operations allow (imported if it imports, sent if it exports); present: a value missing from the map is not imported',
       })),
@@ -113,6 +121,8 @@ function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Static<typ
     signIn: {
       kind: c.signIn.kind, login: c.signIn.kind === 'password' ? c.signIn.login : null,
       canKeepPassword: c.signIn.kind === 'password' && canKeepPasswords,
+      createUrl: c.signIn.kind === 'token' ? c.signIn.createUrl ?? null : null,
+      expires: c.signIn.kind === 'token' && !!c.signIn.expires,
     },
     data: {
       dives: dives ? {
@@ -121,6 +131,7 @@ function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Static<typ
           readBackFields: exports.readBackFields ?? [], numbers: exports.numbers ?? null,
         } : null,
         import: direction(dives.import),
+        ...(a.dives?.file && { asFiles: true }),
         ...(dives.fields && { fields: dives.fields }),
       } : null,
       diveSites: c.data.diveSites ? { import: direction(c.data.diveSites.import) } : null,
@@ -155,7 +166,7 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
       const { fetchMinimum: __, ...offers } = automationOffers(providers.get(c.provider));
       return {
         // The column's check keeps it to the three intervals.
-        ...rest, fetchEveryMinutes: c.fetchEveryMinutes as 60 | 360 | 1440 | null, lastUsedAt: c.lastUsedAt?.toISOString() ?? null, createdAt: c.createdAt.toISOString(),
+        ...rest, keyExpiresSoon: connections.keyExpiresSoon(c.keyExpiresOn), fetchEveryMinutes: c.fetchEveryMinutes as 60 | 360 | 1440 | null, lastUsedAt: c.lastUsedAt?.toISOString() ?? null, createdAt: c.createdAt.toISOString(),
         diveNumbers: hasNumbers(c.provider) ? { follow: followNumbers } : null,
         diveImport: importsDives(c.provider) ? { mode: importMode, windowMinutes: importWindowMinutes } : null,
         offers, waiting, unsentDives,
@@ -195,6 +206,7 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
         login: Type.Optional(Type.String({ minLength: 1, maxLength: 320, description: 'E-mail or user name (password sign-in)' })),
         password: Type.Optional(Secret),
         token: Type.Optional(Secret),
+        keyExpiresOn: KeyExpiresOn,
         keepSignedIn: KeepSignedIn,
         claim: Type.Optional(Type.Boolean({
           description: 'An external Diver here with this account is this person: merge it into the Diver (ADR 0028). Ask the User first: provider_account_held names it',
@@ -212,7 +224,7 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
     schema: {
       summary: 'Sign in to the Provider again with the Connection\'s login (after the access expired), and choose again whether to keep the password',
       params: IdParams,
-      body: Type.Object({ password: Type.Optional(Secret), token: Type.Optional(Secret), keepSignedIn: KeepSignedIn }, { additionalProperties: false }),
+      body: Type.Object({ password: Type.Optional(Secret), token: Type.Optional(Secret), keyExpiresOn: KeyExpiresOn, keepSignedIn: KeepSignedIn }, { additionalProperties: false }),
       response: { 200: ConnectionView, ...errors },
     },
   }, async (request) => {
@@ -234,6 +246,10 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
           windowMinutes: Type.Optional(Type.Union(MATCHING_WINDOWS.map((m) => Type.Literal(m)), { description: '5, 15, 30 or 60' })),
           computers: Type.Optional(ComputerChoices),
         }, { additionalProperties: false })),
+        fetchKinds: Type.Optional(Type.Array(Type.Enum([...DIVE_KINDS]), {
+          minItems: 1, maxItems: DIVE_KINDS.length, uniqueItems: true,
+          description: 'The kinds of dive an import fetches: scuba, apnea, or both. A dive of another kind is skipped (kind_not_chosen); turning one on takes in its older dives with the next fetch. 400 provider_unsupported at a Provider that imports no dives',
+        })),
         diveNumbers: Type.Optional(Type.Object({ follow: Type.Boolean() }, { additionalProperties: false })),
         sendChanges: Type.Optional(Type.Boolean()),
         sendNewDives: Type.Optional(Type.Boolean()),
@@ -245,17 +261,17 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
       response: { 200: ConnectionView, ...errors },
     },
   }, async (request) => {
-    const { diveImport, diveNumbers, ...automation } = request.body;
+    const { diveImport, fetchKinds, diveNumbers, ...automation } = request.body;
     const userId = userOf(request).id;
     // Every part is checked before any is written: a refusal in one changes nothing.
     const parts = Object.keys(automation).length > 0;
     await connections.checkChanges(userId, request.params.id, { ...(parts && { automation }), ...(diveNumbers && { follow: diveNumbers.follow }) });
-    if (diveImport) await diveImports.checkSettings(userId, request.params.id);
+    if (diveImport || fetchKinds) await diveImports.checkSettings(userId, request.params.id);
     if (parts) await connections.setAutomation(userId, request.params.id, automation);
-    if (diveImport) {
-      const { computers, ...set } = diveImport;
+    if (diveImport || fetchKinds) {
+      const { computers, ...set } = diveImport ?? {};
       await diveImports.settings(userOf(request).id, request.params.id, {
-        ...set, ...(computers && { computers: Object.fromEntries(computers.map((c) => [c.key, c.choice])) }),
+        ...set, ...(computers && { computers: Object.fromEntries(computers.map((c) => [c.key, c.choice])) }), ...(fetchKinds && { fetchKinds }),
       });
     }
     if (diveNumbers) await connections.setFollowNumbers(userOf(request).id, request.params.id, diveNumbers.follow);

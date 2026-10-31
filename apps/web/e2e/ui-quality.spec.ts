@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectAccessible, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, clearQueue, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, tankPodDive
+  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -524,6 +524,17 @@ for (const v of variants) {
       await goodPage(page, title('My account'), v);
     });
 
+    test('my account, connected to Garmin, the key expires soon', { tag: ['@account'] }, async ({ page, request }) => {
+      await connectGarmin(request, 5);
+      try {
+        await page.goto('/#/account?tab=connections');
+        await expect(page.locator('#main').getByText(v.english ? /The key expires on / : /Der Schlüssel läuft am /)).toBeVisible();
+        await goodPage(page, title('My account'), v);
+      } finally {
+        await leaveGarmin(request);
+      }
+    });
+
     test('a dive at SSI, choosing the SSI site', { tag: ['@dives'] }, async ({ page, request }) => {
       await connectSsi(request);
       await readyForSsi(request, diveId);
@@ -706,7 +717,7 @@ for (const v of variants) {
       try {
         await page.goto('/#/account?tab=connections');
         const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
-        await panel.getByRole('button', { name: v.english ? /Diver$/ : /Taucher$/ }).click();
+        await panel.getByRole('button', { name: v.english ? /Diver for SSI$/ : /Taucher für SSI$/ }).click();
         await page.getByRole('option', { name: 'Lena', exact: true }).click();
         await panel.getByRole('textbox', { name: v.english ? 'SSI e-mail' : 'SSI-E-Mail' }).fill(LENA_SSI.login);
         await panel.getByRole('textbox', { name: v.english ? 'SSI password' : 'SSI-Passwort' }).fill(LENA_SSI.password);

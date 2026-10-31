@@ -15,8 +15,8 @@ import { createDiveChanges, type ProviderContext } from '../dive-import/dive-cha
 import { LeaseBusy, realClock, type Clock, type LeaseService } from '../lease-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
 import {
-  DIVE_FIELDS, ProviderError, referenceOf, type ActionContext, type Delivered, type DiveExport, type DiveExportAction, type DiveField, type ImportContext,
-  type ImportedDive, type Leave, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite,
+  DIVE_FIELDS, isExporting, ProviderError, referenceOf, type ActionContext, type Delivered, type DiveExport, type DiveExportAction, type DiveField, type ImportContext,
+  type ExportingProvider, type ImportedDive, type Leave, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite,
 } from '../provider.js';
 import { withRemembered } from '../list-entries.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from '../registry.js';
@@ -125,7 +125,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
   function exporter(provider: string) {
     const adapter = registry.get(provider);
     const exports = adapter.dives && adapter.capabilities.data.dives?.export;
-    if (!adapter.dives || !exports) throw new ProviderServiceError('provider_unsupported', named(adapter));
+    if (!isExporting(adapter) || !exports) throw new ProviderServiceError('provider_unsupported', named(adapter));
     return { adapter, dives: adapter.dives, exports };
   }
 
@@ -134,7 +134,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
   }
 
   async function record(adapter: ProviderAdapter, values: PushValues) {
-    const [row] = await db.insert(push).values({ provider: adapter.id, mode: adapter.dives!.mode, ...values }).returning();
+    const [row] = await db.insert(push).values({ provider: adapter.id, mode: adapter.dives!.mode!, ...values }).returning();
     return row!;
   }
 
@@ -282,7 +282,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
     };
     const delivered = (action: 'create' | 'update', d: Delivered, p: Prepared, diveVersion: number) => record(adapter, {
       ...base, diveVersion, action, state: exports.delivery === 'confirmed' ? 'confirmed' : 'handed_over',
-      remoteId: d.remoteId, remoteNumber: d.remoteNumber, fingerprint: adapter.dives!.fingerprint(p.outgoing), payload: d.payload,
+      remoteId: d.remoteId, remoteNumber: d.remoteNumber, fingerprint: adapter.dives!.fingerprint!(p.outgoing), payload: d.payload,
       differences: d.differences, leftOut: leftOut(d, p),
     });
     const failed = (action: 'create' | 'update', error: unknown, remoteId: string | null = null) => recordFailed(adapter, { ...base, action, remoteId }, error);
@@ -376,7 +376,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
   }
 
   /** The remote dive a Dive has now: whether it is up to date, and what an update would cost there (ADR 0043). */
-  function remoteState(current: PushRow, dives: NonNullable<ProviderAdapter['dives']>, outgoing: OutgoingDive, numbers: NumbersFor | null) {
+  function remoteState(current: PushRow, dives: ExportingProvider['dives'], outgoing: OutgoingDive, numbers: NumbersFor | null) {
     const upToDate = current.fingerprint !== null && current.fingerprint === dives.fingerprint(outgoing);
     // Whether the Provider's number is Dive Hub's is a state of its own, not "changed since sent" (ADR 0048).
     const number = numbers && {

@@ -150,6 +150,24 @@ export async function connectSsi(api: APIRequestContext) {
   if (!response.ok()) throw new Error(`connecting to SSI failed: ${response.status()} ${await response.text()}`);
 }
 
+/** The key of the e2e server's fake Garmin account (apps/server/test/e2e-server.ts). */
+export const GARMIN_KEY = 'GCDC_e2e-key-0001';
+
+/** The Garmin Connection of Erika's own Diver removed, if there is one: Garmin specs start and end without it. */
+export async function leaveGarmin(api: APIRequestContext) {
+  const connections = await (await api.get('/api/connections')).json() as Connection[];
+  for (const c of connections.filter((x) => x.provider === 'garmin')) await api.delete(`/api/connections/${c.id}`, { headers });
+}
+
+/** Erika's own Diver connected to the fake Garmin with a key that expires `days` from now (a new Connection each time). */
+export async function connectGarmin(api: APIRequestContext, days: number) {
+  await leaveGarmin(api);
+  const me = await (await api.get('/api/me')).json() as { ownDiver: { id: string } };
+  const keyExpiresOn = new Date(Date.now() + days * 86_400_000).toLocaleDateString('sv');
+  const response = await api.post('/api/connections/garmin', { data: { diverId: me.ownDiver.id, token: GARMIN_KEY, keyExpiresOn, keepSignedIn: false }, headers });
+  if (!response.ok()) throw new Error(`connecting to Garmin failed: ${response.status()} ${await response.text()}`);
+}
+
 /** Lena's own SSI account (ADR 0030): the e2e server's fake SSI has her logbook to import. Lena is a Diver Erika keeps. */
 export const LENA_SSI = { login: 'lena@example.com', password: 'ssi-password-lena' };
 

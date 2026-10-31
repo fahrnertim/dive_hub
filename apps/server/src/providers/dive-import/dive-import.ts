@@ -2,18 +2,22 @@
 // here. Trust per dive by its evidence (sent by Dive Hub, from a dive computer, typed by hand) and per computer by the
 // User; logbook entries match Dives here by local time and fill what they lack; computer dives become Recordings placed
 // like a file's. A preview first (nothing stored), then an Import over one JSON Original per dive that the worker runs.
+// A Provider whose dives come as files (`dives.file`, ADR 0062): each new dive's file is downloaded by the Import's
+// worker, kept as its Original and placed like an upload, never replacing a Recording here; it is linked to the dive,
+// and a download that ended for good is remembered by its Import, so it is never downloaded again.
 import { isDeepStrictEqual } from 'node:util';
 import { and, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../../db/client.js';
 import {
   connection, dive, diveSite, device, importJob, importOriginal, original, providerSiteData, push, user,
-  recording, type ComputerChoice, type DiveImportMode, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
+  recording, type ComputerChoice, type DiveImportMode, type DiveKind, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
 } from '../../db/schema.js';
 import { writeRevision, type Actor } from '../../dives/revisions.js';
 import type { PlacedTime } from '../../dives/time-zone.js';
 import { errorMessage } from '../../errors.js';
+import { createFileFormats, formatOf, type FileFormat } from '../../imports/formats.js';
 import type { ParsedRecording } from '../../imports/parsed-recording.js';
-import { PROCESS_IMPORT_TASK } from '../../imports/import-service.js';
+import { PROCESS_IMPORT_TASK, kindOfMode } from '../../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../../imports/placement.js';
 import { DAY_MS, MAX_OFFSET_MS, entryMatches } from '../../imports/matching.js';
 import { recordFindings } from './gone-dives.js';
@@ -23,7 +27,7 @@ import { siteOutlook } from '../../sites/provider-sites.js';
 import type { BlobStore } from '../../storage/blob-store.js';
 import type { ConnectionService } from '../connection-service.js';
 import { loadOutgoingDive } from '../push/outgoing-dive.js';
-import { REFERENCE_PREFIX, localStartOf, type DiveField, type ImportContext, type ImportedDive, type ProviderCylinder } from '../provider.js';
+import { REFERENCE_PREFIX, ProviderError, localStartOf, recordedMode, type Capabilities, type DiveField, type ImportContext, type ImportedDive, type ProviderCylinder } from '../provider.js';
 import { createDiveChanges, importsField, type ProviderContext } from './dive-changes.js';
 import { currentRemote, fingerprintNow } from '../remote-state.js';
 import { sameAtProvider, type SyncedField } from './three-way.js';
@@ -91,7 +95,11 @@ type Assessment =
   | { kind: 'create' }
   | { kind: 'no_match' }
   /** Unattended: from a dive computer the User hasn't chosen for yet. */
-  | { kind: 'unchosen' };
+  | { kind: 'unchosen' }
+  /** Entered by hand at a Provider whose dives come as files: no file is behind it. */
+  | { kind: 'by_hand' }
+  /** Of a kind the Connection doesn't fetch (its `fetchKinds`): left alone, and never downloaded. */
+  | { kind: 'kind_not_chosen' };
 
 /** An Import's Original read again by the worker: its dive to process, or the outcome it ends with already. */
 type ReadOriginal =
@@ -104,7 +112,7 @@ type FoundChanges = NonNullable<Awaited<ReturnType<ReturnType<typeof createDiveC
 /** The preview's count each assessment adds to; `unchosen` only comes unattended, and isn't counted. */
 const COUNTED = {
   ours: 'ours', linked: 'linked', deleted: 'deleted', recording: 'recordings', link: 'link', decide: 'decide', create: 'create',
-  no_match: 'noMatch', unchosen: null,
+  no_match: 'noMatch', unchosen: null, by_hand: 'enteredByHand', kind_not_chosen: 'kindNotChosen',
 } as const satisfies Record<Assessment['kind'], string | null>;
 
 /** The preview's site count a site's outlook adds to: a new one is created only where an admin allowed the site data. */
@@ -114,8 +122,13 @@ const siteCounted = (kind: string, allowed: boolean) =>
 const keyOf = (d: { manufacturer: string; serialNumber: string }) => `${d.manufacturer}:${d.serialNumber}`;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-export function createDiveImportService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; clock?: Clock }) {
+export function createDiveImportService(deps: {
+  db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService; clock?: Clock;
+  /** The file formats a Provider's dive files are read with (ADR 0037); all of them unless a test narrows it. */
+  formats?: FileFormat[];
+}) {
   const { db, blobs, registry, connections } = deps;
+  const formats = deps.formats ?? createFileFormats();
   const clock = deps.clock ?? realClock;
   const { contextOf, providerSitesOf, settleSiteVisibility, placeTime, providerChangesOf, takeChanges, fillFromProvider, shown, conflictFields } = createDiveChanges({ db, blobs });
 
@@ -147,6 +160,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     const dives = parsed.flatMap((p) => (p.dive ? [p.dive] : []));
     const pc = await contextOf(db, userId, adapter, {
       diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {}, context,
+      kinds: row.fetchKinds,
     });
     return { row, adapter, context, parsed, dives, pc };
   }
@@ -236,6 +250,15 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * computer has no choice in `run.choices` waits for the User (Recordings or entries could go wrong, hard to undo).
    */
   async function assess(q: Queryable, pc: ProviderContext, d: ImportedDive, unattended = false): Promise<Assessment> {
+    // A dive of a kind not chosen is left alone, whatever else is known of it; one Dive Hub sent is ours, not a fetched one.
+    if (d.evidence !== 'ours' && !pc.kinds.has(kindOfMode(d.diveMode))) return { kind: 'kind_not_chosen' };
+    // Dives that come as files (ADR 0062) are matched by placing the file, like an upload: no computer to choose for.
+    if (pc.adapter.dives?.file) {
+      if (d.evidence === 'logbook') return { kind: 'by_hand' };
+      const linked = await linkedTo(q, pc, d.remoteId);
+      if (linked?.deleted) return { kind: 'deleted' };
+      return linked ? { kind: 'linked', diveId: linked.diveId } : { kind: 'recording' };
+    }
     if (d.evidence === 'ours') {
       // The Dive it is linked to now, when that isn't the one our reference names: the Dive it was sent from was merged
       // into another, which took the link (ADR 0038). Changes made at the Provider then come back to that Dive.
@@ -298,13 +321,16 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
 
   /**
    * Links the Dive to the Provider's dive (a `link` Push), unless it has a remote dive there already: sending then updates
-   * that dive instead of making another. `upToDate`: the Dive was made from it, so it shows up to date.
+   * that dive instead of making another. `upToDate`: the Dive was made from it, so it shows up to date. `deleted`: the
+   * Dive may be one deleted here (a file's dive on it, so the next fetch finds it deleted).
    */
-  async function link(tx: Tx, pc: ProviderContext, diveId: string, d: ImportedDive, upToDate: boolean) {
+  async function link(
+    tx: Tx, pc: ProviderContext, diveId: string, d: Pick<ImportedDive, 'remoteId' | 'remoteNumber'>, upToDate: boolean, options: { deleted?: boolean } = {},
+  ) {
     if ((await withRemote(tx, pc, [diveId])).size > 0) return;
-    const loaded = await loadOutgoingDive(tx, pc.userId, diveId);
+    const loaded = await loadOutgoingDive(tx, pc.userId, diveId, options);
     await tx.insert(push).values({
-      diveId, connectionId: pc.connectionId, userId: pc.userId, provider: pc.adapter.id, mode: pc.adapter.dives!.mode,
+      diveId, connectionId: pc.connectionId, userId: pc.userId, provider: pc.adapter.id, mode: recordedMode(pc.adapter),
       action: 'link', state: 'confirmed', remoteId: d.remoteId, remoteNumber: d.remoteNumber, diveVersion: loaded.row.version,
       fingerprint: upToDate ? fingerprintNow(pc.adapter, loaded) : null,
     });
@@ -463,7 +489,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
    * entry is shown as a Conflict, never as a change to take.
    */
   async function previewDives(pc: ProviderContext, parsed: number, dives: ImportedDive[]) {
-    const counts = { total: parsed, unreadable: parsed - dives.length, ours: 0, linked: 0, deleted: 0, recordings: 0, link: 0, decide: 0, create: 0, noMatch: 0, changed: 0 };
+    const counts = {
+      total: parsed, unreadable: parsed - dives.length, ours: 0, linked: 0, deleted: 0, recordings: 0, link: 0, decide: 0, create: 0, noMatch: 0,
+      enteredByHand: 0, kindNotChosen: 0, changed: 0,
+    };
     const conflicts: ConflictView[] = [];
     const decisions: { remoteId: string; remoteNumber: number | null; localStart: string; durationSeconds: number; maxDepthM: number | null; candidates: CandidateView[] }[] = [];
     for (const d of dives) {
@@ -507,6 +536,141 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       }
     }
     return sites;
+  }
+
+  const fileBase = (pc: ProviderContext, remoteId: string) => ({ fileName: `${pc.adapter.id}-dive-${remoteId}`, remoteId });
+
+  /** A dive an earlier fetch downloaded for good, now: skipped again with its reason, else unchanged. */
+  const endedBefore = (pc: ProviderContext, remoteId: string, earlier: ImportOutcome[number]): ImportOutcome[number] => {
+    const on = { ...(earlier.diveId && { diveId: earlier.diveId }), ...(earlier.recordingId && { recordingId: earlier.recordingId }) };
+    return earlier.result === 'skipped' && earlier.reason
+      ? { ...fileBase(pc, remoteId), result: 'skipped', reason: earlier.reason, ...on }
+      : { ...fileBase(pc, remoteId), result: 'unchanged', ...on };
+  };
+
+  /**
+   * The dives whose file a finished Import of this Connection downloaded and that ended for good (placed, or skipped:
+   * no dive file, no dive, another Diver's), by remote ID, with how each ended: the design's "remote ID of a Recording",
+   * also where the Dive keeps another dive's link (two computers on one dive) or no Recording came of it. A failed
+   * download (`unavailable`, `file_failed`) isn't among them: the next fetch tries it again. Only the Imports that
+   * downloaded something are read (almost every scheduled fetch downloads nothing), so the work grows with downloads,
+   * not with the fetches.
+   */
+  async function downloadedBefore(connectionId: string): Promise<Map<string, ImportOutcome[number]>> {
+    const rows = await db.execute<{ entry: ImportOutcome[number] }>(sql`
+      select e.entry from ${importJob} i cross join lateral jsonb_array_elements(i.outcome) as e(entry)
+      where i.connection_id = ${connectionId} and i.status = 'done' and i.plan->'files' <> '[]'::jsonb
+        and jsonb_exists(i.plan->'files', e.entry->>'remoteId') and e.entry->>'result' <> 'failed'`);
+    return new Map(rows.rows.map(({ entry }) => [entry.remoteId!, entry]));
+  }
+
+  /**
+   * When an Import of dives that come as files starts (ADR 0062): the dives new here, whose files the worker downloads
+   * (oldest first); the others end as they were found: linked already, deleted here, entered by hand, or downloaded by
+   * an earlier fetch for good (skipped again with its reason, else unchanged). Nothing is downloaded here, so starting
+   * answers at once.
+   */
+  async function sortFiles(pc: ProviderContext, parsed: { remoteId: string; dive: ImportedDive | null }[]) {
+    const ended: ImportOutcome = [];
+    const wanted: ImportedDive[] = [];
+    const before = await downloadedBefore(pc.connectionId!);
+    for (const { remoteId, dive: d } of parsed) {
+      const a = d ? await assess(db, pc, d) : null;
+      const earlier = before.get(remoteId);
+      if (!d || !a) ended.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'not_a_dive' });
+      else if (a.kind === 'recording' && earlier) ended.push(endedBefore(pc, remoteId, earlier));
+      else if (a.kind === 'recording') wanted.push(d);
+      else if (a.kind === 'linked') ended.push({ ...fileBase(pc, remoteId), result: 'unchanged', diveId: a.diveId });
+      else if (a.kind === 'deleted') ended.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'deleted_earlier' });
+      else if (a.kind === 'by_hand') ended.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'entered_by_hand' });
+      else if (a.kind === 'kind_not_chosen') ended.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'kind_not_chosen' });
+    }
+    wanted.sort((x, y) => x.localStart.localeCompare(y.localStart));
+    return { files: wanted.map((d) => d.remoteId), ended };
+  }
+
+  /**
+   * The worker's part for dives that come as files (ADR 0062): each new dive's file downloaded, one after another (the
+   * adapter keeps the pause), and placed. A dive the Provider has no file of (`file` answers null) ends that dive only,
+   * for good. Any download that fails (a 429, a 404, a dropped call, an unreadable answer, a key it no longer takes: the
+   * Connection then needs a sign-in) ends the downloads: that dive and the rest fail as `unavailable`, nothing more is
+   * asked now, and the next fetch tries them again. Never throws, so the dives placed keep their outcome.
+   */
+  async function placeFiles(job: typeof importJob.$inferSelect, pc: ProviderContext, remoteIds: string[]) {
+    const outcome: ImportOutcome = [];
+    if (remoteIds.length === 0) return outcome;
+    const file = pc.adapter.dives!.file!;
+    const row = job.connectionId ? await connections.own(job.userId, job.connectionId).catch(() => null) : null;
+    const download = async (remoteId: string) => {
+      if (!row) return new ProviderError('unavailable', 'the Connection is gone');
+      try {
+        return await connections.withAccess(row, async (ctx) => {
+          try {
+            return await file(ctx, remoteId);
+          } catch (error) {
+            // A refused sign-in goes on to `withAccess`, which marks the Connection as needing one.
+            if (!(error instanceof ProviderError) || error.reason === 'signed_out' || error.reason === 'wrong_credentials') throw error;
+            return error;
+          }
+        });
+      } catch (error) {
+        return error instanceof Error ? error : new Error(String(error));
+      }
+    };
+    for (const [i, remoteId] of remoteIds.entries()) {
+      const got = await download(remoteId);
+      if (got === null) {
+        outcome.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'no_dive_file' });
+      } else if (got instanceof Error) {
+        for (const rest of remoteIds.slice(i)) outcome.push({ ...fileBase(pc, rest), result: 'failed', reason: 'unavailable', message: errorMessage(got) });
+        break;
+      } else {
+        outcome.push(...(await placeFile(job, pc, remoteId, got)));
+      }
+    }
+    return outcome;
+  }
+
+  /**
+   * One downloaded file: read through the file formats, kept as its Original (once per content, only when it holds a
+   * dive) and its Recordings placed like an upload's, a Recording here already kept as it is. The Dive is then linked to
+   * the Provider's dive, so the next fetch finds it linked and doesn't download it again; one on a Dive deleted here is
+   * linked to that Dive, so the next fetch finds it deleted (ADR 0026).
+   */
+  async function placeFile(job: typeof importJob.$inferSelect, pc: ProviderContext, remoteId: string, f: { bytes: Uint8Array; mediaType: string; fileName: string }) {
+    const actor: Actor = { type: 'import', id: job.id };
+    const base = { fileName: f.fileName, remoteId };
+    const ref = { remoteId, remoteNumber: null };
+    try {
+      const format = formatOf(formats, f.bytes);
+      const parsed = format ? await format.parse(f.bytes) : [];
+      if (!format || parsed.length === 0) return [{ ...base, result: 'skipped', reason: format ? 'not_a_dive' : 'no_dive_file' }] satisfies ImportOutcome;
+      const parser = { name: format.parser, version: format.parserVersion };
+      const blob = await blobs.putOriginal(f.bytes);
+      return await db.transaction(async (tx) => {
+        const [existing] = await tx.select({ id: original.id, fileName: original.fileName }).from(original)
+          .where(and(eq(original.userId, job.userId), eq(original.sha256, blob.sha256)));
+        const originalId = existing?.id ?? (await tx.insert(original).values({
+          userId: job.userId, sha256: blob.sha256, mediaType: f.mediaType, sizeBytes: blob.sizeBytes, fileName: f.fileName, storageKey: blob.key,
+        }).returning({ id: original.id }))[0]!.id;
+        await tx.insert(importOriginal).values({ importId: job.id, originalId }).onConflictDoNothing();
+        const fileName = existing?.fileName ?? f.fileName;
+        const placed: ImportOutcome = [];
+        for (const rec of parsed) {
+          const one = await placeRecording(tx, { userId: job.userId, importId: job.id, originalId, fileName, actor, parser, diverId: pc.diverId, keepKnown: true }, rec);
+          if (one.diveId) {
+            await link(tx, pc, one.diveId, ref, one.result === 'created');
+          } else if (one.reason === 'deleted_earlier' && one.recordingId) {
+            const [gone] = await tx.select({ diveId: recording.diveId }).from(recording).where(eq(recording.id, one.recordingId));
+            if (gone?.diveId) await link(tx, pc, gone.diveId, ref, false, { deleted: true });
+          }
+          placed.push({ ...one, fileName, remoteId });
+        }
+        return placed;
+      });
+    } catch (error) {
+      return [{ ...base, result: 'failed', reason: 'file_failed', message: errorMessage(error) }] satisfies ImportOutcome;
+    }
   }
 
   /** One dive of a running Import, in its own transaction. `seen`: its Original came with an earlier Import unchanged. */
@@ -567,6 +731,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
         return { ...base, result: 'skipped', reason: 'no_match' };
       case 'unchosen':
         return { ...base, result: 'skipped', reason: 'no_computer_choice' };
+      case 'by_hand':
+        return { ...base, result: 'skipped', reason: 'entered_by_hand' };
+      case 'kind_not_chosen':
+        return { ...base, result: 'skipped', reason: 'kind_not_chosen' };
     }
   }
 
@@ -575,7 +743,12 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     async siteData() {
       const rows = await db.select({ provider: providerSiteData.provider, allowedAt: providerSiteData.allowedAt, allowedBy: user.name })
         .from(providerSiteData).leftJoin(user, eq(user.id, providerSiteData.allowedBy));
-      return registry.list().filter((a) => a.capabilities.data.dives?.import?.operations.includes('list')).map((a) => {
+      // Only a Provider whose dives carry a site (a Garmin dive comes from its file and declares no fields) has site data.
+      const withSites = ({ capabilities }: { capabilities: Capabilities }) => {
+        const fields = capabilities.data.dives?.fields;
+        return !fields || !!fields.site?.includes('import');
+      };
+      return registry.list().filter((a) => a.capabilities.data.dives?.import?.operations.includes('list') && withSites(a)).map((a) => {
         const row = rows.find((r) => r.provider === a.id);
         return { provider: a.id, name: a.capabilities.name, allowedAt: row?.allowedAt ?? null, allowedBy: row?.allowedBy ?? null };
       });
@@ -599,12 +772,14 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     /** What an import of the Connection's dives may do (ADR 0030). */
     async settings(userId: string, connectionId: string, set: {
       mode?: DiveImportMode | undefined; windowMinutes?: number | undefined; computers?: Record<string, ComputerChoice> | undefined;
+      fetchKinds?: DiveKind[] | undefined;
     }) {
       const row = await connections.own(userId, connectionId);
       importer(row.provider);
       await db.update(connection).set({
         ...(set.mode && { importMode: set.mode }), ...(set.windowMinutes && { importWindowMinutes: set.windowMinutes }),
-        ...(set.computers && { importComputers: { ...row.importComputers, ...set.computers } }), updatedAt: new Date(),
+        ...(set.computers && { importComputers: { ...row.importComputers, ...set.computers } }),
+        ...(set.fetchKinds && { fetchKinds: set.fetchKinds }), updatedAt: new Date(),
       }).where(eq(connection.id, row.id));
     },
 
@@ -642,7 +817,8 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
 
     /**
      * Starts the import (ADR 0030): reads the dives again (or the Provider's kept read), keeps the choice per computer on
-     * the Connection, stores one Original per dive (its record as JSON, never the whole answer), and creates the Import
+     * the Connection, stores one Original per dive (its record as JSON, never the whole answer; for dives that come as
+     * files none: the worker downloads the new dives' files), and creates the Import
      * the worker runs, with the context and the decisions. `unattended` (a scheduled fetch, ADR 0056): a fresh read that
      * also finds gone dives, as a preview's (ADR 0051); only the computers the User chose for keep a choice, so the
      * others' dives wait (`no_computer_choice`), and Conflicts wait in "Needs your decision".
@@ -656,12 +832,15 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       const saved = { ...row.importComputers, ...given.computers };
       const computers = (await computersOf(db, pc, dives, saved)).filter((c) => !given.unattended || saved[c.key] !== undefined);
       const choices = Object.fromEntries(computers.map((c) => [c.key, c.choice]));
-      const stored = await Promise.all(parsed.map(async ({ remoteId, record }) => ({
+      // Dives that come as files (ADR 0062): the worker downloads the new ones; their files are the Originals, never their records.
+      const sorted = adapter.dives?.file ? await sortFiles(pc, parsed) : null;
+      const stored = sorted ? [] : await Promise.all(parsed.map(async ({ remoteId, record }) => ({
         remoteId, blob: await blobs.putOriginal(Buffer.from(JSON.stringify(record), 'utf8')),
       })));
       const plan: ProviderImportPlan = {
         context: pick(context), computers: choices, decisions: given.decisions, conflicts: given.conflicts ?? {}, mode: row.importMode,
-        windowMinutes: row.importWindowMinutes, diverId: row.diverId, ...(given.unattended && { unattended: true }),
+        windowMinutes: row.importWindowMinutes, fetchKinds: row.fetchKinds, diverId: row.diverId, ...(given.unattended && { unattended: true }),
+        ...(sorted && { files: sorted.files, ended: sorted.ended }),
       };
       return db.transaction(async (tx) => {
         await tx.update(connection).set({ importComputers: saved, updatedAt: new Date() }).where(eq(connection.id, row.id));
@@ -676,9 +855,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
           }).returning({ id: original.id }))[0]!.id;
           await tx.insert(importOriginal).values({ importId: created!.id, originalId }).onConflictDoNothing();
         }
-        // One import of a Connection at a time: a second one waits in the same queue, so a dive is never made twice.
+        // One import of a Connection at a time: a second one waits in the same queue, so a dive is never made twice. One
+        // that downloads files runs once: a retry would download them again (the next fetch takes what it left).
         await tx.execute(sql`select graphile_worker.add_job(${PROCESS_IMPORT_TASK}, json_build_object('importId', ${created!.id}::text),
-          queue_name => ${`dive-import:${row.id}`})`);
+          queue_name => ${`dive-import:${row.id}`}${sorted ? sql`, max_attempts => 1` : sql``})`);
         return created!;
       });
     },
@@ -692,9 +872,10 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
       const { adapter, parse } = importer(job.provider!);
       const pc = await contextOf(db, job.userId, adapter, {
         diverId: plan.diverId, connectionId: job.connectionId, mode: plan.mode, windowMinutes: plan.windowMinutes, choices: plan.computers,
-        context: plan.context,
+        context: plan.context, ...(plan.fetchKinds && { kinds: plan.fetchKinds }),
       });
       await db.transaction((tx) => settleSiteVisibility(tx, pc));
+      if (adapter.dives?.file) return [...(plan.ended ?? []), ...(await placeFiles(job, pc, plan.files ?? []))];
       const rows = await db.select({ id: original.id, storageKey: original.storageKey, fileName: original.fileName })
         .from(importOriginal).innerJoin(original, eq(original.id, importOriginal.originalId))
         .where(eq(importOriginal.importId, job.id));

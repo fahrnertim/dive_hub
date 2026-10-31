@@ -386,6 +386,7 @@ token: the token). Migration 0013 dropped the old token and password, so Connect
 *Importing dives ([ADR 0030](../decisions/0030-importing-dives-from-providers.md), slice 15):* `import_mode` (`off`, `add`, `create`), `import_window_minutes` (5, 15, 30, 60)
 and `import_computers` (the choice per dive computer found there, `recordings` or `entries`, by `manufacturer:serial`;
 kept on the Connection, not the Device).
+*Kinds and key expiry ([ADR 0062](../decisions/0062-garmin-import-only-provider.md), Garmin):* `fetch_kinds` (the kinds of dive an import fetches, `scuba` and `apnea` by default, at least one; a dive of another kind is skipped) and `key_expires_on` (a date: when the User's API key expires, as they gave it; only for a Provider whose token sign-in declares `expires`; cleared by signing in again without it).
 
 **Original** — User, content hash, media type, size, received at, stored bytes. It's immutable.
 The same hash received again **from the same User** is not processed a second time. Originals are
@@ -394,6 +395,7 @@ Archives (zip, nested zips in a Garmin account export) are unpacked; each contai
 an Original, and the Import records the archive's name and hash.
 *From a Provider ([ADR 0030](../decisions/0030-importing-dives-from-providers.md)):* one Original per dive, that dive's record as JSON (`application/json`), never the whole
 answer (which holds the buddy list's personal data). An unchanged dive has the same hash next time.
+*Dives as files from a Provider ([ADR 0062](../decisions/0062-garmin-import-only-provider.md), Garmin):* the Original is the dive's file itself (the FIT, `application/vnd.ant.fit`), stored once per content and read like an upload; its Recordings, with their `recordingKey` from the file, are placed like an upload's, but a fetch never replaces a Recording already here (`already_here`). The Dive is linked to the Provider's dive, so the next fetch doesn't download it again; a file whose dive was deleted here is linked to that deleted Dive (ADR 0026), so it isn't downloaded again either. A dive entered by hand at the Provider has no file and is skipped (`entered_by_hand`).
 
 **AI access** ([ADR 0035](../decisions/0035-mcp-connector.md), slice 17) — a User's permission for one LLM client to read
 through the MCP endpoint. It is a row of Better Auth's `apikey` table: name, the key's first characters and its SHA-256

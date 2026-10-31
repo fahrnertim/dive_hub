@@ -11,15 +11,19 @@ export interface ProviderRegistry {
 
 /**
  * What the adapter declares but has no method for (ADR 0027): the generic layer reads the Capabilities and then calls
- * the method, so the two must agree. `dives.open` makes no call, so it is opened once to see its methods.
+ * the method, so the two must agree. `dives.open` makes no call, so it is opened once to see its methods. An adapter that only imports needs no `open`,
+ * `mode` or `fingerprint`.
  */
 function unbacked(adapter: ProviderAdapter): string[] {
   const { data, limits } = adapter.capabilities;
   const exports = data.dives?.export;
-  const action = exports && adapter.dives?.open({ connectionId: '', accountId: '', access: '' });
+  const action = exports && adapter.dives?.open?.({ connectionId: '', accountId: '', access: '' });
   const has = (declared: boolean | undefined, method: unknown, name: string) => (declared && !method ? [name] : []);
   return [
     ...has(!!exports, adapter.dives, 'dives'),
+    ...has(!!exports, adapter.dives?.open, 'open'),
+    ...has(!!exports, adapter.dives?.mode, 'mode'),
+    ...has(!!exports, adapter.dives?.fingerprint, 'fingerprint'),
     ...has(exports?.operations.includes('update'), action?.update, 'update'),
     ...has(exports?.operations.includes('delete'), action?.remove, 'remove'),
     ...has(exports?.operations.includes('delete'), action?.exists, 'exists'),
