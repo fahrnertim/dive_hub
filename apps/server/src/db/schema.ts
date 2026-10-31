@@ -214,6 +214,9 @@ export const OUTCOME_REASONS = [
   // adds; several Dives and no decision that still fits; left out by the User; in an unattended fetch, a dive of a
   // computer the User hasn't chosen for yet.
   'sent_by_dive_hub', 'no_match', 'ambiguous', 'left_out', 'no_computer_choice',
+  // A Provider's dive that comes as a file (ADR 0062): its Recording is here already (a fetch never replaces one);
+  // entered by hand at the Provider, so no file is behind it; the Provider didn't answer its download (tried again next time).
+  'already_here', 'entered_by_hand', 'unavailable',
 ] as const;
 export type OutcomeReason = (typeof OUTCOME_REASONS)[number];
 
@@ -273,6 +276,12 @@ export interface ProviderImportPlan {
   diverId: string;
   /** A scheduled or on-opening fetch: it takes what is safe by itself and leaves the rest for the User. */
   unattended?: boolean;
+  /**
+   * A Provider whose dives come as files (ADR 0062): the Original each downloaded dive's file is, oldest first, and the
+   * outcome of the dives not downloaded (linked already, entered by hand, a failed download), decided when it started.
+   */
+  files?: { remoteId: string; originalId: string }[];
+  ended?: ImportOutcome;
 }
 
 /** One ingestion of what a User delivered at once. */

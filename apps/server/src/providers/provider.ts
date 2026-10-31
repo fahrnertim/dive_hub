@@ -507,3 +507,10 @@ export type ExportingProvider = ProviderAdapter & {
 };
 export const isExporting = (adapter: ProviderAdapter): adapter is ExportingProvider =>
   !!adapter.dives?.open && !!adapter.dives.mode && !!adapter.dives.fingerprint;
+
+/**
+ * The mode of a Push Dive Hub records without sending (a link to a remote dive, a remote dive found gone): how the
+ * Provider takes dives; an import-only Provider (ADR 0062) takes none and is only read, through its API. Such a Push
+ * sends nothing: sending needs `isExporting` and a sending setting, which an import-only Provider never offers.
+ */
+export const recordedMode = (adapter: ProviderAdapter): 'api' | 'qr' => adapter.dives?.mode ?? 'api';

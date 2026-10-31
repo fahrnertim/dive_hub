@@ -10,7 +10,7 @@ import { siteRef } from '../../dives/dive-summary-view.js';
 import type { ConnectionService } from '../connection-service.js';
 import { compareGone, goneWarning, type GoneCandidate } from './gone-dive-rules.js';
 import { LeaseBusy, type LeaseService } from '../lease-service.js';
-import type { ProviderAdapter } from '../provider.js';
+import { recordedMode, type ProviderAdapter } from '../provider.js';
 import { named, ProviderServiceError, type ProviderRegistry } from '../registry.js';
 import { currentRemote, type PushRow } from '../remote-state.js';
 
@@ -187,7 +187,7 @@ export function createGoneDiveService(deps: { db: Db; registry: ProviderRegistry
           }
           await db.transaction(async (tx) => {
             await tx.insert(push).values({
-              diveId: id, connectionId: row.id, userId, provider: row.provider, mode: adapter.dives?.mode ?? 'api', action: 'delete',
+              diveId: id, connectionId: row.id, userId, provider: row.provider, mode: recordedMode(adapter), action: 'delete',
               state: 'confirmed', remoteId: finding.remoteId, remoteNumber: finding.remoteNumber, diveVersion: candidate.version, remoteGone: true,
             });
             await tx.delete(providerGoneDive).where(and(eq(providerGoneDive.diveId, id), eq(providerGoneDive.provider, row.provider)));

@@ -26,6 +26,11 @@ export interface Placement {
   parser: { name: string; version: string };
   /** Where a Recording of a Device not seen before goes: the User's own Diver (files), the Connection's (a Provider). */
   diverId?: string;
+  /**
+   * A Recording already here under this key stays as it is (a Provider's file, ADR 0062): skipped as `already_here`.
+   * Uploads leave it unset: the User's own file replaces.
+   */
+  keepKnown?: boolean;
 }
 
 type Outcome = ImportOutcome[number];
@@ -44,7 +49,7 @@ export async function deviceDiver(tx: Queryable, d: { manufacturer: string; seri
 
 /**
  * Places one Recording; runs inside the Import's transaction. In order: the same Recording seen again is updated in
- * place; one deleted earlier, or one a fuller file already brought, is skipped; else a new one is created and matched
+ * place (kept as it is with `keepKnown`); one deleted earlier, or one a fuller file already brought, is skipped; else a new one is created and matched
  * against its Diver's Dives.
  */
 export async function placeRecording(tx: Tx, c: Placement, rec: ParsedRecording): Promise<Outcome> {
@@ -55,6 +60,9 @@ export async function placeRecording(tx: Tx, c: Placement, rec: ParsedRecording)
   const keys = [rec.recordingKey, ...(rec.replacesKey ? [rec.replacesKey] : [])];
   const known = await knownRecording(tx, keys);
   if (known && !(await isManaged(known))) return notYours;
+  if (known && c.keepKnown) {
+    return { fileName: c.fileName, result: 'skipped', reason: 'already_here', recordingId: known.id, ...(known.diveId && { diveId: known.diveId }) };
+  }
   // A Device first seen on a Recording that is already on a Dive belongs to that Dive's Diver.
   const [onDive] = known?.diveId ? await tx.select({ diverId: dive.diverId }).from(dive).where(eq(dive.id, known.diveId)) : [];
   const diverId = await resolveDiver(tx, onDive ? { ...c, diverId: onDive.diverId } : c, rec, managed);

@@ -222,7 +222,10 @@
       "no_match": "kein Tauchgang hier zu dieser Zeit",
       "ambiguous": "mehrere Tauchgänge hier zu dieser Zeit, oder nur einer, der wahrscheinlich kein Tauchgang ist; wähle in der Vorschau aus",
       "left_out": "von dir ausgelassen",
-      "no_computer_choice": "von einem Tauchcomputer, für den du noch nichts gewählt hast; wähle es bei einem Import von Hand"
+      "no_computer_choice": "von einem Tauchcomputer, für den du noch nichts gewählt hast; wähle es bei einem Import von Hand",
+      "already_here": "dieser Tauchgang ist schon hier; die Kopie hier bleibt",
+      "entered_by_hand": "dort von Hand eingetragen, daher steht keine Tauchgangsdatei dahinter",
+      "unavailable": "konnte gerade nicht heruntergeladen werden; der nächste Abruf versucht es wieder"
     },
     "errorCode": {
       "unsupported_file": "Das ist weder eine Tauchgangsdatei (FIT, Suunto-JSON) noch ein ZIP-Archiv.",

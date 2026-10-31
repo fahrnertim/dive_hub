@@ -97,7 +97,8 @@ export function createGarminAdapter(deps: {
       parse(record) {
         const a = activityOf(record);
         const dive: ImportedDive = {
-          remoteId: String(a.activityId), remoteNumber: null, evidence: 'computer', reference: null,
+          // Entered by hand in Garmin Connect: no computer recorded it, so no file is behind it.
+          remoteId: String(a.activityId), remoteNumber: null, evidence: a.manual ? 'logbook' : 'computer', reference: null,
           localStart: a.startTimeLocal, sitePosition: null, people: [],
           durationSeconds: a.duration ?? 0, maxDepthM: a.maxDepth, avgDepthM: null, waterTemperatureC: null, maxTemperatureC: null,
           notes: null, siteIds: {}, entry: null, exit: null, gases: [], gfLow: null, gfHigh: null, cnsStart: null, cnsEnd: null,

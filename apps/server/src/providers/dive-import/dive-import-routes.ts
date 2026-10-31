@@ -43,6 +43,7 @@ const Preview = Type.Object({
     decide: Type.Integer({ description: 'Several Dives here in the window: in decisions' }),
     create: Type.Integer({ description: 'No Dive here: a Dive without a Recording (mode create)' }),
     noMatch: Type.Integer({ description: 'No Dive here, and the mode only adds: left out' }),
+    enteredByHand: Type.Integer({ description: 'Entered by hand at a Provider whose dives come as files: no file behind it, skipped' }),
     changed: Type.Integer({ description: 'Linked dives changed at the Provider since Dive Hub last saw them: the Dive takes the changes' }),
   }),
   sites: Type.Object({

@@ -9466,6 +9466,8 @@ export interface paths {
                                 create: number;
                                 /** @description No Dive here, and the mode only adds: left out */
                                 noMatch: number;
+                                /** @description Entered by hand at a Provider whose dives come as files: no file behind it, skipped */
+                                enteredByHand: number;
                                 /** @description Linked dives changed at the Provider since Dive Hub last saw them: the Dive takes the changes */
                                 changed: number;
                             };
@@ -11628,7 +11630,7 @@ export interface components {
                  * @description Why; clients translate it. A failure’s detail stays in the server log
                  * @enum {unknown}
                  */
-                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out" | "no_computer_choice";
+                reason?: "no_dive_file" | "no_fit_file" | "not_a_dive" | "not_your_diver" | "overlaps_several_dives" | "max_depth_differs" | "file_failed" | "probably_no_dive" | "deleted_earlier" | "fuller_copy_here" | "sent_by_dive_hub" | "no_match" | "ambiguous" | "left_out" | "no_computer_choice" | "already_here" | "entered_by_hand" | "unavailable";
                 /**
                  * @description For a duplicate-candidate: what has been decided since. diveId is then the Dive it went to
                  * @enum {unknown}

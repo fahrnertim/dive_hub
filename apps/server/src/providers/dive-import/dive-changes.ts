@@ -18,7 +18,7 @@ import { accountOf, idsOf, pickId, settleVisibility } from '../../sites/site-ids
 import type { SiteSource } from '../../sites/sources.js';
 import type { BlobStore } from '../../storage/blob-store.js';
 import { loadOutgoingDive } from '../push/outgoing-dive.js';
-import { localStartOf, type DiveField, type DiverSource, type ImportContext, type ImportedDive, type ProviderAdapter, type ProviderCylinder } from '../provider.js';
+import { localStartOf, recordedMode, type DiveField, type DiverSource, type ImportContext, type ImportedDive, type ProviderAdapter, type ProviderCylinder } from '../provider.js';
 import { currentRemote, fingerprintNow } from '../remote-state.js';
 import { comparableOf, SYNCED_FIELDS, threeWay, VALUE_FIELDS, type Comparable, type SyncedField } from './three-way.js';
 import { cylindersOf, mergeProviderCylinder, providerCylinderOf } from '../../dives/cylinders.js';
@@ -318,7 +318,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     if (wasUpToDate && remote && !sending) {
       const loaded = await loadOutgoingDive(tx, pc.userId, diveId);
       await tx.insert(push).values({
-        diveId, connectionId: pc.connectionId, userId: pc.userId, provider: pc.adapter.id, mode: pc.adapter.dives?.mode ?? 'api',
+        diveId, connectionId: pc.connectionId, userId: pc.userId, provider: pc.adapter.id, mode: recordedMode(pc.adapter),
         action: 'link', state: 'confirmed', remoteId: remote.remoteId, remoteNumber: remote.remoteNumber, diveVersion: loaded.row.version,
         fingerprint: fingerprintNow(pc.adapter, loaded),
       });

@@ -883,7 +883,10 @@
                     "no_match",
                     "ambiguous",
                     "left_out",
-                    "no_computer_choice"
+                    "no_computer_choice",
+                    "already_here",
+                    "entered_by_hand",
+                    "unavailable"
                   ],
                   "description": "Why; clients translate it. A failure’s detail stays in the server log"
                 },
@@ -21331,6 +21334,7 @@
                         "decide",
                         "create",
                         "noMatch",
+                        "enteredByHand",
                         "changed"
                       ],
                       "properties": {
@@ -21372,6 +21376,10 @@
                         "noMatch": {
                           "type": "integer",
                           "description": "No Dive here, and the mode only adds: left out"
+                        },
+                        "enteredByHand": {
+                          "type": "integer",
+                          "description": "Entered by hand at a Provider whose dives come as files: no file behind it, skipped"
                         },
                         "changed": {
                           "type": "integer",
