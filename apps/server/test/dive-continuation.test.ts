@@ -181,6 +181,39 @@ describe.skipIf(!(await databaseReachable()))('appending a later Dive to the ear
     expect(await deleted(b)).toMatchObject({ continuedInto: a, stillAt: [] });
   });
 
+  describe('alsoAt with two later Dives', () => {
+    /** Three dives of one Device on that day, 10 minutes each, 5 minutes apart. */
+    const chain = async (day: string) => {
+      const s = serial++;
+      return [
+        await dive(s, `${day}T09:00:00Z`, 600), await dive(s, `${day}T09:15:00Z`, 600), await dive(s, `${day}T09:30:00Z`, 600),
+      ] as [string, string, string];
+    };
+
+    it('asks about a later Dive where the kept Dive is, even when the Dive before it is not', async () => {
+      const [a, b, c] = await chain('2026-11-17');
+      const mine = await send(a);
+      const theirs = await send(c);
+      expect((await append(a, [b, c], { alsoAt: ['ledger'] })).statusCode).toBe(200);
+      expect(ledger.dives.has(theirs)).toBe(false);
+      expect(ledger.dives.has(mine)).toBe(true);
+      expect(await deleted(c)).toMatchObject({ continuedInto: a, stillAt: [] });
+    });
+
+    it('checks every version before asking a Provider: a stale later Dive deletes nothing there', async () => {
+      const [a, b, c] = await chain('2026-11-18');
+      const remotes = [await send(a), await send(b), await send(c)];
+      const before = await Promise.all([a, b, c].map(diveOf));
+      const answer = await call('POST', `/api/dives/${a}/continuation`, {
+        version: before[0]!.version, dives: [{ id: b, version: before[1]!.version }, { id: c, version: before[2]!.version - 1 }], alsoAt: ['ledger'],
+      });
+      expect(answer.statusCode).toBe(409);
+      expect(answer.json()).toMatchObject({ code: 'dive_changed' });
+      expect(remotes.map((r) => ledger.dives.has(r))).toEqual([true, true, true]);
+      expect(await Promise.all([a, b, c].map(diveOf))).toEqual(before);
+    });
+  });
+
   describe('three parts of one Device', () => {
     const three = async (day: string) => {
       const s = serial++;

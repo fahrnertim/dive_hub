@@ -85,7 +85,7 @@ export function createServices({ db, blobs, auth, secrets, adapters, siteSources
     deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }),
     merge: createMergeService({ merging, logbook, pushes }),
     continuation,
-    append: createAppendService({ continuation, logbook, pushes }),
+    append: createAppendService({ continuation, logbook, pushes, waitingPushes }),
     candidates: createCandidateService(db),
     planning: createPlanningService(db),
     lead: createLeadService(db),
