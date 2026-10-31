@@ -1,14 +1,14 @@
 ---
 title: "ADR 0063: Appending a Continuation - one Dive from two cut apart by a surface break"
-summary: Proposed - consecutive Dives of one Diver from the same Device become one by a joined Recording (derived, no Original, each surface break as 0 m) that is the Primary recording, with their Recordings kept as its parts (any number); the later Dives are deleted like merged ones so imports skip them, and restoring one reverses its whole append (and later ones), giving back their Recordings. A new logbook check (`surface_break`, at most 10 minutes, chains as one item) suggests them. Amends 0016, 0026, 0038.
-status: proposed
-date: 2026-10-31
+summary: Planned - consecutive Dives of one Diver from the same Device become one by a joined Recording (derived, no Original, each surface break as 0 m) that is the Primary recording, with their Recordings kept as its parts (any number); the later Dives are deleted like merged ones so imports skip them, and restoring one reverses its whole append (and later ones), giving back their Recordings. A new logbook check (`surface_break`, at most 10 minutes, chains as one item) suggests them. Amends 0016, 0026, 0038.
+status: accepted
+date: 2026-11-01
 ---
 
 # ADR 0063: Appending a Continuation - one Dive from two cut apart by a surface break
 
 ## Status
-Proposed – 2026-10-31. Designed in [Continuation](../superpowers/specs/2026-10-31-dive-continuation-design.md). Amends
+Accepted – 2026-11-01 (owner, after the design; proposed 2026-10-31). Not built yet. Designed in [Continuation](../superpowers/specs/2026-10-31-dive-continuation-design.md). Amends
 [ADR 0016](0016-recording-decisions-and-divers.md) (a Recording may be derived from others; a Device can have two
 Recordings on one Dive, as parts), [ADR 0026](0026-deleting-dives.md) (restoring an appended Dive gives its Recording
 back) and [ADR 0038](0038-logbook-checks-and-merging-dives.md) (a fifth rule, `surface_break`; a second way to fold one

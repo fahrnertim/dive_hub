@@ -137,12 +137,12 @@ _Avoid_: Combine, deduplicate, attach (that is a Recording's)
 _German_: zusammenführen (Tauchgänge)
 
 **Continuation (of a Dive)**:
-A Dive that is the rest of the Dive before it: the same Diver's dive computer ended the dive during a Surface break and recorded the rest as a new dive. Appending makes the parts one Dive, whose profile runs through each break at the surface; the later Dives are deleted like merged ones, and restoring one undoes its whole append ([ADR 0063](decisions/0063-dive-continuation.md), proposed).
+A Dive that is the rest of the Dive before it: the same Diver's dive computer ended the dive during a Surface break and recorded the rest as a new dive. Appending makes the parts one Dive, whose profile runs through each break at the surface; the later Dives are deleted like merged ones, and restoring one undoes its whole append ([ADR 0063](decisions/0063-dive-continuation.md)).
 _Avoid_: Merge (that is the same descent twice), combine, join, stitch, attach (that is a Recording's), split dive
 _German_: Fortsetzung; the action: anhängen
 
 **Surface break**:
-Time at the surface inside one Dive, between two parts of it that the dive computer recorded as two dives ([ADR 0063](decisions/0063-dive-continuation.md), proposed).
+Time at the surface inside one Dive, between two parts of it that the dive computer recorded as two dives ([ADR 0063](decisions/0063-dive-continuation.md)).
 _Avoid_: Surface interval (that is the time between two Dives), pause, gap
 _German_: Oberflächenaufenthalt (not Oberflächenpause, the surface interval)
 

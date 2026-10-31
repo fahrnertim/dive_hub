@@ -1,15 +1,15 @@
 ---
 title: Continuation - appending a Dive cut in two by a surface break to the Dive before it
-summary: Consecutive Dives of one Diver from the same dive computer, cut apart because the computer ended the dive at the surface, become one Dive - a joined Recording made from them (each gap as 0 m, marked as a Surface break) is its Primary recording, the Recordings stay as its parts, the later Dives are deleted like merged ones and their Provider links stay on them so no import brings them back; found by a new logbook check (same Device, at most 10 minutes apart; chains as one item) and offered by hand; undone as a whole append by restoring. Proposed ADR 0063.
-status: proposed
+summary: Consecutive Dives of one Diver from the same dive computer, cut apart because the computer ended the dive at the surface, become one Dive - a joined Recording made from them (each gap as 0 m, marked as a Surface break) is its Primary recording, the Recordings stay as its parts, the later Dives are deleted like merged ones and their Provider links stay on them so no import brings them back; found by a new logbook check (same Device, at most 10 minutes apart; chains as one item) and offered by hand; undone as a whole append by restoring. ADR 0063.
+status: accepted
 date: 2026-10-31
 ---
 
 # Continuation
 
-Design from the owner's answers on 2026-10-31. "Owner" marks what the owner decided; "my call" marks what the designer
+Design from the owner's answers on 2026-10-31 and 2026-11-01; approved by the owner on 2026-11-01. "Owner" marks what the owner decided; "my call" marks what the designer
 decided and the owner may overturn. The decision that changes accepted ADRs is
-[ADR 0063 (proposed)](../../decisions/0063-dive-continuation.md).
+[ADR 0063](../../decisions/0063-dive-continuation.md).
 
 ## Intent
 
