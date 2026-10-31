@@ -1,15 +1,17 @@
 // Fetching dives from Garmin (ADR 0062), against the fake Garmin: each new dive's FIT is downloaded, kept as the
 // Original and placed like an uploaded file, one Recording per dive whatever came first; a dive fetched before isn't
 // downloaded again (nor one on a Dive deleted here), one entered by hand is skipped, a download Garmin refuses or that
-// holds no FIT ends that dive only; the worker downloads, not the request that starts the fetch.
+// holds no FIT ends that dive only, and one Garmin refuses ends the downloads of this fetch; a download that ends for
+// good (no FIT, no dive, another Diver's, a second copy on a linked Dive) isn't tried again; a key revoked during the
+// downloads ends the fetch with what was placed; the worker downloads, not the request that starts the fetch.
 import { readFileSync } from 'node:fs';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { dive, original, push, recording } from '../src/db/schema.js';
+import { connection, dive, original, push, recording } from '../src/db/schema.js';
 import { createGarminAdapter } from '../src/providers/garmin/garmin-adapter.js';
 import { createGarminClient } from '../src/providers/garmin/garmin-client.js';
 import { createFakeGarmin, type FakeGarmin, type FakeGarminDive } from './fake-garmin.js';
-import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
+import { makeSyntheticDive, makeSyntheticRun } from './fixtures/synthetic-dive.js';
 import { zipOf } from './zip.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase } from './support.js';
 
@@ -23,6 +25,10 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
   let garmin: FakeGarmin;
   /** Activities whose download Garmin answers with this status, or with a zip that holds no FIT. */
   const refused = new Map<string, number | 'no_fit'>();
+  /** Activities whose download finds this key revoked at Garmin. */
+  const revokedAt = new Map<string, string>();
+  /** Every download asked for, the refused ones too. */
+  const tried: string[] = [];
   let users = 0;
 
   beforeAll(async () => {
@@ -31,6 +37,9 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
     const flaky: typeof fetch = async (input, init) => {
       const path = new URL(String(input instanceof Request ? input.url : input)).pathname;
       const id = /\/download-service\/files\/activity\/(\d+)$/.exec(path)?.[1];
+      if (id) tried.push(id);
+      const revoke = id ? revokedAt.get(id) : undefined;
+      if (revoke) garmin.revoke(revoke);
       const answer = id ? refused.get(id) : undefined;
       if (answer === 'no_fit') return new Response(await zipOf({ 'readme.txt': Buffer.from('no dive here') }), { status: 200 });
       return answer ? new Response('{}', { status: answer }) : fetch(input, init);
@@ -57,15 +66,16 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
     const connectionId = (await call('POST', '/api/connections/garmin', { diverId, token: key, keepSignedIn: false })).json().id as string;
     await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'add' } });
     return {
-      userId: user.id, diverId, call,
+      userId: user.id, diverId, connectionId, key, call,
       preview: async () => (await call('GET', `/api/connections/${connectionId}/dive-import`)).json() as { computers: unknown[]; counts: Record<string, number> },
-      /** Starts a fetch, runs it as the worker would, and answers its outcome. */
-      fetch: async () => {
+      /** Starts a fetch, runs it as the worker would, and answers its outcome; `between`: what happens before the worker runs. */
+      fetch: async (between?: (importId: string) => Promise<void>) => {
         const before = allDownloads();
         const started = await call('POST', `/api/connections/${connectionId}/dive-import`, { computers: [], decisions: [] });
         expect(started.statusCode).toBe(202);
         // Starting only assesses and queues: the worker downloads.
         expect(allDownloads()).toBe(before);
+        await between?.(started.json().id);
         await ctx.imports.processImport(started.json().id);
         const done = (await call('GET', `/api/imports/${started.json().id}`)).json() as { status: string; outcome: Outcome[] };
         expect(done.status).toBe('done');
@@ -91,6 +101,7 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
 
   const allDownloads = () => garmin.calls.filter((c) => c.startsWith('GET /download-service/')).length;
   const downloads = (id: number) => garmin.calls.filter((c) => c === `GET /download-service/files/activity/${id}`).length;
+  const attempts = (id: number) => tried.filter((t) => t === String(id)).length;
   const garminDive = (activityId: number, fit: Uint8Array, extra: Partial<FakeGarminDive> = {}): FakeGarminDive =>
     ({ activityId, typeKey: 'single_gas_diving', startTimeLocal: '2026-01-15 11:00:00', fit, ...extra });
 
@@ -170,7 +181,7 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
     expect(await u.dives()).toHaveLength(1);
   });
 
-  it('a download answering 429 fails that dive only; the next fetch takes it', async () => {
+  it('a download answering 429 ends the downloads of this fetch; the next fetch takes them', async () => {
     const u = await connected([
       garminDive(2501, makeSyntheticDive({ serialNumber: 7501 })),
       garminDive(2502, makeSyntheticDive({ serialNumber: 7501, start: new Date('2026-01-16T09:00:00Z') }), { startTimeLocal: '2026-01-16 11:00:00' }),
@@ -179,17 +190,21 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
     const first = await u.fetch();
     expect(first).toEqual(expect.arrayContaining([
       expect.objectContaining({ result: 'failed', reason: 'unavailable', remoteId: '2501' }),
-      expect.objectContaining({ result: 'created', remoteId: '2502' }),
+      expect.objectContaining({ result: 'failed', reason: 'unavailable', remoteId: '2502' }),
     ]));
-    expect(await u.recordings()).toHaveLength(1);
+    // Nothing asked of Garmin after the refused download.
+    expect(attempts(2501)).toBe(1);
+    expect(attempts(2502)).toBe(0);
+    expect(await u.recordings()).toHaveLength(0);
 
     refused.delete('2501');
     const next = await u.fetch();
     expect(next).toEqual(expect.arrayContaining([
       expect.objectContaining({ result: 'created', remoteId: '2501' }),
-      expect.objectContaining({ result: 'unchanged', remoteId: '2502' }),
+      expect.objectContaining({ result: 'created', remoteId: '2502' }),
     ]));
-    expect(downloads(2502)).toBe(1);
+    expect(attempts(2501)).toBe(2);
+    expect(attempts(2502)).toBe(1);
     expect(await u.recordings()).toHaveLength(2);
     expect(await u.dives()).toHaveLength(2);
   });
@@ -225,9 +240,87 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
       expect.objectContaining({ result: 'skipped', reason: 'no_dive_file', remoteId: '2701' }),
       expect.objectContaining({ result: 'created', remoteId: '2702' }),
     ]));
-    refused.delete('2701');
     expect(await u.recordings()).toHaveLength(1);
     expect(await u.dives()).toHaveLength(1);
+
+    // It holds no FIT for good: the next fetch doesn't ask for it again.
+    expect(await u.fetch()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ result: 'skipped', reason: 'no_dive_file', remoteId: '2701' }),
+      expect.objectContaining({ result: 'unchanged', remoteId: '2702' }),
+    ]));
+    refused.delete('2701');
+    expect(attempts(2701)).toBe(1);
+  });
+
+  it('a FIT that holds no dive is not downloaded again', async () => {
+    const u = await connected([garminDive(2751, makeSyntheticRun())]);
+    expect(await u.fetch()).toEqual([expect.objectContaining({ result: 'skipped', reason: 'not_a_dive', remoteId: '2751' })]);
+    expect(await u.fetch()).toEqual([expect.objectContaining({ result: 'skipped', reason: 'not_a_dive', remoteId: '2751' })]);
+    expect(downloads(2751)).toBe(1);
+  });
+
+  it("a dive another User's file brought is not downloaded again", async () => {
+    const fit = makeSyntheticDive({ serialNumber: 7761 });
+    const other = await connected([]);
+    expect(await other.upload('theirs.fit', fit)).toEqual([expect.objectContaining({ result: 'created' })]);
+    const u = await connected([garminDive(2761, fit)]);
+    expect(await u.fetch()).toEqual([expect.objectContaining({ result: 'skipped', reason: 'not_your_diver', remoteId: '2761' })]);
+    expect(await u.fetch()).toEqual([expect.objectContaining({ result: 'skipped', reason: 'not_your_diver', remoteId: '2761' })]);
+    expect(downloads(2761)).toBe(1);
+    expect(await u.dives()).toHaveLength(0);
+  });
+
+  it('a second Garmin copy placed on a Dive linked to the first is not downloaded again', async () => {
+    // Two computers on one dive, both at Garmin: the second Recording joins the Dive, which keeps the first link.
+    const u = await connected([
+      garminDive(2771, makeSyntheticDive({ serialNumber: 7771 })),
+      garminDive(2772, makeSyntheticDive({ serialNumber: 7772 })),
+    ]);
+    const first = await u.fetch();
+    expect(first).toEqual(expect.arrayContaining([
+      expect.objectContaining({ result: 'created', remoteId: '2771' }),
+      expect.objectContaining({ result: 'attached', remoteId: '2772' }),
+    ]));
+    const [only] = await u.dives();
+    expect(await u.links(only!.id)).toEqual([{ remoteId: '2771', action: 'link' }]);
+
+    expect(await u.fetch()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ result: 'unchanged', remoteId: '2771', diveId: only!.id }),
+      expect.objectContaining({ result: 'unchanged', remoteId: '2772', diveId: only!.id }),
+    ]));
+    expect(downloads(2771)).toBe(1);
+    expect(downloads(2772)).toBe(1);
+    expect(await u.recordings()).toHaveLength(2);
+  });
+
+  it('a key revoked during the downloads ends the fetch with what was placed, and nothing is downloaded again', async () => {
+    const u = await connected([
+      garminDive(2781, makeSyntheticDive({ serialNumber: 7781 })),
+      garminDive(2782, makeSyntheticDive({ serialNumber: 7781, start: new Date('2026-01-16T09:00:00Z') }), { startTimeLocal: '2026-01-16 11:00:00' }),
+      garminDive(2783, makeSyntheticDive({ serialNumber: 7781, start: new Date('2026-01-17T09:00:00Z') }), { startTimeLocal: '2026-01-17 11:00:00' }),
+    ]);
+    revokedAt.set('2782', u.key);
+    let importId = '';
+    const outcome = await u.fetch(async (id) => {
+      importId = id;
+      // The worker runs it once: a failure isn't retried, which would download the dives again.
+      const job = await t.db.execute(sql`select max_attempts from graphile_worker.jobs where queue_name = ${`dive-import:${u.connectionId}`}`);
+      expect(job.rows).toEqual([{ max_attempts: 1 }]);
+    });
+    revokedAt.delete('2782');
+    expect(outcome).toEqual([
+      expect.objectContaining({ result: 'created', remoteId: '2781' }),
+      expect.objectContaining({ result: 'failed', reason: 'unavailable', remoteId: '2782' }),
+      expect.objectContaining({ result: 'failed', reason: 'unavailable', remoteId: '2783' }),
+    ]);
+    const [row] = await t.db.select({ state: connection.state }).from(connection).where(eq(connection.id, u.connectionId));
+    expect(row!.state).toBe('needs_sign_in');
+    expect(await u.recordings()).toHaveLength(1);
+
+    expect(await ctx.imports.processImport(importId)).toEqual([]);
+    expect(attempts(2781)).toBe(1);
+    expect(attempts(2782)).toBe(1);
+    expect(attempts(2783)).toBe(0);
   });
 
   it('a dive on a Dive deleted here is not downloaded again', async () => {

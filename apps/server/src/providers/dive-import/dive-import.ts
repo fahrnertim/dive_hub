@@ -3,7 +3,8 @@
 // User; logbook entries match Dives here by local time and fill what they lack; computer dives become Recordings placed
 // like a file's. A preview first (nothing stored), then an Import over one JSON Original per dive that the worker runs.
 // A Provider whose dives come as files (`dives.file`, ADR 0062): each new dive's file is downloaded by the Import's
-// worker, kept as its Original and placed like an upload, never replacing a Recording here; it is linked to the dive.
+// worker, kept as its Original and placed like an upload, never replacing a Recording here; it is linked to the dive,
+// and a download that ended for good is remembered by its Import, so it is never downloaded again.
 import { isDeepStrictEqual } from 'node:util';
 import { and, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../../db/client.js';
@@ -539,17 +540,43 @@ export function createDiveImportService(deps: {
 
   const fileBase = (pc: ProviderContext, remoteId: string) => ({ fileName: `${pc.adapter.id}-dive-${remoteId}`, remoteId });
 
+  /** A dive an earlier fetch downloaded for good, now: skipped again with its reason, else unchanged. */
+  const endedBefore = (pc: ProviderContext, remoteId: string, earlier: ImportOutcome[number]): ImportOutcome[number] => {
+    const on = { ...(earlier.diveId && { diveId: earlier.diveId }), ...(earlier.recordingId && { recordingId: earlier.recordingId }) };
+    return earlier.result === 'skipped' && earlier.reason
+      ? { ...fileBase(pc, remoteId), result: 'skipped', reason: earlier.reason, ...on }
+      : { ...fileBase(pc, remoteId), result: 'unchanged', ...on };
+  };
+
+  /**
+   * The dives whose file a finished Import of this Connection downloaded and that ended for good (placed, or skipped:
+   * no dive file, no dive, another Diver's), by remote ID, with how each ended: the design's "remote ID of a Recording",
+   * also where the Dive keeps another dive's link (two computers on one dive) or no Recording came of it. A failed
+   * download (`unavailable`, `file_failed`) isn't among them: the next fetch tries it again.
+   */
+  async function downloadedBefore(connectionId: string): Promise<Map<string, ImportOutcome[number]>> {
+    const rows = await db.execute<{ entry: ImportOutcome[number] }>(sql`
+      select e.entry from ${importJob} i cross join lateral jsonb_array_elements(i.outcome) as e(entry)
+      where i.connection_id = ${connectionId} and i.status = 'done'
+        and jsonb_exists(i.plan->'files', e.entry->>'remoteId') and e.entry->>'result' <> 'failed'`);
+    return new Map(rows.rows.map(({ entry }) => [entry.remoteId!, entry]));
+  }
+
   /**
    * When an Import of dives that come as files starts (ADR 0062): the dives new here, whose files the worker downloads
-   * (oldest first); the others end as they were found: linked already, deleted here, entered by hand. Nothing is
-   * downloaded here, so starting answers at once.
+   * (oldest first); the others end as they were found: linked already, deleted here, entered by hand, or downloaded by
+   * an earlier fetch for good (skipped again with its reason, else unchanged). Nothing is downloaded here, so starting
+   * answers at once.
    */
   async function sortFiles(pc: ProviderContext, parsed: { remoteId: string; dive: ImportedDive | null }[]) {
     const ended: ImportOutcome = [];
     const wanted: ImportedDive[] = [];
+    const before = await downloadedBefore(pc.connectionId!);
     for (const { remoteId, dive: d } of parsed) {
       const a = d ? await assess(db, pc, d) : null;
+      const earlier = before.get(remoteId);
       if (!d || !a) ended.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'not_a_dive' });
+      else if (a.kind === 'recording' && earlier) ended.push(endedBefore(pc, remoteId, earlier));
       else if (a.kind === 'recording') wanted.push(d);
       else if (a.kind === 'linked') ended.push({ ...fileBase(pc, remoteId), result: 'unchanged', diveId: a.diveId });
       else if (a.kind === 'deleted') ended.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'deleted_earlier' });
@@ -562,32 +589,42 @@ export function createDiveImportService(deps: {
 
   /**
    * The worker's part for dives that come as files (ADR 0062): each new dive's file downloaded, one after another (the
-   * adapter keeps the pause), and placed. A failed download ends that dive only, and the next fetch tries it again; a
-   * refused sign-in ends the Import (the Connection needs one).
+   * adapter keeps the pause), and placed. A download that holds no dive file ends that dive only. One the Provider
+   * refuses or doesn't answer (a 429, a dropped call, a key it no longer takes: the Connection then needs a sign-in)
+   * ends the downloads: that dive and the rest fail as `unavailable`, nothing more is asked now, and the next fetch
+   * tries them again. Never throws, so the dives placed keep their outcome.
    */
   async function placeFiles(job: typeof importJob.$inferSelect, pc: ProviderContext, remoteIds: string[]) {
     const outcome: ImportOutcome = [];
     if (remoteIds.length === 0) return outcome;
     const file = pc.adapter.dives!.file!;
     const row = job.connectionId ? await connections.own(job.userId, job.connectionId).catch(() => null) : null;
-    for (const remoteId of remoteIds) {
-      const got = row
-        ? await connections.withAccess(row, async (ctx) => {
+    const download = async (remoteId: string) => {
+      if (!row) return new ProviderError('unavailable', 'the Connection is gone');
+      try {
+        return await connections.withAccess(row, async (ctx) => {
           try {
             return await file(ctx, remoteId);
           } catch (error) {
+            // A refused sign-in goes on to `withAccess`, which marks the Connection as needing one.
             if (!(error instanceof ProviderError) || error.reason === 'signed_out' || error.reason === 'wrong_credentials') throw error;
             return error;
           }
-        })
-        : new ProviderError('unavailable', 'the Connection is gone');
-      if (got instanceof ProviderError) {
-        outcome.push(got.reason === 'bad_response'
-          ? { ...fileBase(pc, remoteId), result: 'skipped', reason: 'no_dive_file', message: errorMessage(got) }
-          : { ...fileBase(pc, remoteId), result: 'failed', reason: 'unavailable', message: errorMessage(got) });
-        continue;
+        });
+      } catch (error) {
+        return error instanceof Error ? error : new Error(String(error));
       }
-      outcome.push(...(await placeFile(job, pc, remoteId, got)));
+    };
+    for (const [i, remoteId] of remoteIds.entries()) {
+      const got = await download(remoteId);
+      if (got instanceof ProviderError && got.reason === 'bad_response') {
+        outcome.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'no_dive_file', message: errorMessage(got) });
+      } else if (got instanceof Error) {
+        for (const rest of remoteIds.slice(i)) outcome.push({ ...fileBase(pc, rest), result: 'failed', reason: 'unavailable', message: errorMessage(got) });
+        break;
+      } else {
+        outcome.push(...(await placeFile(job, pc, remoteId, got)));
+      }
     }
     return outcome;
   }
@@ -816,9 +853,10 @@ export function createDiveImportService(deps: {
           }).returning({ id: original.id }))[0]!.id;
           await tx.insert(importOriginal).values({ importId: created!.id, originalId }).onConflictDoNothing();
         }
-        // One import of a Connection at a time: a second one waits in the same queue, so a dive is never made twice.
+        // One import of a Connection at a time: a second one waits in the same queue, so a dive is never made twice. One
+        // that downloads files runs once: a retry would download them again (the next fetch takes what it left).
         await tx.execute(sql`select graphile_worker.add_job(${PROCESS_IMPORT_TASK}, json_build_object('importId', ${created!.id}::text),
-          queue_name => ${`dive-import:${row.id}`})`);
+          queue_name => ${`dive-import:${row.id}`}${sorted ? sql`, max_attempts => 1` : sql``})`);
         return created!;
       });
     },

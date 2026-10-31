@@ -4,10 +4,12 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { createGarminAdapter } from '../src/providers/garmin/garmin-adapter.js';
 import { createGarminClient } from '../src/providers/garmin/garmin-client.js';
 import { createFakeGarmin, type FakeGarmin } from './fake-garmin.js';
-import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';
+import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, resettableClock, signIn, type TestDatabase } from './support.js';
 
 const KEY = 'GCDC_secret-key-1234';
-const day = (offsetDays: number) => new Date(Date.now() + offsetDays * 86_400_000).toISOString().slice(0, 10);
+/** The app's clock, standing still: a day the test names is the server's, also across midnight (UTC). */
+const clock = resettableClock({ stopped: true });
+const day = (offsetDays: number) => new Date(clock.now() + offsetDays * 86_400_000).toISOString().slice(0, 10);
 
 describe.skipIf(!(await databaseReachable()))('the key\'s expiry date', () => {
   let t: TestDatabase;
@@ -26,7 +28,7 @@ describe.skipIf(!(await databaseReachable()))('the key\'s expiry date', () => {
     garmin = await createFakeGarmin();
     garmin.addAccount({ key: KEY, guid: 'guid-1', displayName: 'Ida Diver', dives: [] });
     garmin.addAccount({ key: 'GCDC_new-key', guid: 'guid-1', displayName: 'Ida Diver', dives: [] });
-    ctx = await createTestApp(t, { extraProviders: [createGarminAdapter({ client: createGarminClient({ url: garmin.url }) })] });
+    ctx = await createTestApp(t, { clock, extraProviders: [createGarminAdapter({ client: createGarminClient({ url: garmin.url }) })] });
     await createUser(ctx.auth, 'tim@example.com');
     tim = await signIn(ctx.app, 'tim@example.com');
     diverId = ((await call('GET', '/api/divers')).json() as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;

@@ -61,10 +61,19 @@ export function createGarminClient(opts: { url: string; fetch?: typeof fetch }):
     throw new GarminError('bad_response', `Garmin answered ${res.status}`);
   }
 
+  /** An answer's body: one that breaks off is Garmin not answering, as a dropped call is. */
+  async function bodyOf<T>(read: () => Promise<T>): Promise<T> {
+    try {
+      return await read();
+    } catch {
+      throw new GarminError('unavailable', "Garmin's answer broke off");
+    }
+  }
+
   return {
     async token(key) {
       const res = await call('/personalapitoken-service/personal-api/personal-api-key/token', { Authorization: `ApiKey ${key}` }, true);
-      return readToken((await res.text()).trim());
+      return readToken((await bodyOf(() => res.text())).trim());
     },
 
     async dives(token) {
@@ -73,14 +82,19 @@ export function createGarminClient(opts: { url: string; fetch?: typeof fetch }):
         const res = await call(`/activitylist-service/activities/search/activities?activityType=diving&start=${start}&limit=${PAGE_SIZE}`, bearer(token));
         const page: unknown = await res.json().catch(() => null);
         if (!Array.isArray(page)) throw new GarminError('bad_response', 'Garmin sent no dive list');
-        all.push(...page.map(readActivity));
+        const activities = page.map(readActivity);
+        // A page that starts like the one before: Garmin ignores `start`, and the listing would never end.
+        if (start > 0 && activities[0]?.activityId === all[start - PAGE_SIZE]?.activityId) {
+          throw new GarminError('bad_response', 'Garmin sent the same page of the dive list again');
+        }
+        all.push(...activities);
         if (page.length < PAGE_SIZE) return all;
       }
     },
 
     async file(token, activityId) {
       const res = await call(`/download-service/files/activity/${encodeURIComponent(activityId)}`, bearer(token));
-      return fitOf(new Uint8Array(await res.arrayBuffer()));
+      return fitOf(new Uint8Array(await bodyOf(() => res.arrayBuffer())));
     },
   };
 }

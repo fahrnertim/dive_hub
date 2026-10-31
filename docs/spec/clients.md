@@ -290,7 +290,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **New words to translate (ADR 0062):** reasons `entered_by_hand` (a dive entered by hand at a Provider whose dives come
   as files: no file is behind it), `kind_not_chosen` (a dive of a kind the Connection doesn't fetch), `already_here` (a
   downloaded file's Recording is here already; a fetch never replaces one) and `unavailable` (the Provider didn't answer
-  the download; the next fetch tries it again).
+  the download, or refused one before it in the same fetch, which then asks for no more; the next fetch tries it again).
 
 ### Dives
 - **Overrides:**

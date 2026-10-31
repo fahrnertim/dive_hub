@@ -62,4 +62,26 @@ describe('Garmin client', () => {
     expect(error).toBeInstanceOf(GarminError);
     expect((error as GarminError).reason).toBe('unavailable');
   });
+
+  it('a download whose answer breaks off is unavailable', async () => {
+    const broken = () => new ReadableStream({ start(c) { c.error(new Error('connection reset')); } });
+    const client = createGarminClient({ url: garmin.url, fetch: async () => new Response(broken(), { status: 200 }) });
+    for (const call of [() => client.file('jwt', '1'), () => client.token(KEY)]) {
+      const error = await call().catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(GarminError);
+      expect((error as GarminError).reason).toBe('unavailable');
+    }
+  });
+
+  it('a listing that answers the same page again is refused, not read forever', async () => {
+    const page = Array.from({ length: 100 }, (_, i) => ({
+      activityId: 5000 + i, startTimeLocal: '2026-10-01 10:00:00', startTimeGMT: '2026-10-01 08:00:00', activityType: { typeKey: 'single_gas_diving' },
+    }));
+    let pages = 0;
+    const client = createGarminClient({ url: garmin.url, fetch: async () => { pages += 1; return Response.json(page); } });
+    const error = await client.dives('jwt').catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(GarminError);
+    expect((error as GarminError).reason).toBe('bad_response');
+    expect(pages).toBe(2);
+  });
 });
