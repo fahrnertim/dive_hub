@@ -69,14 +69,14 @@ function nearbyDives(db: Queryable, row: DiveRow) {
 type Participant = Awaited<ReturnType<typeof participantsOf>>[number];
 
 /** The other's Participants the kept Dive lacks: not its own Diver, nor one it has already. */
-const addedParticipants = (kept: Participant[], theirs: Participant[], diverId: string) =>
+export const addedParticipants = (kept: Participant[], theirs: Participant[], diverId: string) =>
   theirs.filter((p) => p.diverId !== diverId && !kept.some((k) => k.diverId === p.diverId));
 
 /**
  * The kept Dive's values with its gaps filled from the other's, and its overrides: beside a Recording a filled value is
  * one set by hand, or the next refresh from the Recording would drop it.
  */
-function fillValues(current: DiveRow, other: DiveRow): { values: DiveValues; overrides: OverridableField[] } {
+export function fillValues(current: DiveRow, other: DiveRow): { values: DiveValues; overrides: OverridableField[] } {
   const values: DiveValues = valuesOfDive(current);
   const theirs = valuesOfDive(other);
   const overrides = new Set(current.overrides);
@@ -89,17 +89,17 @@ function fillValues(current: DiveRow, other: DiveRow): { values: DiveValues; ove
 }
 
 /** The kept Dive's notes with the other's appended, unless they are empty or the same. */
-function mergeNotes(kept: string | null, other: string | null): string | null {
+export function mergeNotes(kept: string | null, other: string | null): string | null {
   const own = kept?.trim() ?? '';
   const more = other?.trim() ?? '';
   return !more || own === more ? kept : own ? `${own}\n\n${more}` : more;
 }
 
 /**
- * Deletes the Dive a merge or a move leaves behind (ADR 0026, 0038), its Recordings already gone to the other: one
+ * Deletes the Dive a merge, a move or an append leaves behind (ADR 0026, 0038, 0063), its Recordings already gone to the other: one
  * Revision with the delete and `extra` (where it went). Answers when.
  */
-async function deleteLeftBehind(tx: Tx, diveId: string, actor: Actor, cause: 'merge' | 'move', extra: Changes): Promise<Date> {
+export async function deleteLeftBehind(tx: Tx, diveId: string, actor: Actor, cause: 'merge' | 'move' | 'continuation', extra: Changes): Promise<Date> {
   const at = new Date();
   await tx.update(dive).set({ deletedAt: at, primaryRecordingId: null, ...nextVersion(at) }).where(eq(dive.id, diveId));
   await writeRevision(tx, 'dive', diveId, actor, cause, { deletedAt: { from: null, to: at.toISOString() }, ...extra });
@@ -244,7 +244,7 @@ export function createMergingService(db: Db, checks: LogbookCheckService, { curr
  * and the kept Dive has none, the other's Pushes there become the kept Dive's, so what Dive Hub sent and saw stays
  * with the link. Where both have one, the other's stays behind on the Dive that is deleted.
  */
-async function moveLinks(tx: Tx, currentRemote: typeof CurrentRemote, userId: string, keptId: string, otherId: string) {
+export async function moveLinks(tx: Tx, currentRemote: typeof CurrentRemote, userId: string, keptId: string, otherId: string) {
   const pushes = await pushesOf(tx, [keptId, otherId]);
   const mine = byProvider(pushes, keptId);
   const moved: { provider: string; remoteId: string; remoteNumber: number | null }[] = [];

@@ -19,7 +19,8 @@ import { managesDiveDiver } from '../divers/management.js';
 export class DiveError extends Error {
   constructor(readonly code:
     | 'dive_not_found' | 'dive_changed' | 'dive_values_inconsistent' | 'recording_not_on_dive'
-    | 'recording_not_found' | 'last_recording' | 'diver_not_found' | 'site_not_found' | 'participant_invalid' | 'merge_not_possible' | 'check_not_found') {
+    | 'recording_not_found' | 'last_recording' | 'diver_not_found' | 'site_not_found' | 'participant_invalid' | 'merge_not_possible' | 'check_not_found'
+    | 'continuation_not_possible' | 'recording_is_part') {
     super(code);
   }
 }
@@ -154,7 +155,7 @@ function merge(current: DiveValues, fromRecording: DiveValues | null, overrides:
  * Makes `primaryRecordingId` the Dive's Primary recording (it may be the one it has): values without Override, and
  * where the start's offset came from, follow it (ADR 0015, 0030). Applied through applyToDive with `extra`.
  */
-async function followPrimary(
+export async function followPrimary(
   tx: Tx, current: DiveRow, primaryRecordingId: string | null, actor: Actor, cause: RevisionCause, extra: Changes = {},
 ): Promise<Changes> {
   const primary = await primaryOf(tx, primaryRecordingId);

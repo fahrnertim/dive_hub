@@ -209,7 +209,7 @@ export function createLogbookService(db: Db) {
     return row?.version ?? null;
   }
 
-  /** The deleted Dives of the Divers the User manages, most recently deleted first; where a merge or move sent each. */
+  /** The deleted Dives of the Divers the User manages, most recently deleted first; where a merge, move or append sent each. */
   async function deletedDives(userId: string, limit: number) {
     const rows = await db.select({ d: dive, siteName: diveSite.name }).from(dive)
       .innerJoin(diverManagement, managesDiveDiver(userId))
@@ -220,11 +220,13 @@ export function createLogbookService(db: Db) {
     const last = rows.length === 0 ? [] : await db.selectDistinctOn([revision.entityId], { id: revision.entityId, changes: revision.changes })
       .from(revision).where(and(eq(revision.entityType, 'dive'), inArray(revision.entityId, rows.map((r) => r.d.id))))
       .orderBy(revision.entityId, desc(revision.at), desc(revision.id));
-    const went = (id: string, key: 'mergedInto' | 'movedTo') => {
+    const went = (id: string, key: 'mergedInto' | 'movedTo' | 'continuedInto') => {
       const to = last.find((r) => r.id === id)?.changes[key]?.to;
       return typeof to === 'string' ? to : null;
     };
-    return rows.map(({ d, siteName }) => ({ d, siteName, mergedInto: went(d.id, 'mergedInto'), movedTo: went(d.id, 'movedTo') }));
+    return rows.map(({ d, siteName }) => ({
+      d, siteName, mergedInto: went(d.id, 'mergedInto'), movedTo: went(d.id, 'movedTo'), continuedInto: went(d.id, 'continuedInto'),
+    }));
   }
 
   /** The Revisions of a Dive and of its Recordings, newest first (at most 200), with the name of who made each. */

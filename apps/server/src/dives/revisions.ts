@@ -24,6 +24,8 @@ export const REVISION_CAUSES = [
   'restore',
   // An import from a Provider filling what a Dive lacked: site, Participants, notes (ADR 0030).
   'fill',
+  // Appending a later Dive to the earlier one, on the kept Dive and the one deleted, and undoing it (ADR 0063).
+  'continuation', 'continuation-undo',
 ] as const;
 export type RevisionCause = (typeof REVISION_CAUSES)[number];
 

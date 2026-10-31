@@ -9,6 +9,8 @@ import { createAssessmentService } from './assessment/assessment-service.js';
 import { createCentreService } from './centres/centre-service.js';
 import { createCandidateService } from './dives/candidates/candidate-service.js';
 import { createLogbookCheckService } from './dives/checks/logbook-check-service.js';
+import { createAppendService } from './dives/continuation/append-service.js';
+import { createContinuationService } from './dives/continuation/continuation-service.js';
 import { createDeletionService } from './dives/deletion-service.js';
 import { createDiveService } from './dives/dive-service.js';
 import { createLogbookService } from './dives/logbook-service.js';
@@ -64,6 +66,7 @@ export function createServices({ db, blobs, auth, secrets, adapters, siteSources
   const dives = createDiveService(db);
   const checks = createLogbookCheckService(db);
   const merging = createMergingService(db, checks, { currentRemote, deletingItself: waitingPushes.deletingItself });
+  const continuation = createContinuationService(db, checks, { currentRemote, deletingItself: waitingPushes.deletingItself });
   return {
     db, blobs, auth, assessments, providers, imports,
     siteImports: createSiteImportService({ db, sources: siteSources }),
@@ -81,6 +84,8 @@ export function createServices({ db, blobs, auth, secrets, adapters, siteSources
     centres: createCentreService(db, { ssi: ssiCentreDisplayName }),
     deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }),
     merge: createMergeService({ merging, logbook, pushes }),
+    continuation,
+    append: createAppendService({ continuation, logbook, pushes }),
     candidates: createCandidateService(db),
     planning: createPlanningService(db),
     lead: createLeadService(db),

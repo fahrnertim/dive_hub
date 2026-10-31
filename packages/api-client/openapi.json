@@ -400,6 +400,8 @@
               "participant_invalid",
               "merge_not_possible",
               "check_not_found",
+              "continuation_not_possible",
+              "recording_is_part",
               "device_not_found",
               "candidate_not_found",
               "candidate_resolved",
@@ -1289,6 +1291,7 @@
                 "durationSeconds",
                 "maxDepthM",
                 "parser",
+                "partOf",
                 "summary",
                 "channels"
               ],
@@ -1351,6 +1354,17 @@
                 },
                 "parser": {
                   "type": "string"
+                },
+                "partOf": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "string",
+                      "description": "The joined Recording this one is a part of (ADR 0063): clients list it under that one, never as Primary or to split off"
+                    }
+                  ]
                 },
                 "summary": {
                   "type": "object",
@@ -1470,6 +1484,25 @@
                       "additionalProperties": {
                         "type": "string"
                       }
+                    },
+                    "surfaceBreaks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "startS",
+                          "endS"
+                        ],
+                        "properties": {
+                          "startS": {
+                            "type": "number"
+                          },
+                          "endS": {
+                            "type": "number"
+                          }
+                        }
+                      },
+                      "description": "A joined Recording's Surface breaks (ADR 0063): where its parts meet, seconds from its start. Clients mark them in the profile and show each one's length with the duration (docs/spec/clients.md)"
                     }
                   }
                 },
@@ -3231,6 +3264,8 @@
                   "participant_invalid",
                   "merge_not_possible",
                   "check_not_found",
+                  "continuation_not_possible",
+                  "recording_is_part",
                   "device_not_found",
                   "candidate_not_found",
                   "candidate_resolved",
@@ -3417,6 +3452,8 @@
                   "participant_invalid",
                   "merge_not_possible",
                   "check_not_found",
+                  "continuation_not_possible",
+                  "recording_is_part",
                   "device_not_found",
                   "candidate_not_found",
                   "candidate_resolved",
@@ -4210,6 +4247,8 @@
                         "participant_invalid",
                         "merge_not_possible",
                         "check_not_found",
+                        "continuation_not_possible",
+                        "recording_is_part",
                         "device_not_found",
                         "candidate_not_found",
                         "candidate_resolved",
@@ -8706,6 +8745,279 @@
         }
       }
     },
+    "/api/dives/{id}/continuation-candidate": {
+      "get": {
+        "summary": "The Dive before this one it may be appended to as its continuation, or null",
+        "description": "The Diver's Dive just before this one by start, when each has one Recording of the same Device (the one before may be a joined Dive of that Device) and this one starts after it ends; no time limit. With the Surface break's length and the Providers both are at. The dive page offers appending to it (POST /dives/{id}/continuation on that Dive). ADR 0063.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "version",
+                        "number",
+                        "startsAt",
+                        "utcOffsetSeconds",
+                        "utcOffsetSource",
+                        "durationSeconds",
+                        "maxDepthM",
+                        "site",
+                        "breakSeconds",
+                        "bothAt",
+                        "deletesItself"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "description": "Send it when appending"
+                        },
+                        "number": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer"
+                            }
+                          ]
+                        },
+                        "startsAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "utcOffsetSeconds": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer"
+                            }
+                          ]
+                        },
+                        "utcOffsetSource": {
+                          "enum": [
+                            "device",
+                            "position",
+                            "nearby",
+                            "unknown"
+                          ]
+                        },
+                        "durationSeconds": {
+                          "type": "number"
+                        },
+                        "maxDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "site": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "id",
+                                "name"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "breakSeconds": {
+                          "type": "integer",
+                          "description": "How long the Diver was at the surface between the two"
+                        },
+                        "bothAt": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Providers both Dives are at: this one's dive there stays unless `alsoAt` names the Provider (docs/spec/clients.md)"
+                        },
+                        "deletesItself": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Of `bothAt`, the Providers where this Dive's Connection deletes at the Provider by itself: its dive there is deleted 5 minutes after the append, so don't ask about them and leave them out of `alsoAt`"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/continuation": {
+      "post": {
+        "summary": "Append later Dives of the same Diver to this one, as its continuation after a time at the surface",
+        "description": "Send this Dive's version and each later Dive's (409 dive_changed). This Dive is kept: the answer is it. Its Primary recording becomes a joined Recording of its own and the later Dives' Recordings, with a Surface break between each two (`surfaceBreaks`); those Recordings stay as its parts (`partOf`). Each later Dive fills what this one lacks (site, Participants, values; its notes are appended), gives its link at each Provider where this one has none, and is deleted like any Dive (GET /dives/deleted, `continuedInto`). Where both are at a Provider, the later one's dive there stays unless `alsoAt` names the Provider: it is deleted there first, and a refusal (provider_* codes) appends nothing. 400 continuation_not_possible unless the Dives are one Diver's, this one has one Recording or a joined one, each later one has one Recording of the same Device and starts after the one before ends, and no other Dive starts between them. ADR 0063.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "dives"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer"
+                  },
+                  "dives": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "version"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "description": "The later Dives to append, with their versions"
+                  },
+                  "alsoAt": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Providers to delete the later Dives' copies at, where both have one; ask the User first"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiveView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal while deleting a Dive: a Problem, with the copies at Providers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal while deleting a Dive: a Problem, with the copies at Providers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteProblem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "A refusal while deleting a Dive: a Problem, with the copies at Providers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recordings/{id}/detach": {
       "post": {
         "summary": "Split a Recording off its Dive into a new Dive of the same Diver",
@@ -8808,6 +9120,7 @@
                       "deletedAt",
                       "mergedInto",
                       "movedTo",
+                      "continuedInto",
                       "stillAt",
                       "waiting"
                     ],
@@ -8912,6 +9225,17 @@
                           {
                             "type": "string",
                             "description": "The Dive it became in another Diver's logbook when it was moved while linked to a Provider (ADR 0038)"
+                          }
+                        ]
+                      },
+                      "continuedInto": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string",
+                            "description": "The Dive it was appended to as its continuation (ADR 0063): clients say so and link there"
                           }
                         ]
                       },
@@ -9116,7 +9440,9 @@
                           "site-merge",
                           "adopt",
                           "restore",
-                          "fill"
+                          "fill",
+                          "continuation",
+                          "continuation-undo"
                         ]
                       },
                       "changes": {
@@ -16599,7 +16925,9 @@
                           "site-merge",
                           "adopt",
                           "restore",
-                          "fill"
+                          "fill",
+                          "continuation",
+                          "continuation-undo"
                         ]
                       },
                       "changes": {

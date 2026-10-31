@@ -24,6 +24,8 @@ import type { MergingService } from './merging-service.js';
 import type { LogbookService } from './logbook-service.js';
 import type { DeletionService } from './deletion-service.js';
 import type { MergeService } from './merge-service.js';
+import type { AppendService } from './continuation/append-service.js';
+import type { ContinuationService } from './continuation/continuation-service.js';
 import { LOGBOOK_CHECK_RULES } from './checks/logbook-check-rules.js';
 import type { LogbookCheckService } from './checks/logbook-check-service.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
@@ -57,6 +59,9 @@ export interface DiveRouteDeps {
   deletion: DeletionService;
   /** Merging two Dives deletes the one not kept at the Providers asked first (ADR 0038). */
   merge: MergeService;
+  /** Appending later Dives to the earlier one (ADR 0063), deleting their copies at the Providers asked first. */
+  continuation: Pick<ContinuationService, 'previousCandidate'>;
+  append: AppendService;
   assessments: AssessmentService;
   /** How a refusal about a Provider is answered (providers/route-parts.ts). */
   providerAnswers: ProviderAnswers;
@@ -132,7 +137,7 @@ const fromValues = (v: Partial<Static<typeof ValuesSchema>>): Partial<DiveValues
 const STATUS: Record<DiveError['code'], number> = {
   dive_not_found: 404, dive_changed: 409, dive_values_inconsistent: 400, recording_not_on_dive: 400,
   recording_not_found: 404, last_recording: 409, diver_not_found: 404, site_not_found: 404, participant_invalid: 400,
-  merge_not_possible: 400, check_not_found: 404,
+  merge_not_possible: 400, check_not_found: 404, continuation_not_possible: 400, recording_is_part: 400,
 };
 const CYLINDER_STATUS: Record<CylinderError['code'], number> = { cylinder_invalid: 400, cylinder_series_not_found: 400 };
 const WEIGHTING_STATUS: Record<WeightingError['code'], number> = { weighting_feedback_invalid: 400, suit_invalid: 400 };
@@ -145,6 +150,7 @@ const DeletedDiveView = Type.Object({
   deletedAt: DateTime,
   mergedInto: Nullable(Type.String({ description: 'The Dive it was merged into (ADR 0038): clients say so and link there' })),
   movedTo: Nullable(Type.String({ description: 'The Dive it became in another Diver\'s logbook when it was moved while linked to a Provider (ADR 0038)' })),
+  continuedInto: Nullable(Type.String({ description: 'The Dive it was appended to as its continuation (ADR 0063): clients say so and link there' })),
   stillAt: Type.Array(Type.Object({
     provider: Type.String(),
     remoteNumber: Nullable(Type.Integer({ description: 'The Provider\'s own dive number' })),
@@ -213,7 +219,7 @@ const DeleteProblem = refTo(DeleteProblemSchema);
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, merge, assessments, providerAnswers }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, merge, continuation, append, assessments, providerAnswers }) => {
   app.addHook('onRequest', requireUser(auth));
   refreshAssessmentsAfterChange(app, assessments);
 
@@ -257,7 +263,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       recordings: recs.map(({ r, d, channels }) => ({
         id: r.id, isPrimary: r.id === row.primaryRecordingId,
         device: d ? { manufacturer: d.manufacturer, product: d.product, serialNumber: d.serialNumber } : null, startsAt: r.startsAt.toISOString(),
-        durationSeconds: r.durationSeconds, maxDepthM: r.maxDepthM, parser: r.parser,
+        durationSeconds: r.durationSeconds, maxDepthM: r.maxDepthM, parser: r.parser, partOf: r.joinedRecordingId,
         summary: r.summary as RecordingSummary, channels,
       })),
       cylinders,
@@ -495,6 +501,65 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     const merged = await merge.merge(userOf(request).id, { id: request.params.id, version }, { id: otherId, version: otherVersion }, alsoAt);
     if (merged.failure) return providerAnswers.reply(merged.failure, reply, { providers: merged.providers });
     return viewOfKept(request, merged.kept);
+  });
+
+  app.get('/dives/:id/continuation-candidate', {
+    schema: {
+      summary: 'The Dive before this one it may be appended to as its continuation, or null',
+      description: 'The Diver\'s Dive just before this one by start, when each has one Recording of the same Device (the one before may be '
+        + 'a joined Dive of that Device) and this one starts after it ends; no time limit. With the Surface break\'s length and the '
+        + 'Providers both are at. The dive page offers appending to it (POST /dives/{id}/continuation on that Dive). ADR 0063.',
+      params: IdParams,
+      response: {
+        200: Nullable(Type.Object({
+          id: Type.String(),
+          version: Type.Integer({ description: 'Send it when appending' }),
+          ...DiveSummaryFields,
+          breakSeconds: Type.Integer({ description: 'How long the Diver was at the surface between the two' }),
+          bothAt: Type.Array(Type.String(), {
+            description: 'Providers both Dives are at: this one\'s dive there stays unless `alsoAt` names the Provider (docs/spec/clients.md)',
+          }),
+          deletesItself: Type.Array(Type.String(), {
+            description: 'Of `bothAt`, the Providers where this Dive\'s Connection deletes at the Provider by itself: its dive there is deleted '
+              + '5 minutes after the append, so don\'t ask about them and leave them out of `alsoAt`',
+          }),
+        })),
+        404: Problem,
+      },
+    },
+  }, async (request) => {
+    const found = await continuation.previousCandidate(userOf(request).id, request.params.id);
+    if (!found) return null;
+    const { dive: d, siteName, breakSeconds, bothAt, deletesItself } = found;
+    return { id: d.id, version: d.version, ...diveSummaryOf(d, siteName), breakSeconds, bothAt, deletesItself };
+  });
+
+  app.post('/dives/:id/continuation', {
+    schema: {
+      summary: 'Append later Dives of the same Diver to this one, as its continuation after a time at the surface',
+      description: 'Send this Dive\'s version and each later Dive\'s (409 dive_changed). This Dive is kept: the answer is it. Its Primary '
+        + 'recording becomes a joined Recording of its own and the later Dives\' Recordings, with a Surface break between each two '
+        + '(`surfaceBreaks`); those Recordings stay as its parts (`partOf`). Each later Dive fills what this one lacks (site, '
+        + 'Participants, values; its notes are appended), gives its link at each Provider where this one has none, and is deleted '
+        + 'like any Dive (GET /dives/deleted, `continuedInto`). Where both are at a Provider, the later one\'s dive there stays unless '
+        + '`alsoAt` names the Provider: it is deleted there first, and a refusal (provider_* codes) appends nothing. 400 '
+        + 'continuation_not_possible unless the Dives are one Diver\'s, this one has one Recording or a joined one, each later one '
+        + 'has one Recording of the same Device and starts after the one before ends, and no other Dive starts between them. ADR 0063.',
+      params: IdParams,
+      body: Type.Object({
+        version: Type.Integer(),
+        dives: Type.Array(Type.Object({ id: Type.String({ format: 'uuid' }), version: Type.Integer() }, { additionalProperties: false }), {
+          minItems: 1, maxItems: 20, description: 'The later Dives to append, with their versions',
+        }),
+        alsoAt: Type.Optional(Type.Array(Type.String(), { description: 'Providers to delete the later Dives\' copies at, where both have one; ask the User first' })),
+      }, { additionalProperties: false }),
+      response: { 200: DiveView, 400: DeleteProblem, 404: Problem, 409: DeleteProblem, 502: DeleteProblem },
+    },
+  }, async (request, reply) => {
+    const { version, dives: later, alsoAt = [] } = request.body;
+    const appended = await append.append(userOf(request).id, { id: request.params.id, version }, later, alsoAt);
+    if (appended.failure) return providerAnswers.reply(appended.failure, reply, { providers: appended.providers });
+    return viewOfKept(request, appended.kept);
   });
 
   app.post('/recordings/:id/detach', {

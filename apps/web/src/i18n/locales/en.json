@@ -462,6 +462,8 @@
     "diver_external_id_connected": "A connection uses this account. Disconnect it first.",
     "participant_invalid": "Someone is on the list twice, or is the dive’s own diver.",
     "merge_not_possible": "Only two different dives of the same Diver can be merged.",
+    "continuation_not_possible": "Only later dives of the same Diver, each with one recording of the same computer and no dive between them, can be appended.",
+    "recording_is_part": "This recording is part of an appended dive: it can’t be made primary or split off on its own.",
     "check_not_found": "These two dives are no longer at the same time.",
     "device_not_found": "This device doesn’t exist or isn’t yours.",
     "candidate_not_found": "There’s nothing to decide here (anymore).",
@@ -624,7 +626,9 @@
       "merge": "Merged with another dive",
       "adopt": "Data taken from its source",
       "restore": "Restored",
-      "fill": "Filled in from a dive at a service"
+      "fill": "Filled in from a dive at a service",
+      "continuation": "Later dive appended",
+      "continuation-undo": "Appending undone"
     },
     "field": {
       "number": "Dive number",

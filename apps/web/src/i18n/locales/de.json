@@ -462,6 +462,8 @@
     "diver_external_id_connected": "Eine Verbindung nutzt dieses Konto. Trenne sie zuerst.",
     "participant_invalid": "Jemand steht doppelt auf der Liste oder ist der Taucher dieses Tauchgangs selbst.",
     "merge_not_possible": "Nur zwei verschiedene Tauchgänge desselben Tauchers lassen sich zusammenführen.",
+    "continuation_not_possible": "Anhängen lässt sich nur ein späterer Tauchgang desselben Tauchers mit genau einer Aufzeichnung desselben Computers, ohne Tauchgang dazwischen.",
+    "recording_is_part": "Diese Aufzeichnung ist Teil eines angehängten Tauchgangs: Sie lässt sich nicht allein zur primären machen oder abtrennen.",
     "check_not_found": "Diese beiden Tauchgänge liegen nicht mehr zur selben Zeit.",
     "device_not_found": "Dieses Gerät gibt es nicht oder es gehört nicht zu dir.",
     "candidate_not_found": "Hier gibt es (nichts mehr) zu entscheiden.",
@@ -624,7 +626,9 @@
       "merge": "Mit einem anderen Tauchgang zusammengeführt",
       "adopt": "Daten aus der Quelle übernommen",
       "restore": "Wiederhergestellt",
-      "fill": "Aus einem Tauchgang bei einem Dienst ergänzt"
+      "fill": "Aus einem Tauchgang bei einem Dienst ergänzt",
+      "continuation": "Späteren Tauchgang angehängt",
+      "continuation-undo": "Anhängen rückgängig gemacht"
     },
     "field": {
       "number": "Tauchgangsnummer",
