@@ -237,8 +237,8 @@ async function resolveDevice(tx: Tx, diverId: string, rec: ParsedRecording): Pro
   return created!.id;
 }
 
-// A part's samples are never written here for a new Recording (only appending makes a part); a changed part is rebuilt into
-// its joined Recording by `reimport` (rebuildJoined).
+// Whoever rewrites a Continuation's part (its samples or summary, e.g. a parser version reading Originals again) must go
+// through `reimport` or call `rebuildJoined`, or the joined Recording and its Dive keep the old data (ADR 0063).
 async function writeSamples(tx: Tx, recordingId: string, rec: ParsedRecording, replace: boolean) {
   if (replace) {
     await tx.delete(sampleSeries).where(eq(sampleSeries.recordingId, recordingId));
