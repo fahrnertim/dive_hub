@@ -1,6 +1,6 @@
 ---
 title: Continuation - appending a Dive cut in two by a surface break to the Dive before it
-summary: Two consecutive Dives of one Diver from the same dive computer, cut in two because the computer ended the dive at the surface, become one Dive - a joined Recording made from both (the gap as 0 m, marked as a Surface break) is its Primary recording, the two Recordings stay as its parts, the later Dive is deleted like a merged one and its Provider links stay on it so no import brings it back; found by a new logbook check (same Device, at most 10 minutes apart) and offered by hand; undone by restoring the later Dive. Proposed ADR 0063.
+summary: Consecutive Dives of one Diver from the same dive computer, cut apart because the computer ended the dive at the surface, become one Dive - a joined Recording made from them (each gap as 0 m, marked as a Surface break) is its Primary recording, the Recordings stay as its parts, the later Dives are deleted like merged ones and their Provider links stay on them so no import brings them back; found by a new logbook check (same Device, at most 10 minutes apart; chains as one item) and offered by hand; undone as a whole append by restoring. Proposed ADR 0063.
 status: proposed
 date: 2026-10-31
 ---
@@ -42,14 +42,15 @@ the *same* descent into one); here two *consecutive* parts of one dive become on
 - Dive Hub finds such pairs and suggests them in "Needs your decision"; nothing is appended unasked (owner).
 - Appending by hand from the dive page, for pairs the rule doesn't find (my call, as merge does).
 - No import (a file upload, a Garmin or SSI fetch) brings the later Dive back or undoes the continuation.
-- Undone by restoring the later Dive from "Deleted dives" (owner).
+- Undone by restoring from "Deleted dives", and an undo reverses the whole append: every Dive it took comes back
+  (owner, 2026-11-01).
+- More than two parts: a dive cut twice (three parts) is appended in one go, and a joined Dive can take a further Continuation
+  later (owner, 2026-11-01).
 
 ## Non-goals
 
 - A "time underwater" metric for every Dive (owner: left out for now).
 - A "split at the surface break" action (owner: restoring is enough).
-- Appending more than two: a Dive whose Primary recording is already joined is not offered again (my call). Three
-  parts are rare; the chain would need ordering and undo rules of its own.
 - Different computers, different Divers (owner: same computer only). A Recording from another computer is the existing merge.
 - Dives without a Recording (logbook entries): nothing to join; a merge or a corrected duration fits them.
 - Joining the Recordings of a second computer that also split the dive: only Dives with exactly one live Recording
@@ -66,16 +67,17 @@ the *same* descent into one); here two *consecutive* parts of one dive become on
 ### Data: a joined Recording (my call, owner agreed)
 
 - **Appending builds one new Recording from the two**: the first part's samples, the surface break, then the second
-  part's samples, on one time axis from the first part's start. It names its two parts and is the kept Dive's **Primary
+  part's samples, on one time axis from the first part's start. It names its parts (two or more; each further part after a further break) and is the kept Dive's **Primary
   recording**. Everything that reads a Dive's profile (the profile chart, summary values, the dive assessment, sending to
   SSI, MCP, export) keeps reading one Recording and needs no notion of parts.
-- **The two Recordings stay** on the kept Dive, each with its Original and its Recording key, shown as the joined
+- **The parts' Recordings stay** on the kept Dive, each with its Original and its Recording key, shown as the joined
   Recording's **parts** (not as two more computers) and never offered as Primary. They are what imports find.
 - **The joined Recording has no Original and no Recording key an import can match**: it is derived (my call for its
   columns): the parts' Device; `recording_key` `continuation:<its own id>` (unique, never produced by an import);
   `parser` `continuation` with its own version; `original_id` and `import_id` empty, allowed only for this kind (a check
-  constraint). Its parts are named by a link from each part to it (or a list on it; the builder's). Migration: a
-  protected path, so the owner sees its shape when it is written.
+  constraint). **Any number of parts**: each part points to its joined Recording and to the **append** that brought it
+  in; parts are ordered by start (my call; the first part points to the first append). Migration: a protected path, so
+  the owner sees its shape when it is written.
 - **Its sample series are stored**, copied from the parts with the break filled in (my call): readers stay unchanged.
 - **Rebuilt, never edited**: in the same transaction as any write of a part's samples or summary (an upload or fetch
   updating the part in place, a parser version reading Originals again), the joined Recording is rebuilt from its parts.
@@ -107,7 +109,7 @@ the *same* descent into one); here two *consecutive* parts of one dive become on
 | Max depth | the deeper of the two |
 | Average depth | over the time under water only, time-weighted; the surface break doesn't count |
 | Surface break | its length, shown with the duration ("50 min · 5 min at the surface") |
-| Water temperature | the lower of the two parts' minimums (as the Dive shows a minimum today) |
+| Water temperature | the lowest of the parts' minimums (as the Dive shows a minimum today) |
 | Gas | per cylinder: start pressure from the first part, end pressure from the second; gas used from those |
 | CNS, OTU | CNS at the end of the second part; OTU summed |
 | SAC/RMV, the computer's own ascent rates and TTS | computed again from the joined samples where Dive Hub computes them; a device-only value that can't be combined is left out |
@@ -150,19 +152,24 @@ The outcome reason stays `deleted_earlier` (my call); a new reason would be a ne
 - The kept Dive is then outdated there; "Send update" sends the longer duration and the joined profile. The card warns
   that SSI then renumbers its later dives and that the update removes a dive centre's QR verification (ADR 0038, 0043).
 
-### Undo: restoring the later Dive (owner)
+### Undo: restoring reverses the whole append (owner, 2026-11-01)
 
-- Restoring a Dive that was appended (`continuedInto`) brings it back **with its part Recording** (my call: unlike a
-  merge, whose restore gives nothing back; a restored second half without its Recording would be an empty entry). The
-  part comes back as it is now (updated by imports since, if they did) and is the restored Dive's Primary recording. The
-  joined Recording is deleted; on the Dive that held it, the **earlier part** becomes Primary again and values without
-  Override follow it; Overrides (also those set by the append, as a merge sets them) stay.
+- **An append is one operation** and may take several Dives at once (A with B and C). Restoring any Dive it took
+  restores **every Dive of that append**; "Deleted dives" lists them as one entry ("2 dives appended to dive 85").
+- **Later appends go too.** Appending B to A, then C to the joined Dive, are two appends. Undoing the second brings C
+  back and leaves A + B joined. Undoing the first can't leave A + C joined across B's gap, so it undoes the later append
+  as well: A, B and C are separate again. The restore dialog says so before ("This also takes dive C back out").
+- Each restored Dive comes back **with its part Recording** (my call: unlike a merge, whose restore gives nothing back;
+  a restored half without its Recording would be an empty entry). A part comes back as it is now (updated by imports
+  since, if they did) and is its Dive's Primary recording. The joined Recording is rebuilt from the parts that remain,
+  or deleted when one remains; that one becomes Primary again and values without Override follow it; Overrides (also
+  those set by the append, as a merge sets them) stay.
 - The joined Recording is found wherever it is now: if its Dive was merged into another since, the restore works on that
   one.
 - Its Provider links come back with it where they stayed on it; a link that had moved to the kept Dive stays there,
   as after a merge. Values filled into the kept Dive and the appended notes stay (as a merge's).
-- Restoring writes the answer "two dives" for the pair (as restoring a probable non-dive records "keep it"), so the
-  check doesn't suggest it again at once.
+- Restoring writes the answer "two dives" for each pair it separates (as restoring a probable non-dive records "keep
+  it"), so the check doesn't suggest them again at once.
 - If the kept Dive was deleted meanwhile, the restored Dive gets its Recording back and stands alone.
 
 ### The rule: `surface_break` logbook check (owner: automatic detection; numbers my call)
@@ -174,20 +181,24 @@ A pair is found when:
   gap was 4 min 01 s; real repetitive dives usually have 30 minutes or more);
 - neither Recording is a probable non-dive (`probablyNoDive`, ADR 0038): a false start 5 minutes before the real dive
   must be offered for deleting, not for appending (my call; the owner's logbook has exactly that case);
-- neither Dive's Primary recording is already joined.
+- a joined Dive may be the earlier one; the 10 minutes count from its last part's end (owner: more than two).
+
+**Chains are one item** (my call): pairs that follow one another (A–B, B–C) are offered together, "Make these 3 dives
+one", and **Anhängen** appends them in one append, which an undo reverses as a whole.
 
 Where the start position is known for both and they lie far apart it would be a sign of two dives; not used now (my
 call: the Device and the 10 minutes are strong enough, and a wrong suggestion costs one click).
 
 - **Never obvious**: not part of "Merge the clear pairs"; each pair needs its own click.
 - **Resolutions** on the card: **Anhängen** and "these are two dives" (kept per pair, Undo and "Ask again", as today).
-- **One to one**: a Dive is in at most one pair of this rule (the nearer partner wins, as `entry_apart_from_recording`).
+- **One before, one after**: a Dive has at most one partner before it and one after it in this rule (the nearer wins, as
+  in `entry_apart_from_recording`; a tie gives no suggestion).
 - `LOGBOOK_CHECKS_VERSION` goes up by one.
 
 ### By hand
 
 - The dive page's menu has "An den vorherigen Tauchgang anhängen…" when the Diver's Dive just before it (by start) has
-  one Recording from the same Device and no Dive between them; the dialog says which stays, which goes to "Deleted
+  one Recording from the same Device, or is a joined Dive of that Device, and no Dive lies between them; the dialog says which stays, which goes to "Deleted
   dives", the surface break's length, and asks the Provider question. No 10-minute limit by hand (my call); the same
   Device is required (owner).
 - The server's operation has the same preconditions apart from the 10 minutes, and refuses otherwise (a 400 code of its
@@ -201,7 +212,7 @@ The joined Recording and its parts are one unit: they move together and are neve
 - **Merging (ADR 0038)** with a joined Dive works either way: when the joined Dive is the one deleted, its joined
   Recording and parts attach to the kept Dive together; the Primary recording is chosen as for any merge.
 - **Splitting off:** a part can't be split off or deleted on its own (refused with a code of its own); the joined
-  Recording can be split off only with its parts, making a Dive of them. Undoing the append is restoring the later Dive.
+  Recording can be split off only with its parts, making a Dive of them. Undoing an append is restoring a Dive it took.
 - **Moving to another Diver** takes the unit along, as any Recordings.
 - **Listing a Dive's Recordings:** parts are listed under their joined Recording, not beside it; code that picks a
   Recording (Primary choice, earliest-remaining after a split, `hasRecordingOf` in the import) treats the unit as the
@@ -220,13 +231,15 @@ The joined Recording and its parts are one unit: they move together and are neve
 
 ### Client duties (for [docs/spec/clients.md](../../spec/clients.md), written in the same change as the build)
 
-- Show a `surface_break` check: both Dives, the break's length, the button **Anhängen** with text that says what
+- Show a `surface_break` check: its Dives (two or more), each break's length, the button **Anhängen** with text that says what
   happens (one Dive, the later one goes to "Deleted dives" and can be restored).
 - Offer appending by hand on the dive page, with the dialog's "stays" / "goes" and the Provider question (as merge).
 - Mark Surface breaks in the profile chart from the joined Recording's intervals; show the break with the duration.
 - Show a joined Recording's parts under it (named by their Device and time), not as more computers; no "make primary"
   or "split off" for a part.
-- A deleted Dive with `continuedInto`: say it was appended to that Dive and link it; restoring brings its Recording back.
+- A deleted Dive with `continuedInto`: say it was appended to that Dive and link it; list the Dives of one append as
+  one entry; before restoring, say which Dives come back (also those of later appends); restoring brings their
+  Recordings back.
 - History: the `continuation` entries.
 
 ## Constraints
