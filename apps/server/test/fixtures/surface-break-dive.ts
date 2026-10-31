@@ -16,14 +16,15 @@ function through(points: [number, number][]): (t: number) => number {
   };
 }
 
-export function ownersDiveParts(): { first: Uint8Array; second: Uint8Array } {
+/** `diveNumber`: another file of the same dives (a re-export): other bytes, the same keys and samples. */
+export function ownersDiveParts(diveNumber?: number): { first: Uint8Array; second: Uint8Array } {
   const firstDepth = through([[0, 0], [120, 7.1], [900, 6.5], [1120, 0]]);
   const first = makeSyntheticDive({
-    serialNumber: SERIAL_NUMBER, start: new Date('2026-10-26T06:05:49Z'), durationSeconds: 1180,
+    serialNumber: SERIAL_NUMBER, start: new Date('2026-10-26T06:05:49Z'), durationSeconds: 1180, ...(diveNumber !== undefined && { diveNumber }),
     depthAt: (t) => (t <= 1120 ? firstDepth(t) : (Math.floor(t / 10) % 2) * 0.3),
   });
   const second = makeSyntheticDive({
-    serialNumber: SERIAL_NUMBER, start: new Date('2026-10-26T06:29:30Z'), durationSeconds: 1530,
+    serialNumber: SERIAL_NUMBER, start: new Date('2026-10-26T06:29:30Z'), durationSeconds: 1530, ...(diveNumber !== undefined && { diveNumber }),
     depthAt: through([[0, 1.9], [100, 7.9], [1200, 7.0], [1530, 0]]),
   });
   return { first, second };

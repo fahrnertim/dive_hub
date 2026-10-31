@@ -7,6 +7,7 @@ import type { Queryable, Tx } from '../db/client.js';
 import {
   device, dive, diverManagement, duplicateCandidate, original, recording, recordingEvent, sampleSeries, type ImportOutcome,
 } from '../db/schema.js';
+import { rebuildJoined } from '../dives/continuation/joined-recording.js';
 import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '../dives/dive-service.js';
 import { managedDiverIds } from '../divers/management.js';
 import { reviseDive, untieLostSeries } from '../dives/cylinders.js';
@@ -103,6 +104,8 @@ async function reimport(tx: Tx, c: Placement, rec: ParsedRecording, known: Recor
   const { actor } = c;
   await tx.update(recording).set(values).where(eq(recording.id, known.id));
   await writeSamples(tx, known.id, rec, true);
+  // A part of a Continuation: its joined Recording is rebuilt, and the Dive whose Primary that is follows it.
+  if (known.joinedRecordingId) await rebuildJoined(tx, known.joinedRecordingId, actor, 'reimport');
   await writeRevision(tx, 'recording', known.id, actor, 'reimport', { originalId: { from: known.originalId, to: c.originalId } });
   // If it is a Dive's Primary recording, the Dive's values without Override follow the new data.
   const [owner] = await tx.select({ id: dive.id }).from(dive).where(eq(dive.primaryRecordingId, known.id));
@@ -234,6 +237,8 @@ async function resolveDevice(tx: Tx, diverId: string, rec: ParsedRecording): Pro
   return created!.id;
 }
 
+// A part's samples are never written here for a new Recording (only appending makes a part); a changed part is rebuilt into
+// its joined Recording by `reimport` (rebuildJoined).
 async function writeSamples(tx: Tx, recordingId: string, rec: ParsedRecording, replace: boolean) {
   if (replace) {
     await tx.delete(sampleSeries).where(eq(sampleSeries.recordingId, recordingId));
