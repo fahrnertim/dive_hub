@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  api, diveImportPreviewQuery, diveTimesQuery, importQuery, keys, unwrap, type ConnectionView, type DiveImportMode, type DiveImportPreview,
+  api, diveImportPreviewQuery, diveTimesQuery, importQuery, keys, unwrap, type ConnectionView, type DiveImportMode, type DiveKind, type DiveImportPreview,
   type ProviderView,
 } from './api.ts';
 import { GoneCheck } from './GoneDives.tsx';
@@ -13,8 +13,9 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { deviceName } from './lib/devices.ts';
 import { useProviderText } from './lib/providers.ts';
 import { formatDiveTime } from './lib/units.ts';
-import { Button, Muted, Notice, RadioGroup, Select, Table } from './ui/index.ts';
+import { Button, Checkbox, Muted, Notice, RadioGroup, Select, Table } from './ui/index.ts';
 
+const DIVE_KINDS: readonly DiveKind[] = ['scuba', 'apnea'];
 const WINDOWS = ['5', '15', '30', '60'] as const;
 type Window = (typeof WINDOWS)[number];
 
@@ -37,8 +38,11 @@ export function ProviderDiveImport({ provider: p, connection: c, several }: { pr
   const [importId, setImportId] = useState<string | null>(null);
   const [timing, setTiming] = useState(false);
   const settings = useMutation({
-    mutationFn: async (diveImport: { mode?: DiveImportMode; windowMinutes?: 5 | 15 | 30 | 60; computers?: { key: string; choice: 'recordings' | 'entries' }[] }) =>
-      unwrap(await api.PATCH('/api/connections/{id}', { params: { path: { id: c.id } }, body: { diveImport } })),
+    mutationFn: async ({ fetchKinds, ...diveImport }: {
+      mode?: DiveImportMode; windowMinutes?: 5 | 15 | 30 | 60; computers?: { key: string; choice: 'recordings' | 'entries' }[]; fetchKinds?: DiveKind[];
+    }) => unwrap(await api.PATCH('/api/connections/{id}', {
+      params: { path: { id: c.id } }, body: { ...(Object.keys(diveImport).length > 0 && { diveImport }), ...(fetchKinds && { fetchKinds }) },
+    })),
     onSuccess: async (updated) => {
       queryClient.setQueryData<ConnectionView[]>(keys.connections, (all) => all?.map((x) => (x.id === updated.id ? updated : x)));
       // What the preview showed no longer holds.
@@ -69,6 +73,7 @@ export function ProviderDiveImport({ provider: p, connection: c, several }: { pr
           options={WINDOWS.map((w) => ({ id: w, label: pt('importMinutes' as 'importMinutes_one', { count: Number(w) }) }))}
         />
       )}
+      {mode !== 'off' && <FetchKinds provider={p} chosen={c.fetchKinds} onChange={(fetchKinds) => settings.mutate({ fetchKinds })} />}
       {settings.error && <Notice tone="danger">{errorText(settings.error)}</Notice>}
       {mode !== 'off' && !previewing && !importId && (
         <div className="form-actions">
@@ -92,6 +97,27 @@ export function ProviderDiveImport({ provider: p, connection: c, several }: { pr
       ) : <DiveTimes provider={p} connection={c} onClose={() => setTiming(false)} />}
       <GoneCheck provider={p} connection={c} />
     </section>
+  );
+}
+
+/** The kinds of dive an import fetches (saved at once): at least one stays chosen, so the last one can't be turned off. */
+function FetchKinds({ provider: p, chosen, onChange }: { provider: ProviderView; chosen: DiveKind[]; onChange: (kinds: DiveKind[]) => void }) {
+  const pt = useProviderText(p);
+  const labelId = useId();
+  const hintId = useId();
+  return (
+    <div className="field" role="group" aria-labelledby={labelId} aria-describedby={hintId}>
+      <span id={labelId} className="field-label">{pt('fetchKinds')}</span>
+      {(['scuba', 'apnea'] as const).map((kind) => (
+        <Checkbox
+          key={kind} isSelected={chosen.includes(kind)} isDisabled={chosen.length === 1 && chosen[0] === kind}
+          onChange={(on) => onChange(DIVE_KINDS.filter((k) => (k === kind ? on : chosen.includes(k))))}
+        >
+          {pt(`fetchKind.${kind}`)}
+        </Checkbox>
+      ))}
+      <span id={hintId} className="field-description">{pt('fetchKindsHint')}</span>
+    </div>
   );
 }
 
@@ -187,7 +213,7 @@ function Preview({ provider: p, connection: c, mode, onSettings, onStarted, onCl
   }
   const data = preview.data;
   const n = new Intl.NumberFormat(i18n.language);
-  const counted = (['recordings', 'link', 'create', 'decide', 'changed', 'linked', 'ours', 'deleted', 'noMatch', 'unreadable'] as const)
+  const counted = (['recordings', 'link', 'create', 'decide', 'changed', 'linked', 'ours', 'deleted', 'noMatch', 'enteredByHand', 'kindNotChosen', 'unreadable'] as const)
     .filter((k) => data.counts[k] > 0);
   // The local time as the Provider keeps it, without a time zone.
   const local = (text: string) => formatDiveTime(`${text.replace(' ', 'T')}Z`, null, display.locale, true);

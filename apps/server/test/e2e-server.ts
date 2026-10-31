@@ -105,9 +105,16 @@ const fakeSsi = createFakeSsi({
     fakeCard(5_012_047, { uid: 'E2ECARD-0002', course: 'Advanced Adventurer', short: 'aa', courseId: 102, issued: '2021-04-02', dives: 40 }),
   ],
 });
-// Garmin as the fake answers it: one account with the key below and no dives yet (the tests that need some add them).
+// Garmin as the fake answers it: one account with the key below.
 const fakeGarmin = await createFakeGarmin();
-fakeGarmin.addAccount({ key: 'GCDC_e2e-key-0001', guid: 'e2e-garmin-guid', displayName: 'Erika Garmin', dives: [] });
+// Two dives in it (garmin.spec.ts): a scuba dive and an apnea session, on days no other seeded dive has.
+const garminDive = (activityId: number, typeKey: string, startTimeLocal: string) => ({
+  activityId, typeKey, startTimeLocal, fit: makeSyntheticDive({ serialNumber: 9000 + activityId, start: new Date(`${startTimeLocal.replace(' ', 'T')}Z`) }),
+});
+fakeGarmin.addAccount({
+  key: 'GCDC_e2e-key-0001', guid: 'e2e-garmin-guid', displayName: 'Erika Garmin',
+  dives: [garminDive(7001, 'single_gas_diving', '2026-09-05 10:00:00'), garminDive(7002, 'apnea_diving', '2026-09-06 10:00:00')],
+});
 const quick = <A extends { capabilities: { limits: { pauseMs: number; run: unknown } } }>(adapter: A): A => ({
   ...adapter, capabilities: { ...adapter.capabilities, limits: { ...adapter.capabilities.limits, pauseMs: 0, run: { pauseMs: 150, maxDives: 100 } } },
 });

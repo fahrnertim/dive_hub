@@ -10,7 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, diveNumber, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, tankPodDive,
-  clearPushRuns, clearQueue, conflictAtSsi, fetchState, queueEntry, ssiConnectionOf, expireSsiTokens, leaveConflict, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
+  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, queueEntry, ssiConnectionOf, expireSsiTokens, leaveConflict, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
@@ -258,6 +258,18 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, '05-account');
     await page.goto('/#/account?tab=connections'); await page.getByRole('heading', { name: 'SSI', exact: true }).waitFor();
     await capture(page, '05c-account-connections');
+    // Garmin (ADR 0062): its key form is on the page above; now connected with a key that expires in 5 days, its kinds under the import.
+    await connectGarmin(request, 5);
+    await page.reload();
+    await page.locator('#main').getByText(/The key expires on /).waitFor();
+    await page.getByText('Only add to dives here', { exact: true }).click();
+    await page.getByRole('checkbox', { name: 'Apnea sessions' }).waitFor();
+    await page.getByRole('button', { name: 'Show what the import would do' }).click();
+    await page.getByText(/dives in Garmin/).waitFor();
+    await page.getByRole('checkbox', { name: 'Apnea sessions' }).click({ force: true });
+    await page.getByText(/you don’t fetch: left out/).waitFor();
+    await capture(page, '05f-account-connections-garmin-connected');
+    await leaveGarmin(request);
     await page.goto('/#/account?tab=ai'); await page.getByRole('region', { name: 'What was read' }).waitFor();
     await capture(page, '05d-account-ai-access');
     await page.getByRole('textbox', { name: 'Name' }).fill('VS Code at the dive centre');

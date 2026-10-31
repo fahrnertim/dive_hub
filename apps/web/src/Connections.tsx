@@ -10,7 +10,7 @@ import { ProviderAutomation } from './ProviderAutomation.tsx';
 import { ProviderBuddies } from './ProviderBuddies.tsx';
 import { ProviderDiveImport } from './ProviderDiveImport.tsx';
 import { ProviderDiveNumbers } from './ProviderDiveNumbers.tsx';
-import { Badge, Button, ConfirmButton, Dialog, Form, Muted, Notice, Panel, RadioGroup, Select, Table, TextField } from './ui/index.ts';
+import { Badge, Button, ConfirmButton, Dialog, Form, Icon, Muted, Notice, Panel, RadioGroup, Select, Table, TextField } from './ui/index.ts';
 
 /** A choice with its explanation under it, read together by screen readers. */
 const choice = (label: string, hint: string): ReactNode => (
@@ -36,11 +36,26 @@ function KeepSignedIn({ provider: p, value, onChange }: { provider: ProviderView
   );
 }
 
+/** The way to the page where the User creates the Provider's key, in a new tab. */
+function CreateKeyLink({ provider: p }: { provider: ProviderView }) {
+  const pt = useProviderText(p);
+  if (!p.signIn.createUrl) return null;
+  return <a href={p.signIn.createUrl} target="_blank" rel="noopener noreferrer" className="external-link">{pt('tokenCreate')}<Icon name="external" /></a>;
+}
+
 /** The fields the Provider's sign-in asks for. Its secrets are the Provider's: never saved as Dive Hub's (autocomplete off). */
 function SignInFields({ provider: p, withLogin, autoFocus }: { provider: ProviderView; withLogin: boolean; autoFocus?: boolean }) {
   const pt = useProviderText(p);
   if (p.signIn.kind === 'token') {
-    return <TextField label={pt('token')} description={pt('tokenHint')} name="token" type="password" autoComplete="off" isRequired {...(autoFocus && { autoFocus })} />;
+    return (
+      <>
+        <TextField
+          label={pt('token')} name="token" type="password" autoComplete="off" isRequired {...(autoFocus && { autoFocus })}
+          description={<>{pt('tokenHint')}{p.signIn.createUrl && <>{' '}<CreateKeyLink provider={p} /></>}</>}
+        />
+        {p.signIn.expires && <TextField label={pt('keyExpiresOn')} description={pt('keyExpiresOnHint')} name="keyExpiresOn" type="date" />}
+      </>
+    );
   }
   return (
     <>
@@ -54,7 +69,7 @@ function SignInFields({ provider: p, withLogin, autoFocus }: { provider: Provide
 
 /** What the sign-in fields hold, for the API. */
 const signInBody = (p: ProviderView, values: Record<string, string | undefined>, keep: string) => (p.signIn.kind === 'token'
-  ? { token: values.token!, keepSignedIn: false }
+  ? { token: values.token!, keepSignedIn: false, ...(p.signIn.expires && values.keyExpiresOn && { keyExpiresOn: values.keyExpiresOn }) }
   : { password: values.password!, keepSignedIn: p.signIn.canKeepPassword && keep === 'keep' });
 
 /** The account's Connections (ADR 0024, 0027): a panel per Provider the User can connect to, one Connection per Diver. */
@@ -124,6 +139,7 @@ function ProviderConnections({ provider: p, focus }: { provider: ProviderView; f
           ))}
         </Table>
       )}
+      {own.map((c) => <KeyExpiry key={`expiry-${c.id}`} provider={p} connection={c} several={several} />)}
       {own.map((c) => <ProviderBuddies key={`buddies-${c.id}`} provider={p} connection={c} />)}
       {own.map((c) => <ProviderDiveImport key={`import-${c.id}`} provider={p} connection={c} several={several} />)}
       {own.map((c) => <ProviderDiveNumbers key={`numbers-${c.id}`} provider={p} connection={c} />)}
@@ -136,7 +152,23 @@ function ProviderConnections({ provider: p, focus }: { provider: ProviderView; f
   );
 }
 
-type ConnectBody = { diverId: string; login?: string; password?: string; token?: string; keepSignedIn: boolean; claim?: boolean };
+/** A key that expires within a week (the server says so, ADR 0062): said on the Connection, with the way to a new one. */
+function KeyExpiry({ provider: p, connection: c, several }: { provider: ProviderView; connection: ConnectionView; several: boolean }) {
+  const pt = useProviderText(p);
+  const display = useDisplay();
+  if (!c.keyExpiresSoon || !c.keyExpiresOn) return null;
+  const gone = c.keyExpiresOn < new Date().toLocaleDateString('sv');
+  return (
+    <Notice tone="info">
+      <p>
+        {several && `${c.diverName}: `}{pt(gone ? 'keyExpired' : 'keyExpiresSoon', { date: display.date(c.keyExpiresOn) })}{' '}
+        <CreateKeyLink provider={p} />
+      </p>
+    </Notice>
+  );
+}
+
+type ConnectBody = { diverId: string; login?: string; password?: string; token?: string; keyExpiresOn?: string; keepSignedIn: boolean; claim?: boolean };
 
 function ConnectForm({ provider: p, divers, several }: { provider: ProviderView; divers: { id: string; name: string }[]; several: boolean }) {
   const { t } = useTranslation();
@@ -176,7 +208,7 @@ function ConnectForm({ provider: p, divers, several }: { provider: ProviderView;
     >
       <h3 className="subheading">{several ? pt('connectDiver', { diver: target?.name ?? '' }) : pt('connect')}</h3>
       {several && divers.length > 1 && (
-        <Select label={pt('diver')} value={diverId} onChange={setDiverId} options={divers.map((d) => ({ id: d.id, label: d.name }))} />
+        <Select label={pt('diverFor')} value={diverId} onChange={setDiverId} options={divers.map((d) => ({ id: d.id, label: d.name }))} />
       )}
       <SignInFields provider={p} withLogin />
       <KeepSignedIn provider={p} value={keep} onChange={setKeep} />
@@ -204,7 +236,7 @@ function SignInDialog({ provider: p, connection: c, onClose }: { provider: Provi
   const queryClient = useQueryClient();
   const [keep, setKeep] = useState(c.keepSignedIn ? 'keep' : 'token');
   const signIn = useMutation({
-    mutationFn: async (body: { password?: string; token?: string; keepSignedIn: boolean }) =>
+    mutationFn: async (body: { password?: string; token?: string; keyExpiresOn?: string; keepSignedIn: boolean }) =>
       unwrap(await api.POST('/api/connections/{id}/sign-in', { params: { path: { id: c.id } }, body })),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: keys.connections });

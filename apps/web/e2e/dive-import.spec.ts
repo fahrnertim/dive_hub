@@ -118,7 +118,7 @@ test('a buddy imported earlier is claimed by connecting their own SSI account, a
   try {
     await page.goto('/#/account?tab=connections');
     const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
-    await panel.getByRole('button', { name: /Diver$/ }).click();
+    await panel.getByRole('button', { name: /Diver for SSI$/ }).click();
     await page.getByRole('option', { name: 'Lena', exact: true }).click();
     await panel.getByRole('textbox', { name: 'SSI e-mail' }).fill(LENA_SSI.login);
     await panel.getByRole('textbox', { name: 'SSI password' }).fill(LENA_SSI.password);
