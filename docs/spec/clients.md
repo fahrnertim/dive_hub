@@ -175,7 +175,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Render Providers from `GET /api/providers`** ([ADR 0027](../decisions/0027-providers-as-adapters.md)): its list is
   the instance's, and it changes only with the server (cache it for the session). Offer a Connection panel per Provider
   whose `signIn.kind` isn't `none`, with the fields that kind asks for (`password`: login as `signIn.login` says, and
-  password; `token`: the token), and a panel on the dive page per Provider whose `data.dives.export` is set. Offer only the
+  password; `token`: the token), and a panel on the dive page per Provider whose `data.dives.export` is set. A Provider
+  without `data.dives.export` (Garmin, [ADR 0062](../decisions/0062-garmin-import-only-provider.md)) is import only: it
+  has no send, read-back or sending automation, so offer none. Offer only the
   operations it lists (no "Update" or "Delete in …" without `update`/`delete`), show its `notices`, and name it by `name`.
   *Web:* `lib/providers.ts`, `Connections.tsx`, `ProviderPanel.tsx`.
 - **Use the server's flags for what is allowed** (`canDelete`, `inUse`, `isOwn`, `diveCount`/`deviceCount`, the
@@ -197,6 +199,12 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   (`accountLabel`), whether the password is kept, and the state. `needs_sign_in` means the Provider no longer accepts the
   sign-in: offer "Sign in again" (password and the choice again, or a new token). Connections made before slice 13 start
   in this state once. *Web:* `Connections.tsx`.
+- **A token sign-in with a key page and an expiry** ([ADR 0062](../decisions/0062-garmin-import-only-provider.md), Garmin):
+  with `signIn.createUrl`, link to the page where the User creates the key. With `signIn.expires`, offer an optional
+  expiry date (`keyExpiresOn`, `YYYY-MM-DD`) on connecting and on signing in again; send it only then (400 for a past date
+  or another Provider; signing in again without it clears it). The Connection says `keyExpiresOn` and `keyExpiresSoon`
+  (from 7 days before the date): then show a notice that the key expires, with the `createUrl` link and "Sign in again".
+  *Web:* `Connections.tsx`.
 - **Must ask before claiming an external Diver** (ADR 0028, amended): connecting answers `provider_account_held` when an
   external Diver here holds the account (`diver`: its name and on how many Dives it is). Say so and ask whether that is
   the User; on yes, connect again with the same sign-in and `claim: true` (the external Diver merges into the Diver being
@@ -279,6 +287,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   `linked` (a logbook entry tied to a Dive here and filled where it was empty), `sent_by_dive_hub`, `no_match` (the import
   only adds), `ambiguous` (several Dives here and no decision that still fits; say to choose one in the preview),
   `left_out` (the User's decision). *Web:* `ImportPanel.tsx` (`ProviderImportSummary`).
+- **New words to translate (ADR 0062):** reasons `entered_by_hand` (a dive entered by hand at a Provider whose dives come
+  as files: no file is behind it), `kind_not_chosen` (a dive of a kind the Connection doesn't fetch), `already_here` (a
+  downloaded file's Recording is here already; a fetch never replaces one) and `unavailable` (the Provider didn't answer
+  the download; the next fetch tries it again).
 
 ### Dives
 - **Overrides:**
@@ -659,6 +671,15 @@ repeatedly).
 From the Connection (`diveImport` on `GET /api/connections`, null when the Provider imports no dives) and the
 Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/0030-importing-dives-from-providers.md).
 *Web:* `ProviderDiveImport.tsx`, under the Connection.
+- **Dives that come as files** ([ADR 0062](../decisions/0062-garmin-import-only-provider.md), `data.dives.asFiles` true,
+  Garmin): the import only decides whether to fetch. Offer fetch or nothing (send `mode` `add` or `off`), and show no
+  add-or-create choice, no matching window, no computers, sites, decisions or conflicts: each new dive's file is placed
+  like an uploaded one. Without `asFiles`, the dives come as entries to match, as below.
+- **The kinds of dive to fetch** (`fetchKinds` on the Connection, scuba and apnea by default; `PATCH /api/connections/{id}`
+  with `fetchKinds`: 1 or 2 distinct of `scuba`, `apnea`): offer both as choices, and keep one chosen. A dive of another
+  kind is skipped (`kind_not_chosen`; the preview counts it as `kindNotChosen`, dives entered by hand as `enteredByHand`);
+  turning a kind on takes in its older dives with the next fetch. 400 `provider_unsupported` at a Provider that imports no
+  dives.
 - **What the import may do**, saved on the Connection (`PATCH /api/connections/{id}` with `diveImport`): `mode` off (the
   default), `add` (only link and fill Dives here, never create) or `create` (also create Dives Dive Hub doesn't have),
   and the matching window, 5, 15, 30 or 60 minutes. Explain each choice: Dives here are never overwritten; the Provider

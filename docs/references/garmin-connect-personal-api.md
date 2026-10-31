@@ -69,7 +69,7 @@ Markers: **[T]** tested on the owner's account on 2026-10-31; **[D]** Garmin's p
 The FAQ adds that the Personal API is "not intended for commercial applications serving multiple end users" [D].
 
 ## Notes
-- Read only: Dive Hub can import from Garmin, never send to it.
+- Read only: Dive Hub can import from Garmin, never send to it. Used by `providers/garmin/` ([ADR 0062](../decisions/0062-garmin-import-only-provider.md)): the key is the Connection's token sign-in, each dive's original FIT file is fetched and placed like an upload.
 - The Swagger page (<https://developer.garmin.com/gc-developer-program/personal/swagger-docs/>) renders in the
   browser only; its full parameter list was not read.
 - Unofficial routes (garth, garminconnect) need Garmin's web sign-in and are against its terms
