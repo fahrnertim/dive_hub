@@ -245,4 +245,8 @@ PostgreSQL, React + React Aria, Playwright.
 
 - [ ] **Step 1:** `pnpm check` → green.
 - [ ] **Step 2:** the `architecture-review` subagent; fix what it finds with `path:line` and a rule; `pnpm check` again.
-- [ ] **Step 3:** push `garmin-provider`, open the PR against `main` (after `desloppify-cleanup` is merged, rebase onto `main` first if it was).
+- [ ] **Step 3:** if PR #14 (`desloppify-cleanup`) is still open and its CI check passed, merge it on GitHub
+  (`gh pr merge 14`, never locally; owner, 2026-10-31); if its CI failed or is still running, leave it and say so.
+- [ ] **Step 4:** once PR #14 is merged, rebase `garmin-provider` onto `main` and run `pnpm check` again; then push
+  `garmin-provider` and open its PR against `main`. With PR #14 still open, push and open the PR against
+  `desloppify-cleanup` instead, and say so in the PR text.
