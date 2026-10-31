@@ -401,6 +401,19 @@ describe.skipIf(!(await databaseReachable()))('appending a later Dive to the ear
         expect(await diveOf(joinedDive)).toEqual(view);
       });
 
+      it('answers 404 to a User who does not manage the Dive, and 409 to a stale version, before naming a part', async () => {
+        await createUser(ctx.auth, 'eve@example.com');
+        const eve = await signIn(ctx.app, 'eve@example.com');
+        const view = await diveOf(joinedDive);
+        const part = partsOf(view)[0]!;
+        const stranger = await ctx.app.inject({
+          method: 'POST', url: `/api/recordings/${part.id}/detach`, headers: { cookie: eve, origin: BASE_URL }, payload: { version: view.version },
+        });
+        expect(stranger.statusCode).toBe(404);
+        const stale = await call('POST', `/api/recordings/${part.id}/detach`, { version: view.version - 1 });
+        expect(stale.statusCode).toBe(409);
+      });
+
       it('splits the joined Recording off only with its parts', async () => {
         const view = await diveOf(joinedDive);
         const split = await call('POST', `/api/recordings/${joinedOf(view).id}/detach`, { version: view.version });
