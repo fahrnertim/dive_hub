@@ -373,6 +373,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   app.put('/dives/:id/primary-recording', {
     schema: {
       summary: 'Make one of the Dive\'s Recordings the Primary one; values without Override follow it',
+      description: 'Not a part of a joined Recording: 400 recording_is_part (ADR 0063).',
       params: IdParams, body: Type.Object({ recordingId: Type.String({ format: 'uuid' }), version: Type.Integer() }),
       response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
     },
@@ -565,9 +566,10 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   app.post('/recordings/:id/detach', {
     schema: {
       summary: 'Split a Recording off its Dive into a new Dive of the same Diver',
-      description: 'Send the version of the Dive it is on. The Dive\'s last Recording can\'t be split off.',
+      description: 'Send the version of the Dive it is on. The Dive\'s last Recording can\'t be split off, and a part of a joined '
+        + 'Recording can\'t be split off at all (400 recording_is_part): the joined Recording goes with its parts (ADR 0063).',
       params: IdParams, body: Type.Object({ version: Type.Integer() }),
-      response: { 200: Type.Object({ diveId: Type.String({ description: 'The new Dive' }) }), 404: Problem, 409: Problem },
+      response: { 200: Type.Object({ diveId: Type.String({ description: 'The new Dive' }) }), 400: Problem, 404: Problem, 409: Problem },
     },
   }, async (request) => ({ diveId: await dives.detach(userOf(request).id, request.params.id, request.body.version) }));
 

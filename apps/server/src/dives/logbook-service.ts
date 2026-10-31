@@ -7,6 +7,7 @@ import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'd
 import type { Db } from '../db/client.js';
 import { device, dive, diveAssessment, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user } from '../db/schema.js';
 import { cylindersOf } from './cylinders.js';
+import { isUnit } from './recording-units.js';
 import { participantsOf, participantsOfDives, type Participant } from './dive-service.js';
 import { managedDiverIds, managesDiveDiver } from '../divers/management.js';
 import { diveListFilter, FINDINGS_SHOWN } from './list-filter.js';
@@ -84,7 +85,7 @@ export function createLogbookService(db: Db) {
     const primaryIds = rows.flatMap((r) => (r.d.primaryRecordingId ? [r.d.primaryRecordingId] : []));
     const [recordingCounts, primaries, peopleOf, assessments] = pageIds.length === 0 ? [[], [], new Map<string, Participant[]>(), []] : await Promise.all([
       db.select({ diveId: recording.diveId, n: count() }).from(recording)
-        .where(and(inArray(recording.diveId, pageIds), isNull(recording.deletedAt))).groupBy(recording.diveId),
+        .where(and(inArray(recording.diveId, pageIds), isNull(recording.deletedAt), isUnit())).groupBy(recording.diveId),
       primaryIds.length === 0 ? [] : db.select({ id: recording.id, summary: recording.summary }).from(recording).where(inArray(recording.id, primaryIds)),
       participantsOfDives(db, pageIds, { live: true }),
       db.select({ diveId: diveAssessment.diveId, recordingId: diveAssessment.recordingId, profile: diveAssessment.profile, ascentBands: diveAssessment.ascentBands })

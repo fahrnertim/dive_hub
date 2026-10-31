@@ -21,7 +21,7 @@ export function createLogbookCheckService(db: Db) {
     if (diverIds.length === 0) return [];
     const rows = await db.select({
       d: dive, siteName: diveSite.name,
-      recordings: sql<number>`(select count(*)::int from ${recording} where ${recording.diveId} = ${dive.id} and ${recording.deletedAt} is null)`,
+      recordings: sql<number>`(select count(*)::int from ${recording} where ${recording.diveId} = ${dive.id} and ${recording.deletedAt} is null and ${recording.joinedRecordingId} is null)`,
     }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
       .where(and(inArray(dive.diverId, diverIds), isNull(dive.deletedAt)));
     return rows.map(({ d, siteName, recordings }) => ({ ...d, siteName, recordings }));

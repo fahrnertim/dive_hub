@@ -4,6 +4,7 @@
 // of the old Diver's makes it again. Links are read as the Pushes say, for any Provider.
 import { and, desc, eq, gte, inArray, isNull, lte, ne } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
+import { isUnit } from './recording-units.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
 import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localDay } from '../imports/matching.js';
 import type { currentRemote as CurrentRemote, PushRow } from '../providers/remote-state.js';
@@ -45,7 +46,11 @@ const pushesOf = (tx: Queryable, diveIds: string[]) =>
   tx.select().from(push).where(inArray(push.diveId, diveIds)).orderBy(desc(push.createdAt), desc(push.id));
 
 const liveRecordings = (tx: Queryable, diveId: string) =>
-  tx.select({ id: recording.id }).from(recording).where(and(eq(recording.diveId, diveId), isNull(recording.deletedAt))).orderBy(recording.startsAt);
+  tx.select({ id: recording.id, joinedRecordingId: recording.joinedRecordingId }).from(recording)
+    .where(and(eq(recording.diveId, diveId), isNull(recording.deletedAt))).orderBy(recording.startsAt);
+
+/** How many Recordings a Dive has, a joined Recording and its parts counting as one (ADR 0063). */
+const unitsOf = async (tx: Queryable, diveId: string) => (await liveRecordings(tx, diveId)).filter((r) => r.joinedRecordingId === null).length;
 
 /** Of two Dives, the one a merge keeps: the one with a Recording when only one has; else the first. */
 const keptOf = <T>(a: T, aRecordings: number, b: T, bRecordings: number): [kept: T, other: T] =>
@@ -120,7 +125,7 @@ export function createMergingService(db: Db, checks: LogbookCheckService, { curr
       const near = await nearbyDives(db, row);
       if (near.length === 0) return [];
       const all = [row.id, ...near.map(({ d }) => d.id)];
-      const recs = await db.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, all), isNull(recording.deletedAt)));
+      const recs = await db.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, all), isNull(recording.deletedAt), isUnit()));
       const count = (id: string) => recs.filter((r) => r.diveId === id).length;
       const found = await checks.against(row.id, near.map(({ d }) => ({ ...d, recordings: count(d.id) })), { ...row, recordings: count(row.id) });
       const hits = near
@@ -167,7 +172,7 @@ export function createMergingService(db: Db, checks: LogbookCheckService, { curr
         const b = locked.get(second.id)!;
         if (a.version !== first.version || b.version !== second.version) throw new DiveError('dive_changed');
         if (a.diverId !== b.diverId) throw new DiveError('merge_not_possible');
-        const [kept, other] = keptOf(a, (await liveRecordings(tx, a.id)).length, b, (await liveRecordings(tx, b.id)).length);
+        const [kept, other] = keptOf(a, await unitsOf(tx, a.id), b, await unitsOf(tx, b.id));
         const actor = userActor(userId);
 
         // The other's Recordings first: which becomes primary is attaching's rule (ADR 0016, 0030). Each is a Recording

@@ -7797,6 +7797,7 @@
     "/api/dives/{id}/primary-recording": {
       "put": {
         "summary": "Make one of the Dive's Recordings the Primary one; values without Override follow it",
+        "description": "Not a part of a joined Recording: 400 recording_is_part (ADR 0063).",
         "requestBody": {
           "required": true,
           "content": {
@@ -9021,7 +9022,7 @@
     "/api/recordings/{id}/detach": {
       "post": {
         "summary": "Split a Recording off its Dive into a new Dive of the same Diver",
-        "description": "Send the version of the Dive it is on. The Dive's last Recording can't be split off.",
+        "description": "Send the version of the Dive it is on. The Dive's last Recording can't be split off, and a part of a joined Recording can't be split off at all (400 recording_is_part): the joined Recording goes with its parts (ADR 0063).",
         "requestBody": {
           "required": true,
           "content": {
@@ -9067,6 +9068,16 @@
                       "description": "The new Dive"
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }

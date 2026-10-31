@@ -14,6 +14,7 @@ import { userActor, writeRevision, type Actor, type Changes, type RevisionCause 
 import { liveSite, siteRef } from '../sites/dive-site-link.js';
 import { keepApart, keepRestored } from './checks/logbook-check-answers.js';
 import { renumber } from './dive-numbers.js';
+import { isUnit } from './recording-units.js';
 import { managesDiveDiver } from '../divers/management.js';
 
 export class DiveError extends Error {
@@ -208,7 +209,8 @@ export async function createDiveFromRecording(
 /**
  * Adds a Recording to a Dive. The Dive's values stay with its Primary recording, except (ADR 0030): on a Dive without
  * one, the Recording becomes primary; and a file's Recording becomes primary over a Provider's copy of the dive. Values
- * without Override then follow it. Both must exist (the caller found them): else it throws.
+ * without Override then follow it. A part of a joined Recording never takes over (ADR 0063). Both must exist (the caller
+ * found them): else it throws.
  */
 export async function attachRecording(tx: Tx, diveId: string, recordingId: string, actor: Actor, cause: RevisionCause) {
   const current = await lockDive(tx, diveId);
@@ -216,8 +218,8 @@ export async function attachRecording(tx: Tx, diveId: string, recordingId: strin
   if (!rec) throw new DiveError('recording_not_found');
   // A tank pod's data makes the Dive's Cylinders where it has none (ADR 0045).
   const changes: Changes = { recordings: { from: null, to: recordingId }, ...(await fillCylindersFromRecording(tx, diveId, rec)) };
-  const takesOver = !current.primaryRecordingId
-    || ((await isProviderCopy(tx, current.primaryRecordingId)) && !(await isProviderCopy(tx, recordingId)));
+  const takesOver = rec.joinedRecordingId === null && (!current.primaryRecordingId
+    || ((await isProviderCopy(tx, current.primaryRecordingId)) && !(await isProviderCopy(tx, recordingId))));
   if (takesOver) {
     await followPrimary(tx, current, recordingId, actor, cause, changes);
     return;
@@ -286,9 +288,10 @@ export function createDiveService(db: Db) {
       await db.transaction(async (tx) => {
         const current = await lockManagedDive(tx, userId, diveId);
         if (current.version !== version) throw new DiveError('dive_changed');
-        const [rec] = await tx.select({ id: recording.id }).from(recording)
+        const [rec] = await tx.select({ id: recording.id, joinedRecordingId: recording.joinedRecordingId }).from(recording)
           .where(and(eq(recording.id, recordingId), eq(recording.diveId, diveId), isNull(recording.deletedAt)));
         if (!rec) throw new DiveError('recording_not_on_dive');
+        if (rec.joinedRecordingId) throw new DiveError('recording_is_part');
         await followPrimary(tx, current, recordingId, userActor(userId), 'primary-change');
       });
     },
@@ -296,28 +299,35 @@ export function createDiveService(db: Db) {
     /**
      * Splits a Recording off its Dive into a new Dive of the same Diver (data model: detaching is
      * always possible). If it was the Primary recording, the earliest remaining one takes over.
-     * A Dive's last Recording can't be split off; that would only move the Dive.
+     * A Dive's last Recording can't be split off; that would only move the Dive. A part of a joined Recording can't be
+     * split off (ADR 0063); the joined one goes with its parts.
      */
     async detach(userId: string, recordingId: string, version: number): Promise<string> {
       return db.transaction(async (tx) => {
         const [rec] = await tx.select().from(recording).where(and(eq(recording.id, recordingId), isNull(recording.deletedAt)));
         if (!rec?.diveId) throw new DiveError('recording_not_found');
+        if (rec.joinedRecordingId) throw new DiveError('recording_is_part');
         // A Recording on a Dive the User doesn't manage is one they can't see.
         const current = await lockManagedDive(tx, userId, rec.diveId).catch((error: unknown) => {
           throw error instanceof DiveError && error.code === 'dive_not_found' ? new DiveError('recording_not_found') : error;
         });
         if (current.version !== version) throw new DiveError('dive_changed');
         const remaining = (await tx.select().from(recording)
-          .where(and(eq(recording.diveId, current.id), isNull(recording.deletedAt)))
+          .where(and(eq(recording.diveId, current.id), isNull(recording.deletedAt), isUnit()))
           .orderBy(recording.startsAt)).filter((r) => r.id !== rec.id);
         if (remaining.length === 0) throw new DiveError('last_recording');
         const actor = userActor(userId);
+        const parts = await tx.select({ id: recording.id }).from(recording)
+          .where(and(eq(recording.joinedRecordingId, rec.id), isNull(recording.deletedAt)));
         await tx.update(recording).set({ diveId: null }).where(eq(recording.id, rec.id));
         const primary = current.primaryRecordingId === rec.id ? remaining[0]!.id : current.primaryRecordingId;
         await followPrimary(tx, current, primary, actor, 'detach', {
           recordings: { from: rec.id, to: null }, ...(await untieRecording(tx, current.id, rec.id)),
         });
         const created = await createDiveFromRecording(tx, rec, current.diverId, actor, 'detach');
+        if (parts.length > 0) {
+          await tx.update(recording).set({ diveId: created, updatedAt: new Date() }).where(inArray(recording.id, parts.map((p) => p.id)));
+        }
         // Split off on purpose: the two Dives at the same time are two dives (ADR 0038), not a check to answer.
         await keepApart(tx, userId, created, [current.id]);
         return created;

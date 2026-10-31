@@ -2076,7 +2076,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Make one of the Dive's Recordings the Primary one; values without Override follow it */
+        /**
+         * Make one of the Dive's Recordings the Primary one; values without Override follow it
+         * @description Not a part of a joined Recording: 400 recording_is_part (ADR 0063).
+         */
         put: {
             parameters: {
                 query?: never;
@@ -2729,7 +2732,7 @@ export interface paths {
         put?: never;
         /**
          * Split a Recording off its Dive into a new Dive of the same Diver
-         * @description Send the version of the Dive it is on. The Dive's last Recording can't be split off.
+         * @description Send the version of the Dive it is on. The Dive's last Recording can't be split off, and a part of a joined Recording can't be split off at all (400 recording_is_part): the joined Recording goes with its parts (ADR 0063).
          */
         post: {
             parameters: {
@@ -2758,6 +2761,15 @@ export interface paths {
                             /** @description The new Dive */
                             diveId: string;
                         };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */

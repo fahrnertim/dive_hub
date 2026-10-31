@@ -5,6 +5,7 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Queryable, Tx } from '../../db/client.js';
 import { dive, logbookCheckAnswer, logbookCheckDiveAnswer, recording } from '../../db/schema.js';
+import { isUnit } from '../recording-units.js';
 import { ordered, probablyNoDive, ruleFor } from './logbook-check-rules.js';
 
 /** Records that the Dive and each of the others it breaks a rule with are two dives. */
@@ -13,7 +14,7 @@ export async function keepApart(tx: Tx, userId: string, diveId: string, otherIds
   if (ids.length < 2) return;
   const rows = await tx.select().from(dive).where(and(inArray(dive.id, ids), isNull(dive.deletedAt)));
   // Counted apart: in a subquery of a one-table select the columns lose their table, and every Dive counted 0.
-  const live = await tx.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, ids), isNull(recording.deletedAt)));
+  const live = await tx.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, ids), isNull(recording.deletedAt), isUnit()));
   const dives = rows.map((d) => ({ ...d, recordings: live.filter((r) => r.diveId === d.id).length }));
   const self = dives.find((d) => d.id === diveId);
   if (!self) return;
@@ -36,6 +37,6 @@ export async function keepDive(q: Queryable, userId: string, d: { id: string; du
 /** A Dive just restored: if it is probably no dive, the User wanted it back, so it isn't offered for deleting again. */
 export async function keepRestored(tx: Tx, userId: string, diveId: string): Promise<void> {
   const [d] = await tx.select().from(dive).where(eq(dive.id, diveId));
-  const recordings = await tx.$count(recording, and(eq(recording.diveId, diveId), isNull(recording.deletedAt)));
+  const recordings = await tx.$count(recording, and(eq(recording.diveId, diveId), isNull(recording.deletedAt), isUnit()));
   if (d && probablyNoDive({ ...d, recordings })) await keepDive(tx, userId, d);
 }

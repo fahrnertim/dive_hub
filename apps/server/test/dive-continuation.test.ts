@@ -3,7 +3,8 @@
 // synthetic dives of one Device; links at a Provider are followed at the test-only ledger.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { recording } from '../src/db/schema.js';
+import { dive as diveTable, recording, user } from '../src/db/schema.js';
+import { loadOutgoingDive } from '../src/providers/push/outgoing-dive.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { ownersDiveParts } from './fixtures/surface-break-dive.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -303,6 +304,132 @@ describe.skipIf(!(await databaseReachable()))('appending a later Dive to the ear
       expect(answer.statusCode).toBe(409);
       expect(answer.json()).toMatchObject({ code: 'dive_changed' });
       expect((await diveOf(a)).recordings).toHaveLength(1);
+    });
+  });
+
+  describe('a joined Dive in the existing flows', () => {
+    const primaryOf = (view: DiveView) => view.recordings.find((r) => r.isPrimary);
+    const partsOf = (view: DiveView) => view.recordings.filter((r) => r.partOf !== null);
+    /** A Dive typed by hand: no Recording, from a Provider. */
+    const entry = async (start: string, durationSeconds: number) => {
+      const [made] = await t.db.insert(diveTable).values({ diverId: own, startsAt: new Date(start), durationSeconds, maxDepthM: 20, fromProvider: 'ssi' })
+        .returning({ id: diveTable.id });
+      return made!.id;
+    };
+    const merge = async (id: string, otherId: string) => call('POST', `/api/dives/${id}/merge`, {
+      version: (await diveOf(id)).version, otherId, otherVersion: (await diveOf(otherId)).version,
+    });
+    let counted: string;
+    let typed: string;
+
+    it('counts a joined Dive as one Recording', async () => {
+      const { a, b } = await pair('2026-12-01');
+      expect((await append(a, [b])).statusCode).toBe(200);
+      counted = a;
+      typed = await entry('2026-12-01T09:00:00Z', 1200);
+      const { dives } = await json<{ dives: { id: string; recordings: number }[] }>('GET', `/api/dives?limit=100&diverId=${own}`);
+      expect(dives.find((d) => d.id === a)).toMatchObject({ recordings: 1 });
+      expect(await json<{ dive: { id: string }; recordings: number }[]>('GET', `/api/dives/${typed}/merge-candidates`))
+        .toMatchObject([{ recordings: 1, keeps: a }]);
+      const found = (await json<{ dive: { id: string; recordings: number }; other: { id: string; recordings: number } | null }[]>('GET', '/api/logbook-checks'))
+        .find((c) => c.other && [c.dive.id, c.other.id].includes(a) && [c.dive.id, c.other.id].includes(typed))!;
+      expect([found.dive, found.other!].find((d) => d.id === a)!.recordings).toBe(1);
+    });
+
+    it('merges a joined Dive and keeps the unit: the joined Dive is kept beside an entry', async () => {
+      const merged = await merge(typed, counted);
+      expect(merged.statusCode).toBe(200);
+      expect(merged.json()).toMatchObject({ id: counted });
+      const view = await diveOf(counted);
+      expect(view.recordings).toHaveLength(3);
+      expect(primaryOf(view)).toMatchObject({ parser: 'continuation' });
+    });
+
+    it('merges as the second of two: the joined Recording and both parts attach together, no part Primary', async () => {
+      const { a, b } = await pair('2026-12-02');
+      expect((await append(a, [b])).statusCode).toBe(200);
+      const single = await dive(serial++, '2026-12-02T15:00:00Z', 1200);
+      const singleRecording = primaryOf(await diveOf(single))!;
+      const merged = await merge(single, a);
+      expect(merged.json()).toMatchObject({ id: single });
+      const view = await diveOf(single);
+      expect(view.recordings).toHaveLength(4);
+      expect(primaryOf(view)!.id).toBe(singleRecording.id);
+      expect(partsOf(view)).toHaveLength(2);
+      expect(partsOf(view).some((r) => r.isPrimary)).toBe(false);
+    });
+
+    describe("with another Device's file on it", () => {
+      let joinedDive: string;
+      let other: string;
+
+      beforeAll(async () => {
+        const { a, b } = await pair('2026-12-03');
+        expect((await append(a, [b])).statusCode).toBe(200);
+        joinedDive = a;
+      });
+
+      it('places the file overlapping it as today: attached, not Primary', async () => {
+        const placed = await upload(makeSyntheticDive({ serialNumber: serial++, start: new Date('2026-12-03T09:05:00Z'), durationSeconds: 600 }));
+        expect(placed).toMatchObject({ result: 'attached', diveId: joinedDive });
+        const view = await diveOf(joinedDive);
+        expect(view.recordings).toHaveLength(4);
+        expect(primaryOf(view)).toMatchObject({ parser: 'continuation' });
+        other = view.recordings.find((r) => r.parser !== 'continuation' && r.partOf === null)!.id;
+      });
+
+      it('sends the joined profile to a Provider', async () => {
+        const [owner] = await t.db.select({ id: user.id }).from(user);
+        const view = await diveOf(joinedDive);
+        const { outgoing } = await loadOutgoingDive(t.db, owner!.id, joinedDive);
+        expect(outgoing.durationSeconds).toBe(view.values.durationSeconds);
+        const samples = await json<{ series: { channel: string; values: number[] }[] }>(
+          'GET', `/api/recordings/${joinedOf(view).id}/samples?channels=depth&maxPoints=5000`,
+        );
+        expect(outgoing.samples.depth!.values).toHaveLength(samples.series[0]!.values.length);
+      });
+
+      it('refuses to make a part primary or split it off', async () => {
+        const view = await diveOf(joinedDive);
+        const part = partsOf(view)[0]!;
+        const primary = await call('PUT', `/api/dives/${joinedDive}/primary-recording`, { recordingId: part.id, version: view.version });
+        expect(primary.statusCode).toBe(400);
+        expect(primary.json()).toMatchObject({ code: 'recording_is_part' });
+        const split = await call('POST', `/api/recordings/${part.id}/detach`, { version: view.version });
+        expect(split.statusCode).toBe(400);
+        expect(split.json()).toMatchObject({ code: 'recording_is_part' });
+        expect(await diveOf(joinedDive)).toEqual(view);
+      });
+
+      it('splits the joined Recording off only with its parts', async () => {
+        const view = await diveOf(joinedDive);
+        const split = await call('POST', `/api/recordings/${joinedOf(view).id}/detach`, { version: view.version });
+        expect(split.statusCode).toBe(200);
+        const created = await diveOf(split.json().diveId);
+        expect(created.recordings).toHaveLength(3);
+        expect(primaryOf(created)).toMatchObject({ id: joinedOf(view).id });
+        expect(partsOf(created)).toHaveLength(2);
+        const old = await diveOf(joinedDive);
+        expect(old.recordings.map((r) => r.id)).toEqual([other]);
+        expect(primaryOf(old)!.id).toBe(other);
+      });
+    });
+
+    it('moves a joined Dive to another Diver with its parts, also as a copy where it is at a Provider', async () => {
+      const plain = await pair('2026-12-04');
+      expect((await append(plain.a, [plain.b])).statusCode).toBe(200);
+      expect((await call('POST', `/api/dives/${plain.a}/move`, { diverId: lena, version: (await diveOf(plain.a)).version })).json()).toMatchObject({ id: plain.a });
+      expect((await diveOf(plain.a)).recordings).toHaveLength(3);
+
+      const linked = await pair('2026-12-05');
+      expect((await append(linked.a, [linked.b])).statusCode).toBe(200);
+      await send(linked.a);
+      const moved = await call('POST', `/api/dives/${linked.a}/move`, { diverId: lena, version: (await diveOf(linked.a)).version });
+      const copy = moved.json() as DiveView;
+      expect(copy.id).not.toBe(linked.a);
+      expect(copy.recordings).toHaveLength(3);
+      expect(primaryOf(copy)).toMatchObject({ parser: 'continuation' });
+      expect(partsOf(copy)).toHaveLength(2);
     });
   });
 });
