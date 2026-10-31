@@ -4,8 +4,8 @@
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../../db/client.js';
 import {
-  dive, diveSite, diver, diverExternalId, importJob, importOriginal, original, participant, push,
-  type ComputerChoice, type DiveImportMode,
+  DIVE_KINDS, dive, diveSite, diver, diverExternalId, importJob, importOriginal, original, participant, push,
+  type ComputerChoice, type DiveImportMode, type DiveKind,
 } from '../../db/schema.js';
 import { nextVersion, participantsOf } from '../../dives/dive-service.js';
 import { managedDiverIds } from '../../divers/management.js';
@@ -33,6 +33,8 @@ export interface ProviderContext {
   connectionId: string | null;
   mode: DiveImportMode;
   windowMinutes: number;
+  /** The kinds of dive the Connection fetches: a dive of another kind is skipped. */
+  kinds: ReadonlySet<DiveKind>;
   /** The choice for every computer found. */
   choices: Record<string, ComputerChoice>;
   managed: Set<string>;
@@ -355,9 +357,10 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
 
   async function contextOf(q: Queryable, userId: string, adapter: ProviderAdapter, settings: {
     diverId: string; connectionId: string | null; mode: DiveImportMode; windowMinutes: number; choices: Record<string, ComputerChoice>;
-    context: ImportContext;
+    context: ImportContext; kinds?: readonly DiveKind[];
   }): Promise<ProviderContext> {
-    return { userId, adapter, ...settings, managed: await managedDiverIds(q, userId), sitesAllowed: await siteDataAllowed(q, adapter.id) };
+    const { kinds = DIVE_KINDS, ...rest } = settings;
+    return { userId, adapter, ...rest, kinds: new Set(kinds), managed: await managedDiverIds(q, userId), sitesAllowed: await siteDataAllowed(q, adapter.id) };
   }
 
   return { contextOf, providerSitesOf, settleSiteVisibility, placeTime, baseDiveOf, hubSideOf, providerChangesOf, takeChanges, fillFromProvider, shown, conflictFields };

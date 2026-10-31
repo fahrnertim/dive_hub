@@ -225,7 +225,8 @@
       "no_computer_choice": "von einem Tauchcomputer, für den du noch nichts gewählt hast; wähle es bei einem Import von Hand",
       "already_here": "dieser Tauchgang ist schon hier; die Kopie hier bleibt",
       "entered_by_hand": "dort von Hand eingetragen, daher steht keine Tauchgangsdatei dahinter",
-      "unavailable": "konnte gerade nicht heruntergeladen werden; der nächste Abruf versucht es wieder"
+      "unavailable": "konnte gerade nicht heruntergeladen werden; der nächste Abruf versucht es wieder",
+      "kind_not_chosen": "eine Art von Tauchgang, die diese Verbindung nicht abruft; die Arten stehen in ihren Einstellungen"
     },
     "errorCode": {
       "unsupported_file": "Das ist weder eine Tauchgangsdatei (FIT, Suunto-JSON) noch ein ZIP-Archiv.",

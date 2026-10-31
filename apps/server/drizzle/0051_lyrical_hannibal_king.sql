@@ -1,0 +1,2 @@
+ALTER TABLE "connection" ADD COLUMN "fetch_kinds" text[] DEFAULT '{scuba,apnea}' NOT NULL;--> statement-breakpoint
+ALTER TABLE "connection" ADD CONSTRAINT "connection_fetch_kinds_ck" CHECK (cardinality("connection"."fetch_kinds") > 0 and "connection"."fetch_kinds" <@ array['scuba', 'apnea']);

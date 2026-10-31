@@ -146,7 +146,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const rows = await db.select({
         id: connection.id, provider: connection.provider, diverId: connection.diverId, diverName: diver.name,
         accountId: connection.accountId, accountLabel: connection.accountLabel, keepSignedIn: connection.keepSignedIn,
-        importMode: connection.importMode, importWindowMinutes: connection.importWindowMinutes, followNumbers: connection.followNumbers,
+        importMode: connection.importMode, importWindowMinutes: connection.importWindowMinutes, followNumbers: connection.followNumbers, fetchKinds: connection.fetchKinds,
         state: connection.state, lastUsedAt: connection.lastUsedAt, createdAt: connection.createdAt,
         sendChanges: connection.sendChanges, sendNewDives: connection.sendNewDives, deleteAtProvider: connection.deleteAtProvider,
         fetchEveryMinutes: connection.fetchEveryMinutes, lastFetchImportId: connection.lastFetchImportId,

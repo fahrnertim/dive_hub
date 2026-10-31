@@ -217,6 +217,8 @@ export const OUTCOME_REASONS = [
   // A Provider's dive that comes as a file (ADR 0062): its Recording is here already (a fetch never replaces one);
   // entered by hand at the Provider, so no file is behind it; the Provider didn't answer its download (tried again next time).
   'already_here', 'entered_by_hand', 'unavailable',
+  // A dive of a kind the Connection doesn't fetch (its `fetchKinds`): skipped, and not downloaded where the dive is a file.
+  'kind_not_chosen',
 ] as const;
 export type OutcomeReason = (typeof OUTCOME_REASONS)[number];
 
@@ -272,6 +274,8 @@ export interface ProviderImportPlan {
   conflicts?: Record<string, 'hub' | 'provider'>;
   mode: DiveImportMode;
   windowMinutes: number;
+  /** The kinds of dive the Connection fetched with; missing on Imports made before it was kept (then both). */
+  fetchKinds?: DiveKind[];
   /** The Connection's Diver: an import still runs after the Connection is gone. */
   diverId: string;
   /** A scheduled or on-opening fetch: it takes what is safe by itself and leaves the rest for the User. */
@@ -852,6 +856,8 @@ export const connection = pgTable(
     importComputers: jsonb('import_computers').$type<Record<string, ComputerChoice>>().notNull().default({}),
     /** Whether dives are numbered at the Provider as in Dive Hub (ADR 0048); off until the User turns it on. */
     followNumbers: boolean('follow_numbers').notNull().default(false),
+    /** The kinds of dive an import fetches (ADR 0062): both unless the User narrows it; a dive of another kind is skipped. */
+    fetchKinds: text('fetch_kinds').array().$type<DiveKind[]>().notNull().default(sql`'{scuba,apnea}'`),
     /** Automation (ADR 0056): send a changed Dive, send a new one, delete at the Provider when deleted here; all off until chosen. */
     sendChanges: boolean('send_changes').notNull().default(false),
     sendNewDives: boolean('send_new_dives').notNull().default(false),
@@ -873,6 +879,7 @@ export const connection = pgTable(
     uniqueIndex('connection_user_diver_provider_uq').on(t.userId, t.diverId, t.provider),
     check('connection_import_window_ck', sql`${t.importWindowMinutes} in (5, 15, 30, 60)`),
     check('connection_fetch_every_ck', sql`${t.fetchEveryMinutes} in (60, 360, 1440)`),
+    check('connection_fetch_kinds_ck', sql`cardinality(${t.fetchKinds}) > 0 and ${t.fetchKinds} <@ array['scuba', 'apnea']`),
   ],
 );
 

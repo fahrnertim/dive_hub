@@ -225,7 +225,8 @@
       "no_computer_choice": "from a dive computer you haven’t chosen for yet; choose in a manual import",
       "already_here": "this dive is already here; the copy here stays",
       "entered_by_hand": "entered by hand there, so no dive file is behind it",
-      "unavailable": "couldn’t be downloaded just now; the next fetch tries again"
+      "unavailable": "couldn’t be downloaded just now; the next fetch tries again",
+      "kind_not_chosen": "a kind of dive this Connection doesn’t fetch; choose the kinds in its settings"
     },
     "errorCode": {
       "unsupported_file": "This is neither a dive file (FIT, Suunto JSON) nor a zip archive.",

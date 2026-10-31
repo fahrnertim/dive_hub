@@ -9,14 +9,14 @@ import { and, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../../db/client.js';
 import {
   connection, dive, diveSite, device, importJob, importOriginal, original, providerSiteData, push, user,
-  recording, type ComputerChoice, type DiveImportMode, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
+  recording, type ComputerChoice, type DiveImportMode, type DiveKind, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
 } from '../../db/schema.js';
 import { writeRevision, type Actor } from '../../dives/revisions.js';
 import type { PlacedTime } from '../../dives/time-zone.js';
 import { errorMessage } from '../../errors.js';
 import { createFileFormats, formatOf, type FileFormat } from '../../imports/formats.js';
 import type { ParsedRecording } from '../../imports/parsed-recording.js';
-import { PROCESS_IMPORT_TASK } from '../../imports/import-service.js';
+import { PROCESS_IMPORT_TASK, kindOfMode } from '../../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../../imports/placement.js';
 import { DAY_MS, MAX_OFFSET_MS, entryMatches } from '../../imports/matching.js';
 import { recordFindings } from './gone-dives.js';
@@ -96,7 +96,9 @@ type Assessment =
   /** Unattended: from a dive computer the User hasn't chosen for yet. */
   | { kind: 'unchosen' }
   /** Entered by hand at a Provider whose dives come as files: no file is behind it. */
-  | { kind: 'by_hand' };
+  | { kind: 'by_hand' }
+  /** Of a kind the Connection doesn't fetch (its `fetchKinds`): left alone, and never downloaded. */
+  | { kind: 'kind_not_chosen' };
 
 /** An Import's Original read again by the worker: its dive to process, or the outcome it ends with already. */
 type ReadOriginal =
@@ -109,7 +111,7 @@ type FoundChanges = NonNullable<Awaited<ReturnType<ReturnType<typeof createDiveC
 /** The preview's count each assessment adds to; `unchosen` only comes unattended, and isn't counted. */
 const COUNTED = {
   ours: 'ours', linked: 'linked', deleted: 'deleted', recording: 'recordings', link: 'link', decide: 'decide', create: 'create',
-  no_match: 'noMatch', unchosen: null, by_hand: 'enteredByHand',
+  no_match: 'noMatch', unchosen: null, by_hand: 'enteredByHand', kind_not_chosen: 'kindNotChosen',
 } as const satisfies Record<Assessment['kind'], string | null>;
 
 /** The preview's site count a site's outlook adds to: a new one is created only where an admin allowed the site data. */
@@ -157,6 +159,7 @@ export function createDiveImportService(deps: {
     const dives = parsed.flatMap((p) => (p.dive ? [p.dive] : []));
     const pc = await contextOf(db, userId, adapter, {
       diverId: row.diverId, connectionId: row.id, mode: row.importMode, windowMinutes: row.importWindowMinutes, choices: {}, context,
+      kinds: row.fetchKinds,
     });
     return { row, adapter, context, parsed, dives, pc };
   }
@@ -246,6 +249,8 @@ export function createDiveImportService(deps: {
    * computer has no choice in `run.choices` waits for the User (Recordings or entries could go wrong, hard to undo).
    */
   async function assess(q: Queryable, pc: ProviderContext, d: ImportedDive, unattended = false): Promise<Assessment> {
+    // A dive of a kind not chosen is left alone, whatever else is known of it; one Dive Hub sent is ours, not a fetched one.
+    if (d.evidence !== 'ours' && !pc.kinds.has(kindOfMode(d.diveMode))) return { kind: 'kind_not_chosen' };
     // Dives that come as files (ADR 0062) are matched by placing the file, like an upload: no computer to choose for.
     if (pc.adapter.dives?.file) {
       if (d.evidence === 'logbook') return { kind: 'by_hand' };
@@ -485,7 +490,7 @@ export function createDiveImportService(deps: {
   async function previewDives(pc: ProviderContext, parsed: number, dives: ImportedDive[]) {
     const counts = {
       total: parsed, unreadable: parsed - dives.length, ours: 0, linked: 0, deleted: 0, recordings: 0, link: 0, decide: 0, create: 0, noMatch: 0,
-      enteredByHand: 0, changed: 0,
+      enteredByHand: 0, kindNotChosen: 0, changed: 0,
     };
     const conflicts: ConflictView[] = [];
     const decisions: { remoteId: string; remoteNumber: number | null; localStart: string; durationSeconds: number; maxDepthM: number | null; candidates: CandidateView[] }[] = [];
@@ -549,6 +554,7 @@ export function createDiveImportService(deps: {
       else if (a.kind === 'linked') ended.push({ ...fileBase(pc, remoteId), result: 'unchanged', diveId: a.diveId });
       else if (a.kind === 'deleted') ended.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'deleted_earlier' });
       else if (a.kind === 'by_hand') ended.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'entered_by_hand' });
+      else if (a.kind === 'kind_not_chosen') ended.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'kind_not_chosen' });
     }
     wanted.sort((x, y) => x.localStart.localeCompare(y.localStart));
     return { files: wanted.map((d) => d.remoteId), ended };
@@ -688,6 +694,8 @@ export function createDiveImportService(deps: {
         return { ...base, result: 'skipped', reason: 'no_computer_choice' };
       case 'by_hand':
         return { ...base, result: 'skipped', reason: 'entered_by_hand' };
+      case 'kind_not_chosen':
+        return { ...base, result: 'skipped', reason: 'kind_not_chosen' };
     }
   }
 
@@ -725,12 +733,14 @@ export function createDiveImportService(deps: {
     /** What an import of the Connection's dives may do (ADR 0030). */
     async settings(userId: string, connectionId: string, set: {
       mode?: DiveImportMode | undefined; windowMinutes?: number | undefined; computers?: Record<string, ComputerChoice> | undefined;
+      fetchKinds?: DiveKind[] | undefined;
     }) {
       const row = await connections.own(userId, connectionId);
       importer(row.provider);
       await db.update(connection).set({
         ...(set.mode && { importMode: set.mode }), ...(set.windowMinutes && { importWindowMinutes: set.windowMinutes }),
-        ...(set.computers && { importComputers: { ...row.importComputers, ...set.computers } }), updatedAt: new Date(),
+        ...(set.computers && { importComputers: { ...row.importComputers, ...set.computers } }),
+        ...(set.fetchKinds && { fetchKinds: set.fetchKinds }), updatedAt: new Date(),
       }).where(eq(connection.id, row.id));
     },
 
@@ -790,7 +800,7 @@ export function createDiveImportService(deps: {
       })));
       const plan: ProviderImportPlan = {
         context: pick(context), computers: choices, decisions: given.decisions, conflicts: given.conflicts ?? {}, mode: row.importMode,
-        windowMinutes: row.importWindowMinutes, diverId: row.diverId, ...(given.unattended && { unattended: true }),
+        windowMinutes: row.importWindowMinutes, fetchKinds: row.fetchKinds, diverId: row.diverId, ...(given.unattended && { unattended: true }),
         ...(sorted && { files: sorted.files, ended: sorted.ended }),
       };
       return db.transaction(async (tx) => {
@@ -822,7 +832,7 @@ export function createDiveImportService(deps: {
       const { adapter, parse } = importer(job.provider!);
       const pc = await contextOf(db, job.userId, adapter, {
         diverId: plan.diverId, connectionId: job.connectionId, mode: plan.mode, windowMinutes: plan.windowMinutes, choices: plan.computers,
-        context: plan.context,
+        context: plan.context, ...(plan.fetchKinds && { kinds: plan.fetchKinds }),
       });
       await db.transaction((tx) => settleSiteVisibility(tx, pc));
       if (adapter.dives?.file) return [...(plan.ended ?? []), ...(await placeFiles(job, pc, plan.files ?? []))];

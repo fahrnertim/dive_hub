@@ -886,7 +886,8 @@
                     "no_computer_choice",
                     "already_here",
                     "entered_by_hand",
-                    "unavailable"
+                    "unavailable",
+                    "kind_not_chosen"
                   ],
                   "description": "Why; clients translate it. A failure’s detail stays in the server log"
                 },
@@ -3640,6 +3641,7 @@
           "createdAt",
           "diveNumbers",
           "diveImport",
+          "fetchKinds",
           "sendChanges",
           "sendNewDives",
           "deleteAtProvider",
@@ -3745,6 +3747,16 @@
                 "description": "What importing this account's dives may do (ADR 0030); null when the Provider imports no dives"
               }
             ]
+          },
+          "fetchKinds": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "scuba",
+                "apnea"
+              ]
+            },
+            "description": "The kinds of dive an import fetches (both by default); a dive of another kind is skipped with the reason kind_not_chosen"
           },
           "sendChanges": {
             "type": "boolean",
@@ -20054,6 +20066,19 @@
                     },
                     "additionalProperties": false
                   },
+                  "fetchKinds": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "scuba",
+                        "apnea"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "uniqueItems": true,
+                    "description": "The kinds of dive an import fetches: scuba, apnea, or both. A dive of another kind is skipped (kind_not_chosen); turning one on takes in its older dives with the next fetch. 400 provider_unsupported at a Provider that imports no dives"
+                  },
                   "diveNumbers": {
                     "type": "object",
                     "required": [
@@ -21334,6 +21359,7 @@
                         "decide",
                         "create",
                         "noMatch",
+                        "kindNotChosen",
                         "enteredByHand",
                         "changed"
                       ],
@@ -21376,6 +21402,10 @@
                         "noMatch": {
                           "type": "integer",
                           "description": "No Dive here, and the mode only adds: left out"
+                        },
+                        "kindNotChosen": {
+                          "type": "integer",
+                          "description": "Of a kind the Connection does not fetch (fetchKinds): skipped, and not downloaded"
                         },
                         "enteredByHand": {
                           "type": "integer",

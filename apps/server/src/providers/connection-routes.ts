@@ -5,7 +5,7 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import { userOf } from '../auth/fastify.js';
 import { Problem } from '../http/problems.js';
-import { DIVE_IMPORT_MODES, MATCHING_WINDOWS, PARTICIPANT_ROLES } from '../db/schema.js';
+import { DIVE_IMPORT_MODES, DIVE_KINDS, MATCHING_WINDOWS, PARTICIPANT_ROLES } from '../db/schema.js';
 import { SOURCE_INFO } from '../sites/sources.js';
 import { IdParams, Nullable } from '../http/schemas.js';
 import { automationOffers, type ConnectionService } from './connection-service.js';
@@ -238,6 +238,10 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
           windowMinutes: Type.Optional(Type.Union(MATCHING_WINDOWS.map((m) => Type.Literal(m)), { description: '5, 15, 30 or 60' })),
           computers: Type.Optional(ComputerChoices),
         }, { additionalProperties: false })),
+        fetchKinds: Type.Optional(Type.Array(Type.Enum([...DIVE_KINDS]), {
+          minItems: 1, maxItems: DIVE_KINDS.length, uniqueItems: true,
+          description: 'The kinds of dive an import fetches: scuba, apnea, or both. A dive of another kind is skipped (kind_not_chosen); turning one on takes in its older dives with the next fetch. 400 provider_unsupported at a Provider that imports no dives',
+        })),
         diveNumbers: Type.Optional(Type.Object({ follow: Type.Boolean() }, { additionalProperties: false })),
         sendChanges: Type.Optional(Type.Boolean()),
         sendNewDives: Type.Optional(Type.Boolean()),
@@ -249,17 +253,17 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
       response: { 200: ConnectionView, ...errors },
     },
   }, async (request) => {
-    const { diveImport, diveNumbers, ...automation } = request.body;
+    const { diveImport, fetchKinds, diveNumbers, ...automation } = request.body;
     const userId = userOf(request).id;
     // Every part is checked before any is written: a refusal in one changes nothing.
     const parts = Object.keys(automation).length > 0;
     await connections.checkChanges(userId, request.params.id, { ...(parts && { automation }), ...(diveNumbers && { follow: diveNumbers.follow }) });
-    if (diveImport) await diveImports.checkSettings(userId, request.params.id);
+    if (diveImport || fetchKinds) await diveImports.checkSettings(userId, request.params.id);
     if (parts) await connections.setAutomation(userId, request.params.id, automation);
-    if (diveImport) {
-      const { computers, ...set } = diveImport;
+    if (diveImport || fetchKinds) {
+      const { computers, ...set } = diveImport ?? {};
       await diveImports.settings(userOf(request).id, request.params.id, {
-        ...set, ...(computers && { computers: Object.fromEntries(computers.map((c) => [c.key, c.choice])) }),
+        ...set, ...(computers && { computers: Object.fromEntries(computers.map((c) => [c.key, c.choice])) }), ...(fetchKinds && { fetchKinds }),
       });
     }
     if (diveNumbers) await connections.setFollowNumbers(userOf(request).id, request.params.id, diveNumbers.follow);
