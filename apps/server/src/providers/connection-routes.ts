@@ -71,6 +71,9 @@ const ProviderView = Type.Object({
         }, { description: 'ADR 0048: null when the Provider numbers by itself. Else a Connection can be set to number dives here as in Dive Hub (diveNumbers.follow)' })),
       })),
       import: Nullable(Direction),
+      asFiles: Type.Optional(Type.Boolean({
+        description: 'true: the dives come as the original files of the dive computer (each is placed like an uploaded file), so the import only decides whether to fetch: no add-or-create choice and no matching window apply. Absent: the dives come as entries to match',
+      })),
       fields: Type.Optional(Type.Record(Type.String(), Type.Array(Type.Union([Type.Literal('import'), Type.Literal('export')])), {
         description: 'Which way each value of a dive travels; absent: every value travels both ways as far as the Provider\'s operations allow (imported if it imports, sent if it exports); present: a value missing from the map is not imported',
       })),
@@ -128,6 +131,7 @@ function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Static<typ
           readBackFields: exports.readBackFields ?? [], numbers: exports.numbers ?? null,
         } : null,
         import: direction(dives.import),
+        ...(a.dives?.file && { asFiles: true }),
         ...(dives.fields && { fields: dives.fields }),
       } : null,
       diveSites: c.data.diveSites ? { import: direction(c.data.diveSites.import) } : null,

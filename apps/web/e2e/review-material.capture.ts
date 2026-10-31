@@ -262,7 +262,7 @@ test('review material', async ({ page, request, browser }) => {
     await connectGarmin(request, 5);
     await page.reload();
     await page.locator('#main').getByText(/The key expires on /).waitFor();
-    await page.getByText('Only add to dives here', { exact: true }).click();
+    await page.getByText('Fetch dives', { exact: true }).click();
     await page.getByRole('checkbox', { name: 'Apnea sessions' }).waitFor();
     await page.getByRole('button', { name: 'Show what the import would do' }).click();
     await page.getByText(/dives in Garmin/).waitFor();

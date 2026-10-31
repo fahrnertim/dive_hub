@@ -8238,6 +8238,8 @@ export interface paths {
                                         /** @description How find finds a record: by our reference, by a time window, near a position */
                                         findBy: ("reference" | "time" | "position")[];
                                     };
+                                    /** @description true: the dives come as the original files of the dive computer (each is placed like an uploaded file), so the import only decides whether to fetch: no add-or-create choice and no matching window apply. Absent: the dives come as entries to match */
+                                    asFiles?: boolean;
                                     /** @description Which way each value of a dive travels; absent: every value travels both ways as far as the Provider's operations allow (imported if it imports, sent if it exports); present: a value missing from the map is not imported */
                                     fields?: {
                                         [key: string]: ("import" | "export")[];

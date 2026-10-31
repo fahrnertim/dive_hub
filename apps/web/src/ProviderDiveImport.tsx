@@ -52,21 +52,26 @@ export function ProviderDiveImport({ provider: p, connection: c, several }: { pr
   });
   if (!c.diveImport || c.state !== 'active') return null;
   const { mode, windowMinutes } = c.diveImport;
+  // Dives that come as files are placed like uploads: the import only decides whether to fetch (no add or create, no window).
+  const asFiles = !!p.data.dives?.asFiles;
 
   return (
     <section className="provider-import" aria-labelledby={`import-${c.id}`}>
       <h3 id={`import-${c.id}`}>{several ? pt('importTitleDiver', { diver: c.diverName }) : pt('importTitle')}</h3>
-      <Muted>{pt('importIntro')}</Muted>
+      <Muted>{pt(asFiles ? 'importIntroFiles' : 'importIntro')}</Muted>
       <RadioGroup
-        label={pt('importMode')} value={mode}
+        label={pt(asFiles ? 'importModeFiles' : 'importMode')} value={asFiles && mode !== 'off' ? 'add' : mode}
         onChange={(value) => { setImportId(null); settings.mutate({ mode: value as DiveImportMode }); }}
-        options={[
+        options={asFiles ? [
+          { value: 'add', label: choice(pt('importFetch'), pt('importFetchHint')) },
+          { value: 'off', label: choice(pt('importOff'), pt('importOffHint')) },
+        ] : [
           { value: 'off', label: choice(pt('importOff'), pt('importOffHint')) },
           { value: 'add', label: choice(pt('importAdd'), pt('importAddHint')) },
           { value: 'create', label: choice(pt('importCreate'), pt('importCreateHint')) },
         ]}
       />
-      {mode !== 'off' && (
+      {mode !== 'off' && !asFiles && (
         <Select<Window>
           label={pt('importWindow')} description={pt('importWindowHint')} value={String(windowMinutes) as Window}
           onChange={(value) => value && settings.mutate({ windowMinutes: Number(value) as 5 | 15 | 30 | 60 })}

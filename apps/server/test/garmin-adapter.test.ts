@@ -145,6 +145,9 @@ describe.skipIf(!(await databaseReachable()))('Garmin through the API', () => {
   it('lists Garmin with the key page and the expiry date', async () => {
     const garminView = ((await call('GET', '/api/providers')).json() as { id: string; signIn: object }[]).find((p) => p.id === 'garmin');
     expect(garminView!.signIn).toEqual({ kind: 'token', login: null, canKeepPassword: false, createUrl: 'https://connect.garmin.com/app/settings/personalApiToken', expires: true });
+    expect(garminView).toMatchObject({ data: { dives: { asFiles: true, export: null } } });
+    const ssiView = ((await call('GET', '/api/providers')).json() as { id: string; data: { dives: object } }[]).find((p) => p.id === 'ssi');
+    expect(ssiView!.data.dives).not.toHaveProperty('asFiles');
   });
 
   it('refuses a second key of another account, and needs a sign-in once the key is revoked', async () => {
@@ -152,6 +155,13 @@ describe.skipIf(!(await databaseReachable()))('Garmin through the API', () => {
     expect(created.statusCode).toBe(201);
     expect(created.json()).toMatchObject({ provider: 'garmin', accountId: 'guid-1', accountLabel: 'Ida Diver', state: 'active' });
     const id = created.json().id as string;
+    // Its dives come as files: the dive times and the check for dives gone still answer.
+    const times = await call('GET', `/api/connections/${id}/dive-times`);
+    expect(times.statusCode).toBe(200);
+    expect(times.json()).toMatchObject({ provider: 'garmin', dives: [expect.objectContaining({ remoteId: '1001' })] });
+    const gone = await call('POST', `/api/connections/${id}/gone-dives/check`);
+    expect(gone.statusCode).toBe(200);
+    expect(gone.json()).toMatchObject({ gone: 0 });
     expect((await call('POST', `/api/connections/${id}/sign-in`, { token: 'GCDC_other-key', keepSignedIn: false })).json())
       .toMatchObject({ code: 'provider_other_account' });
 

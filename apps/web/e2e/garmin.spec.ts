@@ -30,8 +30,11 @@ test('connects Garmin with a key that expires soon, fetches its dives and choose
 
   // Fetching: the fake account's two dives, both kinds by default.
   const dives = garmin.getByRole('region', { name: 'Dives of Erika from Garmin' });
-  await dives.getByText('Only add to dives here', { exact: true }).click();
-  await expect(dives.getByRole('radio', { name: /^Only add to dives here/ })).toBeChecked();
+  // Its dives come as files: fetching or not, nothing to add or create, no window.
+  await expect(dives.getByRole('radio', { name: /^Also create dives/ })).toHaveCount(0);
+  await dives.getByText('Fetch dives', { exact: true }).click();
+  await expect(dives.getByRole('radio', { name: /^Fetch dives/ })).toBeChecked();
+  await expect(dives.getByRole('button', { name: /Same dive if the start is within/ })).toHaveCount(0);
   await expect(dives.getByRole('checkbox', { name: 'Scuba dives' })).toBeChecked();
   await expect(dives.getByRole('checkbox', { name: 'Apnea sessions' })).toBeChecked();
   await dives.getByRole('button', { name: 'Show what the import would do' }).click();
@@ -44,6 +47,11 @@ test('connects Garmin with a key that expires soon, fetches its dives and choose
   await expect(dives.getByText('1 is a kind of dive you don’t fetch: left out')).toBeVisible();
   await dives.getByRole('button', { name: 'Import from Garmin' }).click();
   await expect(dives.getByRole('link', { name: 'Show in logbook' }).or(dives.getByText('Done'))).toBeVisible();
+
+  // A new key later: the sign-in-again dialog takes the expiry date too.
+  await garmin.getByRole('button', { name: /^Sign in again: / }).click();
+  await expect(page.getByRole('dialog').getByLabel('Key expires on')).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
 
   // Nothing to send: no automation for sending, no sending anywhere on the Connection.
   await expect(garmin.getByText(/Send changes automatically|Send new dives automatically/)).toHaveCount(0);
