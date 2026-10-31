@@ -19149,7 +19149,9 @@
                         "required": [
                           "kind",
                           "login",
-                          "canKeepPassword"
+                          "canKeepPassword",
+                          "createUrl",
+                          "expires"
                         ],
                         "properties": {
                           "kind": {
@@ -19176,6 +19178,21 @@
                           "canKeepPassword": {
                             "type": "boolean",
                             "description": "Offer \"Keep me signed in\": password sign-in, and this server can keep passwords (DIVEHUB_ENCRYPTION_KEY)"
+                          },
+                          "createUrl": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "Token sign-in: where the User makes the token at the Provider; link to it from the form"
+                              }
+                            ]
+                          },
+                          "expires": {
+                            "type": "boolean",
+                            "description": "Token sign-in: the User may give the date the token expires; shown from a week before"
                           }
                         }
                       },

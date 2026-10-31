@@ -52,6 +52,8 @@ const ProviderView = Type.Object({
     kind: Type.Enum(['none', 'password', 'token']),
     login: Nullable(Type.Enum(['email', 'username'], { description: 'What the login field asks for (password sign-in)' })),
     canKeepPassword: Type.Boolean({ description: 'Offer "Keep me signed in": password sign-in, and this server can keep passwords (DIVEHUB_ENCRYPTION_KEY)' }),
+    createUrl: Nullable(Type.String({ description: 'Token sign-in: where the User makes the token at the Provider; link to it from the form' })),
+    expires: Type.Boolean({ description: 'Token sign-in: the User may give the date the token expires; shown from a week before' }),
   }),
   data: Type.Object({
     dives: Nullable(Type.Object({
@@ -113,6 +115,8 @@ function providerView(a: ProviderAdapter, canKeepPasswords: boolean): Static<typ
     signIn: {
       kind: c.signIn.kind, login: c.signIn.kind === 'password' ? c.signIn.login : null,
       canKeepPassword: c.signIn.kind === 'password' && canKeepPasswords,
+      createUrl: c.signIn.kind === 'token' ? c.signIn.createUrl ?? null : null,
+      expires: c.signIn.kind === 'token' && !!c.signIn.expires,
     },
     data: {
       dives: dives ? {

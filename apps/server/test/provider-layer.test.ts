@@ -54,7 +54,7 @@ describe.skipIf(!(await databaseReachable()))('the provider layer', () => {
       expect.objectContaining({ id: 'ssi', name: 'SSI', notices: ['shows_unconfirmed', 'presents_as_app'] }),
       {
         id: 'handover', name: 'Hand-over',
-        signIn: { kind: 'token', login: null, canKeepPassword: false },
+        signIn: { kind: 'token', login: null, canKeepPassword: false, createUrl: null, expires: false },
         data: { dives: { export: { operations: ['create'], findBy: [], delivery: 'handed_over', requirements: [], readBackFields: [], numbers: null }, import: null }, diveSites: null, buddies: null, certifications: null },
         notices: [], limits: { pauseMs: 500, run: null, fetchEveryMinutes: null },
       },

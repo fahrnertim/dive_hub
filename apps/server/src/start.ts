@@ -10,6 +10,8 @@ import { buildApp, createServer } from './app.js';
 import { createServices, workerDeps } from './compose.js';
 import { createSiteSources } from './site-sources.js';
 import { createSecretBox } from './secrets/secret-box.js';
+import { createGarminAdapter } from './providers/garmin/garmin-adapter.js';
+import { createGarminClient, DEFAULT_GARMIN_URL } from './providers/garmin/garmin-client.js';
 import { createSsiAdapter } from './providers/ssi/ssi-adapter.js';
 import { createSsiClient } from './providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from './storage/blob-store.js';
@@ -31,9 +33,10 @@ export async function start(config: Config) {
   const services = createServices({
     db, auth, blobs: createLocalBlobStore(config.dataDir), secrets: createSecretBox(config.encryptionKey),
     siteSources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl, ssiSitesUrl: config.ssiSitesUrl }),
-    // The Providers of this instance (ADR 0027): SSI only, for now. Every call to SSI is logged (no token or password), to
+    // The Providers of this instance (ADR 0027): SSI and Garmin. Every call to SSI is logged (no token or password), to
     // tell Dive Hub's use of an account from the owner's own (docs/references/ssi-app-api.md).
-    adapters: [createSsiAdapter({ client: createSsiClient({ url: config.ssiUrl }), onCall: (call) => app.log.info({ ssi: call }, 'SSI call') })],
+    adapters: [createSsiAdapter({ client: createSsiClient({ url: config.ssiUrl }), onCall: (call) => app.log.info({ ssi: call }, 'SSI call') }),
+      createGarminAdapter({ client: createGarminClient({ url: config.garminUrl ?? DEFAULT_GARMIN_URL }) })],
     // The worker's own faults, with the entry they hit, for the operator.
     log: app.log,
   });

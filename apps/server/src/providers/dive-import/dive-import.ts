@@ -23,7 +23,7 @@ import { siteOutlook } from '../../sites/provider-sites.js';
 import type { BlobStore } from '../../storage/blob-store.js';
 import type { ConnectionService } from '../connection-service.js';
 import { loadOutgoingDive } from '../push/outgoing-dive.js';
-import { REFERENCE_PREFIX, localStartOf, type DiveField, type ImportContext, type ImportedDive, type ProviderCylinder } from '../provider.js';
+import { REFERENCE_PREFIX, localStartOf, type Capabilities, type DiveField, type ImportContext, type ImportedDive, type ProviderCylinder } from '../provider.js';
 import { createDiveChanges, importsField, type ProviderContext } from './dive-changes.js';
 import { currentRemote, fingerprintNow } from '../remote-state.js';
 import { sameAtProvider, type SyncedField } from './three-way.js';
@@ -304,7 +304,7 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     if ((await withRemote(tx, pc, [diveId])).size > 0) return;
     const loaded = await loadOutgoingDive(tx, pc.userId, diveId);
     await tx.insert(push).values({
-      diveId, connectionId: pc.connectionId, userId: pc.userId, provider: pc.adapter.id, mode: pc.adapter.dives!.mode,
+      diveId, connectionId: pc.connectionId, userId: pc.userId, provider: pc.adapter.id, mode: pc.adapter.dives?.mode ?? 'api',
       action: 'link', state: 'confirmed', remoteId: d.remoteId, remoteNumber: d.remoteNumber, diveVersion: loaded.row.version,
       fingerprint: upToDate ? fingerprintNow(pc.adapter, loaded) : null,
     });
@@ -575,7 +575,12 @@ export function createDiveImportService(deps: { db: Db; blobs: BlobStore; regist
     async siteData() {
       const rows = await db.select({ provider: providerSiteData.provider, allowedAt: providerSiteData.allowedAt, allowedBy: user.name })
         .from(providerSiteData).leftJoin(user, eq(user.id, providerSiteData.allowedBy));
-      return registry.list().filter((a) => a.capabilities.data.dives?.import?.operations.includes('list')).map((a) => {
+      // Only a Provider whose dives carry a site (a Garmin dive comes from its file and declares no fields) has site data.
+      const withSites = ({ capabilities }: { capabilities: Capabilities }) => {
+        const fields = capabilities.data.dives?.fields;
+        return !fields || !!fields.site?.includes('import');
+      };
+      return registry.list().filter((a) => a.capabilities.data.dives?.import?.operations.includes('list') && withSites(a)).map((a) => {
         const row = rows.find((r) => r.provider === a.id);
         return { provider: a.id, name: a.capabilities.name, allowedAt: row?.allowedAt ?? null, allowedBy: row?.allowedBy ?? null };
       });

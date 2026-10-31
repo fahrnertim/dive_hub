@@ -187,7 +187,7 @@ export function createGoneDiveService(deps: { db: Db; registry: ProviderRegistry
           }
           await db.transaction(async (tx) => {
             await tx.insert(push).values({
-              diveId: id, connectionId: row.id, userId, provider: row.provider, mode: adapter.dives!.mode, action: 'delete',
+              diveId: id, connectionId: row.id, userId, provider: row.provider, mode: adapter.dives?.mode ?? 'api', action: 'delete',
               state: 'confirmed', remoteId: finding.remoteId, remoteNumber: finding.remoteNumber, diveVersion: candidate.version, remoteGone: true,
             });
             await tx.delete(providerGoneDive).where(and(eq(providerGoneDive.diveId, id), eq(providerGoneDive.provider, row.provider)));

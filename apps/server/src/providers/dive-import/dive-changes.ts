@@ -318,7 +318,7 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     if (wasUpToDate && remote && !sending) {
       const loaded = await loadOutgoingDive(tx, pc.userId, diveId);
       await tx.insert(push).values({
-        diveId, connectionId: pc.connectionId, userId: pc.userId, provider: pc.adapter.id, mode: pc.adapter.dives!.mode,
+        diveId, connectionId: pc.connectionId, userId: pc.userId, provider: pc.adapter.id, mode: pc.adapter.dives?.mode ?? 'api',
         action: 'link', state: 'confirmed', remoteId: remote.remoteId, remoteNumber: remote.remoteNumber, diveVersion: loaded.row.version,
         fingerprint: fingerprintNow(pc.adapter, loaded),
       });

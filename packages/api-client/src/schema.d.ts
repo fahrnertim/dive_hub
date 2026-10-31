@@ -8191,6 +8191,9 @@ export interface paths {
                                 login: null | ("email" | "username");
                                 /** @description Offer "Keep me signed in": password sign-in, and this server can keep passwords (DIVEHUB_ENCRYPTION_KEY) */
                                 canKeepPassword: boolean;
+                                createUrl: null | string;
+                                /** @description Token sign-in: the User may give the date the token expires; shown from a week before */
+                                expires: boolean;
                             };
                             data: {
                                 dives: null | {

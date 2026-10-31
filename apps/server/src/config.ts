@@ -29,6 +29,8 @@ export interface Config {
   encryptionKey: Buffer | undefined;
   /** SSI's app API; another endpoint only for tests. */
   ssiUrl: string | undefined;
+  /** Garmin's Personal API; another endpoint only for tests. */
+  garminUrl: string | undefined;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -67,5 +69,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     ssiSitesUrl: get('DIVEHUB_SSI_SITES_URL'),
     encryptionKey: parseEncryptionKey(env.DIVEHUB_ENCRYPTION_KEY),
     ssiUrl: get('DIVEHUB_SSI_URL'),
+    garminUrl: get('DIVEHUB_GARMIN_URL'),
   };
 }
