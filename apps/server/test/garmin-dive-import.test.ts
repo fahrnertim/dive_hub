@@ -1,6 +1,7 @@
 // Fetching dives from Garmin (ADR 0062), against the fake Garmin: each new dive's FIT is downloaded, kept as the
 // Original and placed like an uploaded file, one Recording per dive whatever came first; a dive fetched before isn't
-// downloaded again, one entered by hand is skipped, and a download Garmin refuses fails that dive only.
+// downloaded again (nor one on a Dive deleted here), one entered by hand is skipped, a download Garmin refuses or that
+// holds no FIT ends that dive only; the worker downloads, not the request that starts the fetch.
 import { readFileSync } from 'node:fs';
 import { and, eq, isNull } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -9,6 +10,7 @@ import { createGarminAdapter } from '../src/providers/garmin/garmin-adapter.js';
 import { createGarminClient } from '../src/providers/garmin/garmin-client.js';
 import { createFakeGarmin, type FakeGarmin, type FakeGarminDive } from './fake-garmin.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
+import { zipOf } from './zip.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase } from './support.js';
 
 type Outcome = { fileName: string; result: string; reason?: string; diveId?: string; recordingId?: string; remoteId?: string };
@@ -19,8 +21,8 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
   let t: TestDatabase;
   let ctx: Awaited<ReturnType<typeof createTestApp>>;
   let garmin: FakeGarmin;
-  /** Activities whose download Garmin answers with 429. */
-  const refused = new Set<string>();
+  /** Activities whose download Garmin answers with this status, or with a zip that holds no FIT. */
+  const refused = new Map<string, number | 'no_fit'>();
   let users = 0;
 
   beforeAll(async () => {
@@ -29,7 +31,9 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
     const flaky: typeof fetch = async (input, init) => {
       const path = new URL(String(input instanceof Request ? input.url : input)).pathname;
       const id = /\/download-service\/files\/activity\/(\d+)$/.exec(path)?.[1];
-      return id && refused.has(id) ? new Response('{}', { status: 429 }) : fetch(input, init);
+      const answer = id ? refused.get(id) : undefined;
+      if (answer === 'no_fit') return new Response(await zipOf({ 'readme.txt': Buffer.from('no dive here') }), { status: 200 });
+      return answer ? new Response('{}', { status: answer }) : fetch(input, init);
     };
     ctx = await createTestApp(t, { extraProviders: [createGarminAdapter({ client: createGarminClient({ url: garmin.url, fetch: flaky }), pauseMs: 0 })] });
   });
@@ -57,8 +61,11 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
       preview: async () => (await call('GET', `/api/connections/${connectionId}/dive-import`)).json() as { computers: unknown[]; counts: Record<string, number> },
       /** Starts a fetch, runs it as the worker would, and answers its outcome. */
       fetch: async () => {
+        const before = allDownloads();
         const started = await call('POST', `/api/connections/${connectionId}/dive-import`, { computers: [], decisions: [] });
         expect(started.statusCode).toBe(202);
+        // Starting only assesses and queues: the worker downloads.
+        expect(allDownloads()).toBe(before);
         await ctx.imports.processImport(started.json().id);
         const done = (await call('GET', `/api/imports/${started.json().id}`)).json() as { status: string; outcome: Outcome[] };
         expect(done.status).toBe('done');
@@ -72,12 +79,17 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
       },
       recordings: () => t.db.select({ id: recording.id, originalId: recording.originalId, diveId: recording.diveId }).from(recording)
         .innerJoin(dive, eq(dive.id, recording.diveId)).where(and(eq(dive.diverId, diverId), isNull(recording.deletedAt))),
+      deleteDive: async (id: string) => {
+        const { version } = (await call('GET', `/api/dives/${id}`)).json() as { version: number };
+        expect((await ctx.app.inject({ method: 'DELETE', url: `/api/dives/${id}`, headers: { cookie, origin: BASE_URL }, payload: { version } })).statusCode).toBeLessThan(300);
+      },
       dives: () => t.db.select({ id: dive.id }).from(dive).where(and(eq(dive.diverId, diverId), isNull(dive.deletedAt))),
       links: (diveId: string) => t.db.select({ remoteId: push.remoteId, action: push.action }).from(push)
         .where(and(eq(push.diveId, diveId), eq(push.provider, 'garmin'))),
     };
   }
 
+  const allDownloads = () => garmin.calls.filter((c) => c.startsWith('GET /download-service/')).length;
   const downloads = (id: number) => garmin.calls.filter((c) => c === `GET /download-service/files/activity/${id}`).length;
   const garminDive = (activityId: number, fit: Uint8Array, extra: Partial<FakeGarminDive> = {}): FakeGarminDive =>
     ({ activityId, typeKey: 'single_gas_diving', startTimeLocal: '2026-01-15 11:00:00', fit, ...extra });
@@ -163,7 +175,7 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
       garminDive(2501, makeSyntheticDive({ serialNumber: 7501 })),
       garminDive(2502, makeSyntheticDive({ serialNumber: 7501, start: new Date('2026-01-16T09:00:00Z') }), { startTimeLocal: '2026-01-16 11:00:00' }),
     ]);
-    refused.add('2501');
+    refused.set('2501', 429);
     const first = await u.fetch();
     expect(first).toEqual(expect.arrayContaining([
       expect.objectContaining({ result: 'failed', reason: 'unavailable', remoteId: '2501' }),
@@ -180,5 +192,55 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
     expect(downloads(2502)).toBe(1);
     expect(await u.recordings()).toHaveLength(2);
     expect(await u.dives()).toHaveLength(2);
+  });
+
+  it('a download answering 503 fails that dive only, the dives before it stay; the next fetch takes it', async () => {
+    const u = await connected([
+      garminDive(2601, makeSyntheticDive({ serialNumber: 7601 })),
+      garminDive(2602, makeSyntheticDive({ serialNumber: 7601, start: new Date('2026-01-16T09:00:00Z') }), { startTimeLocal: '2026-01-16 11:00:00' }),
+    ]);
+    refused.set('2602', 503);
+    expect(await u.fetch()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ result: 'created', remoteId: '2601' }),
+      expect.objectContaining({ result: 'failed', reason: 'unavailable', remoteId: '2602' }),
+    ]));
+    expect(await u.recordings()).toHaveLength(1);
+
+    refused.delete('2602');
+    expect(await u.fetch()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ result: 'unchanged', remoteId: '2601' }),
+      expect.objectContaining({ result: 'created', remoteId: '2602' }),
+    ]));
+    expect(downloads(2601)).toBe(1);
+    expect(await u.recordings()).toHaveLength(2);
+  });
+
+  it('a download whose zip holds no FIT is skipped with a reason, the other dive is placed', async () => {
+    const u = await connected([
+      garminDive(2701, makeSyntheticDive({ serialNumber: 7701 })),
+      garminDive(2702, makeSyntheticDive({ serialNumber: 7701, start: new Date('2026-01-16T09:00:00Z') }), { startTimeLocal: '2026-01-16 11:00:00' }),
+    ]);
+    refused.set('2701', 'no_fit');
+    expect(await u.fetch()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ result: 'skipped', reason: 'no_dive_file', remoteId: '2701' }),
+      expect.objectContaining({ result: 'created', remoteId: '2702' }),
+    ]));
+    refused.delete('2701');
+    expect(await u.recordings()).toHaveLength(1);
+    expect(await u.dives()).toHaveLength(1);
+  });
+
+  it('a dive on a Dive deleted here is not downloaded again', async () => {
+    const fit = makeSyntheticDive({ serialNumber: 7801 });
+    const u = await connected([garminDive(2801, fit)]);
+    const [uploaded] = await u.upload('deleted-later.fit', fit);
+    await u.deleteDive(uploaded!.diveId!);
+
+    expect(await u.fetch()).toEqual([expect.objectContaining({ result: 'skipped', reason: 'deleted_earlier', remoteId: '2801' })]);
+    expect(downloads(2801)).toBe(1);
+    expect((await u.preview()).counts).toMatchObject({ deleted: 1, recordings: 0 });
+    expect(await u.fetch()).toEqual([expect.objectContaining({ result: 'skipped', reason: 'deleted_earlier', remoteId: '2801' })]);
+    expect(downloads(2801)).toBe(1);
+    expect(await u.dives()).toHaveLength(0);
   });
 });

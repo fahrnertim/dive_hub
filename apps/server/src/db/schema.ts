@@ -277,10 +277,10 @@ export interface ProviderImportPlan {
   /** A scheduled or on-opening fetch: it takes what is safe by itself and leaves the rest for the User. */
   unattended?: boolean;
   /**
-   * A Provider whose dives come as files (ADR 0062): the Original each downloaded dive's file is, oldest first, and the
-   * outcome of the dives not downloaded (linked already, entered by hand, a failed download), decided when it started.
+   * A Provider whose dives come as files (ADR 0062): the remote dives whose files the worker downloads, oldest first,
+   * and the outcome of the others (linked already, deleted here, entered by hand), decided when it started.
    */
-  files?: { remoteId: string; originalId: string }[];
+  files?: string[];
   ended?: ImportOutcome;
 }
 
