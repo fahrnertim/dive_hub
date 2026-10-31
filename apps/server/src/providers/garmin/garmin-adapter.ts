@@ -110,10 +110,8 @@ export function createGarminAdapter(deps: {
       async file(context, remoteId) {
         if (lastDownloadAt !== null && now() - lastDownloadAt < pauseMs) await sleep(pauseMs - (now() - lastDownloadAt));
         try {
-          return {
-            bytes: await withToken(context, (jwt) => client.file(jwt, remoteId)),
-            mediaType: 'application/vnd.ant.fit', fileName: `${remoteId}.fit`,
-          };
+          const bytes = await withToken(context, (jwt) => client.file(jwt, remoteId));
+          return bytes && { bytes, mediaType: 'application/vnd.ant.fit', fileName: `${remoteId}.fit` };
         } finally {
           lastDownloadAt = now();
         }

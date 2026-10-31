@@ -552,12 +552,14 @@ export function createDiveImportService(deps: {
    * The dives whose file a finished Import of this Connection downloaded and that ended for good (placed, or skipped:
    * no dive file, no dive, another Diver's), by remote ID, with how each ended: the design's "remote ID of a Recording",
    * also where the Dive keeps another dive's link (two computers on one dive) or no Recording came of it. A failed
-   * download (`unavailable`, `file_failed`) isn't among them: the next fetch tries it again.
+   * download (`unavailable`, `file_failed`) isn't among them: the next fetch tries it again. Only the Imports that
+   * downloaded something are read (almost every scheduled fetch downloads nothing), so the work grows with downloads,
+   * not with the fetches.
    */
   async function downloadedBefore(connectionId: string): Promise<Map<string, ImportOutcome[number]>> {
     const rows = await db.execute<{ entry: ImportOutcome[number] }>(sql`
       select e.entry from ${importJob} i cross join lateral jsonb_array_elements(i.outcome) as e(entry)
-      where i.connection_id = ${connectionId} and i.status = 'done'
+      where i.connection_id = ${connectionId} and i.status = 'done' and i.plan->'files' <> '[]'::jsonb
         and jsonb_exists(i.plan->'files', e.entry->>'remoteId') and e.entry->>'result' <> 'failed'`);
     return new Map(rows.rows.map(({ entry }) => [entry.remoteId!, entry]));
   }
@@ -589,10 +591,10 @@ export function createDiveImportService(deps: {
 
   /**
    * The worker's part for dives that come as files (ADR 0062): each new dive's file downloaded, one after another (the
-   * adapter keeps the pause), and placed. A download that holds no dive file ends that dive only. One the Provider
-   * refuses or doesn't answer (a 429, a dropped call, a key it no longer takes: the Connection then needs a sign-in)
-   * ends the downloads: that dive and the rest fail as `unavailable`, nothing more is asked now, and the next fetch
-   * tries them again. Never throws, so the dives placed keep their outcome.
+   * adapter keeps the pause), and placed. A dive the Provider has no file of (`file` answers null) ends that dive only,
+   * for good. Any download that fails (a 429, a 404, a dropped call, an unreadable answer, a key it no longer takes: the
+   * Connection then needs a sign-in) ends the downloads: that dive and the rest fail as `unavailable`, nothing more is
+   * asked now, and the next fetch tries them again. Never throws, so the dives placed keep their outcome.
    */
   async function placeFiles(job: typeof importJob.$inferSelect, pc: ProviderContext, remoteIds: string[]) {
     const outcome: ImportOutcome = [];
@@ -617,8 +619,8 @@ export function createDiveImportService(deps: {
     };
     for (const [i, remoteId] of remoteIds.entries()) {
       const got = await download(remoteId);
-      if (got instanceof ProviderError && got.reason === 'bad_response') {
-        outcome.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'no_dive_file', message: errorMessage(got) });
+      if (got === null) {
+        outcome.push({ ...fileBase(pc, remoteId), result: 'skipped', reason: 'no_dive_file' });
       } else if (got instanceof Error) {
         for (const rest of remoteIds.slice(i)) outcome.push({ ...fileBase(pc, rest), result: 'failed', reason: 'unavailable', message: errorMessage(got) });
         break;

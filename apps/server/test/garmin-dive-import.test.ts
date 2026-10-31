@@ -1,8 +1,9 @@
 // Fetching dives from Garmin (ADR 0062), against the fake Garmin: each new dive's FIT is downloaded, kept as the
 // Original and placed like an uploaded file, one Recording per dive whatever came first; a dive fetched before isn't
-// downloaded again (nor one on a Dive deleted here), one entered by hand is skipped, a download Garmin refuses or that
-// holds no FIT ends that dive only, and one Garmin refuses ends the downloads of this fetch; a download that ends for
-// good (no FIT, no dive, another Diver's, a second copy on a linked Dive) isn't tried again; a key revoked during the
+// downloaded again (nor one on a Dive deleted here), one entered by hand is skipped, a download that holds no FIT ends
+// that dive only, and any other failed download (a 429, a 404, an unreadable answer) ends the downloads of this fetch
+// for the next one to take; a download that ends for good (no FIT, no dive, another Diver's, a second copy on a linked
+// Dive) isn't tried again, however many fetches come between; a key revoked during the
 // downloads ends the fetch with what was placed; the worker downloads, not the request that starts the fetch.
 import { readFileSync } from 'node:fs';
 import { and, eq, isNull, sql } from 'drizzle-orm';
@@ -27,6 +28,9 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
   const refused = new Map<string, number | 'no_fit'>();
   /** Activities whose download finds this key revoked at Garmin. */
   const revokedAt = new Map<string, string>();
+  /** Activities whose download finds the token refused, after which Garmin answers the next token trade unreadably. */
+  const unreadableTokenAt = new Set<string>();
+  let tokenUnreadable = false;
   /** Every download asked for, the refused ones too. */
   const tried: string[] = [];
   let users = 0;
@@ -38,6 +42,14 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
       const path = new URL(String(input instanceof Request ? input.url : input)).pathname;
       const id = /\/download-service\/files\/activity\/(\d+)$/.exec(path)?.[1];
       if (id) tried.push(id);
+      if (path.endsWith('/personal-api-key/token') && tokenUnreadable) {
+        tokenUnreadable = false;
+        return new Response('not a token', { status: 200 });
+      }
+      if (id && unreadableTokenAt.has(id)) {
+        tokenUnreadable = true;
+        return new Response('{}', { status: 401 });
+      }
       const revoke = id ? revokedAt.get(id) : undefined;
       if (revoke) garmin.revoke(revoke);
       const answer = id ? refused.get(id) : undefined;
@@ -321,6 +333,57 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
     expect(attempts(2781)).toBe(1);
     expect(attempts(2782)).toBe(1);
     expect(attempts(2783)).toBe(0);
+  });
+
+  it('a download answering 404 ends the downloads of this fetch and is not remembered; the next fetch takes them', async () => {
+    const u = await connected([
+      garminDive(2901, makeSyntheticDive({ serialNumber: 7901 })),
+      garminDive(2902, makeSyntheticDive({ serialNumber: 7901, start: new Date('2026-01-16T09:00:00Z') }), { startTimeLocal: '2026-01-16 11:00:00' }),
+    ]);
+    refused.set('2901', 404);
+    expect(await u.fetch()).toEqual([
+      expect.objectContaining({ result: 'failed', reason: 'unavailable', remoteId: '2901' }),
+      expect.objectContaining({ result: 'failed', reason: 'unavailable', remoteId: '2902' }),
+    ]);
+    expect(attempts(2902)).toBe(0);
+
+    refused.delete('2901');
+    expect(await u.fetch()).toEqual([
+      expect.objectContaining({ result: 'created', remoteId: '2901' }),
+      expect.objectContaining({ result: 'created', remoteId: '2902' }),
+    ]);
+    expect(await u.recordings()).toHaveLength(2);
+  });
+
+  it('an unreadable token answer during the downloads ends them and is not remembered; the next fetch takes them', async () => {
+    const u = await connected([
+      garminDive(2911, makeSyntheticDive({ serialNumber: 7911 })),
+      garminDive(2912, makeSyntheticDive({ serialNumber: 7911, start: new Date('2026-01-16T09:00:00Z') }), { startTimeLocal: '2026-01-16 11:00:00' }),
+    ]);
+    // Garmin refuses the kept token at the first download, and the token traded again can't be read.
+    unreadableTokenAt.add('2911');
+    expect(await u.fetch()).toEqual([
+      expect.objectContaining({ result: 'failed', reason: 'unavailable', remoteId: '2911' }),
+      expect.objectContaining({ result: 'failed', reason: 'unavailable', remoteId: '2912' }),
+    ]);
+    expect(attempts(2912)).toBe(0);
+
+    unreadableTokenAt.delete('2911');
+    expect(await u.fetch()).toEqual([
+      expect.objectContaining({ result: 'created', remoteId: '2911' }),
+      expect.objectContaining({ result: 'created', remoteId: '2912' }),
+    ]);
+    expect(await u.recordings()).toHaveLength(2);
+  });
+
+  it('a download that ended for good is still not asked for after several fetches that downloaded nothing', async () => {
+    const u = await connected([garminDive(2921, makeSyntheticDive({ serialNumber: 7921 }))]);
+    refused.set('2921', 'no_fit');
+    for (let i = 0; i < 4; i += 1) {
+      expect(await u.fetch()).toEqual([expect.objectContaining({ result: 'skipped', reason: 'no_dive_file', remoteId: '2921' })]);
+    }
+    refused.delete('2921');
+    expect(attempts(2921)).toBe(1);
   });
 
   it('a dive on a Dive deleted here is not downloaded again', async () => {

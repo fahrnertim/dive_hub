@@ -33,8 +33,8 @@ export interface GarminActivity {
 export interface GarminClient {
   token(key: string): Promise<GarminToken>;
   dives(token: string): Promise<GarminActivity[]>;
-  /** The unzipped FIT of an activity. */
-  file(token: string, activityId: string): Promise<Uint8Array>;
+  /** The unzipped FIT of an activity; null when the zip Garmin sends holds none or can't be read (no file is behind it). */
+  file(token: string, activityId: string): Promise<Uint8Array | null>;
 }
 
 export type GarminErrorReason = 'wrong_credentials' | 'unavailable' | 'bad_response';
@@ -127,8 +127,8 @@ function readActivity(raw: unknown): GarminActivity {
   };
 }
 
-/** The first `.fit` in the downloaded zip, read through the archive limits. */
-async function fitOf(zip: Uint8Array): Promise<Uint8Array> {
+/** The first `.fit` in the downloaded zip, read through the archive limits; null when there is none or the zip can't be read. */
+async function fitOf(zip: Uint8Array): Promise<Uint8Array | null> {
   const dir = await mkdtemp(join(tmpdir(), 'divehub-garmin-'));
   try {
     const path = join(dir, 'download.zip');
@@ -139,9 +139,8 @@ async function fitOf(zip: Uint8Array): Promise<Uint8Array> {
         if (!fit && /\.fit$/i.test(entry.name)) fit = await entry.read();
       });
     } catch {
-      throw new GarminError('bad_response', 'Garmin sent no readable zip');
+      return null;
     }
-    if (!fit) throw new GarminError('bad_response', 'Garmin sent no FIT file');
     return fit;
   } finally {
     await rm(dir, { recursive: true, force: true });

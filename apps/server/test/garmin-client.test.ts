@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createGarminClient, GarminError } from '../src/providers/garmin/garmin-client.js';
 import { createFakeGarmin, type FakeGarmin, type FakeGarminDive } from './fake-garmin.js';
+import { zipOf } from './zip.js';
 
 const fit = new Uint8Array(readFileSync(new URL('./fixtures/synthetic-dive.fit', import.meta.url)));
 const KEY = 'GCDC_secret-key-1234';
@@ -44,7 +45,21 @@ describe('Garmin client', () => {
   it('answers the FIT inside the downloaded zip', async () => {
     const client = setup([dive(1)]);
     const token = await client.token(KEY);
-    expect(Buffer.from(await client.file(token.jwt, '1001')).equals(Buffer.from(fit))).toBe(true);
+    expect(Buffer.from((await client.file(token.jwt, '1001'))!).equals(Buffer.from(fit))).toBe(true);
+  });
+
+  it('a download whose zip holds no FIT, or is no zip, is no file', async () => {
+    for (const body of [await zipOf({ 'readme.txt': 'no dive here' }), Buffer.from('not a zip')]) {
+      const client = createGarminClient({ url: garmin.url, fetch: async () => new Response(body, { status: 200 }) });
+      await expect(client.file('jwt', '1')).resolves.toBeNull();
+    }
+  });
+
+  it('a download answering 404 is a bad response, not "no file"', async () => {
+    const client = createGarminClient({ url: garmin.url, fetch: async () => new Response('{}', { status: 404 }) });
+    const error = await client.file('jwt', '1').catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(GarminError);
+    expect((error as GarminError).reason).toBe('bad_response');
   });
 
   it('a revoked key is wrong_credentials', async () => {

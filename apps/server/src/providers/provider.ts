@@ -460,9 +460,10 @@ export interface ProviderAdapter {
     origin?(record: Record<string, unknown>): DiveOrigin;
     /**
      * A dive that comes as a file (Garmin): the original file of the dive `remoteId`, to be read like an uploaded one. The
-     * generic import then places it from the file instead of from `parse`'s values.
+     * generic import then places it from the file instead of from `parse`'s values. Null: the Provider has no readable
+     * file of it (Garmin: a zip without a FIT), which ends that dive for good. Throws a ProviderError.
      */
-    file?(context: ActionContext, remoteId: string): Promise<{ bytes: Uint8Array; mediaType: string; fileName: string }>;
+    file?(context: ActionContext, remoteId: string): Promise<{ bytes: Uint8Array; mediaType: string; fileName: string } | null>;
     /** The parser name and version a Recording made from a Provider's dive carries, e.g. `ssi-app-api`. */
     parser?: { name: string; version: string };
   };

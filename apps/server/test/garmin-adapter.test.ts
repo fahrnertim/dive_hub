@@ -102,7 +102,7 @@ describe('the Garmin adapter', () => {
     const adapter = setUp([dive(1)]);
     const file = await adapter.dives!.file!({ connectionId: 'c1', accountId: 'guid-1', access: KEY }, '1001');
     expect(file).toMatchObject({ mediaType: 'application/vnd.ant.fit', fileName: '1001.fit' });
-    expect(Buffer.from(file.bytes).equals(Buffer.from(fit))).toBe(true);
+    expect(Buffer.from(file!.bytes).equals(Buffer.from(fit))).toBe(true);
   });
 
   it('downloads wait the pause between two files', async () => {
