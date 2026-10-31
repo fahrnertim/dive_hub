@@ -136,6 +136,16 @@ Folding one Dive into another that is the same descent: the kept Dive (the one w
 _Avoid_: Combine, deduplicate, attach (that is a Recording's)
 _German_: zusammenführen (Tauchgänge)
 
+**Continuation (of a Dive)**:
+A Dive that is the rest of the Dive before it: the same Diver's dive computer ended the dive during a Surface break and recorded the rest as a new dive. Appending it makes the two one Dive, whose profile runs through the break at the surface; the later Dive is deleted like a merged one and restoring it undoes the append ([ADR 0063](decisions/0063-dive-continuation.md), proposed).
+_Avoid_: Merge (that is the same descent twice), combine, join, stitch, attach (that is a Recording's), split dive
+_German_: Fortsetzung; the action: anhängen
+
+**Surface break**:
+Time at the surface inside one Dive, between two parts of it that the dive computer recorded as two dives ([ADR 0063](decisions/0063-dive-continuation.md), proposed).
+_Avoid_: Surface interval (that is the time between two Dives), pause, gap
+_German_: Oberflächenaufenthalt (not Oberflächenpause, the surface interval)
+
 **Primary recording**:
 The one Recording of a Dive whose summary values the Dive shows, unless the Diver overrode a value by hand.
 _Avoid_: Master, main log
