@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ENGINE_VERSION } from '../src/assessment/rules.js';
 import { dive, diveAssessment, diveFinding, recording, recordingEvent } from '../src/db/schema.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
+import { ownersDiveParts } from './fixtures/surface-break-dive.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
@@ -239,5 +240,25 @@ describe.skipIf(!(await databaseReachable()))('the dive assessment', () => {
     // Read from the table: reading the assessment through the API would refresh it itself.
     const [stored] = await t.db.select().from(diveAssessment).where(eq(diveAssessment.diveId, morning));
     expect(stored!.engineVersion).toBe(ENGINE_VERSION);
+  });
+
+  it("judges the owner's joined dive as two parts: no rate, sawtooth or safety stop across the Surface break (ADR 0063)", async () => {
+    const { first, second } = ownersDiveParts();
+    const place = async (bytes: Uint8Array) => {
+      const { payload, headers } = multipartFile('dive.fit', bytes);
+      const imported = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: tim } });
+      await ctx.imports.processImport(imported.json().id);
+      return (await json<{ outcome: { diveId: string }[] }>('GET', `/api/imports/${imported.json().id}`, tim)).outcome[0]!.diveId;
+    };
+    const one = await place(first);
+    const two = await place(second);
+    const appended = await call('POST', `/api/dives/${one}/continuation`, tim, {
+      version: await version(one), dives: [{ id: two, version: await version(two) }],
+    });
+    expect(appended.statusCode, appended.body).toBe(200);
+    const a = await assessment(one);
+    expect(a.applies).toBe(true);
+    expect(rules(a).filter((r) => ['ascent_rate', 'descent_rate', 'sawtooth', 'safety_stop'].includes(r))).toEqual([]);
+    expect(a.ascentBands.filter(([from, to]) => from < 1421 && to > 1180)).toEqual([]);
   });
 });

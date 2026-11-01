@@ -72,7 +72,7 @@ export function createAssessmentService(db: Db) {
           continue;
         }
         const rows = d.recordingId ? await readSeries(tx, d.recordingId) : [];
-        const assessed = applies ? assessRows(rows) : null;
+        const assessed = applies ? assessRows(rows, (d.summary as RecordingSummary | null)?.surfaceBreaks) : null;
         // The sketch is for every Dive with a depth profile, also those the rules don't cover.
         const depth = rows.find((r) => r.channel === 'depth');
         const profile = depth ? sketchOf(depth) : null;
@@ -105,13 +105,13 @@ export function createAssessmentService(db: Db) {
     return tx.select().from(sampleSeries).where(and(eq(sampleSeries.recordingId, recordingId), inArray(sampleSeries.channel, [...CHANNELS])));
   }
 
-  function assessRows(rows: Awaited<ReturnType<typeof readSeries>>) {
+  function assessRows(rows: Awaited<ReturnType<typeof readSeries>>, surfaceBreaks: RecordingSummary['surfaceBreaks']) {
     const series = (channel: (typeof CHANNELS)[number]) => {
       const found = rows.find((r) => r.channel === channel);
       return found && { offsetsMs: found.offsetsMs, values: found.values };
     };
     const depth = series('depth');
-    return depth ? assessProfile({ depth, ndl: series('ndl'), nextStopDepth: series('nextStopDepth') ?? series('ceiling'), po2: series('po2'), cns: series('cns') }) : null;
+    return depth ? assessProfile({ depth, ndl: series('ndl'), nextStopDepth: series('nextStopDepth') ?? series('ceiling'), po2: series('po2'), cns: series('cns'), surfaceBreaks }) : null;
   }
 
   async function replaceFindings(tx: Tx, diveId: string, scope: 'profile' | 'series', findings: Finding[], recordingId: string | null) {

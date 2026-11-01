@@ -174,6 +174,29 @@ describe('profile practice', () => {
   });
 });
 
+describe('a surface break in the recording (ADR 0063)', () => {
+  /** A series from [second, metre] points, a sample every second wherever the points are not further apart. */
+  const stepped = (points: [number, number][]): Series => ({ offsetsMs: points.map(([s]) => s * 1000), values: points.map(([, m]) => m) });
+  const everySecond = (from: number, to: number, metres: number): [number, number][] =>
+    Array.from({ length: to - from + 1 }, (_, i) => [from + i, metres]);
+
+  it("gives no descent rate across a break's end", () => {
+    const depth = stepped([...everySecond(0, 600, 0), ...everySecond(602, 700, 6)]);
+    expect(rules(assessProfile({ depth }).findings)).toContain('descent_rate');
+    expect(rules(assessProfile({ depth, surfaceBreaks: [{ startS: 300, endS: 602 }] }).findings)).not.toContain('descent_rate');
+  });
+
+  it("gives no ascent band and no ascent rate across a break's start", () => {
+    const depth = stepped([...everySecond(0, 300, 8), ...everySecond(301, 400, 0)]);
+    const without = assessProfile({ depth });
+    expect(rules(without.findings)).toContain('ascent_rate');
+    expect(without.ascentBands.length).toBeGreaterThan(0);
+    const judged = assessProfile({ depth, surfaceBreaks: [{ startS: 300, endS: 400 }] });
+    expect(rules(judged.findings)).not.toContain('ascent_rate');
+    expect(judged.ascentBands.filter(([a, b]) => a < 301 && b > 300)).toEqual([]);
+  });
+});
+
 describe('decompression and oxygen', () => {
   const deco = profile([[0, 0], [3, 40], [25, 40], [29, 6], [40, 6], [42, 3], [50, 3], [51, 0]]);
   const ndl = channel(deco, (s) => (s < 600 ? 1200 - s * 2 : s < 2700 ? 0 : 5940));

@@ -6,9 +6,10 @@
 /**
  * Raised with every change to a threshold or a rule's logic; stored with each finding. Also raised when the
  * assessment row gains something to fill for existing Dives (2: the logbook's profile sketch, ADR 0041). 3: stop
- * stability reports the part whose stop wandered furthest, not the first.
+ * stability reports the part whose stop wandered furthest, not the first. 4: no rate where a window touches a Surface
+ * break's edge (ADR 0063).
  */
-export const ENGINE_VERSION = 3;
+export const ENGINE_VERSION = 4;
 
 export const SEVERITIES = ['info', 'note', 'caution'] as const;
 export type Severity = (typeof SEVERITIES)[number];

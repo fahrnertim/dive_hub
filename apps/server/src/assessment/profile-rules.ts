@@ -11,6 +11,8 @@ export interface ProfileInput {
   nextStopDepth?: Series | undefined;
   po2?: Series | undefined;
   cns?: Series | undefined;
+  /** Stretches at the surface between the parts of a joined Recording (seconds): no rate where a window touches an edge. */
+  surfaceBreaks?: { startS: number; endS: number }[] | undefined;
 }
 
 /** A stretch of the ascent by how fast it was: 1 above 4, 2 above 9, 3 above 18 m/min. */
@@ -47,6 +49,13 @@ interface Profile {
 function profileOf(input: ProfileInput, t: number[], d: number[]): Profile {
   const sampleIntervalS = round(median(t.slice(1).map((v, i) => v - t[i]!)), 1);
   const { rate, end } = windowRates(t, d);
+  // A window touching a break's edge spans the jump between two parts, not a movement of the diver.
+  for (const { startS, endS } of input.surfaceBreaks ?? []) {
+    for (let i = 0; i < t.length; i++) {
+      const touches = (from: number, to: number) => t[i]! < to && t[end[i]!]! > from;
+      if (touches(startS, startS + sampleIntervalS) || touches(endS - sampleIntervalS, endS)) rate[i] = null;
+    }
+  }
   const duration = ([a, b]: Run) => t[b]! - t[a]! + sampleIntervalS;
   const minNdl = input.ndl && input.ndl.values.length > 0 ? Math.min(...input.ndl.values) : null;
   return {
