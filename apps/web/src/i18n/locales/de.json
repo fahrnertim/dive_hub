@@ -729,6 +729,12 @@
     "answered": "Paare, die zwei Tauchgänge bleiben",
     "answeredIntro": "Tauchgänge zur selben Zeit, von denen du gesagt hast, dass es zwei sind.",
     "askAgain": "Wieder fragen",
+    "surface": {
+      "title": "Tauchgänge mit Oberflächenaufenthalt dazwischen",
+      "how_one": "Angehängt sind sie ein Tauchgang mit einem Profil. Der spätere kommt zu den „Gelöschten Tauchgängen“, wo du ihn wiederherstellen kannst.",
+      "how_other": "Mach diese {{dives}} Tauchgänge zu einem: Angehängt sind sie ein Tauchgang mit einem Profil. Die späteren kommen zu den „Gelöschten Tauchgängen“, wo du sie wiederherstellen kannst.",
+      "append": "Anhängen …"
+    },
     "short": {
       "title": "Wahrscheinlich keine Tauchgänge",
       "how": "Eine Aufzeichnung kürzer als {{duration}}, die über {{depth}} geblieben ist, ist meist ein nass gewordener Tauchcomputer oder ein Fehlstart. War es kein Tauchgang, lösche ihn: er kommt zu den „Gelöschten Tauchgängen“ und lässt sich wiederherstellen.",
@@ -768,16 +774,22 @@
   "append": {
     "menu": "An den vorherigen Tauchgang anhängen…",
     "title": "Diesen Tauchgang an den vorherigen anhängen?",
+    "titleCheck_one": "Den späteren Tauchgang an den früheren anhängen?",
+    "titleCheck_other": "Diese {{dives}} Tauchgänge zu einem machen?",
     "stays": "Bleibt:",
     "goes": "Kommt zu den „Gelöschten Tauchgängen“:",
-    "break": "Dazwischen war der Taucher {{duration}} an der Oberfläche. Angehängt sind beide ein Tauchgang mit einem Profil, in dem der Oberflächenaufenthalt bei 0 m zu sehen ist.",
-    "takes": "Der Tauchgang, der bleibt, übernimmt vom späteren, was ihm fehlt: Tauchplatz, Buddys und Werte. Die Notizen des späteren werden an seine angehängt.",
-    "other": "Stellst du den späteren unter „Gelöschte Tauchgänge“ im Logbuch wieder her, sind es wieder zwei Tauchgänge.",
+    "break_one": "Dazwischen war der Taucher {{duration}} an der Oberfläche. Angehängt sind beide ein Tauchgang mit einem Profil, in dem der Oberflächenaufenthalt bei 0 m zu sehen ist.",
+    "break_other": "Dazwischen war der Taucher {{duration}} an der Oberfläche. Angehängt sind sie ein Tauchgang mit einem Profil, in dem die Oberflächenaufenthalte bei 0 m zu sehen sind.",
+    "takes_one": "Der Tauchgang, der bleibt, übernimmt vom späteren, was ihm fehlt: Tauchplatz, Buddys und Werte. Die Notizen des späteren werden an seine angehängt.",
+    "takes_other": "Der Tauchgang, der bleibt, übernimmt von den späteren, was ihm fehlt: Tauchplatz, Buddys und Werte. Die Notizen der späteren werden an seine angehängt.",
+    "other_one": "Stellst du den späteren unter „Gelöschte Tauchgänge“ im Logbuch wieder her, sind es wieder zwei Tauchgänge.",
+    "other_other": "Stellst du einen der späteren unter „Gelöschte Tauchgänge“ im Logbuch wieder her, sind es wieder einzelne Tauchgänge.",
     "confirm": "Anhängen",
     "confirmBoth": "Anhängen und in {{name}} löschen",
     "confirmHere": "Nur hier anhängen",
     "nothingAppended": "Es wurde nichts angehängt.",
-    "done": "Die beiden Tauchgänge sind jetzt einer."
+    "done_one": "Die beiden Tauchgänge sind jetzt einer.",
+    "done_other": "Die Tauchgänge sind jetzt einer."
   },
   "gone": {
     "title": "Tauchgänge nicht mehr in {{name}}",
@@ -831,6 +843,8 @@
       "recordings_other": "{{count}} Aufzeichnungen",
       "pairs_one": "{{count}} Paar Tauchgänge zur selben Zeit",
       "pairs_other": "{{count}} Paare Tauchgänge zur selben Zeit",
+      "surfaceBreaks_one": "{{count}} durch einen Oberflächenaufenthalt geteilter Tauchgang",
+      "surfaceBreaks_other": "{{count}} durch einen Oberflächenaufenthalt geteilte Tauchgänge",
       "shortDives_one": "{{count}} Tauchgang, der wahrscheinlich keiner ist",
       "shortDives_other": "{{count}} Tauchgänge, die wahrscheinlich keine sind",
       "gone_one": "{{count}} Tauchgang nicht mehr in {{name}}",
@@ -858,8 +872,18 @@
     "openKept": "Diesen Tauchgang öffnen",
     "movedTo": "Ins Logbuch eines anderen Tauchers verschoben.",
     "openMoved": "Dort öffnen",
+    "continuedInto": "An {{name}} angehängt.",
+    "appendedGroup": "{{dives}} Tauchgänge an {{name}} angehängt",
+    "anotherDive": "einen anderen Tauchgang",
     "restore": "Wiederherstellen",
-    "restored": "{{name}} wiederhergestellt."
+    "restored": "{{name}} wiederhergestellt.",
+    "restoreTitle": "{{name}} wiederherstellen?",
+    "comesBack_one": "{{names}} kommt als eigener Tauchgang zurück, mit seiner Aufzeichnung.",
+    "comesBack_other": "{{names}} kommen als eigene Tauchgänge zurück, jeder mit seiner Aufzeichnung.",
+    "alsoOut_one": "Das holt auch {{names}} wieder heraus: er wurde später angehängt.",
+    "alsoOut_other": "Das holt auch {{names}} wieder heraus: sie wurden später angehängt.",
+    "keptKeeps_one": "{{name}} behält, was er von ihm übernommen hat: Tauchplatz, Buddys, Werte und Notizen.",
+    "keptKeeps_other": "{{name}} behält, was er von ihnen übernommen hat: Tauchplatz, Buddys, Werte und Notizen."
   },
   "divers": {
     "numbers": "Tauchgangsnummern von {{name}}",

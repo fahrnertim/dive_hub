@@ -980,6 +980,32 @@ for (const v of variants) {
       }
     });
 
+    test('a surface break on the Review page: the check, its append dialog, the appended dive in Deleted dives and the restore dialog', { tag: ['@dives'] }, async ({ page, request }) => {
+      const { first, second } = await surfaceBreakPair(request);
+      await request.put('/api/logbook-checks/answer', { data: { diveIds: [first, second], answer: null }, headers });
+      try {
+        await page.goto('/#/review');
+        const open = page.getByRole('button', { name: v.english ? /^Append…: / : /^Anhängen.…: / });
+        await expect(open).toBeVisible();
+        await goodPage(page, title('Review'), v);
+        await open.click();
+        const append = page.getByRole('dialog').getByRole('button', { name: v.english ? 'Append' : 'Anhängen', exact: true });
+        await expect(append).toBeVisible();
+        await goodPage(page, title('Review'), v);
+        await append.click();
+        await expect(open).toHaveCount(0);
+        await page.goto('/#/review?tab=deleted');
+        const restore = page.getByRole('button', { name: v.english ? /^Restore: / : /^Wiederherstellen: / }).first();
+        await expect(page.getByText(v.english ? /^Appended to Dive / : /^An Tauchgang \d+ angehängt/)).toBeVisible();
+        await goodPage(page, title('Review'), v);
+        await restore.click();
+        await expect(page.getByRole('dialog').getByText(v.english ? /comes back as a dive of its own/ : /kommt als eigener Tauchgang zurück/)).toBeVisible();
+        await goodPage(page, title('Review'), v);
+      } finally {
+        await surfaceBreakPair(request);
+      }
+    });
+
     test('an upload that waits for the choice of what to import', { tag: ['@dives'] }, async ({ page, request }) => {
       await waitingImport(request);
       try {

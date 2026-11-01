@@ -2,11 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, diversQuery, isDiveCheck, isPairCheck, keys, logbookChecksQuery, unwrap, type DiveCheckView, type LogbookCheckView } from './api.ts';
+import { AppendDialog } from './AppendDive.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { MergeDialog } from './MergeDive.tsx';
 import { differingFacts } from './lib/review.ts';
 import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
 import { announce } from './lib/announce.ts';
+import { useJoinNames } from './lib/providers.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { Badge, Button, ConfirmButton, Muted, Notice, Panel } from './ui/index.ts';
@@ -19,6 +21,8 @@ const startsApartSeconds = (c: LogbookCheckView) => {
 };
 /** This rule's text says nothing the group's head does: a pair far apart on the clock is not "at the same time". */
 const APART = 'entry_apart_from_recording';
+/** Probably one dive cut by a surface break (ADR 0063): resolved by Appending, in a group of its own. */
+const BREAK = 'surface_break';
 const keyOf = (c: LogbookCheckView) => `${c.dive.id}:${c.other.id}`;
 
 /** "Dive 9", or the Dive's time when it has no number. */
@@ -63,6 +67,7 @@ function useDiveFacts() {
 function PairRows({ check: c, showDiver, stays }: { check: LogbookCheckView; showDiver: string | undefined; stays: boolean }) {
   const { t } = useTranslation();
   const diveFacts = useDiveFacts();
+  if (c.chain) return <ChainRows chain={c.chain} showDiver={showDiver} />;
   const first = diveFacts(c.dive, showDiver);
   const second = diveFacts(c.other, showDiver);
   const marked = differingFacts(first.values, second.values);
@@ -76,10 +81,31 @@ function PairRows({ check: c, showDiver, stays }: { check: LogbookCheckView; sho
   return <Candidates>{row(c.dive, first.facts)}{row(c.other, second.facts)}</Candidates>;
 }
 
+/** The Dives of a `surface_break` check in order, each later one with the surface break before it (ADR 0063). */
+function ChainRows({ chain, showDiver }: { chain: NonNullable<LogbookCheckView['chain']>; showDiver: string | undefined }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  const diveFacts = useDiveFacts();
+  return (
+    <Candidates>
+      {chain.map((d) => (
+        <CandidateRow
+          key={d.id} marked={new Set()}
+          facts={[
+            ...(d.surfaceBreakSeconds !== null ? [{ key: 'break', text: t('dive.surfaceBreak', { duration: display.duration(d.surfaceBreakSeconds) }) }] : []),
+            ...diveFacts(d, showDiver).facts,
+          ]}
+          title={<a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>}
+        />
+      ))}
+    </Candidates>
+  );
+}
+
 /**
  * Logbook checks on the Review page (ADR 0038): pairs of Dives at the same time, in one group that explains itself once,
  * each pair with the ways to resolve it. Nothing merges unasked; the pairs an import would have put together by itself
- * can be merged in one go.
+ * can be merged in one go. Dives cut by a surface break (ADR 0063) are a group of their own, appended one check at a time.
  */
 export function PairDecisions() {
   const { t } = useTranslation();
@@ -88,11 +114,23 @@ export function PairDecisions() {
   // The pair just kept as two dives, offered back with "Undo".
   const [undo, setUndo] = useState<LogbookCheckView>();
   const list = useRef<HTMLUListElement>(null);
-  const checks = (open.data ?? []).filter(isPairCheck);
+  const breaks = useRef<HTMLUListElement>(null);
+  const all = (open.data ?? []).filter(isPairCheck);
+  const checks = all.filter((c) => c.rule !== BREAK);
+  const surfaceBreaks = all.filter((c) => c.rule === BREAK);
   const undoable = undo && answered.data?.filter(isPairCheck).some((c) => keyOf(c) === keyOf(undo)) ? undo : undefined;
   return (
     <>
       {undoable && <UndoAnswer key={keyOf(undoable)} check={undoable} onDone={() => setUndo(undefined)} />}
+      {/* Never among the clear pairs: each is appended with its own click (ADR 0063). */}
+      {surfaceBreaks.length > 0 && (
+        <Panel title={t('checks.surface.title')} attention>
+          <p className="muted">{t('checks.rule.surface_break')}</p>
+          <ul className="decisions" ref={breaks}>
+            {surfaceBreaks.map((c, index) => <SurfaceBreak key={keyOf(c)} check={c} list={breaks} index={index} count={surfaceBreaks.length} onAnswered={() => setUndo(c)} />)}
+          </ul>
+        </Panel>
+      )}
       {checks.length > 0 && (
         <Panel title={t('checks.title')} attention actions={<MergeObvious checks={checks.filter((c) => c.obvious)} />}>
           <p className="muted">{t('checks.how')}</p>
@@ -140,6 +178,53 @@ function Check({ check: c, list, index, count, onAnswered, ruleShown }: {
         <MergeDialog
           dive={c.dive} other={c.other} stay
           onClose={() => setMerging(false)} onMerged={() => refocusAfterRemoval(list.current, index, count)}
+        />
+      )}
+    </li>
+  );
+}
+
+/**
+ * A `surface_break` check (ADR 0063): its Dives with the surface breaks between them, what appending does, and the two
+ * answers: Append (asked first, in the append dialog) or "They are two dives" (with Undo, as for the pairs).
+ */
+function SurfaceBreak({ check: c, list, index, count, onAnswered }: {
+  check: LogbookCheckView; list: RefObject<HTMLUListElement | null>; index: number; count: number; onAnswered: () => void;
+}) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const divers = useQuery(diversQuery());
+  const nameOf = useDiveName();
+  const joinNames = useJoinNames();
+  const [appending, setAppending] = useState(false);
+  const answer = useAnswer(onAnswered);
+  const diver = (divers.data?.length ?? 0) > 1 ? divers.data?.find((v) => v.id === c.diverId)?.name : undefined;
+  const [kept, ...later] = c.chain ?? [];
+  if (!kept) return null;
+  // Several checks may wait at once; their buttons say which Dives they decide about.
+  const item = joinNames([kept, ...later].map(nameOf));
+  // Providers the kept Dive and a later one are both at: the later one's dive there stays unless the dialog says otherwise.
+  const bothAt = [...new Set(later.flatMap((d) => d.at.map((a) => a.provider)))].filter((p) => kept.at.some((a) => a.provider === p));
+  return (
+    <li className="decision">
+      <PairRows check={c} showDiver={diver} stays={false} />
+      <p>{t('checks.surface.how', { count: later.length, dives: later.length + 1 })}</p>
+      <div className="form-actions">
+        <Button icon="append" aria-label={t('common.forItem', { action: t('checks.surface.append'), item })} isDisabled={answer.isPending} onPress={() => setAppending(true)}>
+          {t('checks.surface.append')}
+        </Button>
+        <Button
+          variant="quiet" aria-label={t('common.forItem', { action: t('checks.twoDives'), item })} isPending={answer.isPending}
+          onPress={() => answer.mutate({ check: c, answer: 'two_dives' })}
+        >
+          {t('checks.twoDives')}
+        </Button>
+      </div>
+      {answer.error && <Notice tone="danger">{errorText(answer.error)}</Notice>}
+      {appending && (
+        <AppendDialog
+          kept={kept} later={later.map((d) => ({ ...d, breakSeconds: d.surfaceBreakSeconds ?? 0 }))} bothAt={bothAt} deletesItself={c.other.deletesItself} stay
+          onClose={() => setAppending(false)} onAppended={() => refocusAfterRemoval(list.current, index, count)}
         />
       )}
     </li>

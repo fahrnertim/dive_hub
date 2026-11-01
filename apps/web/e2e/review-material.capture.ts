@@ -934,6 +934,31 @@ test('review material', async ({ page, request, browser }) => {
       await page.getByText(/^(Surface break|Oberflächenaufenthalt) 4/).waitFor();
       await capture(page, `${appendedName}-dive-appended${language === 'de' ? '-de-dark-390' : ''}`, { aria: false });
     }
+    // The same pair as a logbook check on the Review page, its dialog, then the appended dive in Deleted dives and the
+    // restore dialog; in English on a desktop, in German on a dark phone.
+    for (const [suffix, language, scheme, width, height] of [['', 'en', 'light', 1280, 900], ['-de-dark-390', 'de', 'dark', 390, 844]] as const) {
+      await setPreferences(request, { language });
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.setViewportSize({ width, height });
+      const { first, second } = await surfaceBreakPair(request);
+      await request.put('/api/logbook-checks/answer', { data: { diveIds: [first, second], answer: null }, headers });
+      await page.goto('/#/review'); await page.reload();
+      const open = page.getByRole('button', { name: /^(Append|Anhängen\s)…: / });
+      await open.waitFor();
+      await capture(page, `76e-review-surface-break${suffix}`, { aria: !suffix });
+      await open.click();
+      const append = page.getByRole('dialog').getByRole('button', { name: /^(Append|Anhängen)$/ });
+      await append.waitFor();
+      await capture(page, `76f-review-surface-break-dialog${suffix}`, { full: false, aria: false });
+      await append.click();
+      await page.goto('/#/review?tab=deleted');
+      await page.getByText(/^(Appended to|An) (Dive|Tauchgang) \d+/).waitFor();
+      await capture(page, `76g-review-deleted-appended${suffix}`, { aria: !suffix });
+      await page.getByRole('button', { name: /^(Restore|Wiederherstellen): / }).first().click();
+      await page.getByRole('dialog').getByText(/(comes back|kommt als)/).waitFor();
+      await capture(page, `76h-review-restore-appended-dialog${suffix}`, { full: false, aria: false });
+      await page.keyboard.press('Escape');
+    }
     await surfaceBreakPair(request); // two dives again, as for the browser tests
     await setPreferences(request, { language: null });
     await page.emulateMedia({ colorScheme: 'light' });
@@ -960,7 +985,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('button', { name: 'Undo' }).waitFor();
     await capture(page, '77d-review-short-dive-kept');
     await page.goto('/#/review?tab=decided');
-    await page.getByRole('button', { name: /^Ask again: / }).waitFor();
+    await page.getByRole('button', { name: /^Ask again: / }).first().waitFor(); // the surface break pair waits there too
     await capture(page, '77e-review-short-dive-decided');
     await falseStart(request);
     await setPreferences(request, { language: 'de' });

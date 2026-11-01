@@ -9,12 +9,13 @@ import { LinkButton } from './ui/index.ts';
  */
 export function ReviewStrip() {
   const { t, i18n } = useTranslation();
-  const { recordings, pairs, shortDives, goneAt, conflicts, exists, total } = useToDecideCounts();
+  const { recordings, pairs, surfaceBreaks, shortDives, goneAt, conflicts, exists, total } = useToDecideCounts();
   const providers = useProviders();
   if (total === 0) return null;
   const parts = [
     ...(recordings > 0 ? [t('review.strip.recordings', { count: recordings })] : []),
     ...(pairs > 0 ? [t('review.strip.pairs', { count: pairs })] : []),
+    ...(surfaceBreaks > 0 ? [t('review.strip.surfaceBreaks', { count: surfaceBreaks })] : []),
     ...(shortDives > 0 ? [t('review.strip.shortDives', { count: shortDives })] : []),
     ...Object.entries(goneAt).map(([id, count]) => t('review.strip.gone', { count, name: providers.data?.find((p) => p.id === id)?.name ?? id })),
     ...(conflicts > 0 ? [t('review.strip.conflicts', { count: conflicts })] : []),

@@ -729,6 +729,12 @@
     "answered": "Pairs kept as two dives",
     "answeredIntro": "Dives at the same time that you said are two dives.",
     "askAgain": "Ask again",
+    "surface": {
+      "title": "Dives cut by a surface break",
+      "how_one": "Appended, they are one dive with one profile. The later one goes to “Deleted dives”, where you can restore it.",
+      "how_other": "Make these {{dives}} dives one: appended, they are one dive with one profile. The later ones go to “Deleted dives”, where you can restore them.",
+      "append": "Append…"
+    },
     "short": {
       "title": "Probably not dives",
       "how": "A recording shorter than {{duration}} that stayed above {{depth}} is usually a dive computer that got wet, or a false start. If it was no dive, delete it: it goes to “Deleted dives” and can be restored.",
@@ -768,16 +774,22 @@
   "append": {
     "menu": "Append to the previous dive…",
     "title": "Append this dive to the previous one?",
+    "titleCheck_one": "Append the later dive to the earlier one?",
+    "titleCheck_other": "Make these {{dives}} dives one?",
     "stays": "Stays:",
     "goes": "Goes to “Deleted dives”:",
-    "break": "Between the two, the diver was at the surface for {{duration}}. Appended, they are one dive with one profile, and the surface break shows in it at 0 m.",
-    "takes": "The dive that stays takes over what it lacks from the later one: dive site, buddies and values. The later one’s notes are added to its own.",
-    "other": "Restoring the later one under “Deleted dives” on the logbook makes them two dives again.",
+    "break_one": "Between the two, the diver was at the surface for {{duration}}. Appended, they are one dive with one profile, and the surface break shows in it at 0 m.",
+    "break_other": "Between them, the diver was at the surface for {{duration}}. Appended, they are one dive with one profile, and the surface breaks show in it at 0 m.",
+    "takes_one": "The dive that stays takes over what it lacks from the later one: dive site, buddies and values. The later one’s notes are added to its own.",
+    "takes_other": "The dive that stays takes over what it lacks from the later ones: dive site, buddies and values. The later ones’ notes are added to its own.",
+    "other_one": "Restoring the later one under “Deleted dives” on the logbook makes them two dives again.",
+    "other_other": "Restoring one of the later ones under “Deleted dives” on the logbook makes them separate dives again.",
     "confirm": "Append",
     "confirmBoth": "Append and delete in {{name}}",
     "confirmHere": "Append only here",
     "nothingAppended": "Nothing was appended.",
-    "done": "The two dives are one now."
+    "done_one": "The two dives are one now.",
+    "done_other": "The dives are one now."
   },
   "gone": {
     "title": "Dives no longer in {{name}}",
@@ -831,6 +843,8 @@
       "recordings_other": "{{count}} recordings",
       "pairs_one": "{{count}} pair of dives at the same time",
       "pairs_other": "{{count}} pairs of dives at the same time",
+      "surfaceBreaks_one": "{{count}} dive cut by a surface break",
+      "surfaceBreaks_other": "{{count}} dives cut by a surface break",
       "shortDives_one": "{{count}} dive that is probably no dive",
       "shortDives_other": "{{count}} dives that are probably no dives",
       "gone_one": "{{count}} dive no longer in {{name}}",
@@ -858,8 +872,18 @@
     "openKept": "Open that dive",
     "movedTo": "Moved to another Diver’s logbook.",
     "openMoved": "Open it there",
+    "continuedInto": "Appended to {{name}}.",
+    "appendedGroup": "{{dives}} dives appended to {{name}}",
+    "anotherDive": "another dive",
     "restore": "Restore",
-    "restored": "{{name}} restored."
+    "restored": "{{name}} restored.",
+    "restoreTitle": "Restore {{name}}?",
+    "comesBack_one": "{{names}} comes back as a dive of its own, with its recording.",
+    "comesBack_other": "{{names}} come back as dives of their own, each with its recording.",
+    "alsoOut_one": "This also takes {{names}} back out: it was appended later.",
+    "alsoOut_other": "This also takes {{names}} back out: they were appended later.",
+    "keptKeeps_one": "{{name}} keeps what it took over from it: dive site, buddies, values and notes.",
+    "keptKeeps_other": "{{name}} keeps what it took over from them: dive site, buddies, values and notes."
   },
   "divers": {
     "numbers": "Dive numbers of {{name}}",
