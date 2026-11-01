@@ -393,6 +393,9 @@
     "tankLine": "{{tank}}: {{start}} am Anfang, {{end}} am Ende, {{used}} verbraucht.",
     "podSac": "Verbrauch an der Oberfläche (AMV) laut Flaschensender: {{sac}}.",
     "recordingActions": "Aktionen zur Aufzeichnung",
+    "atSurface": "{{duration}} an der Oberfläche",
+    "surfaceBreak": "Oberflächenaufenthalt {{duration}}",
+    "parts": "Teile dieser Aufzeichnung",
     "splitOffMenu": "Als eigenen Tauchgang abtrennen …",
     "primaryChanged": "Das ist jetzt die primäre Aufzeichnung.",
     "moreActions": "Mehr",
@@ -666,6 +669,9 @@
     "fromProvider": "Aus einem Tauchgang in deinem {{name}}-Logbuch angelegt",
     "mergedFrom": "Ein anderer Tauchgang zur selben Zeit wurde in diesen übernommen",
     "mergedInto": "In einen anderen Tauchgang übernommen",
+    "appendedFrom_one": "Ein späterer Tauchgang wurde als Fortsetzung an diesen angehängt",
+    "appendedFrom_other": "{{count}} spätere Tauchgänge wurden als Fortsetzung an diesen angehängt",
+    "continuedInto": "Als Fortsetzung an den Tauchgang davor angehängt",
     "movedFrom": "Aus dem Logbuch des anderen Tauchers kopiert, wo er mit einem Dienst verknüpft war",
     "movedTo": "Als Kopie ins Logbuch eines anderen Tauchers verschoben",
     "linkMoved": "Verknüpfung mit {{name}} übernommen",
@@ -757,6 +763,20 @@
     "pickIntro": "Das sind die anderen Tauchgänge in diesem Logbuch vom Tag davor bis zum Tag danach. Wähle den, der derselbe Tauchgang ist. Vor dem Zusammenführen wirst du noch einmal gefragt.",
     "pickNone": "In diesem Logbuch gibt es keinen anderen Tauchgang vom Tag davor bis zum Tag danach. Steht derselbe Tauchgang an einem anderen Tag, korrigiere zuerst sein Datum.",
     "pick": "Mit diesem zusammenführen …",
+    "done": "Die beiden Tauchgänge sind jetzt einer."
+  },
+  "append": {
+    "menu": "An den vorherigen Tauchgang anhängen…",
+    "title": "Diesen Tauchgang an den vorherigen anhängen?",
+    "stays": "Bleibt:",
+    "goes": "Kommt zu den „Gelöschten Tauchgängen“:",
+    "break": "Dazwischen war der Taucher {{duration}} an der Oberfläche. Angehängt sind beide ein Tauchgang mit einem Profil, in dem der Oberflächenaufenthalt bei 0 m zu sehen ist.",
+    "takes": "Der Tauchgang, der bleibt, übernimmt vom späteren, was ihm fehlt: Tauchplatz, Buddys und Werte. Die Notizen des späteren werden an seine angehängt.",
+    "other": "Stellst du den späteren unter „Gelöschte Tauchgänge“ im Logbuch wieder her, sind es wieder zwei Tauchgänge.",
+    "confirm": "Anhängen",
+    "confirmBoth": "Anhängen und in {{name}} löschen",
+    "confirmHere": "Nur hier anhängen",
+    "nothingAppended": "Es wurde nichts angehängt.",
     "done": "Die beiden Tauchgänge sind jetzt einer."
   },
   "gone": {
@@ -1618,6 +1638,7 @@
       "fix": "Ansehen, was fehlt"
     },
     "deletesItself": "Er ist auch in {{name}}, als Tauchgang {{number}}, und wird dort in 5 Minuten gelöscht. „Rückgängig“ bricht das ab.",
+    "appendOutdated": "Der Tauchgang, der bleibt, weicht dann von seinem Eintrag in {{name}} ab: Sendest du die Aktualisierung, bekommt {{name}} die längere Dauer und das ganze Profil.",
     "automation": {
       "title": "Automatisch",
       "titleDiver": "Automatisch: {{diver}}",
@@ -1662,6 +1683,7 @@
       "deleteBody": "SSI-Tauchgang {{number}} verschwindet aus deinem SSI-Logbuch, und die SSI-App kann ihn nicht zurückholen. Der Tauchgang bleibt hier, und du kannst ihn erneut senden.",
       "deleteBodyDeleted": "SSI-Tauchgang {{number}} verschwindet aus deinem SSI-Logbuch, und die SSI-App kann ihn nicht zurückholen.",
       "deleteAsk": "Er ist auch in SSI, als Tauchgang {{number}}. Dort auch löschen? Die SSI-App kann ihn nicht zurückholen. Behältst du ihn dort, erinnert dich das Logbuch daran.",
+      "appendOutdated": "Der Tauchgang, der bleibt, weicht dann von seinem Eintrag in SSI ab. Sendest du die Aktualisierung, bekommt SSI die längere Dauer und das ganze Profil; SSI nummeriert dann deine späteren Tauchgänge neu, und die Aktualisierung kann die Verifizierung der Tauchbasis für diesen Tauchgang entfernen.",
       "pickIntro": "Wähle den Platz aus den Tauchplätzen in deinem SSI-Logbuch, nächste zuerst, oder gib seine ID ein.",
       "errors": {
         "provider_other_account": "Diese E-Mail und dieses Passwort gehören zu einem anderen SSI-Konto. Trenne zuerst und verbinde dann dieses Konto.",

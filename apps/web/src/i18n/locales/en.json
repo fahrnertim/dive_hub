@@ -393,6 +393,9 @@
     "tankLine": "{{tank}}: {{start}} at the start, {{end}} at the end, {{used}} used.",
     "podSac": "Surface consumption (SAC) as the tank pod measured it: {{sac}}.",
     "recordingActions": "Recording actions",
+    "atSurface": "{{duration}} at the surface",
+    "surfaceBreak": "Surface break {{duration}}",
+    "parts": "Parts of this recording",
     "splitOffMenu": "Split off into its own dive…",
     "primaryChanged": "This is now the primary recording.",
     "moreActions": "More",
@@ -666,6 +669,9 @@
     "fromProvider": "Made from a dive in your {{name}} logbook",
     "mergedFrom": "Another dive of the same time was merged into this one",
     "mergedInto": "Merged into another dive",
+    "appendedFrom_one": "A later dive was appended to this one as its continuation",
+    "appendedFrom_other": "{{count}} later dives were appended to this one as its continuation",
+    "continuedInto": "Appended to the dive before it as its continuation",
     "movedFrom": "Copied from the other Diver’s logbook, where it was linked to a service",
     "movedTo": "Moved to another Diver’s logbook as a copy",
     "linkMoved": "Link to {{name}} taken over",
@@ -757,6 +763,20 @@
     "pickIntro": "These are the other dives in this logbook from the day before to the day after this one. Choose the one that is the same dive. You are asked again before anything is merged.",
     "pickNone": "This logbook has no other dive from the day before to the day after this one. If the same dive is logged on another day, correct its date first.",
     "pick": "Merge with this dive…",
+    "done": "The two dives are one now."
+  },
+  "append": {
+    "menu": "Append to the previous dive…",
+    "title": "Append this dive to the previous one?",
+    "stays": "Stays:",
+    "goes": "Goes to “Deleted dives”:",
+    "break": "Between the two, the diver was at the surface for {{duration}}. Appended, they are one dive with one profile, and the surface break shows in it at 0 m.",
+    "takes": "The dive that stays takes over what it lacks from the later one: dive site, buddies and values. The later one’s notes are added to its own.",
+    "other": "Restoring the later one under “Deleted dives” on the logbook makes them two dives again.",
+    "confirm": "Append",
+    "confirmBoth": "Append and delete in {{name}}",
+    "confirmHere": "Append only here",
+    "nothingAppended": "Nothing was appended.",
     "done": "The two dives are one now."
   },
   "gone": {
@@ -1618,6 +1638,7 @@
       "fix": "See what is needed"
     },
     "deletesItself": "It is also in {{name}}, as dive {{number}}, and will be deleted there in 5 minutes. Undo cancels it.",
+    "appendOutdated": "The dive that stays then differs from its entry in {{name}}: sending the update gives {{name}} the longer duration and the whole profile.",
     "automation": {
       "title": "Automatic",
       "titleDiver": "Automatic: {{diver}}",
@@ -1662,6 +1683,7 @@
       "deleteBody": "SSI dive {{number}} disappears from your SSI logbook, and SSI’s app can’t bring it back. The dive stays here, and you can send it again.",
       "deleteBodyDeleted": "SSI dive {{number}} disappears from your SSI logbook, and SSI’s app can’t bring it back.",
       "deleteAsk": "It is also in SSI, as dive {{number}}. Delete it there too? SSI’s app can’t bring it back. If you keep it there, the logbook reminds you.",
+      "appendOutdated": "The dive that stays then differs from its entry in SSI. Sending the update there gives SSI the longer duration and the whole profile; SSI then renumbers your later dives, and the update can remove a dive centre’s verification of this dive.",
       "pickIntro": "Pick the site from the dive sites in your SSI logbook, nearest first, or type its SSI ID.",
       "errors": {
         "provider_other_account": "This e-mail and password belong to another SSI account. Disconnect, then connect that account.",

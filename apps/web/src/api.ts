@@ -82,6 +82,8 @@ export type DiveCheckView = AnyLogbookCheck & { rule: 'short_shallow_dive'; othe
 export const isPairCheck = (c: AnyLogbookCheck): c is LogbookCheckView => c.other !== null;
 export const isDiveCheck = (c: AnyLogbookCheck): c is DiveCheckView => c.other === null;
 export type MergeCandidateView = Ok<'/api/dives/{id}/merge-candidates'>[number];
+/** The Dive before this one it may be appended to as its continuation (ADR 0063). */
+export type ContinuationCandidateView = NonNullable<Ok<'/api/dives/{id}/continuation-candidate'>>;
 export type DeletedDiveView = Ok<'/api/dives/deleted'>[number];
 export type SiteView = Ok<'/api/dive-sites/{id}'>;
 export type Position = NonNullable<SiteView['position']>;
@@ -133,6 +135,8 @@ export const keys = {
   logbookChecks: (status: 'open' | 'answered') => ['dives', 'checks', status] as const,
   /** Dives this one may be merged with (ADR 0038); under the Dive, so whatever changes it asks again. */
   mergeCandidates: (id: string) => ['dives', id, 'merge-candidates'] as const,
+  /** The Dive before this one it may be appended to (ADR 0063); under the Dive, so whatever changes it asks again. */
+  continuationCandidate: (id: string) => ['dives', id, 'continuation-candidate'] as const,
   /** The Dive's assessment (ADR 0036); under the Dive, so whatever changes it reads the findings again. */
   assessment: (id: string) => ['dives', id, 'assessment'] as const,
   divers: ['divers'] as const,
@@ -281,6 +285,11 @@ export const logbookChecksQuery = (status: 'open' | 'answered') =>
 export const mergeCandidatesQuery = (id: string) => queryOptions({
   queryKey: keys.mergeCandidates(id),
   queryFn: async () => unwrap(await api.GET('/api/dives/{id}/merge-candidates', { params: { path: { id } } })),
+});
+/** The Dive before this one it may be appended to as its continuation, or null (ADR 0063). */
+export const continuationCandidateQuery = (id: string) => queryOptions({
+  queryKey: keys.continuationCandidate(id),
+  queryFn: async () => unwrap(await api.GET('/api/dives/{id}/continuation-candidate', { params: { path: { id } } })),
 });
 /** Every Dive of the same Diver from the day before to the day after: what a merge by hand chooses from (ADR 0038, amended). */
 export const nearbyDivesQuery = (id: string) => queryOptions({

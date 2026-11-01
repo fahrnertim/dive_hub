@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectAccessible, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, tankPodDive
+  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, surfaceBreakPair, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -957,6 +957,26 @@ for (const v of variants) {
         await goodPage(page, title('Logbook'), v);
       } finally {
         await mergePair(request);
+      }
+    });
+
+    test('a dive after a surface break: appending it asked first, then the dive with its surface break and parts', { tag: ['@dives'] }, async ({ page, request }) => {
+      const { first, second } = await surfaceBreakPair(request);
+      try {
+        const [n, m] = [await diveNumber(request, first), await diveNumber(request, second)];
+        await page.goto(`/#/dives/${second}`);
+        await page.getByRole('button', { name: /^(More|Mehr)/ }).click();
+        await page.getByRole('menuitem', { name: v.english ? 'Append to the previous dive…' : 'An den vorherigen Tauchgang anhängen…' }).click();
+        const append = page.getByRole('dialog').getByRole('button', { name: v.english ? 'Append' : 'Anhängen', exact: true });
+        await expect(append).toBeVisible();
+        await goodPage(page, title(`Dive ${m}`), v);
+        await append.click();
+        await expect(page.getByRole('heading', { name: v.english ? `Dive ${n}` : `Tauchgang ${n}`, level: 1 })).toBeVisible();
+        await expect(page.locator('#main').getByText(/^(Surface break|Oberflächenaufenthalt) 4/)).toBeVisible();
+        await expect(page.getByRole('list', { name: v.english ? 'Parts of this recording' : 'Teile dieser Aufzeichnung' }).getByRole('listitem')).toHaveCount(2);
+        await goodPage(page, title(`Dive ${n}`), v);
+      } finally {
+        await surfaceBreakPair(request);
       }
     });
 

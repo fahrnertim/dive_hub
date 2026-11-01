@@ -85,6 +85,9 @@ function Entry({ revision: r, count, dive }: { revision: RevisionView; count: nu
     if (key === 'originalId') return [t('history.fileReplaced')];
     // Merging two Dives and moving a linked one (ADR 0038): the other Dive is deleted, so it is told, not linked.
     if (key === 'mergedFrom' || key === 'mergedInto' || key === 'movedFrom' || key === 'movedTo') return [t(`history.${key}`)];
+    // Appending a Continuation (ADR 0063): the later Dives are deleted, so they are counted, not linked.
+    if (key === 'appendedFrom') return [t('history.appendedFrom', { count: Array.isArray(to) ? to.length : 1 })];
+    if (key === 'continuedInto') return [t('history.continuedInto')];
     if (key === 'providers') return (c.providers?.to ?? []).map((p) => t('history.linkMoved', { name: providerName(p.provider) }));
     // A Dive made from a Provider's logbook entry, and where its time zone came from (ADR 0030).
     if (key === 'fromProvider') return c.fromProvider ? [t('history.fromProvider', { name: providerName(c.fromProvider.to) })] : [];

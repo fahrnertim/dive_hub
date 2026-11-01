@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type uPlot from 'uplot';
 import { samplesQuery } from './api.ts';
 import { FindingLane, useAssessment } from './Assessment.tsx';
-import { bandSeconds, clock, formatRate } from './lib/assessment.ts';
+import { bandSeconds, clock, formatRate, stretch } from './lib/assessment.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { mixName } from './lib/logbook.ts';
 import { nearest, perMinute, summarize } from './lib/profile.ts';
@@ -18,12 +18,15 @@ const NO_POINTS = { minutes: [], depthsM: [], temperaturesC: [] };
 /**
  * A Recording's depth over time with water temperature (ProfilePlot.tsx draws it). Under it, the pressure of the
  * tanks a tank pod measured (`gases` and `sacLpm` are the Recording's summary of them). `children` sit under the
- * charts, before the profile as a table: what recorded it.
+ * charts, before the profile as a table: what recorded it. A joined Recording's Surface breaks (ADR 0063) are shaded
+ * bands, each named with its length in a lane under the profile.
  */
-export function DepthProfile({ recordingId, gases, sacLpm, cylinders, children }: {
+export function DepthProfile({ recordingId, gases, sacLpm, cylinders, surfaceBreaks, children }: {
   recordingId: string; gases?: RecordedGas[] | undefined; sacLpm?: number | undefined;
   /** The Dive's Cylinders tied to this Recording's pressure series. */
-  cylinders?: TiedCylinder[] | undefined; children?: ReactNode;
+  cylinders?: TiedCylinder[] | undefined;
+  /** Seconds from the Recording's start. */
+  surfaceBreaks?: { startS: number; endS: number }[] | undefined; children?: ReactNode;
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
@@ -38,13 +41,15 @@ export function DepthProfile({ recordingId, gases, sacLpm, cylinders, children }
   const assessed = assessment?.recordingId === recordingId ? assessment : undefined;
   const bands = assessed?.ascentBands;
   const highlighted = assessed?.findings.find((f) => f.rule === selected && f.startSeconds !== null);
-  const overlay = useRef<{ bands: number[][]; stretch: [number, number] | null }>({ bands: [], stretch: null });
+  const overlay = useRef<{ bands: number[][]; stretch: [number, number] | null; breaks: { startS: number; endS: number }[] }>({ bands: [], stretch: null, breaks: [] });
   const plotRef = useRef<uPlot | null>(null);
   const [plotBox, setPlotBox] = useState<{ left: number; width: number } | null>(null);
   useEffect(() => {
-    overlay.current = { bands: bands ?? [], stretch: highlighted ? [highlighted.startSeconds!, highlighted.endSeconds ?? highlighted.startSeconds!] : null };
+    overlay.current = {
+      bands: bands ?? [], stretch: highlighted ? [highlighted.startSeconds!, highlighted.endSeconds ?? highlighted.startSeconds!] : null, breaks: surfaceBreaks ?? [],
+    };
     plotRef.current?.redraw(false);
-  }, [bands, highlighted]);
+  }, [bands, highlighted, surfaceBreaks]);
 
   // The plot's arrays, the same between renders: temperature on the depth time axis (both come from the same records).
   const points = useMemo(() => {
@@ -59,10 +64,13 @@ export function DepthProfile({ recordingId, gases, sacLpm, cylinders, children }
     };
   }, [samples.data]);
 
-  /** Over the profile: the selected finding's stretch as a band of light, and the ascent coloured by its speed. */
+  /**
+   * Over the profile: the Surface breaks shaded, the selected finding's stretch as a band of light, and the ascent
+   * coloured by its speed.
+   */
   const drawAssessment = useCallback((u: uPlot) => {
-    const { bands: stretches, stretch: chosen } = overlay.current;
-    if (stretches.length === 0 && !chosen) return;
+    const { bands: stretches, stretch: chosen, breaks } = overlay.current;
+    if (stretches.length === 0 && !chosen && breaks.length === 0) return;
     const line = token(u.root, '--color-accent', '#0f5e8c');
     const ascent = [1, 2, 3].map((band) => token(u.root, `--color-ascent-${band}`, line));
     const { left, top, width, height } = u.bbox;
@@ -72,6 +80,8 @@ export function DepthProfile({ recordingId, gases, sacLpm, cylinders, children }
     u.ctx.beginPath();
     u.ctx.rect(left, top, width, height);
     u.ctx.clip();
+    u.ctx.fillStyle = withAlpha(token(u.root, '--color-text-muted', '#4e6578'), '33');
+    for (const { startS, endS } of breaks) u.ctx.fillRect(x(startS), top, x(endS) - x(startS), height);
     if (chosen) {
       u.ctx.fillStyle = withAlpha(line, '2e');
       u.ctx.fillRect(x(chosen[0]), top, Math.max(3 * ratio, x(chosen[1]) - x(chosen[0])), height);
@@ -122,6 +132,9 @@ export function DepthProfile({ recordingId, gases, sacLpm, cylinders, children }
         {...(points ?? NO_POINTS)} syncKey={recordingId} draw={drawAssessment} plotRef={plotRef} onBox={setPlotBox}
         label={t('dive.profile')} describedBy={summary ? summaryId : undefined}
       />
+      {depth && plotBox && (surfaceBreaks ?? []).length > 0 && (
+        <SurfaceBreakLane breaks={surfaceBreaks!} totalSeconds={(depth.offsetsMs.at(-1) ?? 0) / 1000} plot={plotBox} />
+      )}
       {assessed && depth && <FindingLane totalSeconds={(depth.offsetsMs.at(-1) ?? 0) / 1000} plot={plotBox} />}
       {/* The ascent's colours in words: what each means and how long it lasted (the text alternative to the colours). */}
       {bands && bands.length > 0 && (
@@ -186,5 +199,31 @@ export function DepthProfile({ recordingId, gases, sacLpm, cylinders, children }
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Under the profile, on its time axis: each Surface break (ADR 0063) as a mark the width of its shaded band, named with
+ * its length ("Surface break 4 min") under it.
+ */
+function SurfaceBreakLane({ breaks, totalSeconds, plot }: { breaks: { startS: number; endS: number }[]; totalSeconds: number; plot: { left: number; width: number } }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  return (
+    <ul className="surface-break-lane" style={{ marginLeft: plot.left, width: plot.width }}>
+      {breaks.map(({ startS, endS }) => {
+        const { left, width } = stretch(startS, endS, totalSeconds);
+        // The name's centre moves with the band's, from the lane's left edge to its right one: it never sticks out.
+        const centre = left + width / 2;
+        return (
+          <li key={startS}>
+            <span className="surface-break-mark" aria-hidden="true" style={{ left: `${left}%`, width: `${width}%` }} />
+            <span className="surface-break-label" style={{ left: `${centre}%`, transform: `translateX(-${centre}%)` }}>
+              {t('dive.surfaceBreak', { duration: display.duration(endS - startS) })}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
