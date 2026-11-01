@@ -52,7 +52,7 @@ export function createLogbookCheckService(db: Db) {
     const done = await answered(pairs.flatMap((c) => c.dives));
     const at = (ids: string[], d: CheckedDive) => ids.indexOf(d.id);
     const chain = inChains(pairs.filter((c) => done.has(keyOf(c)) === (answer === null)))
-      .map((c) => c.dives.map((d) => d.id)).find((ids) => at(ids, a) >= 0 && Math.abs(at(ids, a) - at(ids, b)) === 1);
+      .map((c) => c.dives.map((d) => d.id)).find((ids) => at(ids, a) >= 0 && at(ids, b) >= 0 && Math.abs(at(ids, a) - at(ids, b)) === 1);
     return chain ? chain.slice(1).map((id, i): [string, string] => [chain[i]!, id]) : [[a.id, b.id]];
   }
 

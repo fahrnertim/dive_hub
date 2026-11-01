@@ -304,5 +304,21 @@ describe.skipIf(!(await databaseReachable()))('logbook checks', () => {
       await call('PATCH', `/api/dives/${c}`, { version: await versionOf(c), set: { startsAt: { at: '2026-07-01T09:46:00.000Z', utcOffsetSeconds: 7200 } } });
       expect(chainOf(await breaks())).toEqual([[[b, null], [c, 300]]]);
     });
+
+    it('answering a pair outside a chain (the farther of two later partners) answers only that pair', async () => {
+      const a = await created(makeSyntheticDive({ serialNumber: 7_300_002, start: new Date('2026-07-02T09:00:00Z'), durationSeconds: 1800 }));
+      const near = await created(makeSyntheticDive({ serialNumber: 7_300_002, start: new Date('2026-07-02T09:33:00Z'), durationSeconds: 2400 }));
+      // A second file of the same watch 6 minutes after A, overlapping the near one: placed on that Dive, then split off.
+      const { payload, headers } = multipartFile('far.fit', makeSyntheticDive({ serialNumber: 7_300_002, start: new Date('2026-07-02T09:36:00Z'), durationSeconds: 2400 }));
+      const started = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: tim } });
+      await ctx.imports.processImport(started.json().id);
+      const placed = ((await call('GET', `/api/imports/${started.json().id}`)).json() as { outcome: (Outcome & { recordingId?: string })[] }).outcome[0]!;
+      const far = placed.result === 'created' ? placed.diveId!
+        : ((await call('POST', `/api/recordings/${placed.recordingId}/detach`, { version: await versionOf(placed.diveId!) })).json() as { diveId: string }).diveId;
+      const chainOf = async () => (await breaks()).filter((x) => x.dive.id === a).map((x) => x.chain!.map((d) => d.id));
+      expect(await chainOf()).toEqual([[a, near]]);
+      expect((await answer(a, far, 'two_dives')).statusCode).toBe(204);
+      expect(await chainOf()).toEqual([[a, near]]);
+    });
   });
 });
