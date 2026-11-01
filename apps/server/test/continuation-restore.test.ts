@@ -109,7 +109,6 @@ describe.skipIf(!(await databaseReachable()))('restoring an appended Dive', () =
       expect(history[0]).toMatchObject({ cause: 'continuation-undo' });
     });
 
-    // Vacuous until the surface_break check exists (Task 8): keepApart records only pairs a rule finds.
     it('records "two dives" so the check doesn\'t ask again at once', async () => {
       const checks = await json<Check[]>('GET', '/api/logbook-checks');
       expect(checks.filter((c) => c.rule === 'surface_break' && [c.dive.id, c.other?.id].includes(second))).toEqual([]);

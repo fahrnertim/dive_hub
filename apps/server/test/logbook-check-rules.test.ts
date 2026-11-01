@@ -1,7 +1,7 @@
 // The rules of the logbook checks (ADR 0038), pure: which pairs of Dives can't both be right as they stand, and which
 // of them an import would have put together by itself.
 import { describe, expect, it } from 'vitest';
-import { findChecks, probablyNoDive, ruleFor, suggestsDeleting, type CheckedDive, type DeletableDive } from '../src/dives/checks/logbook-check-rules.js';
+import { findChecks, inChains, probablyNoDive, ruleFor, suggestsDeleting, type CheckedDive, type DeletableDive } from '../src/dives/checks/logbook-check-rules.js';
 
 const at = (time: string) => new Date(`2026-03-12T${time}Z`);
 const dive = (id: string, time: string, minutes: number, more: Partial<CheckedDive> = {}): CheckedDive => ({
@@ -144,6 +144,73 @@ describe('the checks of a logbook', () => {
 
   it('keeps Divers apart', () => {
     expect(findChecks([dive('mine', '11:13:00', 44), dive('hers', '11:13:00', 44, { diverId: 'lena' })])).toEqual([]);
+  });
+});
+
+describe('a surface break (rule version 5)', () => {
+  /** A Dive with one Recording of the watch, `seconds` long. */
+  const piece = (id: string, time: string, seconds: number, more: Partial<CheckedDive> = {}): CheckedDive => {
+    const d = file(id, time, 0, { durationSeconds: seconds, maxDepthM: 7.9, ...more });
+    return { unit: { deviceId: 'watch', startsAt: d.startsAt, endsAt: new Date(d.startsAt.getTime() + seconds * 1000), joined: false }, ...d };
+  };
+  const breaks = (dives: CheckedDive[]) => inChains(findChecks(dives)).filter((c) => c.rule === 'surface_break').map((c) => c.dives.map((d) => d.id));
+  // The owner's dive 85/86: 06:05:49 for 1180 s, the second part 241 s after the first ended.
+  const d85 = piece('85', '06:05:49', 1180);
+  const d86 = piece('86', '06:29:30', 1530);
+
+  it('finds the owner\'s two dives, never as obvious', () => {
+    expect(ruleFor(d85, d86)).toBe('surface_break');
+    expect(ruleFor(d86, d85)).toBe('surface_break');
+    expect(findChecks([d86, d85]).map((c) => [c.rule, c.dives.map((d) => d.id), c.obvious])).toEqual([['surface_break', ['85', '86'], false]]);
+  });
+
+  it('not 601 s apart', () => {
+    expect(ruleFor(d85, piece('later', '06:35:29', 1530))).toBe('surface_break'); // 600 s
+    expect(ruleFor(d85, piece('later', '06:35:30', 1530))).toBeNull();
+  });
+
+  it('not another Device, nor a Dive without exactly one unit with a Device', () => {
+    const other = piece('86', '06:29:30', 1530);
+    expect(ruleFor(d85, { ...other, unit: { ...other.unit!, deviceId: 'backup' } })).toBeNull();
+    expect(ruleFor(d85, { ...other, unit: null })).toBeNull();
+  });
+
+  it('not overlapping, nor touching', () => {
+    expect(ruleFor(d85, piece('86', '06:25:00', 1530))).toBe('overlapping_dives');
+    expect(ruleFor(d85, piece('86', '06:25:29', 1530))).not.toBe('surface_break');
+  });
+
+  it('not a probable non-dive 5 minutes before', () => {
+    // The owner's false start: 50 seconds at 1.8 m, the real dive 324 s after it ended.
+    const falseStart = piece('short', '10:58:07', 50, { maxDepthM: 1.8 });
+    const real = piece('real', '11:04:21', 2141, { maxDepthM: 14.5 });
+    expect(ruleFor(falseStart, real)).toBeNull();
+    expect(findChecks([falseStart, real])).toEqual([]);
+  });
+
+  it('the nearer of two later partners', () => {
+    const a = piece('a', '08:00:00', 1800);
+    // Two Dives 3 and 6 minutes after it, overlapping each other: only the nearer is its partner.
+    expect(breaks([a, piece('b', '08:33:00', 2400), piece('c', '08:36:00', 2400)])).toEqual([['a', 'b']]);
+  });
+
+  it('a tie gives none', () => {
+    expect(breaks([piece('a', '08:00:00', 1800), piece('b', '08:33:00', 2400), piece('c', '08:33:00', 2400)])).toEqual([]);
+  });
+
+  it('a joined Dive as the earlier one, counted from its end; never as the later one', () => {
+    const joined = piece('joined', '08:00:00', 3000);
+    joined.unit = { ...joined.unit!, joined: true }; // ends 08:50
+    expect(ruleFor(joined, piece('later', '08:58:00', 1200))).toBe('surface_break');
+    expect(ruleFor(joined, piece('later', '09:01:00', 1200))).toBeNull();
+    const before = piece('before', '07:40:00', 900); // ends 07:55, 5 minutes before the joined Dive
+    expect(ruleFor(before, joined)).toBeNull();
+  });
+
+  it('A–B and B–C make one chain of three', () => {
+    const dives = [piece('a', '09:00:00', 1200), piece('b', '09:25:00', 900), piece('c', '09:45:00', 600)];
+    expect(findChecks(dives).map((c) => c.dives.map((d) => d.id))).toEqual([['a', 'b'], ['b', 'c']]);
+    expect(breaks(dives)).toEqual([['a', 'b', 'c']]);
   });
 });
 

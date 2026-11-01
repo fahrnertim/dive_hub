@@ -173,7 +173,10 @@ const Rule = Type.Enum([...LOGBOOK_CHECK_RULES], {
   description: 'recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have '
     + 'attached them; overlapping_dives: two Dives of one Diver that overlap in time; entry_apart_from_recording: a Dive without a '
     + 'Recording and one with one on the same local day, not overlapping, with depth (0.2 m or 3 %) and duration (3 minutes) agreeing: '
-    + 'probably one dive typed with another start (never `obvious`; show both local start times and their difference)',
+    + 'probably one dive typed with another start (never `obvious`; show both local start times and their difference); surface_break: '
+    + 'Dives of one Diver, each with one Recording of the same Device, each starting at most 10 minutes after the one before ended '
+    + '(the first may be a Continuation already): probably one dive with a Surface break, resolved by Appending '
+    + '(POST /dives/{id}/continuation; never `obvious`, never a merge candidate; `chain` lists its Dives)',
 });
 
 /** A Dive as a check or a merge shows it. */
@@ -215,6 +218,10 @@ const CheckView = Type.Object({
         + 'merging doesn\'t ask about them; leave them out of `alsoAt`',
     }),
   })),
+  chain: Nullable(Type.Array(Type.Object({
+    ...PairedDive,
+    surfaceBreakSeconds: Nullable(Type.Integer({ description: 'The Surface break before this Dive, in seconds; null for the first' })),
+  }), { description: 'surface_break only, else null: every Dive to append, in order (`dive` and `other` are its first two; Appending keeps the first)' })),
 });
 
 const DeleteProblem = refTo(DeleteProblemSchema);
@@ -426,9 +433,10 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       summary: 'Logbook checks: pairs of Dives in the User\'s logbooks that can\'t both be right as they stand, and Dives that are probably no dive',
       description: 'Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one '
         + '(at the same time, or on the same day with the same depth and duration), or two Dives of one Diver that overlap; and, about '
-        + 'one Dive (`other: null`), a Recording under 2 minutes that stayed above 3 m, at no Provider: offer deleting it (DELETE /dives/{id}) or keeping it. '
+        + 'one Dive (`other: null`), a Recording under 2 minutes that stayed above 3 m, at no Provider: offer deleting it (DELETE /dives/{id}) or keeping it; '
+        + 'and Dives of one Device a Surface break of at most 10 minutes apart (`surface_break`), those that follow one another as one check (`chain`). '
         + '`status=answered` lists the pairs the User said are two dives and the Dives they said to keep, to ask again. '
-        + 'Resolve one by merging (POST /dives/{id}/merge), answering (PUT /logbook-checks/answer), correcting a time, moving or '
+        + 'Resolve one by merging (POST /dives/{id}/merge; a `surface_break` by Appending, POST /dives/{id}/continuation), answering (PUT /logbook-checks/answer), correcting a time, moving or '
         + 'deleting one of the Dives. Never merge unasked (docs/spec/clients.md).',
       querystring: Type.Object({ status: Type.Optional(Type.Enum(['open', 'answered'], { default: 'open' })) }),
       response: { 200: Type.Array(CheckView) },
@@ -444,22 +452,24 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     const paired = (d: (typeof list)[number]['dives'][number]) => ({
       id: d.id, version: d.version, ...diveSummaryOf(d, d.siteName), fromProvider: d.fromProvider, recordings: d.recordings, at: at(d.id),
     });
-    return [...list.map(({ rule, obvious, dives: [a, b] }) => {
+    return [...list.map(({ rule, obvious, dives, surfaceBreaks }) => {
+      const [a, b] = dives;
       const bothAt = at(b.id).filter((t) => at(a.id).some((m) => m.provider === t.provider)).map((t) => t.provider);
       const keeps = a.recordings === 0 && b.recordings > 0 ? b.id : a.id;
       return {
         rule, obvious: obvious && bothAt.length === 0, diverId: a.diverId, dive: paired(a),
         // The Dive not kept stays behind at a Provider, unless its Connection deletes there by itself (the queue, 5 minutes after the merge).
         other: { ...paired(b), keeps, bothAt, deletesItself: bothAt.filter((provider) => itself.get(keeps === a.id ? b.id : a.id)?.has(provider)) },
+        chain: surfaceBreaks && dives.map((d, i) => ({ ...paired(d), surfaceBreakSeconds: surfaceBreaks[i]! })),
       };
-    }), ...short.map((d) => ({ rule: 'short_shallow_dive' as const, obvious: false, diverId: d.diverId, dive: paired(d), other: null }))];
+    }), ...short.map((d) => ({ rule: 'short_shallow_dive' as const, obvious: false, diverId: d.diverId, dive: paired(d), other: null, chain: null }))];
   });
 
   app.put('/logbook-checks/answer', {
     schema: {
       summary: 'Answer a logbook check: these two Dives are two dives, or keep this Dive (or take the answer back)',
       description: 'Two ids with `two_dives`: the answer holds until one of the two Dives changes its start; then the pair is asked '
-        + 'about again. One id with `keep` (a check about one Dive): it holds until the Dive\'s duration or depth changes. '
+        + 'about again; about a `surface_break` check (send its `dive` and `other`), it covers each pair of its `chain`. One id with `keep` (a check about one Dive): it holds until the Dive\'s duration or depth changes. '
         + '`answer: null` takes either back. 404 dive_not_found for a Dive not in the User\'s logbooks, check_not_found when the '
         + 'Dives break no rule. 400 for an answer that doesn\'t fit the number of Dives.',
       body: Type.Union([

@@ -5,7 +5,7 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Queryable, Tx } from '../../db/client.js';
 import { dive, logbookCheckAnswer, logbookCheckDiveAnswer, recording } from '../../db/schema.js';
-import { isUnit } from '../recording-units.js';
+import { isUnit, unitsOf } from '../recording-units.js';
 import { ordered, probablyNoDive, ruleFor } from './logbook-check-rules.js';
 
 /** Records that the Dive and each of the others it breaks a rule with are two dives. */
@@ -13,9 +13,8 @@ export async function keepApart(tx: Tx, userId: string, diveId: string, otherIds
   const ids = [...new Set([diveId, ...otherIds])];
   if (ids.length < 2) return;
   const rows = await tx.select().from(dive).where(and(inArray(dive.id, ids), isNull(dive.deletedAt)));
-  // Counted apart: in a subquery of a one-table select the columns lose their table, and every Dive counted 0.
-  const live = await tx.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, ids), isNull(recording.deletedAt), isUnit()));
-  const dives = rows.map((d) => ({ ...d, recordings: live.filter((r) => r.diveId === d.id).length }));
+  const units = await unitsOf(tx, ids);
+  const dives = rows.map((d) => ({ ...d, ...units(d.id) }));
   const self = dives.find((d) => d.id === diveId);
   if (!self) return;
   for (const other of dives) {

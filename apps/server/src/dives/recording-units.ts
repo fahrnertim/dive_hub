@@ -1,4 +1,5 @@
-import { isNull } from 'drizzle-orm';
+import { and, inArray, isNull } from 'drizzle-orm';
+import type { Queryable } from '../db/client.js';
 import { recording } from '../db/schema.js';
 
 /**
@@ -6,3 +7,34 @@ import { recording } from '../db/schema.js';
  * but the joined Recording stands for them in every count, as Primary, and when it is split off, moved or merged.
  */
 export const isUnit = () => isNull(recording.joinedRecordingId);
+
+/** A Dive's one unit as the logbook checks see it (ADR 0063); `joined` for a Continuation's joined Recording. */
+export interface RecordingUnit {
+  deviceId: string;
+  startsAt: Date;
+  endsAt: Date;
+  joined: boolean;
+}
+
+/**
+ * Of these Dives, how many live units each has, and its unit when it has exactly one with a Device. Counted apart from
+ * the Dives' own select: in a subquery of a one-table select the columns lose their table, and every Dive counted 0.
+ */
+export async function unitsOf(q: Queryable, diveIds: string[]): Promise<(diveId: string) => { recordings: number; unit: RecordingUnit | null }> {
+  const rows = diveIds.length === 0 ? [] : await q.select({
+    diveId: recording.diveId, deviceId: recording.deviceId, originalId: recording.originalId, startsAt: recording.startsAt, durationSeconds: recording.durationSeconds,
+  }).from(recording).where(and(inArray(recording.diveId, diveIds), isNull(recording.deletedAt), isUnit()));
+  const byDive = new Map<string, typeof rows>();
+  for (const r of rows) byDive.set(r.diveId!, [...(byDive.get(r.diveId!) ?? []), r]);
+  return (diveId) => {
+    const own = byDive.get(diveId) ?? [];
+    const [r] = own;
+    return {
+      recordings: own.length,
+      // Only the joined Recording has no Original (it is derived).
+      unit: own.length === 1 && r!.deviceId ? {
+        deviceId: r!.deviceId, startsAt: r!.startsAt, endsAt: new Date(r!.startsAt.getTime() + r!.durationSeconds * 1000), joined: r!.originalId === null,
+      } : null,
+    };
+  };
+}

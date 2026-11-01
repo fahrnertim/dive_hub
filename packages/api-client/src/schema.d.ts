@@ -2264,7 +2264,7 @@ export interface paths {
                                 provider: string;
                                 remoteNumber: null | number;
                             }[];
-                            rule: null | ("recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive");
+                            rule: null | ("recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive" | "surface_break");
                             /** @description The User said these are two dives: don't hint at the pair again (it can still be merged) */
                             answered: boolean;
                             /** @description Which of the two Dives a merge keeps: the one with a Recording when only one has, else the Dive asked about */
@@ -2304,7 +2304,7 @@ export interface paths {
         };
         /**
          * Logbook checks: pairs of Dives in the User's logbooks that can't both be right as they stand, and Dives that are probably no dive
-         * @description Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one (at the same time, or on the same day with the same depth and duration), or two Dives of one Diver that overlap; and, about one Dive (`other: null`), a Recording under 2 minutes that stayed above 3 m, at no Provider: offer deleting it (DELETE /dives/{id}) or keeping it. `status=answered` lists the pairs the User said are two dives and the Dives they said to keep, to ask again. Resolve one by merging (POST /dives/{id}/merge), answering (PUT /logbook-checks/answer), correcting a time, moving or deleting one of the Dives. Never merge unasked (docs/spec/clients.md).
+         * @description Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one (at the same time, or on the same day with the same depth and duration), or two Dives of one Diver that overlap; and, about one Dive (`other: null`), a Recording under 2 minutes that stayed above 3 m, at no Provider: offer deleting it (DELETE /dives/{id}) or keeping it; and Dives of one Device a Surface break of at most 10 minutes apart (`surface_break`), those that follow one another as one check (`chain`). `status=answered` lists the pairs the User said are two dives and the Dives they said to keep, to ask again. Resolve one by merging (POST /dives/{id}/merge; a `surface_break` by Appending, POST /dives/{id}/continuation), answering (PUT /logbook-checks/answer), correcting a time, moving or deleting one of the Dives. Never merge unasked (docs/spec/clients.md).
          */
         get: {
             parameters: {
@@ -2325,10 +2325,10 @@ export interface paths {
                     content: {
                         "application/json": {
                             /**
-                             * @description recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time; entry_apart_from_recording: a Dive without a Recording and one with one on the same local day, not overlapping, with depth (0.2 m or 3 %) and duration (3 minutes) agreeing: probably one dive typed with another start (never `obvious`; show both local start times and their difference)
+                             * @description recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time; entry_apart_from_recording: a Dive without a Recording and one with one on the same local day, not overlapping, with depth (0.2 m or 3 %) and duration (3 minutes) agreeing: probably one dive typed with another start (never `obvious`; show both local start times and their difference); surface_break: Dives of one Diver, each with one Recording of the same Device, each starting at most 10 minutes after the one before ended (the first may be a Continuation already): probably one dive with a Surface break, resolved by Appending (POST /dives/{id}/continuation; never `obvious`, never a merge candidate; `chain` lists its Dives)
                              * @enum {unknown}
                              */
-                            rule: "recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive";
+                            rule: "recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive" | "surface_break";
                             /** @description An import would have put the two together by itself, and no dive is left over at a Provider: may be merged with others in one go */
                             obvious: boolean;
                             diverId: string;
@@ -2387,6 +2387,31 @@ export interface paths {
                                 /** @description Of `bothAt`, the Providers where the Connection of the Dive not kept deletes at the Provider by itself (see GET /dives/{id}/merge-candidates): merging doesn't ask about them; leave them out of `alsoAt` */
                                 deletesItself: string[];
                             };
+                            chain: null | {
+                                id: string;
+                                /** @description Send it when merging */
+                                version: number;
+                                number: null | number;
+                                /** Format: date-time */
+                                startsAt: string;
+                                utcOffsetSeconds: null | number;
+                                /** @enum {unknown} */
+                                utcOffsetSource: "device" | "position" | "nearby" | "unknown";
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                site: null | {
+                                    id: string;
+                                    name: string;
+                                };
+                                fromProvider: null | string;
+                                /** @description How many Recordings it has */
+                                recordings: number;
+                                at: {
+                                    provider: string;
+                                    remoteNumber: null | number;
+                                }[];
+                                surfaceBreakSeconds: null | number;
+                            }[];
                         }[];
                     };
                 };
@@ -2410,7 +2435,7 @@ export interface paths {
         get?: never;
         /**
          * Answer a logbook check: these two Dives are two dives, or keep this Dive (or take the answer back)
-         * @description Two ids with `two_dives`: the answer holds until one of the two Dives changes its start; then the pair is asked about again. One id with `keep` (a check about one Dive): it holds until the Dive's duration or depth changes. `answer: null` takes either back. 404 dive_not_found for a Dive not in the User's logbooks, check_not_found when the Dives break no rule. 400 for an answer that doesn't fit the number of Dives.
+         * @description Two ids with `two_dives`: the answer holds until one of the two Dives changes its start; then the pair is asked about again; about a `surface_break` check (send its `dive` and `other`), it covers each pair of its `chain`. One id with `keep` (a check about one Dive): it holds until the Dive's duration or depth changes. `answer: null` takes either back. 404 dive_not_found for a Dive not in the User's logbooks, check_not_found when the Dives break no rule. 400 for an answer that doesn't fit the number of Dives.
          */
         put: {
             parameters: {

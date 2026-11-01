@@ -4,6 +4,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createFakeSsi, handTypedDive } from './fake-ssi.js';
 import { makeSuuntoJson } from './fixtures/suunto-dive.js';
+import { ownersDiveParts } from './fixtures/surface-break-dive.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
@@ -17,6 +18,7 @@ type Check = {
   rule: string; obvious: boolean; diverId: string;
   dive: { id: string; version: number; recordings: number };
   other: { id: string; version: number; recordings: number; keeps: string; bothAt: string[] };
+  chain: { id: string; surfaceBreakSeconds: number | null }[] | null;
 };
 type DiveCheck = Omit<Check, 'other'> & { other: null };
 
@@ -245,6 +247,62 @@ describe.skipIf(!(await databaseReachable()))('logbook checks', () => {
       expect((await call('POST', `/api/dives/${falseStart}/restore`, { version: deleted.version })).statusCode).toBe(200);
       expect(await shortDives()).toEqual([]);
       expect((await shortDives('answered')).map((c) => c.dive.id)).toEqual([falseStart]);
+    });
+  });
+
+  describe('a surface break (ADR 0063)', () => {
+    let d85: string;
+    let d86: string;
+    const breaks = async (status = 'open') => (await checks(status)).filter((c) => c.rule === 'surface_break');
+    const created = async (bytes: Uint8Array) => {
+      const { payload, headers } = multipartFile('dive.fit', bytes);
+      const started = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: tim } });
+      await ctx.imports.processImport(started.json().id);
+      const made = ((await call('GET', `/api/imports/${started.json().id}`)).json() as { outcome: Outcome[] }).outcome[0]!;
+      expect(made.result).toBe('created');
+      return made.diveId!;
+    };
+
+    it('lists the owner\'s two dives as one check, never obvious, with the break before each Dive', async () => {
+      const parts = ownersDiveParts();
+      d85 = await created(parts.first);
+      d86 = await created(parts.second);
+      const found = await breaks();
+      expect(found).toHaveLength(1);
+      expect(found[0]).toMatchObject({ obvious: false, dive: { id: d85 }, other: { id: d86, keeps: d85 } });
+      expect(found[0]!.chain!.map((d) => [d.id, d.surfaceBreakSeconds])).toEqual([[d85, null], [d86, 241]]);
+      expect((await checks()).filter((c) => c.rule !== 'surface_break').every((c) => c.chain === null)).toBe(true);
+    });
+
+    it('is not offered for merging on the dive page', async () => {
+      expect((await call('GET', `/api/dives/${d85}/merge-candidates`)).json()).toEqual([]);
+    });
+
+    it('keeps the answer "these are two dives", lists it to ask again, and takes it back', async () => {
+      expect((await answer(d86, d85, 'two_dives')).statusCode).toBe(204);
+      expect(await breaks()).toEqual([]);
+      expect((await breaks('answered')).map(pairOf)).toEqual([[d85, d86].sort()]);
+      expect((await answer(d85, d86, null)).statusCode).toBe(204);
+      expect((await breaks()).map(pairOf)).toEqual([[d85, d86].sort()]);
+    });
+
+    it('offers dives one after the other as one chain; "two dives" answers each of its pairs, and is taken back alike', async () => {
+      const one = (start: string, durationSeconds: number) => created(makeSyntheticDive({ serialNumber: 7_300_001, start: new Date(start), durationSeconds }));
+      const a = await one('2026-07-01T09:00:00Z', 1200);
+      const b = await one('2026-07-01T09:25:00Z', 900);
+      const c = await one('2026-07-01T09:45:00Z', 600);
+      const chainOf = (list: Check[]) => list.filter((x) => x.dive.id !== d85).map((x) => x.chain!.map((d) => [d.id, d.surfaceBreakSeconds]));
+      expect(chainOf(await breaks())).toEqual([[[a, null], [b, 300], [c, 300]]]);
+      expect((await breaks()).find((x) => x.dive.id === a)).toMatchObject({ dive: { id: a }, other: { id: b, keeps: a } });
+      expect((await answer(a, b, 'two_dives')).statusCode).toBe(204);
+      expect(chainOf(await breaks())).toEqual([]);
+      expect(chainOf(await breaks('answered'))).toEqual([[[a, null], [b, 300], [c, 300]]]);
+      expect((await answer(a, b, null)).statusCode).toBe(204);
+      expect(chainOf(await breaks())).toEqual([[[a, null], [b, 300], [c, 300]]]);
+      // A pair answered ends the chain there: the answer about B–C stops holding when C's start changes, A–B's holds.
+      await answer(a, b, 'two_dives');
+      await call('PATCH', `/api/dives/${c}`, { version: await versionOf(c), set: { startsAt: { at: '2026-07-01T09:46:00.000Z', utcOffsetSeconds: 7200 } } });
+      expect(chainOf(await breaks())).toEqual([[[b, null], [c, 300]]]);
     });
   });
 });
