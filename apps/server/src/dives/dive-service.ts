@@ -228,7 +228,39 @@ export async function attachRecording(tx: Tx, diveId: string, recordingId: strin
   await writeRevision(tx, 'dive', diveId, actor, cause, changes);
 }
 
-export function createDiveService(db: Db) {
+/**
+ * Brings a deleted Dive back with the Recordings deleted with it (ADR 0026). A site deleted meanwhile is replaced by the
+ * one it was merged into, else the Dive has none. `primaryRecordingId` is its Primary recording and values without
+ * Override follow it, in one Revision with `extra`. The caller holds its lock and renumbers.
+ */
+export async function undelete(
+  tx: Tx, current: DiveRow, primaryRecordingId: string | null, actor: Actor, cause: RevisionCause, extra: Changes = {},
+): Promise<void> {
+  const changes: Changes = { deletedAt: { from: current.deletedAt!.toISOString(), to: null }, ...extra };
+  let siteId = current.siteId;
+  if (siteId && !(await liveSite(tx, siteId))) {
+    const [gone] = await tx.select({ mergedInto: diveSite.mergedInto }).from(diveSite).where(eq(diveSite.id, siteId));
+    siteId = gone?.mergedInto && (await liveSite(tx, gone.mergedInto)) ? gone.mergedInto : null;
+    changes.site = { from: await siteRef(tx, current.siteId), to: await siteRef(tx, siteId) };
+  }
+  const at = new Date();
+  await tx.update(recording).set({ deletedAt: null, updatedAt: at })
+    .where(and(eq(recording.diveId, current.id), eq(recording.deletedAt, current.deletedAt!)));
+  await tx.update(dive).set({ deletedAt: null, siteId, updatedAt: at }).where(eq(dive.id, current.id));
+  await followPrimary(tx, { ...current, deletedAt: null, siteId }, primaryRecordingId, actor, cause, changes);
+}
+
+/**
+ * Undoing appends (ADR 0063), passed in so this module doesn't import dives/continuation: restoring a Dive an append
+ * took reverses that append (continuation-service.ts).
+ */
+export interface AppendUndo {
+  /** The live append that took this Dive, if one did. */
+  taking(tx: Tx, diveId: string): Promise<{ appendId: string } | null>;
+  undo(tx: Tx, userId: string, appendId: string): Promise<void>;
+}
+
+export function createDiveService(db: Db, appends: AppendUndo) {
   return {
     /** A User's edit of their Dive, in one transaction and one Revision. */
     async edit(userId: string, diveId: string, edit: DiveEdit): Promise<void> {
@@ -352,8 +384,8 @@ export function createDiveService(db: Db) {
     },
 
     /**
-     * Brings a deleted Dive back with the Recordings deleted with it. A site deleted meanwhile is replaced by the
-     * one it was merged into, else the Dive has none (both in the Revision).
+     * Brings a deleted Dive back with the Recordings deleted with it (see undelete). A Dive an append took comes back by
+     * undoing that append, with the later ones (ADR 0063).
      */
     async restore(userId: string, diveId: string, version: number): Promise<void> {
       await db.transaction(async (tx) => {
@@ -364,18 +396,12 @@ export function createDiveService(db: Db) {
         if (!row) throw new DiveError('dive_not_found');
         const current = row.d;
         if (current.version !== version) throw new DiveError('dive_changed');
-        const changes: Changes = { deletedAt: { from: current.deletedAt!.toISOString(), to: null } };
-        let siteId = current.siteId;
-        if (siteId && !(await liveSite(tx, siteId))) {
-          const [gone] = await tx.select({ mergedInto: diveSite.mergedInto }).from(diveSite).where(eq(diveSite.id, siteId));
-          siteId = gone?.mergedInto && (await liveSite(tx, gone.mergedInto)) ? gone.mergedInto : null;
-          changes.site = { from: await siteRef(tx, current.siteId), to: await siteRef(tx, siteId) };
+        const taken = await appends.taking(tx, diveId);
+        if (taken) {
+          await appends.undo(tx, userId, taken.appendId);
+          return;
         }
-        const at = new Date();
-        await tx.update(recording).set({ deletedAt: null, updatedAt: at })
-          .where(and(eq(recording.diveId, diveId), eq(recording.deletedAt, current.deletedAt!)));
-        await tx.update(dive).set({ deletedAt: null, siteId, ...nextVersion(at) }).where(eq(dive.id, diveId));
-        await writeRevision(tx, 'dive', diveId, userActor(userId), 'restore', changes);
+        await undelete(tx, current, current.primaryRecordingId, userActor(userId), 'restore');
         await keepRestored(tx, userId, diveId);
         await renumber(tx, [current.diverId]);
       });

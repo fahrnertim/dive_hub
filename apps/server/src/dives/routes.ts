@@ -60,7 +60,7 @@ export interface DiveRouteDeps {
   /** Merging two Dives deletes the one not kept at the Providers asked first (ADR 0038). */
   merge: MergeService;
   /** Appending later Dives to the earlier one (ADR 0063), deleting their copies at the Providers asked first. */
-  continuation: Pick<ContinuationService, 'previousCandidate'>;
+  continuation: Pick<ContinuationService, 'previousCandidate' | 'restorePreview'>;
   append: AppendService;
   assessments: AssessmentService;
   /** How a refusal about a Provider is answered (providers/route-parts.ts). */
@@ -151,6 +151,9 @@ const DeletedDiveView = Type.Object({
   mergedInto: Nullable(Type.String({ description: 'The Dive it was merged into (ADR 0038): clients say so and link there' })),
   movedTo: Nullable(Type.String({ description: 'The Dive it became in another Diver\'s logbook when it was moved while linked to a Provider (ADR 0038)' })),
   continuedInto: Nullable(Type.String({ description: 'The Dive it was appended to as its continuation (ADR 0063): clients say so and link there' })),
+  appendedWith: Type.Array(Type.String(), {
+    description: 'The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back',
+  }),
   stillAt: Type.Array(Type.Object({
     provider: Type.String(),
     remoteNumber: Nullable(Type.Integer({ description: 'The Provider\'s own dive number' })),
@@ -604,10 +607,22 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request) => deletion.deleted(userOf(request).id, DELETED_SHOWN));
 
+  app.get('/dives/:id/restore-preview', {
+    schema: {
+      summary: 'The Dives restoring this deleted Dive brings back, in start order: itself, or every Dive of its append and of later ones',
+      description: 'Restoring a Dive an append took (`continuedInto`) undoes that append and every later one to the same Dive (ADR 0063): '
+        + 'clients name the Dives that come back before restoring.',
+      params: IdParams,
+      response: { 200: Type.Object({ comesBack: Type.Array(Type.String()) }), 404: Problem },
+    },
+  }, async (request) => ({ comesBack: await continuation.restorePreview(userOf(request).id, request.params.id) }));
+
   app.post('/dives/:id/restore', {
     schema: {
       summary: 'Bring a deleted Dive back with its Recordings (not to Providers: send it again from there)',
-      description: 'Send the version from GET /dives/deleted (409 dive_changed). A site deleted meanwhile becomes the one it was merged into, or none.',
+      description: 'Send the version from GET /dives/deleted (409 dive_changed). A site deleted meanwhile becomes the one it was merged into, or none. '
+        + 'A Dive an append took (`continuedInto`) comes back by undoing that append and every later one to the same Dive: each of '
+        + 'their Dives comes back with its Recording as its Primary one (GET /dives/{id}/restore-preview names them; ADR 0063).',
       params: IdParams, body: Type.Object({ version: Type.Integer() }),
       response: { 200: DiveView, 404: Problem, 409: Problem },
     },

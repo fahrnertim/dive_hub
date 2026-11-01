@@ -44,9 +44,9 @@ export function createDeletionService({ dives, logbook, pushes, waitingPushes }:
       const rows = await logbook.deletedDives(userId, limit);
       const remote = await pushes.currentOf(rows.map((r) => r.d.id));
       const waiting = await waitingPushes.waitingOf(rows.map((r) => r.d.id));
-      return rows.map(({ d, siteName, mergedInto, movedTo, continuedInto }) => ({
+      return rows.map(({ d, siteName, mergedInto, movedTo, continuedInto, appendedWith }) => ({
         id: d.id, diverId: d.diverId, version: d.version, ...diveSummaryOf(d, siteName),
-        deletedAt: d.deletedAt!.toISOString(), mergedInto, movedTo, continuedInto,
+        deletedAt: d.deletedAt!.toISOString(), mergedInto, movedTo, continuedInto, appendedWith,
         stillAt: providersOf(remote, d.id),
         waiting: waiting.get(d.id) ?? [],
       }));

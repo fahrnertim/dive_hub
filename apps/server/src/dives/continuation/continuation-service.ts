@@ -1,24 +1,30 @@
 // Appending later Dives to the earlier one (ADR 0063): one Dive of the Diver's, whose Primary recording joins the parts'
 // Recordings with a Surface break between each two. The later Dives go as in a merge (ADR 0038): the kept Dive is
 // filled from each, takes its link at a Provider where it has none, and each is deleted the normal way (ADR 0026).
-import { and, desc, eq, gt, inArray, isNull, lt, notInArray } from 'drizzle-orm';
+import { and, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, notInArray } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../../db/client.js';
-import { cylinder, dive, diveSite, diverManagement, participant, push, recording } from '../../db/schema.js';
+import {
+  continuationAppend, cylinder, dive, diveSite, diverManagement, participant, push, recording, sampleSeries,
+} from '../../db/schema.js';
 import { managesDiveDiver } from '../../divers/management.js';
 import { liveSite } from '../../sites/dive-site-link.js';
+import { keepApart } from '../checks/logbook-check-answers.js';
 import type { LogbookCheckService } from '../checks/logbook-check-service.js';
 import { cylindersOf, takeCylinders } from '../cylinders.js';
 import { renumber } from '../dive-numbers.js';
-import { DiveError, applyToDive, followPrimary, lockManagedDive, nextVersion, participantsOf } from '../dive-service.js';
+import {
+  DiveError, applyToDive, followPrimary, lockManagedDive, nextVersion, participantsOf, undelete,
+} from '../dive-service.js';
 import {
   addedParticipants, deleteLeftBehind, fillValues, mergeNotes, moveLinks, type ProviderLinks,
 } from '../merging-service.js';
 import { changeListener, userActor, writeRevision, type Actor, type Changes } from '../revisions.js';
 import { takeWeighting } from '../weighting.js';
-import { JOINED_PARSER, buildJoined } from './joined-recording.js';
+import { JOINED_PARSER, buildJoined, partsOfJoined, rebuildJoined } from './joined-recording.js';
 
 type DiveRow = typeof dive.$inferSelect;
 type RecordingRow = typeof recording.$inferSelect;
+type AppendRow = typeof continuationAppend.$inferSelect;
 
 /** A Dive's unit: its one Recording, or its joined Recording with nothing but its parts beside it; null otherwise. */
 async function unitOf(q: Queryable, diveId: string): Promise<RecordingRow | null> {
@@ -74,6 +80,46 @@ async function tieToJoined(tx: Tx, keptId: string, partIds: string[], joinedId: 
   return tied.length === 0 ? {} : { cylinders: { from: before, to: await cylindersOf(tx, keptId) } };
 }
 
+/** The live append that took this Dive: its Recording is a part that came from it, in an append that kept another Dive. */
+async function taking(q: Queryable, diveId: string): Promise<{ appendId: string } | null> {
+  const [row] = await q.select({ appendId: continuationAppend.id }).from(recording)
+    .innerJoin(continuationAppend, eq(continuationAppend.id, recording.appendId))
+    .where(and(eq(recording.fromDiveId, diveId), ne(continuationAppend.keptDiveId, diveId))).limit(1);
+  return row ?? null;
+}
+
+/** What undoing this append reverses (ADR 0063): it and every later append to its joined Recording, newest first. */
+async function undoneWith(q: Queryable, appendId: string): Promise<AppendRow[]> {
+  const [first] = await q.select().from(continuationAppend).where(eq(continuationAppend.id, appendId));
+  if (!first) return [];
+  return q.select().from(continuationAppend)
+    .where(and(eq(continuationAppend.joinedRecordingId, first.joinedRecordingId), gte(continuationAppend.createdAt, first.createdAt)))
+    .orderBy(desc(continuationAppend.createdAt), desc(continuationAppend.id));
+}
+
+/** The parts these appends took from other Dives (not the kept Dive's own first part), each going back to `fromDiveId`. */
+async function takenParts(q: Queryable, appends: AppendRow[]): Promise<RecordingRow[]> {
+  const rows = await q.select().from(recording).where(inArray(recording.appendId, appends.map((a) => a.id)));
+  return rows.filter((r) => r.fromDiveId !== appends.find((a) => a.id === r.appendId)!.keptDiveId);
+}
+
+const channelsOf = async (q: Queryable, recordingIds: string[]) => recordingIds.length === 0 ? [] : (await q
+  .selectDistinct({ channel: sampleSeries.channel }).from(sampleSeries).where(inArray(sampleSeries.recordingId, recordingIds))).map((s) => s.channel);
+
+/**
+ * Cylinders tied to the joined Recording's series of a channel no staying part has go back with the part to its Dive,
+ * tied to the part, when that Dive has none: they came from it with the part (takeCylinders). Answers how many went.
+ */
+async function cylindersBack(tx: Tx, holderId: string, joinedId: string, part: RecordingRow, staying: string[]): Promise<number> {
+  if ((await cylindersOf(tx, part.fromDiveId!)).length > 0) return 0;
+  const channels = (await channelsOf(tx, [part.id])).filter((c) => !staying.includes(c));
+  if (channels.length === 0) return 0;
+  const moved = await tx.update(cylinder).set({ diveId: part.fromDiveId!, recordingId: part.id })
+    .where(and(eq(cylinder.diveId, holderId), eq(cylinder.recordingId, joinedId), inArray(cylinder.channel, channels)))
+    .returning({ position: cylinder.position });
+  return moved.length;
+}
+
 export function createContinuationService(db: Db, _checks: LogbookCheckService, { currentRemote, deletingItself }: ProviderLinks) {
   /**
    * Takes one later Dive into the kept one, as a merge does (ADR 0038): its Cylinders where the kept Dive has none, its
@@ -109,6 +155,78 @@ export function createContinuationService(db: Db, _checks: LogbookCheckService, 
   }
 
   return {
+    taking,
+
+    /** Every Dive restoring this deleted one brings back, in start order: the Dives of its append and of later ones (ADR 0063). */
+    async restorePreview(userId: string, diveId: string): Promise<string[]> {
+      const [row] = await db.select({ id: dive.id }).from(dive).innerJoin(diverManagement, managesDiveDiver(userId))
+        .where(and(eq(dive.id, diveId), isNotNull(dive.deletedAt)));
+      if (!row) throw new DiveError('dive_not_found');
+      const taken = await taking(db, diveId);
+      if (!taken) return [diveId];
+      const ids = [...new Set((await takenParts(db, await undoneWith(db, taken.appendId))).map((p) => p.fromDiveId!))];
+      return (await db.select({ id: dive.id }).from(dive).where(inArray(dive.id, ids)).orderBy(dive.startsAt, dive.id)).map((d) => d.id);
+    },
+
+    /**
+     * Undoes the append and every later one to its joined Recording, newest first (ADR 0063), wherever that Recording is
+     * now. Each part goes back to the Dive it came from, revived if it was deleted with its Dive, and is that Dive's
+     * Primary recording; the Dive is restored. The joined Recording is rebuilt from the parts that stay, or deleted when
+     * one stays. Provider links that moved stay; those left on a restored Dive come back with it. The separated Dives are
+     * two dives to the logbook checks. Runs in the restore's transaction, which holds the restored Dive's lock.
+     */
+    async undo(tx: Tx, userId: string, appendId: string): Promise<void> {
+      const appends = await undoneWith(tx, appendId);
+      const joinedId = appends[0]!.joinedRecordingId;
+      const [joined] = await tx.select().from(recording).where(eq(recording.id, joinedId));
+      const holderId = joined!.diveId!;
+      const parts = await takenParts(tx, appends);
+      const backIds = [...new Set(parts.map((p) => p.fromDiveId!))];
+      // Locked in the order of their ids, as an append locks them.
+      const locked = new Map<string, DiveRow>();
+      for (const id of [holderId, ...backIds].sort()) {
+        const [row] = await tx.select().from(dive).where(eq(dive.id, id)).for('update');
+        locked.set(id, row!);
+      }
+      const staying = (await partsOfJoined(tx, joined!)).filter((p) => !parts.some((back) => back.id === p.id));
+      const stayingChannels = await channelsOf(tx, staying.map((p) => p.id));
+      const holderCylinders = await cylindersOf(tx, holderId);
+      const actor = userActor(userId);
+
+      for (const append of appends) {
+        for (const part of parts.filter((p) => p.appendId === append.id)) {
+          const back = part.fromDiveId!;
+          const moved = await cylindersBack(tx, holderId, joinedId, part, stayingChannels);
+          await tx.update(recording).set({ diveId: back, deletedAt: null, joinedRecordingId: null, appendId: null, fromDiveId: null, updatedAt: new Date() })
+            .where(eq(recording.id, part.id));
+          await undelete(tx, locked.get(back)!, part.id, actor, 'continuation-undo', {
+            recordings: { from: null, to: part.id }, ...(moved > 0 && { cylinders: { from: [], to: await cylindersOf(tx, back) } }),
+          });
+          // As after a restore: the queue reads `continuation-undo` as no restore, so it is told (a delete waiting there goes).
+          await changeListener().diveChanged(tx, back, 'restore', new Date(), actor);
+        }
+      }
+
+      // The holder's Cylinders still tied to a series the joined Recording loses are untied; with one part left, tied to it.
+      await tx.update(cylinder).set({ recordingId: null, channel: null, fromPod: false }).where(and(
+        eq(cylinder.diveId, holderId), eq(cylinder.recordingId, joinedId),
+        stayingChannels.length > 0 ? notInArray(cylinder.channel, stayingChannels) : undefined,
+      ));
+      if (staying.length === 1) {
+        await tx.update(cylinder).set({ recordingId: staying[0]!.id }).where(and(eq(cylinder.diveId, holderId), eq(cylinder.recordingId, joinedId)));
+      }
+      const after = await cylindersOf(tx, holderId);
+      await rebuildJoined(tx, joinedId, actor, 'continuation-undo', {
+        recordings: { from: parts.map((p) => p.id), to: null },
+        ...(JSON.stringify(after) !== JSON.stringify(holderCylinders) && { cylinders: { from: holderCylinders, to: after } }),
+      });
+      await tx.delete(continuationAppend).where(inArray(continuationAppend.id, appends.map((a) => a.id)));
+      // Taken apart on purpose: each pair is two dives to the logbook checks, as after splitting off (ADR 0038).
+      const all = [holderId, ...backIds];
+      for (const id of all) await keepApart(tx, userId, id, all.filter((other) => other !== id));
+      await renumber(tx, [...new Set([...locked.values()].map((d) => d.diverId))]);
+    },
+
     /**
      * The Dive just before this one that it could be appended to, by hand (no time limit): null when there is none, or
      * when the two aren't one Device's one Recording each (or a joined one before). With the Surface break's length and

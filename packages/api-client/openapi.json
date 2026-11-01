@@ -9132,6 +9132,7 @@
                       "mergedInto",
                       "movedTo",
                       "continuedInto",
+                      "appendedWith",
                       "stillAt",
                       "waiting"
                     ],
@@ -9250,6 +9251,13 @@
                           }
                         ]
                       },
+                      "appendedWith": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back"
+                      },
                       "stillAt": {
                         "type": "array",
                         "items": {
@@ -9293,10 +9301,60 @@
         }
       }
     },
+    "/api/dives/{id}/restore-preview": {
+      "get": {
+        "summary": "The Dives restoring this deleted Dive brings back, in start order: itself, or every Dive of its append and of later ones",
+        "description": "Restoring a Dive an append took (`continuedInto`) undoes that append and every later one to the same Dive (ADR 0063): clients name the Dives that come back before restoring.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "comesBack"
+                  ],
+                  "properties": {
+                    "comesBack": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/dives/{id}/restore": {
       "post": {
         "summary": "Bring a deleted Dive back with its Recordings (not to Providers: send it again from there)",
-        "description": "Send the version from GET /dives/deleted (409 dive_changed). A site deleted meanwhile becomes the one it was merged into, or none.",
+        "description": "Send the version from GET /dives/deleted (409 dive_changed). A site deleted meanwhile becomes the one it was merged into, or none. A Dive an append took (`continuedInto`) comes back by undoing that append and every later one to the same Dive: each of their Dives comes back with its Recording as its Primary one (GET /dives/{id}/restore-preview names them; ADR 0063).",
         "requestBody": {
           "required": true,
           "content": {

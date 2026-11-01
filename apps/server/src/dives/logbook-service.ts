@@ -5,7 +5,9 @@
 // lockManagedDive in dive-service.ts does).
 import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { device, dive, diveAssessment, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user } from '../db/schema.js';
+import {
+  continuationAppend, device, dive, diveAssessment, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
+} from '../db/schema.js';
 import { cylindersOf } from './cylinders.js';
 import { isUnit } from './recording-units.js';
 import { participantsOf, participantsOfDives, type Participant } from './dive-service.js';
@@ -225,8 +227,19 @@ export function createLogbookService(db: Db) {
       const to = last.find((r) => r.id === id)?.changes[key]?.to;
       return typeof to === 'string' ? to : null;
     };
+    // The other Dives an append took with it, to list as one entry (ADR 0063): parts of the same append, not the kept Dive's.
+    const appendIds = rows.length === 0 ? [] : (await db.select({ appendId: recording.appendId }).from(recording)
+      .where(and(inArray(recording.fromDiveId, rows.map((r) => r.d.id)), isNotNull(recording.appendId)))).map((r) => r.appendId!);
+    const taken = appendIds.length === 0 ? [] : (await db.select({ diveId: recording.fromDiveId, appendId: recording.appendId, keptDiveId: continuationAppend.keptDiveId })
+      .from(recording).innerJoin(continuationAppend, eq(continuationAppend.id, recording.appendId))
+      .where(inArray(recording.appendId, appendIds)).orderBy(recording.startsAt)).filter((p) => p.diveId !== p.keptDiveId);
+    const appendedWith = (id: string) => {
+      const own = taken.find((p) => p.diveId === id);
+      return own ? taken.filter((p) => p.appendId === own.appendId && p.diveId !== id).map((p) => p.diveId!) : [];
+    };
     return rows.map(({ d, siteName }) => ({
       d, siteName, mergedInto: went(d.id, 'mergedInto'), movedTo: went(d.id, 'movedTo'), continuedInto: went(d.id, 'continuedInto'),
+      appendedWith: appendedWith(d.id),
     }));
   }
 

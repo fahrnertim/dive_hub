@@ -2843,6 +2843,8 @@ export interface paths {
                             mergedInto: null | string;
                             movedTo: null | string;
                             continuedInto: null | string;
+                            /** @description The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back */
+                            appendedWith: string[];
                             /** @description Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md) */
                             stillAt: {
                                 provider: string;
@@ -2851,6 +2853,58 @@ export interface paths {
                             /** @description The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason */
                             waiting: components["schemas"]["WaitingPushView"][];
                         }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dives/{id}/restore-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Dives restoring this deleted Dive brings back, in start order: itself, or every Dive of its append and of later ones
+         * @description Restoring a Dive an append took (`continuedInto`) undoes that append and every later one to the same Dive (ADR 0063): clients name the Dives that come back before restoring.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            comesBack: string[];
+                        };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
                     };
                 };
             };
@@ -2874,7 +2928,7 @@ export interface paths {
         put?: never;
         /**
          * Bring a deleted Dive back with its Recordings (not to Providers: send it again from there)
-         * @description Send the version from GET /dives/deleted (409 dive_changed). A site deleted meanwhile becomes the one it was merged into, or none.
+         * @description Send the version from GET /dives/deleted (409 dive_changed). A site deleted meanwhile becomes the one it was merged into, or none. A Dive an append took (`continuedInto`) comes back by undoing that append and every later one to the same Dive: each of their Dives comes back with its Recording as its Primary one (GET /dives/{id}/restore-preview names them; ADR 0063).
          */
         post: {
             parameters: {

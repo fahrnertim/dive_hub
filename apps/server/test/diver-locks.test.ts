@@ -8,6 +8,9 @@ import { createDiverService } from '../src/divers/diver-service.js';
 import { createDiveService } from '../src/dives/dive-service.js';
 import { createTestDatabase, databaseReachable, listenToNoChanges, type TestDatabase } from './support.js';
 
+/** These tests restore no Dive, so no append is undone. */
+const noAppends = { taking: async () => null, undo: async () => undefined };
+
 describe.skipIf(!(await databaseReachable()))('Diver locks', () => {
   let t: TestDatabase;
   let userId: string;
@@ -68,7 +71,7 @@ describe.skipIf(!(await databaseReachable()))('Diver locks', () => {
     await race(
       buddy,
       () => createDiverService(t.db).removeExternal({ userId, isAdmin: false }, buddy),
-      () => createDiveService(t.db).setParticipants(userId, d.id, d.version, [{ diverId: buddy, role: 'buddy' }]),
+      () => createDiveService(t.db, noAppends).setParticipants(userId, d.id, d.version, [{ diverId: buddy, role: 'buddy' }]),
     );
     expect(await participantsOfDeletedDivers()).toBe(0);
   });
@@ -80,7 +83,7 @@ describe.skipIf(!(await databaseReachable()))('Diver locks', () => {
     await race(
       from,
       () => createDiverService(t.db).mergeExternal(userId, from, into),
-      () => createDiveService(t.db).setParticipants(userId, d.id, d.version, [{ diverId: from, role: 'buddy' }]),
+      () => createDiveService(t.db, noAppends).setParticipants(userId, d.id, d.version, [{ diverId: from, role: 'buddy' }]),
     );
     expect(await participantsOfDeletedDivers()).toBe(0);
   });

@@ -4,8 +4,9 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Tx } from '../../db/client.js';
 import { continuationAppend, dive, recording, recordingEvent, sampleSeries } from '../../db/schema.js';
-import { refreshFromPrimary } from '../dive-service.js';
-import type { Actor, RevisionCause } from '../revisions.js';
+import { reviseDive } from '../cylinders.js';
+import { followPrimary, refreshFromPrimary } from '../dive-service.js';
+import type { Actor, Changes, RevisionCause } from '../revisions.js';
 import { joinParts, type PartInput } from './join-parts.js';
 
 /** The parser a joined Recording names, and its version. */
@@ -28,10 +29,17 @@ async function partInput(tx: Tx, rec: RecordingRow): Promise<PartInput> {
   };
 }
 
-/** Writes the joined Recording from its live parts: its values, and its series and events replaced. */
+/** The joined Recording's parts, in start order: live, or deleted with it when its Dive is deleted. */
+export async function partsOfJoined(tx: Tx, joined: RecordingRow): Promise<RecordingRow[]> {
+  return tx.select().from(recording).where(and(
+    eq(recording.joinedRecordingId, joined.id), joined.deletedAt ? eq(recording.deletedAt, joined.deletedAt) : isNull(recording.deletedAt),
+  )).orderBy(recording.startsAt);
+}
+
+/** Writes the joined Recording from its parts: its values, and its series and events replaced. */
 async function writeJoined(tx: Tx, joinedId: string): Promise<void> {
-  const rows = await tx.select().from(recording)
-    .where(and(eq(recording.joinedRecordingId, joinedId), isNull(recording.deletedAt))).orderBy(recording.startsAt);
+  const [joined] = await tx.select().from(recording).where(eq(recording.id, joinedId));
+  const rows = await partsOfJoined(tx, joined!);
   const parts: PartInput[] = [];
   for (const row of rows) parts.push(await partInput(tx, row));
   const { series, events, ...values } = joinParts(parts);
@@ -73,9 +81,28 @@ export async function buildJoined(
   return { joinedId, appendId: append!.id };
 }
 
-/** Rebuilds the joined Recording from its live parts; the Dive whose Primary recording it is follows it. */
-export async function rebuildJoined(tx: Tx, joinedId: string, actor: Actor, cause: RevisionCause): Promise<void> {
-  await writeJoined(tx, joinedId);
-  const [owner] = await tx.select({ id: dive.id }).from(dive).where(eq(dive.primaryRecordingId, joinedId));
-  if (owner) await refreshFromPrimary(tx, owner.id, actor, cause);
+/**
+ * Rebuilds the joined Recording from its parts; the Dive whose Primary recording it is follows it, with `extra` (the
+ * caller's changes of the Dive that holds it) in the Revision. With one part left (an undo took the others back), the
+ * joined Recording is deleted instead and that part is an ordinary Recording again, the Primary one where the joined one
+ * was; values without Override follow it and Overrides stay. The caller ties Cylinders to that part first.
+ */
+export async function rebuildJoined(tx: Tx, joinedId: string, actor: Actor, cause: RevisionCause, extra: Changes = {}): Promise<void> {
+  const [joined] = await tx.select().from(recording).where(eq(recording.id, joinedId));
+  const parts = await partsOfJoined(tx, joined!);
+  if (parts.length > 1) {
+    await writeJoined(tx, joinedId);
+    const [owner] = await tx.select({ id: dive.id }).from(dive).where(eq(dive.primaryRecordingId, joinedId));
+    if (owner) await refreshFromPrimary(tx, owner.id, actor, cause, extra);
+    else if (Object.keys(extra).length > 0) await reviseDive(tx, joined!.diveId!, actor, cause, extra);
+    return;
+  }
+  const [last] = parts;
+  const at = new Date();
+  await tx.update(recording).set({ joinedRecordingId: null, appendId: null, fromDiveId: null, updatedAt: at }).where(eq(recording.id, last!.id));
+  // A tombstone of its own: restoring its Dive later brings back the part, not the joined Recording.
+  await tx.update(recording).set({ deletedAt: at, updatedAt: at }).where(eq(recording.id, joinedId));
+  const [holder] = await tx.select().from(dive).where(eq(dive.id, joined!.diveId!)).for('update');
+  const primary = holder!.primaryRecordingId === joinedId ? last!.id : holder!.primaryRecordingId;
+  await followPrimary(tx, holder!, primary, actor, cause, { recordings: { from: joinedId, to: null }, ...extra });
 }
