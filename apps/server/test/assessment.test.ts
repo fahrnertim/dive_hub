@@ -242,23 +242,40 @@ describe.skipIf(!(await databaseReachable()))('the dive assessment', () => {
     expect(stored!.engineVersion).toBe(ENGINE_VERSION);
   });
 
-  it("judges the owner's joined dive as two parts: no rate, sawtooth or safety stop across the Surface break (ADR 0063)", async () => {
-    const { first, second } = ownersDiveParts();
-    const place = async (bytes: Uint8Array) => {
-      const { payload, headers } = multipartFile('dive.fit', bytes);
-      const imported = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: tim } });
-      await ctx.imports.processImport(imported.json().id);
-      return (await json<{ outcome: { diveId: string }[] }>('GET', `/api/imports/${imported.json().id}`, tim)).outcome[0]!.diveId;
-    };
-    const one = await place(first);
-    const two = await place(second);
-    const appended = await call('POST', `/api/dives/${one}/continuation`, tim, {
-      version: await version(one), dives: [{ id: two, version: await version(two) }],
+  /** Appends the later Dive to the earlier one through the API. */
+  const append = async (keptId: string, laterId: string) => {
+    const appended = await call('POST', `/api/dives/${keptId}/continuation`, tim, {
+      version: await version(keptId), dives: [{ id: laterId, version: await version(laterId) }],
     });
     expect(appended.statusCode, appended.body).toBe(200);
+  };
+  const place = async (bytes: Uint8Array) => {
+    const { payload, headers } = multipartFile('dive.fit', bytes);
+    const imported = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: tim } });
+    await ctx.imports.processImport(imported.json().id);
+    return (await json<{ outcome: { diveId: string }[] }>('GET', `/api/imports/${imported.json().id}`, tim)).outcome[0]!.diveId;
+  };
+
+  it("judges the owner's joined dive as two parts: no rate, sawtooth or safety stop across the Surface break (ADR 0063)", async () => {
+    const { first, second } = ownersDiveParts();
+    const one = await place(first);
+    const two = await place(second);
+    await append(one, two);
     const a = await assessment(one);
     expect(a.applies).toBe(true);
     expect(rules(a).filter((r) => ['ascent_rate', 'descent_rate', 'sawtooth', 'safety_stop'].includes(r))).toEqual([]);
     expect(a.ascentBands.filter(([from, to]) => from < 1421 && to > 1180)).toEqual([]);
+  });
+
+  it("reads the joined Recording's Surface break: parts that jump 8 m at the break give no ascent or descent rate", async () => {
+    const part = (start: string, depthAt: (t: number) => number) =>
+      makeSyntheticDive({ serialNumber: 7_200_001, start: new Date(start), durationSeconds: 600, depthAt });
+    // 8 m for ten minutes each, 120 s apart: across the break the series falls 8 m to the surface and back in a second.
+    const one = await place(part('2026-10-27T06:00:00Z', (t) => Math.min(8, t / 7.5)));
+    const two = await place(part('2026-10-27T06:12:00Z', () => 8));
+    await append(one, two);
+    const a = await assessment(one);
+    expect(rules(a).filter((r) => ['ascent_rate', 'descent_rate'].includes(r))).toEqual([]);
+    expect(a.ascentBands).toEqual([]);
   });
 });
