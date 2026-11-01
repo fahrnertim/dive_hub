@@ -315,10 +315,15 @@ describe.skipIf(!(await databaseReachable()))('logbook checks', () => {
       const placed = ((await call('GET', `/api/imports/${started.json().id}`)).json() as { outcome: (Outcome & { recordingId?: string })[] }).outcome[0]!;
       const far = placed.result === 'created' ? placed.diveId!
         : ((await call('POST', `/api/recordings/${placed.recordingId}/detach`, { version: await versionOf(placed.diveId!) })).json() as { diveId: string }).diveId;
-      const chainOf = async () => (await breaks()).filter((x) => x.dive.id === a).map((x) => x.chain!.map((d) => d.id));
+      const chainOf = async (status = 'open') => (await breaks(status)).filter((x) => x.dive.id === a).map((x) => x.chain!.map((d) => d.id));
       expect(await chainOf()).toEqual([[a, near]]);
       expect((await answer(a, far, 'two_dives')).statusCode).toBe(204);
       expect(await chainOf()).toEqual([[a, near]]);
+      // With the near Dive gone, A–far is the pair: answered "two dives", so not open.
+      const gone = await ctx.app.inject({ method: 'DELETE', url: `/api/dives/${near}`, headers: { cookie: tim, origin: BASE_URL }, payload: { version: await versionOf(near) } });
+      expect(gone.statusCode).toBe(200);
+      expect(await chainOf()).toEqual([]);
+      expect(await chainOf('answered')).toEqual([[a, far]]);
     });
   });
 });
