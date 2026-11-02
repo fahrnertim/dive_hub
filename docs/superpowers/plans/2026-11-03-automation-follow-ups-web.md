@@ -1,7 +1,7 @@
 ---
 title: "Plan: tidy piece 6's automation, web (backlog 0010, points 12-14)"
 summary: The i18n plural casts and filterName={String} gone, the fetch settings always showing a selected interval, switches pending while they save, the fetch help read before switching, a stopped row readable on a phone, Retry's error out of the span, a Dive without a site getting a control to choose one, and "Delete in SSI" hidden while an automatic delete waits.
-status: proposed
+status: done
 date: 2026-11-03
 ---
 
@@ -53,6 +53,22 @@ no new module.
 - **"Delete in SSI" (14, decided in the backlog):** hidden for a Provider copy while the Dive has a queue entry for
   that Provider with action `delete` in state `waiting`. Held or stopped, the manual button shows again (a stopped
   one has Retry beside it as well).
+
+## Rulings made while executing (2026-11-03)
+
+- **Busy switch (13):** React Aria's `Switch` passes no `aria-busy` to its input, so `ui/Choice.tsx` sets it through
+  `inputRef`; `data-pending` on the label reuses the Button's busy look (`.btn[data-pending], .switch[data-pending]`).
+- **`fetchNeedsImport` (13):** the wording stays; it reads well as help in en and de.
+- **"Choose dive site", not "Add dive site" (14):** the Dive page already has an "Add site" button, and a page may not
+  have two buttons with the same name (`ui-quality.spec.ts` caught it). The button uses `dive.chooseSite`.
+- **Retry's error (14):** the retry mutation moved into a `useRetry` hook; `WaitingPushState` shows its error, in a
+  row as a `<span role="alert">` on its own line after the words, in the panel as the `Notice` it was. The phone
+  layout uses the logbook's container query (`dives`, 38rem), as the rows do; the dot rule of `.dive-facts` leaves out
+  the dot before the error.
+- **Tests:** "a Dive without a site…" connects SSI itself so it runs alone; the Task 5 assertions are scoped to the
+  entry's list item; no new `ui-quality.spec.ts` case for Task 4, as "a dive stopped on its way to SSI" already checks
+  the stopped row at phone width.
+- The branch was rebased onto `main` (PR #18) after Task 1, at the owner's request.
 
 ## Review Focus
 

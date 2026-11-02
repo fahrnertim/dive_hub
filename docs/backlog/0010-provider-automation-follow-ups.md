@@ -1,7 +1,7 @@
 ---
 title: Tidy piece 6's automation (Waiting pushes, scheduled fetch)
 summary: Small follow-ups the reviews of piece 6 left open - cheaper queue writes on a Revision or a site change, the Clock everywhere, a few untested branches, an order-dependent test, list-query counts, i18n casts and three small UI points.
-status: draft
+status: done
 risk: low
 date: 2026-10-28
 ---
@@ -67,6 +67,8 @@ and give the reason. Done means: `pnpm check:full` is green.
     - the fetch-on-opening test uses hash navigation only
 
 ### Web
+Points 12-14 are done ([plan of 2026-11-03](../superpowers/plans/2026-11-03-automation-follow-ups-web.md)).
+
 12. **Type workarounds.** The i18n plural-key casts (`'automation.unsentByImport' as …_one` in `ImportPanel.tsx`,
     likewise in `ProviderAutomation.tsx`) and `filterName={String}`.
 13. **Settings.**
@@ -105,13 +107,14 @@ and give the reason. Done means: `pnpm check:full` is green.
 
 - Points 13-14 (owner, 2026-11-03): a stored interval no longer offered is listed and selected; `fetchNeedsImport`
   becomes the fetch switch's help, shown whenever the import is off; a saving switch is busy, the others stay usable;
-  a Dive without a site gets "Add dive site" (the Dive page's site picker) under what the Provider needs.
+  a Dive without a site gets "Choose dive site" (the Dive page's site picker) under what the Provider needs; named so
+  because the Dive page already has an "Add site" button and two buttons may not share a name.
 
 ## State
 `main`, after PR #8 (`ssi-automation`) is merged.
 
-Points 1-11 are done (PR #13). Points 12-14 (Web): [plan of 2026-11-03](../superpowers/plans/2026-11-03-automation-follow-ups-web.md)
-on branch `automation-follow-ups-web`, worked by hand (not by an unattended run), so the status stays `draft`.
+Done. Points 1-11 in PR #13; points 12-14 (Web) by the [plan of 2026-11-03](../superpowers/plans/2026-11-03-automation-follow-ups-web.md)
+on branch `automation-follow-ups-web`, worked by hand (not by an unattended run).
 
 ## Open
 Nothing for the owner; the rest is left to the agent.
