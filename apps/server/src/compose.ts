@@ -65,7 +65,7 @@ export function createServices({ db, blobs, auth, secrets, adapters, siteSources
   const logbook = createLogbookService(db);
   const checks = createLogbookCheckService(db);
   const merging = createMergingService(db, checks, { currentRemote, deletingItself: waitingPushes.deletingItself });
-  const continuation = createContinuationService(db, checks, { currentRemote, deletingItself: waitingPushes.deletingItself });
+  const continuation = createContinuationService(db, { currentRemote, deletingItself: waitingPushes.deletingItself });
   // Restoring a Dive an append took undoes the append (ADR 0063).
   const dives = createDiveService(db, continuation);
   return {

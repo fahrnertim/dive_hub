@@ -9,7 +9,6 @@ import {
 import { managesDiveDiver } from '../../divers/management.js';
 import { liveSite } from '../../sites/dive-site-link.js';
 import { keepApart } from '../checks/logbook-check-answers.js';
-import type { LogbookCheckService } from '../checks/logbook-check-service.js';
 import { cylindersOf, takeCylinders } from '../cylinders.js';
 import { renumber } from '../dive-numbers.js';
 import {
@@ -20,7 +19,8 @@ import {
 } from '../merging-service.js';
 import { changeListener, userActor, writeRevision, type Actor, type Changes } from '../revisions.js';
 import { takeWeighting } from '../weighting.js';
-import { JOINED_PARSER, buildJoined, partsOfJoined, rebuildJoined } from './joined-recording.js';
+import { isJoined } from '../recording-units.js';
+import { buildJoined, partsOfJoined, rebuildJoined } from './joined-recording.js';
 
 type DiveRow = typeof dive.$inferSelect;
 type RecordingRow = typeof recording.$inferSelect;
@@ -29,7 +29,7 @@ type AppendRow = typeof continuationAppend.$inferSelect;
 /** A Dive's unit: its one Recording, or its joined Recording with nothing but its parts beside it; null otherwise. */
 async function unitOf(q: Queryable, diveId: string): Promise<RecordingRow | null> {
   const live = await q.select().from(recording).where(and(eq(recording.diveId, diveId), isNull(recording.deletedAt)));
-  const joined = live.filter((r) => r.parser === JOINED_PARSER);
+  const joined = live.filter(isJoined);
   if (joined.length === 0) return live.length === 1 ? live[0]! : null;
   const [unit] = joined;
   return joined.length === 1 && live.every((r) => r === unit || r.joinedRecordingId === unit!.id) ? unit! : null;
@@ -39,7 +39,7 @@ const endOf = (r: RecordingRow) => r.startsAt.getTime() + r.durationSeconds * 10
 
 /** Whether `later`, a Dive's one Recording, may follow `before`: the same Device, starting after it ends. */
 const follows = (before: RecordingRow, later: RecordingRow | null): later is RecordingRow =>
-  !!later && later.parser !== JOINED_PARSER && !!before.deviceId && later.deviceId === before.deviceId
+  !!later && !isJoined(later) && !!before.deviceId && later.deviceId === before.deviceId
   && later.startsAt.getTime() > endOf(before);
 
 /**
@@ -120,7 +120,7 @@ async function cylindersBack(tx: Tx, holderId: string, joinedId: string, part: R
   return moved.length;
 }
 
-export function createContinuationService(db: Db, _checks: LogbookCheckService, { currentRemote, deletingItself }: ProviderLinks) {
+export function createContinuationService(db: Db, { currentRemote, deletingItself }: ProviderLinks) {
   /**
    * Takes one later Dive into the kept one, as a merge does (ADR 0038): its Cylinders where the kept Dive has none, its
    * Recording (an entry of its own in the history), Participants, links, weighting, site, values and notes; then
@@ -273,7 +273,7 @@ export function createContinuationService(db: Db, _checks: LogbookCheckService, 
 
         for (const [i, other] of laters.entries()) await takeIn(tx, userId, keptRow.id, other, recs[i]!, actor);
         const parts = [
-          ...(unit.parser === JOINED_PARSER ? [] : [{ recordingId: unit.id, fromDiveId: keptRow.id }]),
+          ...(isJoined(unit) ? [] : [{ recordingId: unit.id, fromDiveId: keptRow.id }]),
           ...laters.map((other, i) => ({ recordingId: recs[i]!.id, fromDiveId: other.id })),
         ];
         const { joinedId } = await buildJoined(tx, keptRow.id, parts, userId);

@@ -8,6 +8,10 @@ import { recording } from '../db/schema.js';
  */
 export const isUnit = () => isNull(recording.joinedRecordingId);
 
+/** The parser a joined Recording names (ADR 0063); the one mark of "joined" (the schema ties it to having no Original). */
+export const JOINED_PARSER = 'continuation';
+export const isJoined = (r: { parser: string }) => r.parser === JOINED_PARSER;
+
 /** A Dive's one unit as the logbook checks see it (ADR 0063); `joined` for a Continuation's joined Recording. */
 export interface RecordingUnit {
   deviceId: string;
@@ -22,7 +26,7 @@ export interface RecordingUnit {
  */
 export async function unitsOf(q: Queryable, diveIds: string[]): Promise<(diveId: string) => { recordings: number; unit: RecordingUnit | null }> {
   const rows = diveIds.length === 0 ? [] : await q.select({
-    diveId: recording.diveId, deviceId: recording.deviceId, originalId: recording.originalId, startsAt: recording.startsAt, durationSeconds: recording.durationSeconds,
+    diveId: recording.diveId, deviceId: recording.deviceId, parser: recording.parser, startsAt: recording.startsAt, durationSeconds: recording.durationSeconds,
   }).from(recording).where(and(inArray(recording.diveId, diveIds), isNull(recording.deletedAt), isUnit()));
   const byDive = new Map<string, typeof rows>();
   for (const r of rows) byDive.set(r.diveId!, [...(byDive.get(r.diveId!) ?? []), r]);
@@ -31,9 +35,8 @@ export async function unitsOf(q: Queryable, diveIds: string[]): Promise<(diveId:
     const [r] = own;
     return {
       recordings: own.length,
-      // Only the joined Recording has no Original (it is derived).
       unit: own.length === 1 && r!.deviceId ? {
-        deviceId: r!.deviceId, startsAt: r!.startsAt, endsAt: new Date(r!.startsAt.getTime() + r!.durationSeconds * 1000), joined: r!.originalId === null,
+        deviceId: r!.deviceId, startsAt: r!.startsAt, endsAt: new Date(r!.startsAt.getTime() + r!.durationSeconds * 1000), joined: isJoined(r!),
       } : null,
     };
   };

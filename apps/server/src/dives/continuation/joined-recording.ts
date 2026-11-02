@@ -7,10 +7,10 @@ import { continuationAppend, dive, recording, recordingEvent, sampleSeries } fro
 import { reviseDive } from '../cylinders.js';
 import { followPrimary, refreshFromPrimary } from '../dive-service.js';
 import type { Actor, Changes, RevisionCause } from '../revisions.js';
+import { JOINED_PARSER } from '../recording-units.js';
 import { joinParts, type PartInput } from './join-parts.js';
 
-/** The parser a joined Recording names, and its version. */
-export const JOINED_PARSER = 'continuation';
+/** The version of the joined Recording's parser. */
 const JOINED_PARSER_VERSION = '1';
 
 type RecordingRow = typeof recording.$inferSelect;

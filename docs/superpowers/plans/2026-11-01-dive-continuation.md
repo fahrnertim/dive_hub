@@ -28,7 +28,8 @@ Aria + TanStack Query, Playwright.
 ## Global Constraints
 
 - [ADR 0053](../../decisions/0053-module-boundaries.md): `dives/continuation/` imports from `dives/`, `db/`,
-  `imports/` (matching only) and types from `providers/` (as `merging-service.ts` does: `ProviderLinks` passed in from
+  `imports/` (matching only), `divers/management` and `sites/dive-site-link` (both allowed for `dives/` by
+  `MODULE_IMPORTS`), and types from `providers/` (as `merging-service.ts` does: `ProviderLinks` passed in from
   `app.ts`); never a Provider by name. `imports/placement.ts` may call `dives/continuation/joined-recording.ts` (it
   already calls `dives/dive-service.ts`). `assessment/` reads the Surface breaks from the recording summary, never from
   `dives/`. `pnpm check` runs the dependency rules.
@@ -102,7 +103,7 @@ Every `primaryRecordingId` use and `hasRecordingOf`:
 | `dive-service.ts` `isProviderCopy` (inner join on `import_id`) | Provider copy? | false for the joined Recording: correct, no change | 4 (test) |
 | `dive-service.ts` `setPrimary` | another Recording becomes Primary | refuses a part (`recording_is_part`) | 4 |
 | `dive-service.ts` `detach` (`remaining[0]` as new Primary) | split off | refuses a part; the joined one goes with its parts; `remaining` counts units only | 4 |
-| `dive-service.ts` `followPrimary` / `primaryOf` / `refreshFromPrimary` / `createDiveFromRecording` / `remove` / `restore` | values follow Primary; soft delete with one tombstone | unchanged; `restore` of a Dive an append took goes to the undo (Task 6) | 6 |
+| `dive-service.ts` `followPrimary` / `primaryOf` / `refreshFromPrimary` / `createDiveFromRecording` / `remove` / `restore` | values follow Primary; soft delete with one tombstone | unchanged; `restore` of a Dive an append took goes to the undo (Task 6); a plain `restore` now goes through `undelete` -> `followPrimary` (values without Override follow the unchanged Primary, so a kept Dive deleted mid-continuation comes back with its own values) | 6 |
 | `dives/merging-service.ts` `liveRecordings`, `mergeCandidates` count, `keptOf` | merge keeps the Dive with Recordings | count units | 4 |
 | `merging-service.ts` `deleteLeftBehind` (`primaryRecordingId: null`), `fillValues` | | reused by the append (cause widened) | 3 |
 | `merging-service.ts` `move` | Recordings move to the copy | unit moves together: no change | 4 (test) |
