@@ -29,7 +29,7 @@ const AREAS = [
   [/^apps\/web\/src\/BodyWeight\.tsx$/, ['@divers']],
   // A Diver certification cards (ADR 0050), a section of a Diver's page (slice 25c); their server side also takes part in the import.
   [/^apps\/web\/src\/Certifications\.tsx$|^apps\/server\/src\/certifications\//, ['@divers', '@account']],
-  [/^apps\/web\/src\/(SignedOut|AccountPage|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
+  [/^apps\/web\/src\/(SignedOut|AccountSettings|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
   [/^apps\/web\/src\/SettingsPage\.tsx$/, ['@account', '@admin']],
   // The Settings addresses: also the links to a Connection's settings from a Dive's panels, an Import and a push run.
   [/^apps\/web\/src\/lib\/settings\.ts$/, ['@account', '@admin', '@dives']],
@@ -41,7 +41,7 @@ const AREAS = [
   [/^apps\/web\/src\/(NumberChain|ProviderDiveNumbers)\.tsx$/, ['@dives', '@account']],
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
-  [/^apps\/web\/src\/AdminPage\.tsx$/, ['@admin']],
+  [/^apps\/web\/src\/AdminSettings.tsx$/, ['@admin']],
   // The Tools page (ADR 0032): gas numbers and bottom time; its server computation and the MCP tool that answers the same.
   [/^apps\/web\/src\/Tools(Page|Plan|PlanProfile|Lead)\.tsx$|^apps\/web\/src\/ProfilePlot\.tsx$|^apps\/web\/src\/lib\/tools\.ts$|^apps\/server\/src\/planning\/|^apps\/server\/src\/lead\/|^apps\/server\/src\/mcp\/tools-planning(-gas-plan)?.ts$/, ['@tools']],
   // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
