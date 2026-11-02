@@ -669,6 +669,26 @@ for (const v of variants) {
       }
     });
 
+    // The fetch's help shown while the import is off, and a switch busy while its save runs (backlog 0010, point 13).
+    test('my account, automatic settings: the fetch needs the import, a switch saving', { tag: ['@account'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      await page.route('**/api/connections', async (route) => {
+        const response = await route.fetch();
+        const rows = (await response.json()) as Record<string, unknown>[];
+        await route.fulfill({ status: response.status(), json: rows.map((row) => ({ ...row, diveImport: { mode: 'off', windowMinutes: 15 } })) });
+      });
+      // The save never answers here: the switch stays busy while the page is checked.
+      await page.route('**/api/connections/*', (route) => (route.request().method() === 'PATCH' ? new Promise<void>(() => {}) : route.fallback()));
+      await page.goto('/#/account?tab=connections');
+      const settingsOf = page.getByRole('region', { name: v.english ? /^Automatic/ : /^Automatisch/ });
+      await expect(settingsOf.getByText(v.english ? 'A fetch does nothing while the import below is off.' : 'Ein Abruf tut nichts, solange der Import darunter aus ist.')).toBeVisible();
+      const first = settingsOf.getByRole('switch').first();
+      await first.focus();
+      await page.keyboard.press('Space');
+      await expect(first).toHaveAttribute('aria-busy', 'true');
+      await goodPage(page, title('Connections'), v);
+    });
+
     // Waiting under Needs your decision: a dive the Provider already has (ADR 0056).
     test('review, a dive already at SSI', { tag: ['@dives'] }, async ({ page, request }) => {
       await connectSsi(request);

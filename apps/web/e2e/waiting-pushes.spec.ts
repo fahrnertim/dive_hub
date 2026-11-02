@@ -288,6 +288,94 @@ test('the settings show only what the Provider offers and 6 hours is preselected
   }
 });
 
+test('a stored interval the Provider no longer offers is still the selected one', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  try {
+    // Stored every hour, but the Provider now offers every 6 hours at the soonest.
+    let stored = true;
+    const narrowed = (row: { offers: Record<string, unknown> }) =>
+      ({ ...row, ...(stored ? { fetchEveryMinutes: 60 } : {}), offers: { ...row.offers, fetchEvery: [360, 1440] } });
+    await page.route('**/api/connections', async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({ status: response.status(), json: ((await response.json()) as { offers: Record<string, unknown> }[]).map(narrowed) });
+    });
+    const bodies: unknown[] = [];
+    await page.route('**/api/connections/*', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      bodies.push(route.request().postDataJSON());
+      stored = false;
+      const response = await route.fetch();
+      return route.fulfill({ status: response.status(), json: narrowed(await response.json() as { offers: Record<string, unknown> }) });
+    });
+    await openConnections(page);
+    const every = automatic(page).getByRole('radiogroup', { name: 'How often' });
+    await expect(every.getByRole('radio', { name: 'every hour' })).toBeChecked();
+    await expect(every.getByRole('radio')).toHaveCount(3);
+    await every.getByText('every 6 hours').click();
+    await expect.poll(() => bodies).toEqual([{ fetchEveryMinutes: 360 }]);
+    await expect(every.getByRole('radio', { name: 'every 6 hours' })).toBeChecked();
+  } finally {
+    await leave(request);
+  }
+});
+
+test('the fetch switch says first that it needs the import', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  try {
+    await page.route('**/api/connections', async (route) => {
+      const response = await route.fetch();
+      const rows = (await response.json()) as Record<string, unknown>[];
+      await route.fulfill({ status: response.status(), json: rows.map((row) => ({ ...row, diveImport: { mode: 'off', windowMinutes: 15 } })) });
+    });
+    await openConnections(page);
+    const fetch = automatic(page).getByRole('switch', { name: 'Fetch from SSI' });
+    await expect(fetch).not.toBeChecked();
+    await expect(fetch).toHaveAccessibleDescription('A fetch does nothing while the import below is off.');
+  } finally {
+    await leave(request);
+  }
+});
+
+test('a switch is busy while its setting saves', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    const connectionId = await ssiConnectionOf(request, id);
+    // The save of "send changes" waits until released; the others go through.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    let changesSaves = 0;
+    await page.route('**/api/connections/*', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      if ('sendChanges' in (route.request().postDataJSON() as object)) {
+        changesSaves += 1;
+        await held;
+      }
+      return route.fallback();
+    });
+    await openConnections(page);
+    const settingsOf = automatic(page);
+    const changes = settingsOf.getByRole('switch', { name: 'Send changes automatically' });
+    const newDives = settingsOf.getByRole('switch', { name: 'Send new dives automatically' });
+    await settingsOf.getByText('Send changes automatically', { exact: true }).click();
+    await expect(changes).toHaveAttribute('aria-busy', 'true');
+    // A second press while it saves sends nothing.
+    await settingsOf.getByText('Send changes automatically', { exact: true }).click();
+    // The other switch saves at once.
+    await settingsOf.getByText('Send new dives automatically', { exact: true }).click();
+    await expect(newDives).not.toHaveAttribute('aria-busy', 'true');
+    await expect.poll(async () => (await connectionRow(request, connectionId) as { sendNewDives?: boolean } | undefined)?.sendNewDives).toBe(true);
+    expect(changesSaves).toBe(1);
+    release();
+    await expect(changes).toBeChecked();
+    await expect(changes).not.toHaveAttribute('aria-busy', 'true');
+    await expect(newDives).toBeChecked();
+    expect(changesSaves).toBe(1);
+  } finally {
+    await leave(request);
+  }
+});
+
 test('the delete setting\'s help text says what restoring does', { tag: ['@account'] }, async ({ page, request }) => {
   try {
     await connectSsi(request);
