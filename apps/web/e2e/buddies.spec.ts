@@ -63,6 +63,8 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await dialog.getByRole('option', { name: /Kai Lund/ }).click();
   await expect(dialog).toBeHidden();
   await expect(people.locator('li > :not(.avatar)')).toHaveText(['Kai Lund (Buddy)']);
+  // The chip that opened the dialog is gone: focus goes to the fact's own way to add someone, not to the page.
+  await expect(people.getByRole('button', { name: 'Add someone' })).toBeFocused();
 
   await people.getByRole('button', { name: 'Add someone' }).click();
   dialog = page.getByRole('dialog');

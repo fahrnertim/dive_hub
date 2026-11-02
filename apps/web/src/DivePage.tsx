@@ -325,22 +325,23 @@ function DiveDetails({ dive: d, onAddNotes, onAddCylinders, onAddWeighting }: {
     ...(!hasWeighting ? [{ id: 'weighting', label: t('weighting.addFirst'), onPress: onAddWeighting }] : []),
     ...(!d.notes ? [{ id: 'notes', label: t('dive.addNotes'), onPress: onAddNotes }] : []),
   ];
+  // Without any of these the list is not there; it stays mounted, hidden, because the buddies' dialogs belong to it.
+  const hasDetails = !!d.site || d.participants.length > 0 || hasWeighting;
   return (
     <>
-      {/* Empty until one of them has a value; the buddies' dialogs are mounted from here either way. */}
-      <dl className="facts dive-details">
-          {d.site && (
-            <Fact label={t('dive.site')}>
-              <span className="site-fact">
-                <a href={`#/sites/${d.site.id}`}>{d.site.name}</a>
-                <Button ref={siteButton} variant="quiet" size="small" icon="site" onPress={() => setPicking(true)}>{t('dive.changeSite')}</Button>
-              </span>
-            </Fact>
-          )}
-          <Participants dive={d} adding={addingPerson} onAddingChange={setAddingPerson} emptied={() => buddiesChip.current?.focus()} />
-          {d.suit && <Fact label={t('weighting.suit')}>{weighting.suit(d.suit)}</Fact>}
-          {d.lead.length > 0 && <Fact label={t('weighting.lead')} wide={d.lead.length > 1}>{weighting.lead(d.lead)}</Fact>}
-          {d.weightingFeedback && <Fact label={t('weighting.weighting')}>{weighting.feedback(d.weightingFeedback)}</Fact>}
+      <dl className="facts dive-details" hidden={!hasDetails}>
+        {d.site && (
+          <Fact label={t('dive.site')}>
+            <span className="site-fact">
+              <a href={`#/sites/${d.site.id}`}>{d.site.name}</a>
+              <Button ref={siteButton} variant="quiet" size="small" icon="site" onPress={() => setPicking(true)}>{t('dive.changeSite')}</Button>
+            </span>
+          </Fact>
+        )}
+        <Participants dive={d} adding={addingPerson} onAddingChange={setAddingPerson} emptied={() => buddiesChip.current?.focus()} />
+        {d.suit && <Fact label={t('weighting.suit')}>{weighting.suit(d.suit)}</Fact>}
+        {d.lead.length > 0 && <Fact label={t('weighting.lead')} wide={d.lead.length > 1}>{weighting.lead(d.lead)}</Fact>}
+        {d.weightingFeedback && <Fact label={t('weighting.weighting')}>{weighting.feedback(d.weightingFeedback)}</Fact>}
       </dl>
       {picking && <SitePicker dive={d} onClose={() => setPicking(false)} />}
       <CylinderList dive={d} />

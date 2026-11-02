@@ -39,6 +39,13 @@ export function Participants({ dive: d, adding, onAddingChange: setAdding, empti
     setChanging(false);
     requestAnimationFrame(emptied);
   }, [changing, nobody, emptied]);
+  // The first one added from the page's "Add buddies" chip: the chip goes with it, so focus goes to the fact's own way to add someone.
+  const firstAdded = useRef(false);
+  useEffect(() => {
+    if (nobody || !firstAdded.current) return;
+    firstAdded.current = false;
+    requestAnimationFrame(() => addButton.current?.focus());
+  }, [nobody, adding]);
   const save = useMutation({
     mutationFn: async (participants: { diverId: string; role: ParticipantRole }[]) => unwrap(await api.PUT('/api/dives/{id}/participants', {
       params: { path: { id: d.id } }, body: { version: d.version, participants },
@@ -116,7 +123,11 @@ export function Participants({ dive: d, adding, onAddingChange: setAdding, empti
         <AddParticipant
           dive={d} onClose={() => setAdding(false)} isPending={save.isPending} error={save.error}
           onAdd={(diverId, role, name) => save.mutate([...list, { diverId, role }], {
-            onSuccess: () => { announce(t('participants.added', { name, role: t(`participants.role.${role}`) })); setAdding(false); },
+            onSuccess: () => {
+              firstAdded.current = list.length === 0;
+              announce(t('participants.added', { name, role: t(`participants.role.${role}`) }));
+              setAdding(false);
+            },
           })}
         />
       )}
