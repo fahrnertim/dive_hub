@@ -9,6 +9,7 @@ import { argumentsText, setupLines } from './lib/ai-access.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
+import { settingsHref } from './lib/settings.ts';
 import { Badge, Button, Checkbox, ConfirmButton, CopyField, Form, Muted, Notice, Panel, Table, TextField } from './ui/index.ts';
 
 /** Matches the server's limit for an AI access's name. */
@@ -37,7 +38,7 @@ export function AiAccess() {
         <Notice tone="info">
           <p>
             {me.data?.user.role === 'admin'
-              ? <Trans i18nKey="aiAccess.offAdmin" components={{ a: <a href="#/admin" /> }} />
+              ? <Trans i18nKey="aiAccess.offAdmin" components={{ a: <a href={settingsHref('admin')} /> }} />
               : t('aiAccess.off')}
             {accesses.length > 0 && <> {t('aiAccess.offExisting')}</>}
           </p>

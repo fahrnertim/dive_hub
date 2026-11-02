@@ -467,23 +467,29 @@ for (const v of variants) {
       }
     });
 
-    test('Divers and Devices', { tag: ['@divers'] }, async ({ page, request }) => {
+    test('Divers and Devices', { tag: ['@divers', '@account'] }, async ({ page, request }) => {
       // Someone without a logbook here (ADR 0028), listed under "Other divers".
       await externalDiver(request, 'Ulla Berg');
       await page.goto('/#/divers');
       await expect(page.getByText('Ulla Berg')).toBeVisible();
-      await expect(page.getByRole('table')).toBeVisible();
       // A circle beside each name: decoration (the name is the text), the same two letters as in the logbook row.
       const ulla = page.getByRole('listitem').filter({ hasText: 'Ulla Berg' }).first();
       await expect(ulla.locator('.avatar[aria-hidden="true"]')).toHaveText('UB');
       await goodPage(page, title('Divers'), v);
       await expectCirclesFit(page);
+      // The Devices are a section of Settings (UI overhaul).
+      await page.goto('/#/settings/devices');
+      await expect(page.getByRole('table')).toBeVisible();
+      await goodPage(page, title('Devices'), v);
     });
 
-    test('my account', { tag: ['@account'] }, async ({ page }) => {
+    test('my account: display, and sign-in and security', { tag: ['@account'] }, async ({ page }) => {
       await page.goto('/#/account');
+      await expect(page.getByRole('radiogroup').first()).toBeVisible();
+      await goodPage(page, title('Display'), v);
+      await page.goto('/#/settings/security');
       await expect(page.getByRole('table').first()).toBeVisible();
-      await goodPage(page, title('My account'), v);
+      await goodPage(page, title('Sign-in and security'), v);
     });
 
     test('my account, AI access: none yet, then a new key shown once', { tag: ['@account'] }, async ({ page, request }) => {
@@ -491,12 +497,12 @@ for (const v of variants) {
       try {
         await page.goto('/#/account?tab=ai');
         await expect(page.getByText(v.english ? 'You have no AI access yet.' : 'Du hast noch keinen KI-Zugang.')).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('AI access'), v);
         // A long name, as someone might type it.
         await page.getByRole('textbox', { name: 'Name' }).fill(`Claude Code on the old laptop in the dive shop ${v.locale}`);
         await page.getByRole('button', { name: v.english ? 'Create AI access' : 'KI-Zugang erstellen' }).click();
         await expect(page.getByRole('button', { name: v.english ? 'Copy: Key' : 'Kopieren: Schlüssel' })).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('AI access'), v);
       } finally {
         await aiAccessReady(request);
       }
@@ -510,7 +516,7 @@ for (const v of variants) {
         await askMcp(request, access.key, 'logbook_get_dive', { dive_id: '00000000-0000-7000-8000-000000000000' });
         await page.goto('/#/account?tab=ai');
         await expect(page.getByRole('region', { name: v.english ? 'What was read' : 'Was gelesen wurde' }).getByText('logbook_get_dive').first()).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('AI access'), v);
       } finally {
         await aiAccessReady(request);
       }
@@ -521,7 +527,7 @@ for (const v of variants) {
       await page.goto('/#/account?tab=connections');
       await page.getByRole('button', { name: v.english ? /^Sign in again: / : /^Neu anmelden: / }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
-      await goodPage(page, title('My account'), v);
+      await goodPage(page, title('Connections'), v);
     });
 
     test('my account, connected to Garmin, the key expires soon', { tag: ['@account'] }, async ({ page, request }) => {
@@ -529,7 +535,7 @@ for (const v of variants) {
       try {
         await page.goto('/#/account?tab=connections');
         await expect(page.locator('#main').getByText(v.english ? /The key expires on / : /Der Schlüssel läuft am /)).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await leaveGarmin(request);
       }
@@ -635,7 +641,7 @@ for (const v of variants) {
       await page.goto('/#/account?tab=connections');
       await page.getByRole('button', { name: v.english ? /^Show your SSI buddy list/ : /^Deine SSI-Buddyliste zeigen/ }).click();
       await expect(page.getByRole('row', { name: /Mia Stone/ })).toBeVisible();
-      await goodPage(page, title('My account'), v);
+      await goodPage(page, title('Connections'), v);
     });
 
     // What the Connection does by itself (ADR 0056): the switches, the last fetch with what waits, and the offer of unsent new dives.
@@ -648,7 +654,7 @@ for (const v of variants) {
         await page.goto('/#/account?tab=connections');
         await expect(page.getByRole('region', { name: v.english ? /^Automatic/ : /^Automatisch/ })).toBeVisible();
         await expect(page.getByText(v.english ? /^Last fetched / : /^Zuletzt abgerufen /)).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await fetchState(request, connectionId, { clear: true });
       }
@@ -677,10 +683,10 @@ for (const v of variants) {
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show what the import would do' : 'Zeigen, was der Import tun würde' }).click();
         await expect(section.getByRole('radiogroup', { name: v.english ? /^SSI dive 15: / : /^SSI-Tauchgang 15: / })).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
         await section.getByRole('button', { name: v.english ? 'Import from SSI' : 'Aus SSI importieren' }).click();
         await expect(section.getByRole('link', { name: v.english ? 'Go to the logbook' : 'Zum Logbuch' })).toBeVisible({ timeout: 30_000 });
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await leaveLena(request);
       }
@@ -693,7 +699,7 @@ for (const v of variants) {
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show when each dive was made' : 'Zeigen, wann jeder Tauchgang angelegt wurde' }).click();
         await expect(section.getByRole('region', { name: v.english ? 'Dives in SSI with start and origin' : 'Tauchgänge in SSI mit Beginn und Herkunft' })).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await leaveLena(request);
       }
@@ -706,7 +712,7 @@ for (const v of variants) {
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show what the import would do' : 'Zeigen, was der Import tun würde' }).click();
         await expect(section.getByRole('heading', { name: v.english ? 'Changed in both places' : 'An beiden Stellen geändert' })).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await leaveLena(request);
       }
@@ -723,7 +729,7 @@ for (const v of variants) {
         await panel.getByRole('textbox', { name: v.english ? 'SSI password' : 'SSI-Passwort' }).fill(LENA_SSI.password);
         await panel.getByRole('button', { name: v.english ? 'Connect to SSI' : 'Mit SSI verbinden' }).click();
         await expect(panel.getByRole('button', { name: v.english ? /^Yes, I am Lena Berger/ : /^Ja, ich bin Lena Berger/ })).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await leaveLena(request);
         // The question was left open: Lena's account stays with the external Diver; give it back to her.
@@ -1078,7 +1084,7 @@ for (const v of variants) {
         await page.goto('/#/account?tab=connections');
         await page.getByRole('button', { name: v.english ? /^Check for dives deleted in SSI/ : /^Nach in SSI gelöschten Tauchgängen suchen/ }).click();
         await expect(page.locator('#main').getByText(v.english ? /dive is no longer in your SSI logbook/ : /Tauchgang ist nicht mehr in deinem SSI-Logbuch/)).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await deletableDive(request);
         await request.post('/e2e/fake-ssi/clear-dives', { data: { email: 'erika@example.com' }, headers });
@@ -1131,7 +1137,7 @@ for (const v of variants) {
       await page.getByRole('textbox', { name: v.english ? 'E-mail' : 'E-Mail' }).fill(`shown-${v.locale}@example.com`);
       await page.getByRole('button', { name: v.english ? 'Create invitation link' : 'Einladungslink erstellen' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Copy' : 'Kopieren' })).toBeVisible();
-      await goodPage(page, title('Admin'), v);
+      await goodPage(page, title('Administration'), v);
       // On a phone the rows are cards: the actions stay in sight instead of scrolling away sideways.
       // (Below the fold is fine on a short screen; off to the right is not.)
       const revoke = await page.getByRole('button', { name: v.english ? /^Revoke:/ : /^Zurückziehen:/ }).first().boundingBox();
@@ -1146,7 +1152,7 @@ for (const v of variants) {
         await expect(page.getByRole('button', { name: v.english ? 'Revoke all AI accesses…' : 'Alle KI-Zugänge zurückziehen…' })).toBeVisible();
         await page.getByRole('button', { name: v.english ? 'Switch AI access off…' : 'KI-Zugang ausschalten…' }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
-        await goodPage(page, title('Admin'), v);
+        await goodPage(page, title('Administration'), v);
       } finally {
         await aiAccessReady(request);
       }
@@ -1157,7 +1163,7 @@ for (const v of variants) {
       try {
         await page.goto('/#/admin');
         await expect(page.getByRole('button', { name: v.english ? 'Stop making sites' : 'Keine Tauchplätze mehr anlegen' })).toBeVisible();
-        await goodPage(page, title('Admin'), v);
+        await goodPage(page, title('Administration'), v);
       } finally {
         await request.put('/api/admin/provider-site-data/ssi', { data: { allowed: false }, headers });
       }
@@ -1203,8 +1209,9 @@ test.describe('behaviour', () => {
     ['logbook', () => '/', ['@dives']], ['dive', () => `/#/dives/${diveId}`, ['@dives']], ['Divers', () => '/#/divers', ['@divers']],
     ['Dive sites', () => '/#/sites', ['@sites']], ['a dive site', () => `/#/sites/${siteId}`, ['@sites']],
     ['an imported dive site', () => `/#/sites/${importedSiteId}`, ['@sites']],
-    ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a gas plan', () => '/#/tools/plan?water=fresh&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~', ['@tools']], ['the lead calculator', () => '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['account', () => '/#/account', ['@account']], ['account connections', () => '/#/account?tab=connections', ['@account']], ['account AI access', () => '/#/account?tab=ai', ['@account']],
-    ['Review', () => '/#/review', ['@dives']], ['admin', () => '/#/admin', ['@admin']], ['site import', () => '/#/admin/site-imports', ['@admin', '@sites']],
+    ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a gas plan', () => '/#/tools/plan?water=fresh&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~', ['@tools']], ['the lead calculator', () => '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['Settings', () => '/#/settings', ['@account']], ['Display', () => '/#/settings/display', ['@account']], ['Sign-in and security', () => '/#/settings/security', ['@account']],
+    ['Connections', () => '/#/settings/connections', ['@account']], ['AI access', () => '/#/settings/ai-access', ['@account']], ['Devices', () => '/#/settings/devices', ['@account', '@divers']],
+    ['Review', () => '/#/review', ['@dives']], ['Administration', () => '/#/settings/admin', ['@admin']], ['site import', () => '/#/settings/admin/site-imports', ['@admin', '@sites']],
   ];
   for (const [name, path, tag] of sweep) {
     test(`${name} fits every width from 320 to 1440 px: no page or table scrolls sideways`, { tag: [...tag, '@layout'] }, async ({ page }) => {
@@ -1222,7 +1229,7 @@ test.describe('behaviour', () => {
   }
 
   test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', { tag: ['@layout'] }, async ({ page }) => {
-    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', '/#/review', '/#/account', '/#/account?tab=connections', '/#/account?tab=ai', '/#/admin', '/#/admin/site-imports']) {
+    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', '/#/review', '/#/settings', '/#/settings/display', '/#/settings/security', '/#/settings/connections', '/#/settings/ai-access', '/#/settings/devices', '/#/settings/admin', '/#/settings/admin/site-imports']) {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).waitFor();
       await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
@@ -1511,10 +1518,11 @@ test.describe('behaviour', () => {
     await expect(page.getByRole('menuitem', { name: 'My certifications' })).toBeVisible();
     // The account, its Connections and Administration are sections of Settings (UI overhaul), not in the bar.
     await expect(page.getByRole('menuitem', { name: 'Settings' })).toHaveAttribute('href', '#/settings');
-    await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Admin' })).toHaveCount(0);
-    // Until Settings has its sections, the account page stays at its address.
+    await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Administration' })).toHaveCount(0);
+    // The account page's old address leads to the first section of Settings.
     await page.goto('/#/account');
-    await expect(page.getByRole('heading', { name: 'My account', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Display', level: 1 })).toBeVisible();
+    await expect(page).toHaveURL(/#\/settings\/display$/);
   });
 
   test('a second Diver with the same name is allowed, with a warning', { tag: ['@divers'] }, async ({ page }) => {
@@ -1534,29 +1542,29 @@ test.describe('behaviour', () => {
     await expect(page.locator('section', { has: page.getByRole('heading', { name: 'Other divers' }) }).getByRole('button', { name: 'Add buddy' })).toBeVisible();
   });
 
-  test('the account page has its parts as tabs in the address, and the connections have their own (slice 25e, C10)', { tag: ['@account'] }, async ({ page }) => {
-    await page.goto('/#/account');
-    const parts = page.getByRole('navigation', { name: 'Parts of the account' });
-    await expect(parts.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');
+  test('Settings has a view per section, each at its own address, and the connections have their own (slice 25e, C10; UI overhaul)', { tag: ['@account'] }, async ({ page }) => {
+    await page.goto('/#/settings/security');
+    const sections = page.getByRole('navigation', { name: 'Settings' });
+    await expect(sections.getByRole('link', { name: 'Sign-in and security' })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { name: 'Where you’re signed in' })).toBeVisible();
-    // Connections and AI access are not on the first part: the page is not one long scroll.
+    // Connections and AI access are not on this view: Settings is not one long scroll.
     await expect(page.getByRole('heading', { name: 'AI access' })).toHaveCount(0);
 
-    await parts.getByRole('link', { name: 'Connections' }).click();
-    await expect(page).toHaveURL(/#\/account\?tab=connections$/);
-    await expect(parts.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
+    await sections.getByRole('link', { name: 'Connections' }).click();
+    await expect(page).toHaveURL(/#\/settings\/connections$/);
+    await expect(sections.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { name: 'Where you’re signed in' })).toHaveCount(0);
     await page.reload();
-    await expect(parts.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
+    await expect(sections.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
 
-    await parts.getByRole('link', { name: 'AI access' }).click();
-    await expect(page).toHaveURL(/#\/account\?tab=ai$/);
-    await expect(page.getByRole('heading', { name: 'AI access' }).first()).toBeVisible();
+    await sections.getByRole('link', { name: 'AI access' }).click();
+    await expect(page).toHaveURL(/#\/settings\/ai-access$/);
+    await expect(page.getByRole('heading', { name: 'AI access', level: 1 })).toBeVisible();
 
-    // The connections have their own address (Settings links them from Task 3 of the UI overhaul).
+    // The connections' old address leads to their section.
     await page.goto('/#/account?tab=connections');
-    await expect(parts.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByRole('heading', { name: 'My account', level: 1 })).toBeVisible();
+    await expect(sections.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('heading', { name: 'Connections', level: 1 })).toBeVisible();
   });
 
   test('Imports and Deleted dives are linked from the logbook, even with nothing waiting (slice 25e, C9)', { tag: ['@dives'] }, async ({ page }) => {

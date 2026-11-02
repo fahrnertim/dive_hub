@@ -125,7 +125,7 @@ test('a buddy imported earlier is claimed by connecting their own SSI account, a
     await panel.getByRole('button', { name: 'Connect to SSI' }).click();
     await expect(panel.getByText(/^This SSI account is Lena Berger \d+ here, a buddy on 0 dives\. Is that you\?$/)).toBeVisible();
     await panel.getByRole('button', { name: /^Yes, I am Lena Berger/ }).click();
-    await expect(panel.getByRole('cell', { name: LENA_SSI.login, exact: true })).toBeVisible();
+    await expect(panel.getByRole('cell').getByText(LENA_SSI.login, { exact: true })).toBeVisible(); // a table or, with less room, cards
     await page.goto('/#/divers');
     await expect(page.getByText(/^Lena Berger/)).toHaveCount(0);
   } finally {

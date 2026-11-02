@@ -194,7 +194,7 @@ test('review material', async ({ page, request, browser }) => {
   if (want('divers')) {
     // A dive professional taken from a code (ADR 0043); person, account, e-mail and leader number are made up.
     await request.post('/api/divers/from-code', { headers, data: { text: 'buddy;4600002;firstName:Pia;lastName:Probe;email:pia@example.com;leaderNr:70001', create: true } });
-    await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Devices' }).waitFor(); await page.locator('table').waitFor();
+    await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Other divers' }).waitFor();
     await capture(page, '04-divers');
     await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
     await page.getByRole('dialog').getByRole('img').nth(1).waitFor();
@@ -254,8 +254,10 @@ test('review material', async ({ page, request, browser }) => {
     await askMcp(request, access.key, 'logbook_search_dives', { query: 'wreck', country: 'EG', limit: 5 });
     await askMcp(request, access.key, 'logbook_get_dive', { dive_id: '00000000-0000-7000-8000-000000000000' });
     await askMcp(request, access.key, 'logbook_stats', { group_by: 'year' });
-    await page.goto('/#/account'); await page.getByRole('heading', { name: 'My account' }).waitFor(); await page.locator('table').first().waitFor();
+    await page.goto('/#/account'); await page.getByRole('heading', { name: 'Display', level: 1 }).waitFor();
     await capture(page, '05-account');
+    await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
+    await capture(page, '05a-account-security');
     await page.goto('/#/account?tab=connections'); await page.getByRole('heading', { name: 'SSI', exact: true }).waitFor();
     await capture(page, '05c-account-connections');
     // Garmin (ADR 0062): its key form is on the page above; now connected with a key that expires in 5 days, its kinds under the import.
@@ -277,6 +279,22 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('button', { name: 'Copy: Key' }).waitFor();
     await capture(page, '05b-account-ai-access-key');
     await page.getByRole('button', { name: 'Done, I copied the key' }).click();
+    // Settings (UI overhaul): the Devices beside the sections; dark; on a phone the list of sections, then a section with
+    // its way back to it.
+    await page.goto('/#/settings/devices'); await page.locator('table').waitFor();
+    await capture(page, '05g-account-settings-devices');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
+    await capture(page, '05h-account-settings-security-dark', { aria: false });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#/settings'); await page.getByRole('navigation', { name: 'Settings' }).waitFor();
+    await capture(page, '05i-account-settings-phone');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/#/settings/display'); await page.getByRole('radiogroup').first().waitFor();
+    await capture(page, '05j-account-settings-display-phone-dark', { aria: false });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 1280, height: 900 });
   }
   if (want('admin')) {
     await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Users' }).waitFor();
@@ -311,7 +329,7 @@ test('review material', async ({ page, request, browser }) => {
       await capture(page, '09b-dive-assessment-de-phone', { aria: false });
     }
     if (want('divers')) {
-      await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Geräte' }).waitFor();
+      await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Andere Taucher' }).waitFor();
       await capture(page, '10-divers-de-phone', { aria: false });
       // A Diver's certification cards at phone width, in German: a typed and an imported one (ADR 0050), and the form.
       const [diver] = (await (await request.get('/api/divers')).json()) as { id: string; name: string }[];
@@ -1082,7 +1100,7 @@ test('review material', async ({ page, request, browser }) => {
     await p2.getByRole('button', { name: 'Create account' }).click();
     await p2.getByRole('heading', { name: 'Logbook' }).waitFor();
     await capture(p2, '14-empty-logbook');
-    await p2.goto('/#/divers'); await p2.getByRole('heading', { name: 'Devices' }).waitFor();
+    await p2.goto('/#/divers'); await p2.getByRole('heading', { name: 'Other divers' }).waitFor();
     await capture(p2, '15-empty-divers');
     await p2.goto('/#/dives/00000000-0000-7000-8000-000000000000'); await p2.getByRole('heading', { name: 'Dive not found' }).waitFor();
     await capture(p2, '16-dive-not-found', { aria: false });

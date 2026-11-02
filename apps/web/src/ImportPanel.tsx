@@ -5,7 +5,7 @@ import { FileTrigger } from 'react-aria-components';
 import { api, importsQuery, keys, unwrap, uploadFile, type ImportView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
-import { connectionHref } from './lib/account-tabs.ts';
+import { connectionHref } from './lib/settings.ts';
 import { IMPORTABLE, splitImportable } from './lib/importable.ts';
 import { useProviders, useProviderText } from './lib/providers.ts';
 import { Badge, Button, Checkbox, Muted, Notice, Panel } from './ui/index.ts';

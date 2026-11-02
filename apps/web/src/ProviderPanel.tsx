@@ -11,7 +11,7 @@ import { announce } from './lib/announce.ts';
 import { LinkOrAddDialog, ListChangeNotice, type ListChange } from './LinkOrAdd.tsx';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { diveTargets, typedSiteId, useFieldNames, useJoinNames, useProviders, useProviderText, waitsForUser, type SyncedField } from './lib/providers.ts';
-import { accountHref } from './lib/account-tabs.ts';
+import { settingsHref } from './lib/settings.ts';
 import { NumberChainDialog } from './NumberChain.tsx';
 import { ProviderConflicts } from './ProviderConflicts.tsx';
 import { WaitingPushState } from './WaitingPush.tsx';
@@ -159,7 +159,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
     // Nothing sent and nothing to send with: one line pointing to where to connect.
     return (
       <Line title={p.name}>
-        <p className="muted">{pt('notConnected', { diver: diverName ?? '' })} <a href={accountHref('connections')}>{pt('goConnect')}</a></p>
+        <p className="muted">{pt('notConnected', { diver: diverName ?? '' })} <a href={settingsHref('connections')}>{pt('goConnect')}</a></p>
         {s.current && <SentState provider={p} status={s} />}
       </Line>
     );
@@ -184,7 +184,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
       <div className="provider-body">
 
       {signInNeeded && (
-        <Notice tone="danger">{pt('signInNeeded')} <a href={accountHref('connections')}>{pt('goSignIn')}</a></Notice>
+        <Notice tone="danger">{pt('signInNeeded')} <a href={settingsHref('connections')}>{pt('goSignIn')}</a></Notice>
       )}
       {s.waiting && <WaitingPushState push={s.waiting} providerName={p.name} variant="panel" diveId={d.id} />}
       <Requirements provider={p} dive={d} status={s} onFind={setFinding} />
@@ -226,7 +226,7 @@ function ProviderPanel({ provider: p, dive: d, diverName }: { provider: Provider
             <p>
               {setNumber.error.details.diveId
                 ? <Button size="small" onPress={() => setChainOpen(true)}>{pt('chain')}</Button>
-                : <><span>{pt('heldOnlyThere')}</span> <a href={accountHref('connections')}>{pt('heldImport')}</a></>}
+                : <><span>{pt('heldOnlyThere')}</span> <a href={settingsHref('connections')}>{pt('heldImport')}</a></>}
             </p>
           )}
         </Notice>

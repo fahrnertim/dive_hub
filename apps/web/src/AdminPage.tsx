@@ -7,22 +7,23 @@ import { announce } from './lib/announce.ts';
 import { useProviders, useProviderText } from './lib/providers.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading } from './lib/focus.ts';
-import { usePageTitle } from './lib/page.ts';
-import { Badge, Button, Checkbox, ConfirmButton, CopyField, Dialog, Form, Icon, Notice, PageHeader, Panel, Table, TextField } from './ui/index.ts';
+import { SITE_IMPORTS_HREF } from './lib/settings.ts';
+import { Badge, Button, Checkbox, ConfirmButton, CopyField, Dialog, Form, Icon, Notice, Panel, Table, TextField } from './ui/index.ts';
 
-/** Admins invite people (copy the link, there's no mail yet) and manage Users (ADR 0012, 0013). */
-export function AdminPage() {
+/**
+ * Settings' Administration section: admins invite people (copy the link, there's no mail yet) and manage Users (ADR 0012,
+ * 0013). The section's name is the h1.
+ */
+export function AdminSettings() {
   const { t } = useTranslation();
-  usePageTitle(t('nav.admin'));
   return (
     <>
-      <PageHeader title={t('nav.admin')} />
       <Invite />
       <Invitations />
       <Users />
       <Panel title={t('siteImport.title')}>
         <p>{t('siteImport.adminLead')}</p>
-        <a href="#/admin/site-imports" className="btn btn-secondary"><Icon name="siteImport" />{t('siteImport.open')}</a>
+        <a href={SITE_IMPORTS_HREF} className="btn btn-secondary"><Icon name="siteImport" />{t('siteImport.open')}</a>
       </Panel>
       <ProviderSiteData />
       <AiAccessSetting />

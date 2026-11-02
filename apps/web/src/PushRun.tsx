@@ -13,7 +13,7 @@ import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { logbookHref, toggled, type LogbookFilter, type LogbookParams } from './lib/logbook.ts';
 import { useJoinNames, useProviders } from './lib/providers.ts';
 import { reviewHref } from './lib/review.ts';
-import { accountHref } from './lib/account-tabs.ts';
+import { settingsHref } from './lib/settings.ts';
 import { HeldAtProvider, NumberPlanList } from './NumberChain.tsx';
 import { ActionMenu, Button, Checkbox, ConfirmButton, Dialog, Disclosure, Icon, LinkButton, Muted, Notice, RadioGroup } from './ui/index.ts';
 
@@ -483,7 +483,7 @@ function EndedStrip({ run, name, onDismiss, dismissError }: { run: PushRunView; 
       <div className="push-run-head">
         <p>{summary}{run.status === 'stopped' && run.stopCode && <> {problemText(run.stopCode, { id: provider.id, name })}</>}</p>
         <div className="push-run-actions">
-          {needsSignIn && <LinkButton href={accountHref('connections')} size="small" variant="primary" icon="signIn">{t('pushRun.signIn', { name })}</LinkButton>}
+          {needsSignIn && <LinkButton href={settingsHref('connections')} size="small" variant="primary" icon="signIn">{t('pushRun.signIn', { name })}</LinkButton>}
           {run.status === 'stopped' && (
             <Button size="small" variant={needsSignIn ? 'secondary' : 'primary'} isPending={resume.isPending} onPress={() => resume.mutate()}>{t('pushRun.continue')}</Button>
           )}

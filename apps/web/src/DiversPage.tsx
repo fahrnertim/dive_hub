@@ -2,19 +2,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type FormEvent, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  api, devicesQuery, diverSearchQuery, diversQuery, externalDiversQuery, keys, meQuery, unwrap, type DeviceView, type DiverView, type ExternalDiverView,
+  api, diverSearchQuery, diversQuery, externalDiversQuery, keys, meQuery, unwrap, type DiverView, type ExternalDiverView,
 } from './api.ts';
 import { BodyWeightDialog } from './BodyWeight.tsx';
 import { CertificationsSection } from './Certifications.tsx';
 import { DiverCodesDialog, TakeCodeDialog } from './DiverCodes.tsx';
-import { deviceName } from './lib/devices.ts';
-import { useDisplay, useErrorText } from './lib/display.ts';
+import { useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Checkbox, ConfirmButton, Dialog, Disclosure, Form, DiverAvatar, NumberField, Muted, Notice, PageHeader, Panel, SearchList, Select, Table, TextField, type SearchListItem } from './ui/index.ts';
+import { Button, Checkbox, ConfirmButton, Dialog, Disclosure, Form, DiverAvatar, NumberField, Muted, Notice, PageHeader, Panel, SearchList, TextField, type SearchListItem } from './ui/index.ts';
 
-/** The Divers whose logbooks the User keeps, their Devices (ADR 0016), and the other divers Users dived with (ADR 0028). */
+/** The Divers whose logbooks the User keeps, and the other divers Users dived with (ADR 0028). Their Devices are in Settings. */
 export function DiversPage({ open }: { open?: string | undefined }) {
   const { t } = useTranslation();
   usePageTitle(t('divers.title'));
@@ -23,7 +22,6 @@ export function DiversPage({ open }: { open?: string | undefined }) {
       <PageHeader title={t('divers.title')} />
       <Divers open={open} />
       <OtherDivers />
-      <Devices />
     </>
   );
 }
@@ -407,62 +405,5 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
       {merging && <MergeDialog diver={d} onClose={() => setMerging(false)} />}
       {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
     </li>
-  );
-}
-
-function Devices() {
-  const { t } = useTranslation();
-  const errorText = useErrorText();
-  const devices = useQuery(devicesQuery());
-  const divers = useQuery(diversQuery());
-  return (
-    <Panel title={t('divers.devices')}>
-      <Muted>{t('divers.devicesIntro')}</Muted>
-      {/* Said once here, not under every device's select (UI review A2). */}
-      {(divers.data?.length ?? 0) > 1 && (devices.data?.length ?? 0) > 0 && <Muted>{t('divers.assignHint')}</Muted>}
-      {devices.isPending && <Muted>{t('common.loading')}</Muted>}
-      {devices.error && <Notice tone="danger">{errorText(devices.error)}</Notice>}
-      {devices.data?.length === 0 && <Muted>{t('divers.noDevices')}</Muted>}
-      {devices.data && devices.data.length > 0 && divers.data && (
-        <Table cards
-          label={t('divers.devices')}
-          head={[t('divers.deviceName'), t('divers.serial'), { label: t('divers.recordings'), numeric: true }, t('divers.lastUsed'), t('divers.belongsTo')]}
-        >
-          {devices.data.map((d) => <DeviceRow key={d.id} device={d} divers={divers.data} />)}
-        </Table>
-      )}
-    </Panel>
-  );
-}
-
-function DeviceRow({ device: d, divers }: { device: DeviceView; divers: DiverView[] }) {
-  const { t } = useTranslation();
-  const errorText = useErrorText();
-  const display = useDisplay();
-  const queryClient = useQueryClient();
-  const assign = useMutation({
-    mutationFn: async (diverId: string) => unwrap(await api.PATCH('/api/devices/{id}', { params: { path: { id: d.id } }, body: { diverId } })),
-    onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: keys.devices });
-      await queryClient.invalidateQueries({ queryKey: keys.divers });
-    },
-  });
-  return (
-    <tr>
-      <td translate="no">{deviceName(d.manufacturer, d.product)}</td>
-      <td translate="no">{d.serialNumber}</td>
-      <td className="num">{d.recordingCount}</td>
-      <td className="date">{d.lastUsedAt ? display.dateTime(d.lastUsedAt) : t('common.none')}</td>
-      <td className="device-owner">
-        <Select
-          label={<span className="visually-hidden">{t('divers.belongsToDevice', { device: `${deviceName(d.manufacturer, d.product)} ${d.serialNumber}` })}</span>}
-          size="small"
-          value={d.diverId}
-          onChange={(diverId) => diverId && diverId !== d.diverId && assign.mutate(diverId)}
-          options={divers.map((v) => ({ id: v.id, label: v.name }))}
-        />
-        {assign.error && <Notice tone="danger">{errorText(assign.error)}</Notice>}
-      </td>
-    </tr>
   );
 }

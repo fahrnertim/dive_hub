@@ -8,43 +8,12 @@ import { LANGUAGES } from './i18n/languages.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
-import { ACCOUNT_TABS, accountHref, type AccountTab } from './lib/account-tabs.ts';
-import { usePageTitle } from './lib/page.ts';
-import { AiAccess } from './AiAccess.tsx';
-import { Connections } from './Connections.tsx';
-import { Button, ConfirmButton, Form, Notice, PageHeader, Panel, RadioGroup, Table, TextField } from './ui/index.ts';
-
-/**
- * The signed-in User's own account: display settings, password, and where they're signed in. `connection`: the
- * Connection whose settings the page goes to (a link from an Import's result).
- */
-export function AccountPage({ tab, connection }: { tab: AccountTab; connection?: string | undefined }) {
-  const { t } = useTranslation();
-  usePageTitle(t('account.title'));
-  return (
-    <>
-      <PageHeader title={t('account.title')} />
-      <nav className="subnav" aria-label={t('account.parts')}>
-        {ACCOUNT_TABS.map((id) => (
-          <a key={id} href={accountHref(id)} {...(id === tab && { 'aria-current': 'page' as const })}>{t(`account.tab.${id}`)}</a>
-        ))}
-      </nav>
-      {tab === 'account' && (
-        <>
-          <DisplaySettings />
-          <ChangePassword />
-          <Sessions />
-        </>
-      )}
-      {tab === 'connections' && <Connections focus={connection} />}
-      {tab === 'ai' && <AiAccess />}
-    </>
-  );
-}
+import { Button, ConfirmButton, Form, Notice, Panel, RadioGroup, Table, TextField } from './ui/index.ts';
 
 const AUTO = 'auto';
 
-function DisplaySettings() {
+/** Settings' Display section: the language and the units, each saved as it is chosen. The section's name is the h1. */
+export function DisplaySettings() {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
@@ -61,7 +30,7 @@ function DisplaySettings() {
   if (!prefs) return null;
 
   return (
-    <Panel title={t('account.display')}>
+    <Panel>
       <div className="form-inline">
         <RadioGroup
           label={t('account.language')}
@@ -85,6 +54,16 @@ function DisplaySettings() {
       </div>
       {save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
     </Panel>
+  );
+}
+
+/** Settings' Sign-in and security section: the password, and where the User is signed in. */
+export function SecuritySettings() {
+  return (
+    <>
+      <ChangePassword />
+      <Sessions />
+    </>
   );
 }
 
@@ -183,7 +162,7 @@ function Sessions() {
         >
           {sessions.data.map((s, index) => (
             <tr key={s.id}>
-              <td>{describe(s.userAgent)}{s.current && <> (<strong>{t('account.thisDevice')}</strong>)</>}</td>
+              <td><span>{describe(s.userAgent)}{s.current && <> (<strong>{t('account.thisDevice')}</strong>)</>}</span></td>
               <td>{s.ipAddress ?? t('common.none')}</td>
               <td className="date">{display.dateTime(s.createdAt)}</td>
               <td className="date">{s.lastActiveAt ? display.dateTime(s.lastActiveAt) : t('common.none')}</td>

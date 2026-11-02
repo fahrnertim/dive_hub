@@ -24,13 +24,9 @@
     "main": "Main",
     "skipToContent": "Skip to content",
     "logbook": "Logbook",
-    "admin": "Admin",
-    "account": "My account",
     "myCertifications": "My certifications",
-    "connections": "Connections",
     "divers": "Divers",
     "accountMenu": ", account",
-    "administration": "Administration",
     "toDecide_one": "{{count}} to decide",
     "toDecide_other": "{{count}} to decide",
     "sites": "Dive sites",
@@ -82,9 +78,6 @@
     "submit": "Set password"
   },
   "account": {
-    "title": "My account",
-    "parts": "Parts of the account",
-    "tab": { "account": "Account", "connections": "Connections", "ai": "AI access" },
     "changePassword": "Change password",
     "currentPassword": "Current password",
     "newPassword": "New password",
@@ -101,7 +94,6 @@
     "signOutOthers": "Sign out everywhere else",
     "unknownDevice": "Unknown device",
     "agent": "{{browser}} on {{os}}",
-    "display": "Display",
     "language": "Language",
     "languageAuto": "Same as the browser",
     "units": "Units",
@@ -114,6 +106,17 @@
     "signOutOthersBody": "Every other browser and device where you’re signed in has to sign in again.",
     "signOutThisTitle": "Sign out on this device?",
     "signOutThisBody": "You’ll need your password to sign in again."
+  },
+  "settings": {
+    "title": "Settings",
+    "section": {
+      "display": "Display",
+      "security": "Sign-in and security",
+      "connections": "Connections",
+      "ai-access": "AI access",
+      "devices": "Devices",
+      "admin": "Administration"
+    }
   },
   "admin": {
     "inviteTitle": "Invite someone",

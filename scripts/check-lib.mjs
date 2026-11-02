@@ -24,11 +24,13 @@ const AREAS = [
   // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
   [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
+  [/^apps\/web\/src\/Devices\.tsx$/, ['@divers', '@account']],
   // A Diver's body weight (ADR 0031), a dialog on the divers page.
   [/^apps\/web\/src\/BodyWeight\.tsx$/, ['@divers']],
   // A Diver certification cards (ADR 0050), a section of the divers page (slice 25c); their server side also takes part in the import.
   [/^apps\/web\/src\/Certifications\.tsx$|^apps\/server\/src\/certifications\//, ['@divers', '@account']],
-  [/^apps\/web\/src\/(SignedOut|AccountPage|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/(account-tabs|form)\.ts$/, ['@account']],
+  [/^apps\/web\/src\/(SignedOut|AccountPage|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
+  [/^apps\/web\/src\/SettingsPage\.tsx$|^apps\/web\/src\/lib\/settings\.ts$/, ['@account', '@admin']],
   // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
   [/^apps\/web\/src\/(ProviderDiveImport|GoneDives|ProviderAutomation)\.tsx$/, ['@account', '@dives']],
   // A Dive at a Provider, and a Conflict with it asked on the Dive's page and waiting on the Review page (ADR 0056).

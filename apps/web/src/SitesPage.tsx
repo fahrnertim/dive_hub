@@ -9,6 +9,7 @@ import { logbookHref } from './lib/logbook.ts';
 import { useAddressSearch } from './lib/address-search.ts';
 import { usePageTitle } from './lib/page.ts';
 import { useFocusBackWhenClosed } from './lib/focus.ts';
+import { SITE_IMPORTS_HREF } from './lib/settings.ts';
 import { needsOsmAttribution, siteOrigin } from './lib/site-origin.ts';
 import { SITES_PAGE, sitesHref, type SiteSort, type SitesParams } from './lib/sites-list.ts';
 import { SiteForm, typedSources } from './SiteForm.tsx';
@@ -105,7 +106,7 @@ export function SitesPage({ params }: { params: SitesParams }) {
           <>
             <Button ref={newButton} variant="primary" icon="add" onPress={() => setCreating(true)}>{t('sites.new')}</Button>
             {me.data?.user.role === 'admin' && (
-              <a href="#/admin/site-imports" className="btn btn-secondary"><Icon name="siteImport" />{t('siteImport.title')}</a>
+              <a href={SITE_IMPORTS_HREF} className="btn btn-secondary"><Icon name="siteImport" />{t('siteImport.title')}</a>
             )}
           </>
         )}

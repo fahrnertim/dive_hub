@@ -72,14 +72,15 @@ test('a recording that belongs elsewhere is split off into its own dive', { tag:
   await expect(page.getByRole('link', { name: 'Jan 15, 2026, 11:01 AM (UTC+2)' })).toBeVisible();
 });
 
-test('a second Diver gets a dive and a device; the logbook can show one Diver', { tag: ['@divers', '@dives'] }, async ({ page }) => {
+test('a second Diver gets a dive and a device; the logbook can show one Diver', { tag: ['@divers', '@dives', '@account'] }, async ({ page }) => {
   await page.goto('/#/divers');
   await page.getByRole('textbox', { name: 'Add a Diver' }).fill('Mia');
   await page.getByRole('button', { name: 'Add logbook' }).click();
   // The first list: the Divers with a logbook. Other specs on this server may have left divers in the second.
   await expect(page.locator('.diver-list').first()).toContainText('Mia');
 
-  // The backup computer belongs to Mia from now on.
+  // The backup computer belongs to Mia from now on (the Devices are a section of Settings, UI overhaul).
+  await page.goto('/#/settings/devices');
   const backupRow = page.getByRole('row').filter({ hasText: '999' });
   await backupRow.getByRole('button', { name: /belongs to/ }).click();
   await page.getByRole('option', { name: 'Mia' }).click();
@@ -105,11 +106,13 @@ test('a second Diver gets a dive and a device; the logbook can show one Diver', 
   await expect(diveRows(page).getByText('Mia', { exact: true })).toBeVisible();
 });
 
-test('the Divers page speaks German', { tag: ['@divers'] }, async ({ page, request }) => {
+test('the Divers page and the Devices speak German', { tag: ['@divers', '@account'] }, async ({ page, request }) => {
   await setPreferences(request, { language: 'de' });
   await page.goto('/#/divers');
   await expect(page.getByRole('heading', { name: 'Taucher', level: 1 })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Geräte' })).toBeVisible();
+  // The Devices are a section of Settings (UI overhaul).
+  await page.goto('/#/settings/devices');
+  await expect(page.getByRole('heading', { name: 'Geräte', level: 1 })).toBeVisible();
   await expect(page.getByText('Importe ab dann bei ihm')).toBeVisible();
   await setPreferences(request, { language: null });
 });

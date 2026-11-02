@@ -15,15 +15,14 @@ import { ReviewLinks, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
-import { accountTab } from './lib/account-tabs.ts';
 import { reviewTab } from './lib/review.ts';
+import { isSettingsSection, legacyRedirect } from './lib/settings.ts';
 import { ErrorBoundary, Muted, Notice, PageHeader } from './ui/index.ts';
 import { PlainShell, Shell } from './ui/Shell.tsx';
 
-// Pages most visits don't need load on demand: the chart library, account settings, admin.
+// Pages most visits don't need load on demand: the chart library, Settings.
 const DivePage = lazy(() => import('./DivePage.tsx').then((m) => ({ default: m.DivePage })));
-const AccountPage = lazy(() => import('./AccountPage.tsx').then((m) => ({ default: m.AccountPage })));
-const AdminPage = lazy(() => import('./AdminPage.tsx').then((m) => ({ default: m.AdminPage })));
+const SettingsPage = lazy(() => import('./SettingsPage.tsx').then((m) => ({ default: m.SettingsPage })));
 const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
 const SitesPage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
 const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
@@ -35,10 +34,11 @@ const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ 
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers" ("?certifications=own|<diver id>": that Diver's certifications open), "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/tools/lead" ("?lw=salt&suit=wetsuit&mm=5&cyl=12~steel"), "#/account" ("?tab=connections|ai"), "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers" ("?certifications=own|<diver id>": that Diver's certifications open), "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/tools/lead" ("?lw=salt&suit=wetsuit&mm=5&cyl=12~steel"), "#/settings" ("#/settings/<section>", "#/settings/connections?connection=<id>"), "#/settings/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * The addresses from before Settings ("#/account…", "#/admin…") are replaced by their new ones before routing.
  */
 function useRoute(): string {
-  const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
+  const [route, setRoute] = useState(currentRoute);
   useEffect(() => {
     const onChange = (event: HashChangeEvent) => {
       // A form with unsaved changes may keep the User here; then the address goes back, too.
@@ -46,12 +46,20 @@ function useRoute(): string {
         history.replaceState(null, '', new URL(event.oldURL).hash || '#/');
         return;
       }
-      setRoute(location.hash.slice(1) || '/');
+      setRoute(currentRoute());
     };
     addEventListener('hashchange', onChange);
     return () => removeEventListener('hashchange', onChange);
   }, []);
   return route;
+}
+
+function currentRoute(): string {
+  const route = location.hash.slice(1) || '/';
+  const moved = legacyRedirect(route);
+  if (!moved) return route;
+  location.replace(moved);
+  return moved.slice(1);
 }
 
 /** The UI language follows the User's preference, else the browser (ADR 0014). */
@@ -119,7 +127,6 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const params = new URLSearchParams(query);
   const diveId = /^\/dives\/([\w-]+)$/.exec(path!)?.[1];
   if (diveId) return <DivePage key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
-  if (path === '/account') return <AccountPage tab={accountTab(params)} connection={params.get('connection') ?? undefined} />;
   if (path === '/divers') return <DiversPage open={params.get('certifications') ?? undefined} />;
   if (path === '/review') return <ReviewPage tab={reviewTab(params)} />;
   if (path === '/sites') return <SitesPage params={sitesParams(params)} />;
@@ -129,9 +136,10 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (path === '/centres') return <CentresPage />;
   const centreId = /^\/centres\/([\w-]+)$/.exec(path!)?.[1];
   if (centreId) return <CentrePage key={centreId} id={centreId} />;
-  if (route === '/admin' || route === '/admin/site-imports') {
-    if (me.user.role !== 'admin') return <><PageHeader title={t('nav.admin')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
-    return route === '/admin' ? <AdminPage /> : <SiteImportPage />;
+  const settings = /^\/settings(?:\/([\w-]+))?$/.exec(path!);
+  if (settings) return <SettingsPage section={isSettingsSection(settings[1]) ? settings[1] : null} me={me} params={params} />;
+  if (path === '/settings/admin/site-imports') {
+    return me.user.role === 'admin' ? <SiteImportPage /> : <><PageHeader title={t('siteImport.title')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
   }
   return <Logbook params={logbookParams(params)} />;
 }

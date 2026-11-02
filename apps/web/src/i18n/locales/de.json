@@ -24,13 +24,9 @@
     "main": "Hauptmenü",
     "skipToContent": "Zum Inhalt springen",
     "logbook": "Logbuch",
-    "admin": "Verwaltung",
-    "account": "Mein Konto",
     "myCertifications": "Meine Zertifizierungen",
-    "connections": "Verbindungen",
     "divers": "Taucher",
     "accountMenu": ", Konto",
-    "administration": "Verwaltung",
     "toDecide_one": "{{count}} zu entscheiden",
     "toDecide_other": "{{count}} zu entscheiden",
     "sites": "Tauchplätze",
@@ -82,9 +78,6 @@
     "submit": "Passwort festlegen"
   },
   "account": {
-    "title": "Mein Konto",
-    "parts": "Teile des Kontos",
-    "tab": { "account": "Konto", "connections": "Verbindungen", "ai": "KI-Zugang" },
     "changePassword": "Passwort ändern",
     "currentPassword": "Aktuelles Passwort",
     "newPassword": "Neues Passwort",
@@ -101,7 +94,6 @@
     "signOutOthers": "Überall sonst abmelden",
     "unknownDevice": "Unbekanntes Gerät",
     "agent": "{{browser}} auf {{os}}",
-    "display": "Anzeige",
     "language": "Sprache",
     "languageAuto": "Wie im Browser",
     "units": "Einheiten",
@@ -114,6 +106,17 @@
     "signOutOthersBody": "Alle anderen Browser und Geräte, auf denen du angemeldet bist, müssen sich neu anmelden.",
     "signOutThisTitle": "Auf diesem Gerät abmelden?",
     "signOutThisBody": "Zum erneuten Anmelden brauchst du dein Passwort."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "section": {
+      "display": "Anzeige",
+      "security": "Anmeldung und Sicherheit",
+      "connections": "Verbindungen",
+      "ai-access": "KI-Zugang",
+      "devices": "Geräte",
+      "admin": "Verwaltung"
+    }
   },
   "admin": {
     "inviteTitle": "Jemanden einladen",

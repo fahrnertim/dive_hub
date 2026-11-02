@@ -20,7 +20,7 @@ test('connects a Diver to SSI, signs in again with another choice, and disconnec
   await panel.getByText('Keep me signed in').click();
   await panel.getByRole('button', { name: 'Connect to SSI' }).click();
   await expect(panel.getByText('Connected, password kept')).toBeVisible();
-  await expect(panel.getByRole('cell', { name: SSI_ACCOUNT.login, exact: true })).toBeVisible();
+  await expect(panel.getByRole('cell').getByText(SSI_ACCOUNT.login, { exact: true })).toBeVisible(); // a table or, with less room, cards
 
   // The e2e instance keeps several Divers, so each row names its Diver too.
   await panel.getByRole('button', { name: `Sign in again: Erika, ${SSI_ACCOUNT.login}` }).click();

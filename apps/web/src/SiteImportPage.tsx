@@ -7,6 +7,7 @@ import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { countryOptions } from './lib/geo.ts';
 import { usePageTitle } from './lib/page.ts';
+import { settingsHref } from './lib/settings.ts';
 import { Badge, Button, Checkbox, Form, Icon, Muted, Notice, NumberField, PageHeader, Panel, RadioGroup, Select } from './ui/index.ts';
 
 type Source = SiteImportView['sources'][number];
@@ -28,7 +29,7 @@ export function SiteImportPage() {
   usePageTitle(t('siteImport.title'));
   return (
     <>
-      <PageHeader title={t('siteImport.title')} lead={t('siteImport.intro')} back={{ href: '#/admin', label: t('nav.admin') }} />
+      <PageHeader title={t('siteImport.title')} lead={t('siteImport.intro')} back={{ href: settingsHref('admin'), label: t('settings.section.admin') }} />
       <StartImport />
       <LatestImports />
     </>
