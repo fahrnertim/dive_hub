@@ -103,10 +103,15 @@ and give the reason. Done means: `pnpm check:full` is green.
   name `from` was wrong. The automation offer test checks the run's result ("Sent 1 of 1 dives to SSI.") on the
   logbook, as there is no separate run page.
 
+- Points 13-14 (owner, 2026-11-03): a stored interval no longer offered is listed and selected; `fetchNeedsImport`
+  becomes the fetch switch's help, shown whenever the import is off; a saving switch is busy, the others stay usable;
+  a Dive without a site gets "Add dive site" (the Dive page's site picker) under what the Provider needs.
+
 ## State
 `main`, after PR #8 (`ssi-automation`) is merged.
 
-Points 1-11 are done on branch `automation-follow-ups` (2026-10-29). Points 12-14 (Web) are left for a second plan.
+Points 1-11 are done (PR #13). Points 12-14 (Web): [plan of 2026-11-03](../superpowers/plans/2026-11-03-automation-follow-ups-web.md)
+on branch `automation-follow-ups-web`, worked by hand (not by an unattended run), so the status stays `draft`.
 
 ## Open
 Nothing for the owner; the rest is left to the agent.
