@@ -760,7 +760,7 @@ test('review material', async ({ page, request, browser }) => {
       await setPreferences(request, { language: 'en' });
       await page.emulateMedia({ colorScheme: 'light' });
       await page.setViewportSize({ width: 1280, height: 900 });
-      await page.reload(); await page.getByRole('button', { name: /^Changed since sent \d+$/ }).waitFor();
+      await page.reload(); await openFilters(page); await page.getByRole('button', { name: /^Changed since sent \d+$/ }).waitFor();
       await capture(page, '35d-logbook-changed-since-sent');
       await clearPushRuns(request);
       await leaveSsi(request, dive42);

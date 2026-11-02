@@ -176,7 +176,10 @@
 /* Filters stands in the row as its last control and opens its chips under the row: the disclosure's head and panel
    become the toolbar's own items. */
 .logbook-filters { display: contents; }
-.logbook-filters > .disclosure-head { align-self: flex-start; align-items: center; min-height: 2.5rem; margin-top: calc(var(--text-sm) * var(--leading-normal) + var(--space-1)); }
+.logbook-filters > .disclosure-head { display: grid; gap: var(--space-1); align-content: start; align-self: flex-start; }
+/* The room a field's label takes, so the button stands level with the inputs. */
+.logbook-filters > .disclosure-head::before { content: ''; font-size: var(--text-sm); line-height: var(--leading-normal); height: 1lh; }
+.logbook-filters .disclosure-trigger { min-height: 2.5rem; align-items: center; }
 .logbook-filters > .disclosure-panel { flex: 0 0 100%; }
 .logbook-filters .chips { padding-top: var(--space-1); }
 /* On a phone the first Dive is on the first screen (C11): the search is the only open control, and Diver, sort, Send

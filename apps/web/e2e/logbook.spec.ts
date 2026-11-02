@@ -150,7 +150,13 @@ test('Filters shows how many chips are on and keeps them in the address; a reloa
   await expect(chips.getByRole('button', { name: /^No recording \d+$/ })).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('the Diver select is there only when there is more than one Diver', { tag: ['@dives'] }, async ({ page }) => {
+test('the Diver select is there only when there is more than one Diver', { tag: ['@dives'] }, async ({ page, request }) => {
+  // Positive control: the fixture has more than one Diver, and then the select is there.
+  expect(((await (await request.get('/api/divers')).json()) as unknown[]).length).toBeGreaterThan(1);
+  await page.goto('/');
+  await expect(diveRows(page).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Diver$/ })).toHaveCount(1);
+
   await page.route('**/api/divers', async (route) => {
     const response = await route.fetch();
     const divers = await response.json() as unknown[];
@@ -159,11 +165,27 @@ test('the Diver select is there only when there is more than one Diver', { tag: 
   await page.goto('/');
   await expect(diveRows(page).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Sort by$/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Diver/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Diver$/ })).toHaveCount(0);
 });
 
 test('the drop hint is not in the title row of a logbook with dives', { tag: ['@dives'] }, async ({ page }) => {
   await page.goto('/');
   await expect(diveRows(page).first()).toBeVisible();
-  await expect(page.getByText(/drop dive files/i)).toHaveCount(0);
+  await expect(page.getByText(/dive files or zips/i)).toHaveCount(0);
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+  test('Filter and sort says how many chips are on and opens by itself when one is', { tag: ['@dives'] }, async ({ page, request }) => {
+    await diveWithoutRecording(request);
+    await page.goto('/');
+    const trigger = page.getByRole('button', { name: /^Filter and sort/ });
+    await expect(trigger).toHaveAccessibleName('Filter and sort');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+    await page.goto('/#/?only=no-site');
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Filter and sort, 1 on' })).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('group', { name: 'Show only' }).getByRole('button', { name: /^No dive site/ })).toHaveAttribute('aria-pressed', 'true');
+  });
 });

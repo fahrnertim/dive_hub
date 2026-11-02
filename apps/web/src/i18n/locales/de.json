@@ -292,6 +292,7 @@
     },
     "showOnly": "Nur anzeigen",
     "filterAndSort": "Filtern und sortieren",
+    "filterAndSortOn": "Filtern und sortieren, {{count}} an",
     "only": {
       "noRecording": "Keine Aufzeichnung",
       "noSite": "Kein Tauchplatz",
@@ -301,8 +302,8 @@
     },
     "monthFigures_one": "{{count}} Tauchgang · {{time}}",
     "monthFigures_other": "{{count}} Tauchgänge · {{time}}",
-    "summary_one": "{{count}} Tauchgang · {{time}} unter Wasser · am tiefsten {{depth}}",
-    "summary_other": "{{count}} Tauchgänge · {{time}} unter Wasser · am tiefsten {{depth}}",
+    "summary_one": "{{formatted}} Tauchgang · {{time}} unter Wasser · am tiefsten {{depth}}",
+    "summary_other": "{{formatted}} Tauchgänge · {{time}} unter Wasser · am tiefsten {{depth}}",
     "filters": "Filter",
     "filtersOn": "Filter, {{count}} an",
     "more": "Mehr",

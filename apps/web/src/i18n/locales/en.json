@@ -292,6 +292,7 @@
     },
     "showOnly": "Show only",
     "filterAndSort": "Filter and sort",
+    "filterAndSortOn": "Filter and sort, {{count}} on",
     "only": {
       "noRecording": "No recording",
       "noSite": "No dive site",
@@ -301,8 +302,8 @@
     },
     "monthFigures_one": "{{count}} dive · {{time}}",
     "monthFigures_other": "{{count}} dives · {{time}}",
-    "summary_one": "{{count}} dive · {{time}} under water · deepest {{depth}}",
-    "summary_other": "{{count}} dives · {{time}} under water · deepest {{depth}}",
+    "summary_one": "{{formatted}} dive · {{time}} under water · deepest {{depth}}",
+    "summary_other": "{{formatted}} dives · {{time}} under water · deepest {{depth}}",
     "filters": "Filters",
     "filtersOn": "Filters, {{count}} on",
     "more": "More",
