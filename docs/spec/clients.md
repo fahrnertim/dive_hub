@@ -321,6 +321,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - Name them by their Device ("Garmin Descent Mk3 (777)"), not "Recording 2" (ADR 0016).
   - Show which one is primary. Changing it makes values without Override follow the new one.
   - The Dive's last Recording can't be split off; the server refuses (`last_recording`).
+  - **A joined Recording's parts** (`partOf`: the id of the joined Recording they went into, [ADR 0063](../decisions/0063-dive-continuation.md)):
+    list them under the joined Recording, named by their Device and time ("Garmin Descent Mk3 (777), 08:05"), not as more
+    computers. A part is never Primary and never split off or made primary on its own (`recording_is_part`, 400): offer
+    neither; the joined Recording goes with its parts. *Web:* `DivePage.tsx`.
   - **A Dive without a Recording** (`recordings` empty, ADR 0030) was made from a Provider's logbook entry
     (`fromProvider`): say so, naming the Provider, and that the dive computer's file adds its Recording, which then becomes
     primary and its values replace these. There is no profile. *Web:* `DivePage.tsx` (`NoRecording`).
@@ -355,13 +359,39 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - `POST /api/dives/{id}/merge` with `version`, `otherId`, `otherVersion` (`dive_changed` 409, `merge_not_possible` 400
     for the same Dive or Dives of two Divers). **The answer is the kept Dive, which may be the other one: follow its
     `id`.** *Web:* `MergeDive.tsx`.
+- **Appending a Continuation** ([ADR 0063](../decisions/0063-dive-continuation.md)): a dive the dive computer cut in two
+  because the diver was at the surface (the Dives are one Diver's, each with one Recording of the same Device). The later
+  Dive is appended to the earlier one: the Dive becomes one, its Primary recording a joined Recording whose profile runs
+  through the time at the surface as 0 m. This is not a merge: say "append", never "merge".
+  - **Must offer to append a Dive to the one before it by hand** (`GET /api/dives/{id}/continuation-candidate`: the
+    Diver's Dive just before this one, or null; no time limit, but a Dive that starts exactly when the earlier ends can't be
+    appended, the gap must be more than 0). Show that Dive and the Surface break's length (`surfaceBreakSeconds`), then
+    the dialog; never append unasked. *Web:* `AppendDive.tsx`, the menu "An den vorherigen Tauchgang anhängen…".
+  - **The dialog says which Dive stays** (the earlier one, `POST /api/dives/{id}/continuation` is sent to it) and which
+    goes to "Deleted dives" and can be restored; that the kept Dive takes over what it lacks (site, buddies, values; notes
+    appended), and a link to a Provider goes to it where it has none. **Ask about each Provider both are at** (`bothAt`) as
+    in a merge: the later Dive's dive there stays unless the User chooses to delete it there too (`alsoAt`); a provider_*
+    error appends nothing. Several later Dives go in one request (`dives`, each with its `version`).
+  - `POST /api/dives/{id}/continuation` with `version`, `dives` (`id`, `version` of each), `alsoAt` (`dive_changed` 409,
+    `continuation_not_possible` 400). **The answer is the kept Dive: it is the Dive asked.**
+  - **Show the Surface breaks in the profile:** the Primary recording's `summary.surfaceBreaks` (`startS`, `endS`, seconds
+    from its start) mark where the parts meet; draw them as a band at the surface, and show each break's length with the
+    duration, in the app's duration format. Draw no rate across the edges. *Web:* `DepthProfile.tsx`, `DivePage.tsx`.
 - **Deleted dives that went somewhere** (`mergedInto`, `movedTo` in `GET /api/dives/deleted`): say that the Dive was
   merged into another or moved to another Diver, with a link to that Dive. Restoring one brings it back without the
   Recordings and links it gave away. *Web:* `DeletedDives.tsx`.
+- **Deleted dives an append took** (`continuedInto` in `GET /api/dives/deleted`): say that the Dive was appended to that
+  Dive as its continuation, with a link. **List the Dives of one append as one entry** (`appendedWith` names the others,
+  in start order). **Before restoring, say which Dives come back** (`GET /api/dives/{id}/restore-preview`: `comesBack`,
+  ids): restoring undoes the whole append and every later append to the same joined Recording, so also those Dives. Each
+  comes back with its Recording as its Primary one; the joined Recording is rebuilt from what remains. The server records
+  "two dives" for the pairs it separated, so the logbook check doesn't ask about them again. *Web:* `DeletedDives.tsx`.
 - **History:** a merge is the cause `merge` on the kept Dive (changes `mergedFrom`, the values, site, notes and
   `participants` it took, `providers` for each link taken over), after an `attach` per Recording that came across; the
   other Dive's last entry is `merge` with `mergedInto`. A Dive moved as a copy starts with `move` and `movedFrom`; the old
   one ends with `move` and `movedTo`. These changes name deleted Dives: tell them, don't link them. *Web:* `DiveHistory.tsx`.
+  An append is the cause `continuation` on the kept Dive (the joined Recording as `recordings`, `appendedFrom`, the values
+  and links taken) and on each later Dive (`continuedInto`); an undo by restoring is `continuation-undo`. *Web:* `DiveHistory.tsx`.
 - **Deleting a Dive** ([ADR 0026](../decisions/0026-deleting-dives.md), `DELETE /api/dives/{id}` with `version`):
   - **Must say what happens** before: it leaves the logbook, its counts and search; it can be restored; importing its
     file again doesn't bring it back. *Web:* `DeleteDive.tsx`.
@@ -844,6 +874,15 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   `two_dives` with one). **Never delete it unasked, and never several in one go:** such a check is never `obvious`.
   "Keep it" is taken back like a pair's answer (Undo, and "Ask again" from `status=answered`); the server asks again once
   the Dive's duration or depth changes, and takes restoring such a Dive as "keep it".
+- **A `surface_break` check** (rule version 5, [ADR 0063](../decisions/0063-dive-continuation.md)): Dives of one Diver, each
+  with one Recording of the same Device, each starting at most 10 minutes after the one before ended: probably one dive the
+  computer cut at the surface. The Dives that follow one another are one item: `dive` and `other` are its first pair,
+  `chain` lists all its Dives in order (two or more; each with `surfaceBreakSeconds`, null for the first). Show all of
+  them and each break's length (the app's duration format). Offer **Anhängen** with text that says what happens (one Dive;
+  the later ones go to "Deleted dives" and can be restored), the append of [Dives](#dives) to the first Dive with all the
+  others (`POST /api/dives/{id}/continuation`), and "they are two dives". It is **never `obvious`** and never in
+  `merge-candidates`: appended only by the User's own click, never in one go. *Web:* `LogbookChecks.tsx`.
+  - "They are two dives" on a chain answers every pair of it; "Ask again" on an answered chain reopens all its pairs.
 - **Never merge unasked.** Offer per pair: merge (the merge dialog of [Dives](#dives), with `other.keeps` and
   `other.bothAt`), and "they are two dives" (`PUT /api/logbook-checks/answer` with both ids and `two_dives`). Say that a
   wrong time or a Dive of another Diver is corrected on the Dive itself (edit, move, delete).

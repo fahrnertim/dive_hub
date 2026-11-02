@@ -7,6 +7,14 @@ date: 2026-10-31
 
 # Continuation
 
+**Built** on branch `dive-continuation` (PR to follow); the client duties below are in the [client contract](../../spec/clients.md)
+and the data in the [data model](../../spec/data-model.md). **ADR 0063 status: to be set to Built by the owner** (the ready
+text is in `.superpowers/sdd/2026-11-01-dive-continuation/adr-0063-draft.md`). Rulings made during the build: a later Dive that
+starts exactly when the earlier ends can't be appended (the gap must be more than 0); break lengths show in the app's duration
+format; "two dives" on a chain answers every pair of it and "ask again" reopens all of them; restoring an appended Dive undoes its
+whole append and every later one to the same joined Recording, recording "two dives" so the check doesn't ask again;
+`ENGINE_VERSION` 3 to 4, `LOGBOOK_CHECKS_VERSION` 4 to 5.
+
 Design from the owner's answers on 2026-10-31 and 2026-11-01; approved by the owner on 2026-11-01. "Owner" marks what the owner decided; "my call" marks what the designer
 decided and the owner may overturn. The decision that changes accepted ADRs is
 [ADR 0063](../../decisions/0063-dive-continuation.md).
