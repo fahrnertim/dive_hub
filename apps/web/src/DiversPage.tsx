@@ -4,14 +4,13 @@ import { useTranslation } from 'react-i18next';
 import {
   api, diverSearchQuery, diversQuery, externalDiversQuery, keys, meQuery, unwrap, type DiverView, type ExternalDiverView,
 } from './api.ts';
-import { BodyWeightDialog } from './BodyWeight.tsx';
-import { CertificationsSection } from './Certifications.tsx';
 import { DiverCodesDialog, TakeCodeDialog } from './DiverCodes.tsx';
+import { useSameName } from './DiverPage.tsx';
 import { useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Checkbox, ConfirmButton, Dialog, Disclosure, DiverAvatar, Form, Muted, Notice, NumberField, PageHeader, Panel, RowsSkeleton, SearchList, TextField, type SearchListItem } from './ui/index.ts';
+import { ActionMenu, Button, ConfirmDialog, Dialog, DiverAvatar, Form, Muted, Notice, PageHeader, Panel, RowsSkeleton, SearchList, TextField, type MenuAction, type SearchListItem } from './ui/index.ts';
 
 /** The Divers whose logbooks the User keeps, and the other divers Users dived with (ADR 0028). Their Devices are in Settings. */
 export function DiversPage({ open }: { open?: string | undefined }) {
@@ -26,14 +25,22 @@ export function DiversPage({ open }: { open?: string | undefined }) {
   );
 }
 
-/** `open` is the address's `certifications`: `own` or a Diver's id, whose section is open (the profile menu links to `own`). */
+/**
+ * `open` is the address's `certifications` from before the Diver pages: `own` or a Diver's id. Once the list is here
+ * the address is replaced (so Back doesn't come round to it again) by that Diver's page with the section open, or by
+ * the list when nobody has that id.
+ */
 function Divers({ open }: { open: string | undefined }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const divers = useQuery(diversQuery());
+  useEffect(() => {
+    if (!open || !divers.data) return;
+    const target = divers.data.find((d) => (open === 'own' ? d.isOwn : d.id === open));
+    location.replace(target ? `#/divers/${target.id}?open=certifications` : '#/divers');
+  }, [open, divers.data]);
   const sameName = useSameName();
-  const list = useRef<HTMLUListElement>(null);
   const create = useMutation({
     mutationFn: async (name: string) => unwrap(await api.POST('/api/divers', { body: { name } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.divers }),
@@ -51,8 +58,8 @@ function Divers({ open }: { open: string | undefined }) {
       <Muted>{t('divers.intro')}</Muted>
       {divers.isPending && <RowsSkeleton rows={3} />}
       {divers.error && <Notice tone="danger">{errorText(divers.error)}</Notice>}
-      <ul className="diver-list" ref={list}>
-        {divers.data?.map((d, index) => <DiverRow key={d.id} diver={d} list={list} index={index} count={divers.data.length} certificationsOpen={open === d.id || (open === 'own' && d.isOwn)} />)}
+      <ul className="diver-list">
+        {divers.data?.map((d) => <DiverRow key={d.id} diver={d} />)}
       </ul>
       <Form className="form-inline" onSubmit={submit}>
         <TextField
@@ -66,189 +73,20 @@ function Divers({ open }: { open: string | undefined }) {
   );
 }
 
-/** A warning when another Diver already has this name (still allowed; UI review C9). */
-function useSameName() {
+/** A kept Diver: the name leads to their page, the dive count to their logbook, and the cards are counted. */
+function DiverRow({ diver: d }: { diver: DiverView }) {
   const { t } = useTranslation();
-  return (divers: DiverView[] | undefined, name: string, except?: string) => {
-    const wanted = name.trim().toLocaleLowerCase();
-    const twin = wanted && divers?.find((d) => d.id !== except && d.name.toLocaleLowerCase() === wanted);
-    return twin ? t('divers.sameName', { name: twin.name }) : undefined;
-  };
-}
-
-function DiverRow({ diver: d, list, index, count, certificationsOpen }: {
-  diver: DiverView; list: RefObject<HTMLUListElement | null>; index: number; count: number; certificationsOpen: boolean;
-}) {
-  const { t } = useTranslation();
-  const errorText = useErrorText();
-  const queryClient = useQueryClient();
-  const [renaming, setRenaming] = useState(false);
-  const [codes, setCodes] = useState(false);
-  const [weight, setWeight] = useState(false);
-  const [newName, setNewName] = useState(d.name);
-  const all = useQuery(diversQuery());
-  const sameName = useSameName();
-  // When renaming ends (saved or cancelled), focus goes back to "Rename" (UI review B1).
-  const renameButton = useRef<HTMLButtonElement>(null);
-  const wasRenaming = useRef(false);
-  useEffect(() => {
-    if (wasRenaming.current && !renaming) renameButton.current?.focus();
-    wasRenaming.current = renaming;
-  }, [renaming]);
-  const refresh = () => queryClient.invalidateQueries({ queryKey: keys.divers });
-  const rename = useMutation({
-    mutationFn: async (name: string) => unwrap(await api.PATCH('/api/divers/{id}', { params: { path: { id: d.id } }, body: { name } })),
-    onSuccess: () => { setRenaming(false); void refresh(); },
-  });
-  const remove = useMutation({
-    mutationFn: async () => unwrap(await api.DELETE('/api/divers/{id}', { params: { path: { id: d.id } } })),
-    onSuccess: async () => {
-      await refresh();
-      refocusAfterRemoval(list.current, index, count);
-    },
-  });
-  const empty = d.diveCount === 0 && d.deviceCount === 0;
-
   return (
     <li className="diver-row reveal">
-      {renaming ? (
-        <Form
-          className="form-inline"
-          onSubmit={(e) => { e.preventDefault(); rename.mutate(newName.trim()); }}
-        >
-          <TextField
-            label={t('divers.newName')} name="name" value={newName} onChange={setNewName} isRequired maxLength={100} autoComplete="off" autoFocus
-            description={sameName(all.data, newName, d.id) ?? ''}
-          />
-          <Button type="submit" variant="primary" icon="save" isPending={rename.isPending}>{t('divers.save')}</Button>
-          <Button onPress={() => setRenaming(false)}>{t('common.cancel')}</Button>
-        </Form>
-      ) : (
-        <>
-          <DiverAvatar inline name={d.name} diverId={d.id} />
-          <span className="diver-name">{d.name}{d.isOwn && ` (${t('divers.own')})`}</span>
-          <a href={`#/?diver=${d.id}`} className="meta">{t('divers.dives', { count: d.diveCount })}</a>
-          <span className="actions">
-            <Button variant="quiet" aria-label={t('common.forItem', { action: t('diverCodes.open'), item: d.name })} onPress={() => setCodes(true)}>
-              {t('diverCodes.open')}
-            </Button>
-            <Button variant="quiet" aria-label={t('common.forItem', { action: t('bodyWeight.open'), item: d.name })} onPress={() => setWeight(true)}>
-              {t('bodyWeight.open')}
-            </Button>
-            <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => { setNewName(d.name); setRenaming(true); }}>
-              {t('divers.rename')}
-            </Button>
-            {!d.isOwn && empty && (
-              <ConfirmButton
-                variant="quiet" aria-label={t('common.forItem', { action: t('divers.delete'), item: d.name })}
-                title={t('divers.deleteTitle', { name: d.name })} body={t('divers.deleteBody', { name: d.name })} confirmLabel={t('divers.delete')}
-                onConfirm={() => remove.mutateAsync()}
-              >
-                {t('divers.delete')}
-              </ConfirmButton>
-            )}
-          </span>
-        </>
-      )}
-      {rename.error && <Notice tone="danger">{errorText(rename.error)}</Notice>}
-      {/* Which section is open lives in the address, so a link (the profile menu's) can point at it. */}
-      <CertificationsSection
-        diver={d} isOpen={certificationsOpen}
-        onOpenChange={(open) => location.replace(open ? `#/divers?certifications=${d.id}` : '#/divers')}
-      />
-      <DiveNumbers diver={d} />
-      <MutedRules diver={d} />
-      {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
-      {weight && <BodyWeightDialog diverId={d.id} name={d.name} onClose={() => setWeight(false)} />}
+      <DiverAvatar inline name={d.name} diverId={d.id} />
+      <span className="diver-name"><a href={`#/divers/${d.id}`}>{d.name}</a>{d.isOwn && <span className="meta"> ({t('divers.own')})</span>}</span>
+      <a href={`#/?diver=${d.id}`} className="meta">{t('divers.dives', { count: d.diveCount })}</a>
+      <span className="meta">{d.certifications.count > 0 ? t('divers.cards', { count: d.certifications.count }) : t('certifications.summaryNone')}</span>
     </li>
   );
 }
 
 /** Admins: merges an external Diver into another Diver, the same person (ADR 0028), picked by name. */
-/**
- * How this Diver's Dives are numbered (ADR 0048): by start time, after the dives they did before this logbook, and
- * with or without apnea sessions. The numbers follow at once, in the logbook and at the Providers that follow them.
- */
-function DiveNumbers({ diver: d }: { diver: DiverView }) {
-  const { t } = useTranslation();
-  const errorText = useErrorText();
-  const queryClient = useQueryClient();
-  const save = useMutation({
-    mutationFn: async (body: { divesBefore?: number; apneaCounts?: boolean }) => unwrap(await api.PATCH('/api/divers/{id}', { params: { path: { id: d.id } }, body })),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: keys.divers });
-      // Every Dive's number may have moved.
-      await queryClient.invalidateQueries({ queryKey: keys.dives });
-      announce(t('divers.numbersSaved', { name: d.name }));
-    },
-  });
-  // Behind a line that shows the current values (UI/UX pass C7): three Divers no longer make a page of number fields.
-  const summary = <span className="meta">{t(d.apneaCounts ? 'divers.numbersSummary' : 'divers.numbersSummaryNoApnea', { next: d.divesBefore + 1 })}</span>;
-  return (
-    <Disclosure
-      className="diver-section" summary={summary}
-      title={<><span aria-hidden="true">{t('divers.numbersShort')}</span><span className="visually-hidden">{t('common.forItem', { action: t('divers.numbersShort'), item: d.name })}</span></>}
-    >
-      <fieldset className="dive-numbers">
-        <legend className="visually-hidden">{t('divers.numbers', { name: d.name })}</legend>
-        <NumberField
-          label={t('divers.divesBefore')} description={t('divers.divesBeforeHint')} value={d.divesBefore} minValue={0} maxValue={100_000} step={1}
-          onChange={(n) => { if (!Number.isNaN(n) && n !== d.divesBefore) save.mutate({ divesBefore: n }); }}
-        />
-        <Checkbox isSelected={d.apneaCounts} onChange={(on) => save.mutate({ apneaCounts: on })}>
-          {t('divers.apneaCounts')}
-        </Checkbox>
-        {save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
-      </fieldset>
-    </Disclosure>
-  );
-}
-
-/**
- * Rules of the dive assessment a User stopped showing for this Diver (ADR 0036), with the way back: a muted rule shows
- * on no Dive, so this is where it is found again.
- */
-function MutedRules({ diver: d }: { diver: DiverView }) {
-  const { t } = useTranslation();
-  const errorText = useErrorText();
-  const queryClient = useQueryClient();
-  const show = useMutation({
-    mutationFn: async (rule: string) => {
-      unwrap(await api.PUT('/api/divers/{id}/muted-rules/{rule}', { params: { path: { id: d.id, rule: rule as 'ascent_rate' } }, body: { muted: false } }));
-      return rule;
-    },
-    onSuccess: async (rule) => {
-      await queryClient.invalidateQueries({ queryKey: keys.divers });
-      // The Dives' marks and assessments follow.
-      void queryClient.invalidateQueries({ queryKey: keys.dives });
-      announce(t('assessment.restored', { title: t(`assessment.title.${rule}` as 'assessment.title.ascent_rate') }));
-    },
-  });
-  if (d.mutedRules.length === 0) return null;
-  return (
-    <div className="muted-rules">
-      <span className="meta">{t('divers.mutedRules', { name: d.name })}</span>
-      <ul>
-        {d.mutedRules.map((rule) => {
-          const title = t(`assessment.title.${rule}` as 'assessment.title.ascent_rate');
-          return (
-            <li key={rule}>
-              {title}
-              <Button
-                variant="quiet" size="small" aria-label={t('common.forItem', { action: t('divers.showRule'), item: `${title}, ${d.name}` })}
-                isPending={show.isPending && show.variables === rule} isDisabled={show.isPending} onPress={() => show.mutate(rule)}
-              >
-                {t('divers.showRule')}
-              </Button>
-            </li>
-          );
-        })}
-      </ul>
-      {show.error && <Notice tone="danger">{errorText(show.error)}</Notice>}
-    </div>
-  );
-}
-
 function MergeDialog({ diver: d, onClose }: { diver: ExternalDiverView; onClose: () => void }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
@@ -341,10 +179,12 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
   const [codes, setCodes] = useState(false);
   const admin = useQuery(meQuery()).data?.user.role === 'admin';
   const [newName, setNewName] = useState(d.name);
-  const renameButton = useRef<HTMLButtonElement>(null);
+  const [deleting, setDeleting] = useState(false);
+  // When renaming ends (saved or cancelled), focus goes back to the row's actions (UI review B1).
+  const actionsBox = useRef<HTMLSpanElement>(null);
   const wasRenaming = useRef(false);
   useEffect(() => {
-    if (wasRenaming.current && !renaming) renameButton.current?.focus();
+    if (wasRenaming.current && !renaming) actionsBox.current?.querySelector('button')?.focus();
     wasRenaming.current = renaming;
   }, [renaming]);
   const refresh = () => queryClient.invalidateQueries({ queryKey: keys.divers });
@@ -360,6 +200,14 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
       refocusAfterRemoval(list.current, index, count);
     },
   });
+
+  // The row's secondary actions in one menu; the dialogs and the rename field are the ones they always were.
+  const actions: MenuAction[] = [
+    { id: 'codes', label: t('diverCodes.open'), icon: 'code', onAction: () => setCodes(true) },
+    { id: 'rename', label: t('divers.rename'), icon: 'edit', onAction: () => { setNewName(d.name); setRenaming(true); } },
+    ...(admin ? [{ id: 'merge', label: t('divers.merge'), icon: 'merge' as const, onAction: () => setMerging(true) }] : []),
+    ...(d.canDelete && !d.inUse ? [{ id: 'delete', label: t('divers.delete'), icon: 'delete' as const, onAction: () => setDeleting(true) }] : []),
+  ];
 
   return (
     <li className="diver-row">
@@ -377,32 +225,17 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
             ...d.accounts.map((source) => t('divers.hasAccount', { name: t(`divers.service.${source}`) })),
             d.inUse ? t('divers.onDives') : t('divers.onNoDive'),
           ].join(' · ')}</span>
-          <span className="actions">
-            <Button variant="quiet" aria-label={t('common.forItem', { action: t('diverCodes.open'), item: d.name })} onPress={() => setCodes(true)}>
-              {t('diverCodes.open')}
-            </Button>
-            <Button ref={renameButton} variant="quiet" aria-label={t('common.forItem', { action: t('divers.rename'), item: d.name })} onPress={() => { setNewName(d.name); setRenaming(true); }}>
-              {t('divers.rename')}
-            </Button>
-            {admin && (
-              <Button variant="quiet" aria-label={t('common.forItem', { action: t('divers.merge'), item: d.name })} onPress={() => setMerging(true)}>
-                {t('divers.merge')}
-              </Button>
-            )}
-            {d.canDelete && !d.inUse && (
-              <ConfirmButton
-                variant="quiet" aria-label={t('common.forItem', { action: t('divers.delete'), item: d.name })}
-                title={t('divers.deleteTitle', { name: d.name })} body={t('divers.deleteBody', { name: d.name })} confirmLabel={t('divers.delete')}
-                onConfirm={() => remove.mutateAsync()}
-              >
-                {t('divers.delete')}
-              </ConfirmButton>
-            )}
+          <span className="actions" ref={actionsBox}>
+            <ActionMenu label={t('divers.actions')} aria-label={t('common.forItem', { action: t('divers.actions'), item: d.name })} actions={actions} />
           </span>
         </>
       )}
       {rename.error && <Notice tone="danger">{errorText(rename.error)}</Notice>}
       {merging && <MergeDialog diver={d} onClose={() => setMerging(false)} />}
+      <ConfirmDialog
+        isOpen={deleting} onOpenChange={setDeleting} title={t('divers.deleteTitle', { name: d.name })} body={t('divers.deleteBody', { name: d.name })}
+        confirmLabel={t('divers.delete')} onConfirm={() => remove.mutateAsync()}
+      />
       {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
     </li>
   );

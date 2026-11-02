@@ -33,6 +33,11 @@ test.afterEach(async ({ page }, testInfo) => {
   // A test that already failed has its own error to show.
   if (owed && testInfo.status === testInfo.expectedStatus) await expectAccessible(page);
 });
+/** A kept Diver's own page, reached from the Divers list by the name (UI overhaul). */
+async function openDiver(page: Page, name: string) {
+  await page.goto('/#/divers');
+  await page.getByRole('link', { name, exact: true }).click();
+}
 let diveId: string;
 let invitationToken: string;
 let resetToken: string;
@@ -461,9 +466,9 @@ for (const v of variants) {
       const n = await diveNumber(request, id);
       try {
         await putAside(request, id, { mute: ['ascent_rate', 'safety_stop'] });
-        await page.goto('/#/divers');
+        await openDiver(page, 'Erika');
         await expect(page.getByRole('button', { name: v.english ? /^Show again: Fast ascent, / : /^Wieder zeigen: Schneller Aufstieg, / })).toBeVisible();
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, 'Erika', v);
       } finally {
         await assessedDive(request);
       }
@@ -751,7 +756,9 @@ for (const v of variants) {
       await request.post('/api/divers/from-code', { data: { text: code(account), create: true }, headers });
       try {
         await page.goto('/#/divers');
-        await page.getByRole('button', { name: `Codes: ${name}` }).click();
+        // The row's menu holds the Diver's codes (UI overhaul).
+        await page.getByRole('button', { name: `${v.english ? 'Actions' : 'Aktionen'}: ${name}` }).click();
+        await page.getByRole('menuitem', { name: v.english ? 'Codes' : 'Codes' }).click();
         await expect(page.getByRole('dialog').getByRole('img')).toHaveCount(2);
         await goodPage(page, title('Divers'), v);
         await page.getByRole('button', { name: v.english ? 'Edit details' : 'Angaben bearbeiten' }).click();
@@ -778,14 +785,14 @@ for (const v of variants) {
       const name = `Gewicht Probe ${v.locale} ${Date.now()}`;
       const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
       try {
-        await page.goto('/#/divers');
+        await openDiver(page, name);
         await page.getByRole('button', { name: `${v.english ? 'Body weight' : 'Körpergewicht'}: ${name}` }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
         await page.getByRole('dialog').getByRole('textbox', { name: v.english ? /^Weight/ : /^Gewicht/ }).fill('78');
         await page.getByRole('dialog').getByRole('button', { name: v.english ? 'Add weight' : 'Gewicht hinzufügen' }).click();
         await expect(page.getByRole('dialog').getByRole('listitem')).toHaveCount(1);
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
       }
@@ -795,20 +802,20 @@ for (const v of variants) {
       const name = `Karte Probe ${v.locale} ${Date.now()}`;
       const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
       try {
-        await page.goto('/#/divers');
-        const row = page.getByRole('listitem').filter({ hasText: name });
+        await openDiver(page, name);
+        const row = page.locator('#main');
         await expect(row.getByText(v.english ? 'No cards yet' : 'Noch keine Karten')).toBeVisible();
         await row.getByRole('button', { name: v.english ? /^Certifications: / : /^Zertifizierungen: / }).click();
         await expect(row.getByText(v.english ? 'No certifications yet.' : 'Noch keine Zertifizierungen.')).toBeVisible();
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
         await row.getByRole('button', { name: v.english ? 'Add certification' : 'Zertifizierung hinzufügen' }).click();
         const dialog = page.getByRole('dialog');
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
         await dialog.getByRole('textbox', { name: v.english ? /^Agency/ : /^Organisation/ }).fill('PADI');
         await dialog.getByRole('textbox', { name: v.english ? /^Course or level/ : /^Kurs oder Stufe/ }).fill('Open Water Diver');
         await dialog.getByRole('button', { name: v.english ? 'Save certification' : 'Zertifizierung speichern' }).click();
         await expect(row.getByRole('list', { name: v.english ? 'Certification cards' : 'Zertifizierungskarten' }).getByRole('listitem')).toHaveCount(1);
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
         // An expired card, in words (C21), and the line counting it.
         await request.post(`/api/divers/${created.id}/certifications`, {
           data: { agency: 'DAN', level: 'First Aid', issuedOn: '2020-01-01', expiresOn: '2021-01-01' }, headers,
@@ -818,7 +825,7 @@ for (const v of variants) {
         // The address says the section is open, so it is still open after the reload.
         await expect(row.getByRole('button', { name: v.english ? /^Certifications: / : /^Zertifizierungen: / })).toHaveAttribute('aria-expanded', 'true');
         await expect(row.getByRole('listitem').filter({ hasText: 'First Aid' })).toContainText(v.english ? 'Expired' : 'Abgelaufen');
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
       }
@@ -829,7 +836,7 @@ for (const v of variants) {
       const name = `Schließen Probe ${v.locale} ${Date.now()}`;
       const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
       try {
-        await page.goto('/#/divers');
+        await openDiver(page, name);
         const dialog = page.getByRole('dialog');
         const close = dialog.getByRole('button', { name: v.english ? 'Close dialog' : 'Dialog schließen' });
         const openers = [
@@ -846,10 +853,11 @@ for (const v of variants) {
           await expect(trigger).toBeFocused();
         }
         // A question before something is lost (C8), and the confirmation also has a close button.
-        await page.getByRole('button', { name: `${v.english ? 'Delete' : 'Löschen'}: ${name}` }).click();
+        await page.getByRole('button', { name: `${v.english ? 'Actions' : 'Aktionen'}: ${name}` }).click();
+        await page.getByRole('menuitem', { name: v.english ? 'Delete' : 'Löschen' }).click();
         await expect(dialog.getByRole('heading', { name: v.english ? `Delete ${name}?` : `${name} löschen?` })).toBeVisible();
         await expect(close).toBeVisible();
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
       }
@@ -859,20 +867,25 @@ for (const v of variants) {
       const name = `Löschen Probe ${v.locale} ${Date.now()}`;
       const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
       try {
-        await page.goto('/#/divers');
-        const row = page.getByRole('listitem').filter({ hasText: name });
+        await openDiver(page, name);
         const dialog = page.getByRole('dialog');
-        await page.getByRole('button', { name: `${v.english ? 'Delete' : 'Löschen'}: ${name}` }).click();
+        const deleteItem = async () => {
+          await page.getByRole('button', { name: `${v.english ? 'Actions' : 'Aktionen'}: ${name}` }).click();
+          await page.getByRole('menuitem', { name: v.english ? 'Delete' : 'Löschen' }).click();
+        };
+        await deleteItem();
         // Cancel leaves the diver where it is.
         await dialog.getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' }).click();
         await expect(dialog).toHaveCount(0);
-        await expect(row).toHaveCount(1);
+        await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
         // The main action comes before Cancel (C14).
-        await page.getByRole('button', { name: `${v.english ? 'Delete' : 'Löschen'}: ${name}` }).click();
+        await deleteItem();
         const actions = dialog.locator('.form-actions').getByRole('button');
         await expect(actions.nth(0)).toHaveText(v.english ? 'Delete' : 'Löschen');
         await actions.nth(0).click();
-        await expect(row).toHaveCount(0);
+        // The page is gone with the Diver: the list is where it leads.
+        await expect(page).toHaveURL(/#[/]divers$/);
+        await expect(page.getByRole('link', { name, exact: true })).toHaveCount(0);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
       }
@@ -883,7 +896,8 @@ for (const v of variants) {
       const id = await externalDiver(request, name);
       try {
         await page.goto('/#/divers');
-        await page.getByRole('button', { name: v.english ? `Merge into…: ${name}` : `Zusammenführen mit\u00a0…: ${name}` }).click();
+        await page.getByRole('button', { name: `${v.english ? 'Actions' : 'Aktionen'}: ${name}` }).click();
+        await page.getByRole('menuitem', { name: v.english ? 'Merge into…' : 'Zusammenführen mit …' }).click();
         await expect(page.getByRole('dialog').getByRole('searchbox')).toBeFocused();
         await goodPage(page, title('Divers'), v);
       } finally {

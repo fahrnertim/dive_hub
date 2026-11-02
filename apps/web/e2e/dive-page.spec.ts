@@ -152,8 +152,9 @@ test('the dive number is not typed: the form has no field for it; the Diver\'s s
   await page.getByText('All values').first().click();
   await expect(page.getByText('Number on the computer').first()).toBeVisible();
 
+  // The Diver's own page: behind a line that shows the current values (C7); opened, the fields are there.
   await page.goto('/#/divers');
-  // Behind a line that shows the current values (C7); opened, the fields are there.
+  await page.getByRole('link', { name: 'Erika', exact: true }).first().click();
   await expect(page.getByText('starts at 42 · apnea sessions counted').first()).toBeVisible();
   await page.getByRole('button', { name: /^Dive numbers: / }).first().click();
   const settings = page.getByRole('group', { name: /^Dive numbers of Erika/ });

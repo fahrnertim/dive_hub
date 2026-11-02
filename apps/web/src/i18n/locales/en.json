@@ -951,7 +951,14 @@
     "mergeIntro": "Pick the diver who is {{name}}. The dives that list {{name}} then list that diver, and {{name}}’s accounts move to them. This can’t be undone.",
     "merged": "{{name}} merged into {{into}}.",
     "mutedRules": "Not shown in {{name}}’s assessments:",
-    "showRule": "Show again"
+    "showRule": "Show again",
+    "actions": "Actions",
+    "cards_one": "{{count}} card",
+    "cards_other": "{{count}} cards",
+    "back": "Divers",
+    "backToDivers": "To the Divers",
+    "notFound": "Diver not found",
+    "notFoundBody": "This Diver isn’t in your Divers: it may have been deleted, or its logbook isn’t one you keep."
   },
   "geo": {
     "north": "N",

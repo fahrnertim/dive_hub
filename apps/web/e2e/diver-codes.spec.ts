@@ -51,7 +51,8 @@ test('a diver is added from the text of a professional’s code, and shows both 
 
 test('the details are edited where the codes are shown; without a leader number there is no professional’s code', { tag: ['@divers', '@dives'] }, async ({ page }) => {
   await page.goto('/#/divers');
-  await page.getByRole('button', { name: `Codes: ${NAME}` }).click();
+  await page.getByRole('button', { name: `Actions: ${NAME}` }).click();
+  await page.getByRole('menuitem', { name: 'Codes' }).click();
   const codes = page.getByRole('dialog', { name: `${NAME}: codes and details` });
   await codes.getByRole('button', { name: 'Edit details' }).click();
   await codes.getByRole('textbox', { name: 'SSI leader number' }).fill('');

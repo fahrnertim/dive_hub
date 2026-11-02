@@ -1,7 +1,7 @@
-// A Diver's body weight (ADR 0031, slice A part 3) in a real browser: set on a date from the Divers page, shown in kg or
+// A Diver's body weight (ADR 0031, slice A part 3) in a real browser: set on a date from a Diver's page, shown in kg or
 // lb, replaced by setting the same date again and removed; the dialog says who sees it, and a Diver nobody keeps has none.
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, expectGoodPage, setPreferences } from './support.ts';
+import { E2E_BASE_URL, expectGoodPage, externalDiver, forgetDivers, setPreferences } from './support.ts';
 
 const headers = { origin: E2E_BASE_URL };
 
@@ -13,12 +13,13 @@ test.afterAll(async ({ request }) => {
 });
 
 test('a body weight is set on a date, shown in kg or lb, replaced and removed', { tag: ['@divers'] }, async ({ page, request }) => {
-  await page.goto('/#/divers');
+  const [own] = (await (await request.get('/api/divers')).json()) as { id: string }[];
+  await page.goto(`/#/divers/${own!.id}`);
   await page.getByRole('button', { name: /^Body weight: / }).first().click();
   const dialog = page.getByRole('dialog', { name: /^Body weight of / });
   await expect(dialog.getByText('Only you and the other Users who keep this Diver see it.')).toBeVisible();
   await expect(dialog.getByText('No body weight yet.')).toBeVisible();
-  await expectGoodPage(page, 'Divers');
+  await expectGoodPage(page);
 
   const add = async (date: string, weight: string) => {
     // The form empties when the save is done; typing before that would lose the value.
@@ -54,7 +55,17 @@ test('a body weight is set on a date, shown in kg or lb, replaced and removed', 
 
 test('a Diver nobody keeps has no body weight section', { tag: ['@divers'] }, async ({ page, request }) => {
   await setPreferences(request, { units: 'metric' });
-  await page.goto('/#/divers');
-  const others = page.locator('section', { has: page.getByRole('heading', { name: 'Other divers' }) });
-  await expect(others.getByRole('button', { name: /^Body weight/ })).toHaveCount(0);
+  const name = 'Weight Probe';
+  await externalDiver(request, name);
+  try {
+    await page.goto('/#/divers');
+    const others = page.locator('section', { has: page.getByRole('heading', { name: 'Other divers' }) });
+    await expect(others.getByRole('button', { name: /^Body weight/ })).toHaveCount(0);
+    // Nor in the row's menu, which does hold the Diver's codes.
+    await others.getByRole('button', { name: `Actions: ${name}` }).click();
+    await expect(page.getByRole('menuitem', { name: 'Codes' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /^Body weight/ })).toHaveCount(0);
+  } finally {
+    await forgetDivers(request, name);
+  }
 });

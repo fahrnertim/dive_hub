@@ -207,12 +207,29 @@ test('review material', async ({ page, request, browser }) => {
     await request.post('/api/divers/from-code', { headers, data: { text: 'buddy;4600002;firstName:Pia;lastName:Probe;email:pia@example.com;leaderNr:70001', create: true } });
     await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Other divers' }).waitFor();
     await capture(page, '04-divers');
-    await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
+    // The row menu of an other diver (UI overhaul), then its codes.
+    await page.getByRole('button', { name: 'Actions: Pia Probe' }).click();
+    await capture(page, '04h-divers-row-menu', { full: false, aria: false });
+    await page.getByRole('menuitem', { name: 'Codes' }).click();
     await page.getByRole('dialog').getByRole('img').nth(1).waitFor();
     await capture(page, '04a-divers-codes', { full: false, aria: false });
-    // A Diver's body weight (ADR 0031): the dialog with one value, removed again.
+    // A kept Diver's own page, with a body weight (ADR 0031): the dialog with one value, removed again.
     await page.keyboard.press('Escape');
     const [ownDiver] = (await (await request.get('/api/divers')).json()) as { id: string; name: string }[];
+    await page.goto(`/#/divers/${ownDiver!.id}`); await page.getByRole('heading', { level: 1, name: ownDiver!.name }).waitFor();
+    await capture(page, '04i-divers-page');
+    // Dark, and the Diver page on a phone (UI overhaul).
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await capture(page, '04j-divers-page-dark', { aria: false });
+    await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Other divers' }).waitFor();
+    await capture(page, '04k-divers-dark', { aria: false });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await capture(page, '04l-divers-phone-dark', { aria: false });
+    await page.goto(`/#/divers/${ownDiver!.id}`); await page.getByRole('heading', { level: 1, name: ownDiver!.name }).waitFor();
+    await capture(page, '04m-divers-page-phone-dark', { aria: false });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await capture(page, '04n-divers-page-phone', { aria: false });
+    await page.setViewportSize({ width: 1280, height: 900 });
     await request.put(`/api/divers/${ownDiver!.id}/body-weights/2026-03-01`, { headers, data: { kg: 82 } });
     await page.getByRole('button', { name: `Body weight: ${ownDiver!.name}` }).click();
     await page.getByRole('dialog').getByText('82 kg').waitFor();
@@ -243,7 +260,9 @@ test('review material', async ({ page, request, browser }) => {
     const cards = (await (await request.get(`/api/divers/${ownDiver!.id}/certifications`)).json()) as { id: string }[];
     for (const c of cards) await request.delete(`/api/divers/${ownDiver!.id}/certifications/${c.id}`, { headers });
     void typed;
-    await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
+    await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Other divers' }).waitFor();
+    await page.getByRole('button', { name: 'Actions: Pia Probe' }).click();
+    await page.getByRole('menuitem', { name: 'Codes' }).click();
     await page.getByRole('button', { name: 'Edit details' }).click();
     await capture(page, '04b-divers-codes-edit', { full: false, aria: false });
     await page.keyboard.press('Escape');
@@ -346,6 +365,9 @@ test('review material', async ({ page, request, browser }) => {
     if (want('divers')) {
       await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Andere Taucher' }).waitFor();
       await capture(page, '10-divers-de-phone', { aria: false });
+      await page.getByRole('button', { name: 'Aktionen: Pia Probe' }).click();
+      await capture(page, '10e-divers-row-menu-de-phone', { full: false, aria: false });
+      await page.keyboard.press('Escape');
       // A Diver's certification cards at phone width, in German: a typed and an imported one (ADR 0050), and the form.
       const [diver] = (await (await request.get('/api/divers')).json()) as { id: string; name: string }[];
       await request.post(`/api/divers/${diver!.id}/certifications`, {
@@ -357,7 +379,9 @@ test('review material', async ({ page, request, browser }) => {
       await request.post(`/api/divers/${diver!.id}/certifications`, {
         headers, data: { agency: 'ERC', level: 'Emergency First Response', issuedOn: '2023-02-01', expiresOn: new Date(Date.now() - 20 * 86_400_000).toISOString().slice(0, 10) },
       });
-      await page.reload();
+      await page.goto(`/#/divers/${diver!.id}`);
+      await page.getByRole('button', { name: `Zertifizierungen: ${diver!.name}` }).waitFor();
+      await capture(page, '10f-divers-page-de-phone', { aria: false });
       await page.getByRole('button', { name: `Zertifizierungen: ${diver!.name}` }).click();
       await page.getByRole('button', { name: /^Bild groß anzeigen/ }).first().waitFor({ timeout: 20_000 }).catch(() => undefined);
       await capture(page, '10c-divers-certifications-de-phone', { aria: false });
@@ -368,7 +392,9 @@ test('review material', async ({ page, request, browser }) => {
       for (const c of (await (await request.get(`/api/divers/${diver!.id}/certifications`)).json()) as { id: string }[]) {
         await request.delete(`/api/divers/${diver!.id}/certifications/${c.id}`, { headers });
       }
-      await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
+      await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Andere Taucher' }).waitFor();
+      await page.getByRole('button', { name: 'Aktionen: Pia Probe' }).click();
+      await page.getByRole('menuitem', { name: 'Codes' }).click();
       await page.getByRole('dialog').getByRole('img').nth(1).waitFor();
       await capture(page, '10a-divers-codes-de-phone', { aria: false });
       await page.keyboard.press('Escape');

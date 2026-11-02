@@ -23,11 +23,11 @@ const AREAS = [
   [/^apps\/web\/src\/(DivePage|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|AppendDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|answer|sketch|logbook|review|devices|importable|deletion|assessment|waiting-push)\.ts$/, ['@dives']],
   // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
   [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
-  [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
+  [/^apps\/web\/src\/DiversPage\.tsx$|^apps\/web\/src\/DiverPage\.tsx$/, ['@divers']],
   [/^apps\/web\/src\/Devices\.tsx$/, ['@divers', '@account']],
-  // A Diver's body weight (ADR 0031), a dialog on the divers page.
+  // A Diver's body weight (ADR 0031), a dialog on a Diver's page.
   [/^apps\/web\/src\/BodyWeight\.tsx$/, ['@divers']],
-  // A Diver certification cards (ADR 0050), a section of the divers page (slice 25c); their server side also takes part in the import.
+  // A Diver certification cards (ADR 0050), a section of a Diver's page (slice 25c); their server side also takes part in the import.
   [/^apps\/web\/src\/Certifications\.tsx$|^apps\/server\/src\/certifications\//, ['@divers', '@account']],
   [/^apps\/web\/src\/(SignedOut|AccountPage|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
   [/^apps\/web\/src\/SettingsPage\.tsx$/, ['@account', '@admin']],

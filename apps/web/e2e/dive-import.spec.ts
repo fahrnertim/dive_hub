@@ -137,11 +137,12 @@ test('an admin merges an external diver into another one', { tag: ['@divers'] },
   const name = `Merge me ${Date.now()}`;
   await externalDiver(request, name);
   await page.goto('/#/divers');
-  await page.getByRole('button', { name: `Merge into…: ${name}` }).click();
+  await page.getByRole('button', { name: `Actions: ${name}` }).click();
+  await page.getByRole('menuitem', { name: 'Merge into…' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('searchbox').fill('Lena');
   await dialog.getByRole('option', { name: /^Lena/ }).first().click();
   await expect(dialog).toBeHidden();
   // Gone from Other divers (the announcement still names it).
-  await expect(page.getByRole('button', { name: `Merge into…: ${name}` })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: `Actions: ${name}` })).toHaveCount(0);
 });

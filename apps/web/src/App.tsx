@@ -24,6 +24,7 @@ import { PlainShell, Shell } from './ui/Shell.tsx';
 const DivePage = lazy(() => import('./DivePage.tsx').then((m) => ({ default: m.DivePage })));
 const SettingsPage = lazy(() => import('./SettingsPage.tsx').then((m) => ({ default: m.SettingsPage })));
 const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
+const DiverPage = lazy(() => import('./DiverPage.tsx').then((m) => ({ default: m.DiverPage })));
 const SitesPage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
 const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
 const CentresPage = lazy(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentresPage })));
@@ -34,7 +35,7 @@ const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ 
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers" ("?certifications=own|<diver id>": that Diver's certifications open), "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/tools/lead" ("?lw=salt&suit=wetsuit&mm=5&cyl=12~steel"), "#/settings" ("#/settings/<section>", "#/settings/connections?connection=<id>"), "#/settings/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers" ("?certifications=own|<diver id>" leads on to the Diver's page), "#/divers/<id>" ("?open=certifications"), "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/tools/lead" ("?lw=salt&suit=wetsuit&mm=5&cyl=12~steel"), "#/settings" ("#/settings/<section>", "#/settings/connections?connection=<id>"), "#/settings/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
  * The addresses from before Settings ("#/account…", "#/admin…") are replaced by their new ones before routing.
  */
 function useRoute(): string {
@@ -127,6 +128,8 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const diveId = /^\/dives\/([\w-]+)$/.exec(path!)?.[1];
   if (diveId) return <DivePage key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
   if (path === '/divers') return <DiversPage open={params.get('certifications') ?? undefined} />;
+  const diverId = /^\/divers\/([\w-]+)$/.exec(path!)?.[1];
+  if (diverId) return <DiverPage key={diverId} id={diverId} open={params.get('open') === 'certifications' ? 'certifications' : undefined} />;
   if (path === '/review') return <ReviewPage tab={reviewTab(params)} />;
   if (path === '/sites') return <SitesPage params={sitesParams(params)} />;
   const siteId = /^\/sites\/([\w-]+)$/.exec(path!)?.[1];

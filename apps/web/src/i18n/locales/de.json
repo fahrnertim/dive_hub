@@ -951,7 +951,14 @@
     "mergeIntro": "Wähle den Taucher, der {{name}} ist. Die Tauchgänge, die {{name}} nennen, nennen dann diesen Taucher, und die Konten von {{name}} gehen auf ihn über. Das lässt sich nicht rückgängig machen.",
     "merged": "{{name}} mit {{into}} zusammengeführt.",
     "mutedRules": "In den Auswertungen von {{name}} ausgeblendet:",
-    "showRule": "Wieder zeigen"
+    "showRule": "Wieder zeigen",
+    "actions": "Aktionen",
+    "cards_one": "{{count}} Karte",
+    "cards_other": "{{count}} Karten",
+    "back": "Taucher",
+    "backToDivers": "Zu den Tauchern",
+    "notFound": "Taucher nicht gefunden",
+    "notFoundBody": "Dieser Taucher gehört nicht zu deinen Tauchern: Er wurde vielleicht gelöscht, oder du führst sein Logbuch nicht."
   },
   "geo": {
     "north": "N",

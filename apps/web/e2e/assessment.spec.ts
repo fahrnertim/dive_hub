@@ -131,7 +131,8 @@ test('puts a finding aside on the dive and mutes a rule for the Diver; the logbo
 
   // The muted rule is listed with its Diver, and comes back from there.
   await page.goto('/#/divers');
-  const erika = page.getByRole('listitem').filter({ hasText: 'Not shown in Erika’s assessments:' });
+  await page.getByRole('link', { name: 'Erika', exact: true }).first().click();
+  const erika = page.locator('.muted-rules');
   await expect(erika).toContainText('Fast ascent');
   await erika.getByRole('button', { name: 'Show again: Fast ascent, Erika' }).click();
   await expect(page.getByText('Not shown in Erika’s assessments:')).toHaveCount(0);
