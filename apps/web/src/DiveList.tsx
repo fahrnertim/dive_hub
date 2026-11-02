@@ -40,7 +40,7 @@ export function LogbookHeader({ params, importAction, more }: { params: LogbookP
   // Dropping files is for a pointer, and is said where it happens: in the drop overlay and the empty logbook.
   const summary = totals && totals.dives > 0
     && t('logbook.summary', { count: totals.dives, formatted: totals.dives.toLocaleString(display.locale), time: display.duration(totals.durationSeconds), depth: display.depth(totals.deepestM) });
-  return <PageHeader title={t('logbook.title')} lead={summary || undefined} actions={<>{importAction}{more}</>} />;
+  return <PageHeader className="logbook-head" title={t('logbook.title')} lead={summary || undefined} actions={<>{importAction}{more}</>} />;
 }
 
 /**
@@ -129,7 +129,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
     filters,
   ].filter(Boolean).join(' · ');
   return (
-    <Panel>
+    <Panel className="logbook-panel">
       {params.siteId && <SiteFilter params={params} />}
       {/* Nothing to count, search or sort before the first dive (visual refresh 8). */}
       {searchable && (

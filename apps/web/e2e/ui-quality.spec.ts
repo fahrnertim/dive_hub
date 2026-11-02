@@ -1603,8 +1603,16 @@ test.describe('behaviour', () => {
   // Slice 25f (C11, C12): on a phone the first Dive is on the first screen, and Save stays in view while a Dive is edited.
   for (const size of [{ width: 390, height: 844 }, { width: 320, height: 640 }]) {
     test(`on a ${size.width} px phone the first Dive is on the first screen (slice 25f, C11)`, { tag: ['@dives', '@layout'] }, async ({ page }) => {
+      // With the decision line showing, the tallest the head gets. It is made in the page, not in the data: the specs
+      // run side by side on one server, and a recording waiting for a decision would show in their logbooks too.
+      await page.route('**/api/duplicate-candidates?status=open', (route) => route.fulfill({ json: [{ id: 'waiting' }] }));
       await page.setViewportSize(size);
       await page.goto('/');
+      await expect(page.getByText(/needs? your decision/)).toBeVisible();
+      await expectFirstDiveInView(page);
+    });
+
+    async function expectFirstDiveInView(page: Page) {
       const first = diveRows(page).first();
       await expect(first).toBeVisible();
       const bar = (await page.getByRole('navigation', { name: 'Main' }).boundingBox())!;
@@ -1620,7 +1628,7 @@ test.describe('behaviour', () => {
       await expect(page.getByRole('button', { name: /Sort by$/ })).toBeVisible();
       // The control stays reachable by keyboard and the page doesn't scroll sideways.
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    });
+    }
 
     test(`on a ${size.width} px phone Save is in view while a Dive is edited (slice 25f, C12)`, { tag: ['@dives', '@layout'] }, async ({ page, request }) => {
       await resetDive(request);

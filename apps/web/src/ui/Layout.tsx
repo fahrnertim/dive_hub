@@ -31,11 +31,11 @@ export function Panel({ title, children, narrow, actions, level = 2, attention, 
  * sentence, and the page's actions beside it. Sections follow as panels. Single forms (sign-in, setup)
  * use a narrow `Panel level={1}` instead.
  */
-export function PageHeader({ title, meta, lead, actions, back }: { title: ReactNode; meta?: ReactNode; lead?: ReactNode; actions?: ReactNode; back?: { href: string; label: string } }) {
+export function PageHeader({ title, meta, lead, actions, back, className }: { title: ReactNode; meta?: ReactNode; lead?: ReactNode; actions?: ReactNode; back?: { href: string; label: string }; className?: string }) {
   return (
     <>
       {back && <BackLink {...back} />}
-      <div className="page-head">
+      <div className={className ? `page-head ${className}` : 'page-head'}>
         <div className="page-head-text">
           <h1>{title}</h1>
           {meta}

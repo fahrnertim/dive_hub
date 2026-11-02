@@ -191,6 +191,16 @@
   .logbook-more .logbook-toolbar { padding-top: var(--space-3); }
   .logbook-more .logbook-choice { flex: 1 1 100%; }
 }
+/* On a phone the first Dive is on the first screen even with the decision line showing (C11): the head, the line and the
+   panel sit tighter, and the line's link follows its words instead of taking a line of its own. */
+@media (max-width: 40rem) {
+  .logbook-head { gap: var(--space-2) var(--space-4); }
+  .logbook-head .page-head-text > p { font-size: var(--text-sm); line-height: 1.35; }
+  .app-main:has(.logbook-head) { gap: var(--space-3); padding-top: var(--space-3); }
+  .logbook-head + .strip { display: block; margin: 0; }
+  .logbook-head + .strip > p { display: inline; margin-inline-end: var(--space-2); }
+  .logbook-panel { padding: var(--space-3) var(--space-4); }
+}
 .logbook-range { margin: 0 0 var(--space-2); }
 .logbook-nothing { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
 .logbook-nothing > p { margin: 0; }
