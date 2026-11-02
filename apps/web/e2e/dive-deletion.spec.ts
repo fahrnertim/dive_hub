@@ -51,7 +51,8 @@ test('deletes a dive after asking, offers Undo, and restores it from the deleted
   await panel.getByRole('button', { name: /^Restore: .*2026/ }).click();
   await expect(panel).toHaveCount(0);
   await page.getByRole('main').getByRole('link', { name: 'Logbook' }).click();
-  await expect(diveRow(page, n)).toBeVisible();
+  // The logbook may show its list from before the restore while it refreshes, where Number n is still the next dive.
+  await expect(diveRow(page, n).locator(`a[href="#/dives/${id}"]`)).toBeVisible();
   await diveRow(page, n).click();
   await expect(page.locator('.history > li').first()).toContainText('Restored');
 });
