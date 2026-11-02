@@ -40,7 +40,7 @@ const LINE_DASHES: number[][] = [[], [8, 4], [2, 4], [10, 4, 2, 4]];
 /** Canvas fonts need px; the tokens are in rem. */
 function plotFont(el: Element) {
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  return `${Math.round(parseFloat(token(el, '--text-sm', '0.833rem')) * rem)}px ${token(el, '--font-sans', 'sans-serif')}`;
+  return `${Math.round(parseFloat(token(el, '--text-sm', '0.875rem')) * rem)}px ${token(el, '--font-sans', 'sans-serif')}`;
 }
 
 /**
@@ -76,7 +76,7 @@ export function DepthPlot({ minutes, depthsM, temperaturesC, syncKey, draw, plot
       ...(temperaturesC ? [temperaturesC.map((c) => (c === null ? null : temperatureIn(c, units)))] : []),
     ];
     const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
-    const text = token(el, '--color-text', '#0b2236');
+    const text = token(el, '--color-text', '#0e1a23');
     const muted = token(el, '--color-text-muted', '#4e6578');
     const grid = token(el, '--color-border', '#d5dfe6');
     const line = token(el, '--color-accent', '#0f5e8c');
@@ -183,7 +183,7 @@ export function PressureStrip({ series, labels, range, syncKey, describedBy, tit
       }),
     ];
     const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
-    const text = token(el, '--color-text', '#0b2236');
+    const text = token(el, '--color-text', '#0e1a23');
     const grid = token(el, '--color-border', '#d5dfe6');
     const line = token(el, '--color-accent', '#0f5e8c');
     const font = plotFont(el);

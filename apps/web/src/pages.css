@@ -264,7 +264,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .page-drop { position: fixed; inset: var(--space-3); z-index: 30; pointer-events: none; display: grid; place-items: center;
   border: 3px dashed var(--color-accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-accent-soft) 85%, transparent);
   animation: enter-fade var(--duration-popover) var(--ease-out); }
-.page-drop p { font-size: var(--text-xl); font-weight: var(--weight-semibold); color: var(--color-text); }
+.page-drop p { font-size: var(--text-lg); font-weight: var(--weight-semibold); color: var(--color-text); }
 .device-owner { min-width: 10rem; }
 
 /* Recordings as tabs (UI review C3) */
@@ -496,7 +496,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .tools-answer { display: grid; gap: var(--space-3); margin-top: var(--space-4); }
 .tools-answer > p, .tools-answer .muted, .tools-answer .notice, .tools-answer .subheading { margin: 0; }
 .tools-result { font-size: var(--text-lg); }
-.tools-result strong { font-size: var(--text-xl, var(--text-lg)); }
+.tools-result strong { font-size: var(--text-lg); }
 .tools-limits { width: 100%; border-collapse: collapse; }
 .tools-limits th, .tools-limits td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border, currentColor); }
 .tools-limits th { text-align: left; font-weight: var(--weight-regular); }

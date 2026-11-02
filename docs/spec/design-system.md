@@ -59,8 +59,10 @@ New semantic tokens: `--color-active` (the navigation pill), `--color-primary` a
 |---|---|---|
 | Text on frame / sheet / sunken | 15.8 / 17.6 / 16.4 | 16.7 / 15.5 / 14.4 |
 | Muted text on frame / sheet / sunken | 5.6 / 6.3 / 5.9 | 8.4 / 7.9 / 7.3 |
-| Accent on frame / sheet / accent tint; text on accent | 6.3 / 7.0 / 5.9; 7.0 | 8.7 / 8.1 / 6.1; 8.0 |
+| Accent on frame / sheet / accent tint | 6.3 / 7.0 / 5.9 | 8.7 / 8.1 / 6.1 |
 | Text on primary (the ink button) | 17.6 | 16.7 |
+| Text on accent; text on danger (filled buttons) | 7.0; 6.9 | 8.7; 7.7 |
+| Badges: success, danger on their tint | 5.1, 5.9 | 6.7, 6.3 |
 | Danger on sheet | 6.9 | 7.2 |
 | Success on sheet | 5.9 | 8.5 |
 | Control border on frame / sheet / sunken (≥ 3:1, WCAG 1.4.11) | 3.5 / 3.9 / 3.6 | 4.3 / 4.0 / 3.7 |

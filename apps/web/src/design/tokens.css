@@ -81,7 +81,7 @@
   --panel-padding: var(--space-6);
 
   /* Elevation only for things that float above the page (dialogs, popovers) */
-  --shadow-overlay: 0 12px 32px rgb(11 34 54 / 0.24);
+  --shadow-overlay: 0 12px 32px rgb(14 26 35 / 0.2);
 
   --shell-sidebar: 14.5rem;
   --shell-topbar: 3.25rem;
@@ -114,10 +114,10 @@
     --color-primary: #e9eef2;
     --color-on-primary: #0b0d0f;
     --color-accent: #62b6e6;
-    --color-on-accent: #071827;
+    --color-on-accent: #0b0d0f;
     --color-accent-soft: #14303f;
     --color-danger: #ff7a7a;
-    --color-on-danger: #071827;
+    --color-on-danger: #0b0d0f;
     --color-danger-soft: #3a1620;
     --color-success: #5cc593;
     --color-success-soft: #10301f;

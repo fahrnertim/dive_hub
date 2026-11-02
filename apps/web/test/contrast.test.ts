@@ -71,7 +71,10 @@ describe.each(Object.entries(schemes))('contrast, %s', (_name, color) => {
   it('on-primary on primary is at least 4.5', () => {
     expect(contrast(c('on-primary'), c('primary'))).toBeGreaterThanOrEqual(4.5);
   });
-  it.each(['bg', 'surface'])('border-strong on %s is at least 3', (g) => {
+  it.each([['on-accent', 'accent'], ['on-danger', 'danger'], ['success', 'success-soft'], ['danger', 'danger-soft']])('%s on %s is at least 4.5', (t, g) => {
+    expect(contrast(c(t), c(g))).toBeGreaterThanOrEqual(4.5);
+  });
+  it.each(['bg', 'surface', 'surface-sunken'])('border-strong on %s is at least 3', (g) => {
     expect(contrast(c('border-strong'), c(g))).toBeGreaterThanOrEqual(3);
   });
 });
