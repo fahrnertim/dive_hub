@@ -298,7 +298,7 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
 .table .actions { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
 
 /* ---------- Dialog ---------- */
-.modal-overlay { position: fixed; inset: 0; z-index: 20; background: rgb(7 24 39 / 0.45);
+.modal-overlay { position: fixed; inset: 0; z-index: 20; background: var(--color-scrim);
   display: grid; place-items: center; padding: var(--space-4); overflow-y: auto; overscroll-behavior: contain; }
 .modal { width: 100%; max-width: 32rem; background: var(--color-surface); border-radius: var(--radius-lg);
   box-shadow: var(--shadow-overlay); }
@@ -351,21 +351,20 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
 @keyframes enter-fade { from { opacity: 0; } }
 @keyframes enter-rise { from { opacity: 0; transform: translateY(4px); } }
 @keyframes enter-sheet { from { opacity: 0; transform: translateY(16px); } }
-@keyframes open-panel { from { grid-template-rows: 0fr; opacity: 0; } }
+@keyframes open-panel { from { grid-template-rows: 0fr; opacity: 0; overflow: clip; } to { overflow: clip; } }
 /* Menus and selects grow out of the control that opened them. */
 .popover { transform-origin: var(--trigger-anchor-point, top); }
 .popover[data-entering] { animation: enter-pop var(--duration-popover) var(--ease-out); }
 /* On a phone a menu is a sheet at the bottom edge: it rises 16px with a fade. */
-.menu-sheet-overlay { position: fixed; inset: 0; z-index: 20; background: rgb(7 24 39 / 0.45); display: flex; align-items: flex-end; }
+.menu-sheet-overlay { position: fixed; inset: 0; z-index: 20; background: var(--color-scrim); display: flex; align-items: flex-end; }
 .menu-sheet-overlay[data-entering] { animation: enter-fade var(--duration-popover) var(--ease-out); }
 .menu-sheet { width: 100%; max-height: 80dvh; overflow-y: auto; overscroll-behavior: contain; background: var(--color-surface);
-  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; box-shadow: var(--shadow-overlay);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; box-shadow: var(--shadow-overlay); border-top: 1px solid var(--color-border-strong);
   padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px)); }
 .menu-sheet[data-entering] { animation: enter-sheet var(--duration-normal) var(--ease-out); }
 .menu-sheet .menu-item { min-height: 3rem; border-radius: var(--radius-control); }
 /* A disclosure opens by height (the grid row grows from 0fr, the one allowed exception to transform and opacity),
-   fading in. The body clips with a margin, so focus rings at its edge stay whole. */
-.disclosure-body { overflow: clip; overflow-clip-margin: 6px; }
+   fading in. The panel clips only while it grows, so focus rings and shadows at its edge are whole at rest. */
 @media (prefers-reduced-motion: no-preference) {
   .disclosure-panel:not([hidden]) { animation: open-panel var(--duration-disclosure) var(--ease-out); }
 }

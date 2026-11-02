@@ -132,8 +132,8 @@ describe('icons and motion (ADR 0018)', () => {
     for (const { path, text } of css) {
       for (const m of text.matchAll(/@keyframes [\w-]+ \{([^}]*\{[^}]*\})+\s*\}/g)) {
         const properties = [...m[0].matchAll(/([a-z-]+)\s*:/g)].map((p) => p[1]);
-        // The disclosure's height (a grid row growing from 0fr) is the one accepted exception (UI overhaul, Task 5).
-        const allowed = m[0].startsWith('@keyframes open-panel') ? ['transform', 'opacity', 'grid-template-rows'] : ['transform', 'opacity'];
+        // The disclosure's height (a grid row growing from 0fr, clipped meanwhile) is the one accepted exception (UI overhaul, Task 5).
+        const allowed = ['transform', 'opacity', ...(m[0].startsWith('@keyframes open-panel') ? ['grid-template-rows', 'overflow'] : [])];
         expect(properties.filter((p) => !allowed.includes(p ?? '')), `${path}: ${m[0].slice(0, 40)}`).toEqual([]);
       }
     }

@@ -82,6 +82,7 @@
 
   /* Elevation only for things that float above the page (dialogs, popovers) */
   --shadow-overlay: 0 12px 32px rgb(14 26 35 / 0.2);
+  --color-scrim: rgb(7 24 39 / 0.45);
 
   --shell-sidebar: 14.5rem;
   --shell-topbar: 3.25rem;
@@ -130,6 +131,7 @@
     --color-ascent-2: #f29a4a;
     --color-ascent-3: #ffb9a3;
     --shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.5);
+    --color-scrim: rgb(0 0 0 / 0.6);
     color-scheme: dark;
   }
 }

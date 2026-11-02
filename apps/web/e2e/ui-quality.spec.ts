@@ -1764,6 +1764,9 @@ test.describe('behaviour', () => {
       return document.getAnimations().map((x) => (x as CSSAnimation).animationName);
     });
     expect(grown).toContain('open-panel');
+    // At rest nothing clips, so focus rings and shadows at the panel's edge stay whole.
+    const overflow = () => page.locator('.disclosure[data-expanded] .disclosure-body').first().evaluate((el) => getComputedStyle(el).overflow);
+    await expect.poll(overflow).toBe('visible');
 
     // Reduced motion: the sheet, an opened disclosure and a skeleton bar run nothing.
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -1776,6 +1779,7 @@ test.describe('behaviour', () => {
     const panel = page.locator('.disclosure[data-expanded] .disclosure-panel').first();
     await expect(panel).toBeVisible();
     expect(await panel.evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
+    expect(await overflow()).toBe('visible');
     await page.route(/\/api\/sites(\?|$)/, () => new Promise(() => {})); // never answers: the skeleton stays
     await page.goto('/#/sites');
     await expect(page.locator('.skeleton-bar').first()).toBeVisible();

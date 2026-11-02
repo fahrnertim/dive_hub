@@ -86,7 +86,7 @@
 .dive-lines:empty { display: none; }
 .dive-line { min-width: 0; }
 .dive-line > .disclosure > .disclosure-head > :not(.disclosure-title), .dive-line-plain > :not(h2) { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
-.dive-line > .disclosure > .disclosure-panel { padding-top: var(--space-3); }
+.dive-line > .disclosure > .disclosure-panel > .disclosure-body { padding-top: var(--space-3); }
 /* Without an arrow, the name still starts where the names of the lines that open do. */
 .dive-line-plain { padding-inline-start: 1.5rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
 .dive-line-plain > h2 { margin: 0; font-size: inherit; line-height: inherit; }
@@ -635,7 +635,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .certification-more-fields { display: grid; gap: var(--space-3); padding-top: var(--space-3); }
 /* A Diver's row has sections under the line: Certifications, Dive numbers. */
 .diver-section { flex-basis: 100%; min-width: 0; }
-.diver-section > .disclosure-panel { padding-top: var(--space-2); }
+.diver-section > .disclosure-panel > .disclosure-body { padding-top: var(--space-2); }
 .certification-summary { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
 .certification-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-3); }
 .certification-suggestions { display: flex; flex-wrap: wrap; gap: var(--space-1); }

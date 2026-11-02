@@ -263,11 +263,11 @@ test('review material', async ({ page, request, browser }) => {
     await askMcp(request, access.key, 'logbook_search_dives', { query: 'wreck', country: 'EG', limit: 5 });
     await askMcp(request, access.key, 'logbook_get_dive', { dive_id: '00000000-0000-7000-8000-000000000000' });
     await askMcp(request, access.key, 'logbook_stats', { group_by: 'year' });
-    await page.goto('/#/account'); await page.getByRole('heading', { name: 'Display', level: 1 }).waitFor();
+    await page.goto('/#/settings/display'); await page.getByRole('heading', { name: 'Display', level: 1 }).waitFor();
     await capture(page, '05-account');
     await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
     await capture(page, '05a-account-security');
-    await page.goto('/#/account?tab=connections'); await page.getByRole('heading', { name: 'SSI', exact: true }).waitFor();
+    await page.goto('/#/settings/connections'); await page.getByRole('heading', { name: 'SSI', exact: true }).waitFor();
     await capture(page, '05c-account-connections');
     // Garmin (ADR 0062): its key form is on the page above; now connected with a key that expires in 5 days, its kinds under the import.
     await connectGarmin(request, 5);
@@ -281,7 +281,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByText(/you don’t fetch: left out/).waitFor();
     await capture(page, '05f-account-connections-garmin-connected');
     await leaveGarmin(request);
-    await page.goto('/#/account?tab=ai'); await page.getByRole('region', { name: 'What was read' }).waitFor();
+    await page.goto('/#/settings/ai-access'); await page.getByRole('region', { name: 'What was read' }).waitFor();
     await capture(page, '05d-account-ai-access');
     await page.getByRole('textbox', { name: 'Name' }).fill('VS Code at the dive centre');
     await page.getByRole('button', { name: 'Create AI access' }).click();
@@ -310,7 +310,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
   }
   if (want('admin')) {
-    await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Users' }).waitFor();
+    await page.goto('/#/settings/admin'); await page.getByRole('heading', { name: 'Users' }).waitFor();
     await page.getByRole('textbox', { name: 'E-mail' }).fill('second@example.com');
     await page.getByRole('button', { name: 'Create invitation link' }).click();
     await page.getByRole('button', { name: 'Copy' }).waitFor(); // the notice's text is also in the live region
@@ -378,11 +378,11 @@ test('review material', async ({ page, request, browser }) => {
       await page.keyboard.press('Escape');
     }
     if (want('admin')) {
-      await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Benutzer' }).waitFor();
+      await page.goto('/#/settings/admin'); await page.getByRole('heading', { name: 'Benutzer' }).waitFor();
       await capture(page, '11-admin-de-phone', { aria: false });
     }
     if (want('account')) {
-      await page.goto('/#/account?tab=ai'); await page.getByRole('region', { name: 'Was gelesen wurde' }).waitFor();
+      await page.goto('/#/settings/ai-access'); await page.getByRole('region', { name: 'Was gelesen wurde' }).waitFor();
       await capture(page, '11b-account-de-phone', { aria: false });
     }
     await setPreferences(request, { language: null });
@@ -515,7 +515,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.keyboard.press('Escape');
     await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: de ? /Tauchgang \d+/ : /Dive \d+/ }).waitFor();
     await capture(page, `${prefix}-dive-at-fresh-water-site`, { aria: false, axe });
-    await page.goto('/#/admin/site-imports'); await page.locator('.site-imports > li').first().waitFor();
+    await page.goto('/#/settings/admin/site-imports'); await page.locator('.site-imports > li').first().waitFor();
     await capture(page, `${prefix}-site-import`, { aria: false, axe });
     await page.getByText(de ? 'Ein Gebiet nach Koordinaten' : 'An area by coordinates').click();
     await page.getByRole('button', { name: de ? 'Import starten' : 'Start import' }).click();
@@ -606,7 +606,7 @@ test('review material', async ({ page, request, browser }) => {
     await setPreferences(request, { language: 'en' });
     // Changing the hash doesn't reload the app, which keeps the language it had: reload to take the new one.
     if (want('account')) {
-      await page.goto('/#/account?tab=connections'); await page.reload(); await page.getByRole('button', { name: 'Connect to SSI' }).waitFor();
+      await page.goto('/#/settings/connections'); await page.reload(); await page.getByRole('button', { name: 'Connect to SSI' }).waitFor();
       await capture(page, '24-account-ssi-connect');
     }
     await connectSsi(request);
@@ -626,12 +626,12 @@ test('review material', async ({ page, request, browser }) => {
       await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
       await page.reload(); await page.getByText(/^SSI hat schon einen Tauchgang/).waitFor();
       await capture(page, '25a3-account-review-dive-already-at-ssi-de-phone', { aria: false });
-      await page.goto('/#/account?tab=connections'); await page.getByText(/^Zuletzt abgerufen/).waitFor();
+      await page.goto('/#/settings/connections'); await page.getByText(/^Zuletzt abgerufen/).waitFor();
       await capture(page, '25a4-account-ssi-automatic-de-phone', { aria: false });
       await fetchState(request, automaticConnection, { clear: true }); await clearQueue(request);
       await setPreferences(request, { language: 'en' });
       await page.setViewportSize({ width: 1280, height: 900 }); await page.emulateMedia({ colorScheme: 'light' });
-      await page.goto('/#/account?tab=connections'); await page.reload(); await page.getByText('Connected, password kept').waitFor();
+      await page.goto('/#/settings/connections'); await page.reload(); await page.getByText('Connected, password kept').waitFor();
       // The SSI buddy list (ADR 0029): who is in Dive Hub already, adding and linking.
       await page.getByRole('button', { name: /^Show your SSI buddy list/ }).click();
       await page.getByRole('row', { name: /Mia Stone/ }).waitFor();
@@ -691,7 +691,7 @@ test('review material', async ({ page, request, browser }) => {
       await capture(page, '30-dive-ssi-de-dark-390', { aria: false });
     }
     if (want('account')) {
-      await page.goto('/#/account?tab=connections'); await page.reload(); await page.getByText('Verbunden, Passwort gespeichert').waitFor();
+      await page.goto('/#/settings/connections'); await page.reload(); await page.getByText('Verbunden, Passwort gespeichert').waitFor();
       await capture(page, '31-account-ssi-de-dark-390', { aria: false });
     }
     // Sending many dives (ADR 0047): the dialog with a dive held back, and a run stopped by a sign-in need; German on a dark phone.
@@ -781,7 +781,7 @@ test('review material', async ({ page, request, browser }) => {
     await setPreferences(request, { language: 'en' });
     await lenaReady(request);
     if (want('account')) {
-      await page.goto('/#/account?tab=connections'); await page.reload();
+      await page.goto('/#/settings/connections'); await page.reload();
       const section = page.getByRole('region', { name: 'Dives of Lena from SSI' });
       await section.getByRole('button', { name: 'Show what the import would do' }).click();
       await section.getByRole('radiogroup', { name: /^SSI dive 15: / }).waitFor();
@@ -799,7 +799,7 @@ test('review material', async ({ page, request, browser }) => {
       await setPreferences(request, { language: 'de' });
       await page.emulateMedia({ colorScheme: 'dark' });
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto('/#/account?tab=connections'); await page.reload();
+      await page.goto('/#/settings/connections'); await page.reload();
       const section = page.getByRole('region', { name: 'Tauchgänge von Lena aus SSI' });
       await section.getByRole('button', { name: 'Zeigen, was der Import tun würde' }).click();
       await section.getByRole('radiogroup', { name: /^SSI-Tauchgang 15: / }).waitFor();
@@ -1041,7 +1041,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('link', { name: 'Review them' }).click();
     await page.getByRole('button', { name: /^Delete here too: / }).waitFor();
     await capture(page, '79b-review-gone-dive');
-    await page.goto('/#/account?tab=connections');
+    await page.goto('/#/settings/connections');
     await page.getByRole('button', { name: /^Check for dives deleted in SSI/ }).click();
     await page.getByRole('link', { name: 'Show them' }).waitFor();
     await capture(page, '79c-account-gone-check');
