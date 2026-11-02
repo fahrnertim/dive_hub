@@ -124,6 +124,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.goto(`/#/dives/${assessed}`); await page.getByRole('heading', { name: 'Assessment' }).waitFor();
     await page.getByRole('group', { name: 'Findings along the dive' }).getByRole('button', { name: /^Fast ascent/ }).click();
     await capture(page, '03b-dive-assessment');
+    await page.getByRole('button', { name: 'Notes', exact: true }).click();
     await page.getByRole('button', { name: /^What the assessment can/ }).click(); await page.getByRole('dialog').waitFor();
     await capture(page, '03c-dive-assessment-about', { full: false });
     await page.keyboard.press('Escape');

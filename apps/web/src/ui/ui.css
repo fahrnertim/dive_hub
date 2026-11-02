@@ -419,9 +419,7 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
   .table-cards td { grid-template-columns: minmax(0, 1fr); gap: 0; }
 }
 
-/* Previous and next dive, beside the way back to the logbook (UI redesign 2.4). */
-.dive-trail > p { margin: 0; }
-.dive-trail { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-3); }
+/* Previous and next dive, in the dive page's title row (UI redesign 2.4). */
 .neighbours { display: flex; align-items: center; gap: var(--space-3); }
 .neighbour { display: inline-flex; align-items: center; gap: var(--space-1); }
 .neighbour[aria-disabled='true'] { color: var(--color-text-muted); opacity: 0.6; }

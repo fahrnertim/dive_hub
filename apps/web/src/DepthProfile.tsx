@@ -12,6 +12,9 @@ import { tanksOf, type RecordedGas, type TiedCylinder } from './lib/tanks.ts';
 import { DepthPlot, PressureStrip, token, withAlpha } from './ProfilePlot.tsx';
 import { Notice, Table } from './ui/index.ts';
 
+/** The depth profile is the dive page's hero: tall (UI overhaul). */
+const HERO_HEIGHT = 440;
+
 /** While the samples load: the figure keeps its place. */
 const NO_POINTS = { minutes: [], depthsM: [], temperaturesC: [] };
 
@@ -130,7 +133,7 @@ export function DepthProfile({ recordingId, gases, sacLpm, cylinders, surfaceBre
       {/* The picture for sighted users; the summary and the table say the same in text (UI review B6). */}
       <DepthPlot
         {...(points ?? NO_POINTS)} syncKey={recordingId} draw={drawAssessment} plotRef={plotRef} onBox={setPlotBox}
-        label={t('dive.profile')} describedBy={summary ? summaryId : undefined}
+        label={t('dive.profile')} describedBy={summary ? summaryId : undefined} height={HERO_HEIGHT}
       />
       {depth && plotBox && (surfaceBreaks ?? []).length > 0 && (
         <SurfaceBreakLane breaks={surfaceBreaks!} totalSeconds={(depth.offsetsMs.at(-1) ?? 0) / 1000} plot={plotBox} />

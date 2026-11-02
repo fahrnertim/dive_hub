@@ -52,11 +52,11 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await importSsiBuddies(request, ['4989164']);
 
   await page.goto(`/#/dives/${dive.id}`);
-  // Who dived along is one of the dive's facts: with nobody yet, it is the way to add someone.
+  // Who dived along is one of the dive's facts: with nobody yet, "Add buddies" is the way to add someone.
   const people = page.getByRole('group', { name: 'Buddies and guides' });
-  await expect(people.getByRole('listitem')).toHaveCount(0);
+  await expect(people).toHaveCount(0);
 
-  await people.getByRole('button', { name: 'Add someone' }).click();
+  await page.getByRole('group', { name: 'Add details' }).getByRole('button', { name: 'Add buddies' }).click();
   let dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('radio', { name: 'Buddy' })).toBeChecked();
   await dialog.getByRole('searchbox', { name: 'Find a diver' }).fill('kai');

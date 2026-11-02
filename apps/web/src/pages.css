@@ -28,6 +28,19 @@
 .facts:first-child { margin-top: 0; }
 .facts dt { color: var(--color-text-muted); font-size: var(--text-sm); }
 .facts dd { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+/* The dive page: four figures at hero size, the rest of the facts smaller, then the profile and the details (UI overhaul). */
+.dive-sheet > .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 var(--space-5); }
+@media (min-width: 40rem) { .dive-sheet > .facts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.dive-sheet .fact-wide { grid-column: auto; }
+@media (min-width: 40rem) { .dive-sheet .fact-wide { grid-column: span 2; } }
+.dive-sheet > .facts dd { font-size: var(--text-md); }
+.dive-sheet > .facts .fact-hero dd { font-size: var(--text-hero); line-height: 1.15; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.dive-sheet .facts.dive-details { margin: var(--space-5) 0 var(--space-4); grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); }
+.dive-sheet .facts.dive-details:empty { display: none; }
+.dive-sheet .facts.dive-details dd { font-size: var(--text-md); font-weight: var(--weight-regular); }
+/* Empty details: one row of chips, each opens its editor. */
+.add-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+.dive-about { margin: 0; font-size: var(--text-lg); }
 /* What the recording says, next to a value set by hand. */
 .recorded-value { display: block; font-size: var(--text-sm); font-weight: var(--weight-regular); color: var(--color-text-muted); }
 .title-meta .recorded-value { display: inline; margin-left: var(--space-2); }
@@ -36,6 +49,8 @@
 
 /* Room for the chart and its legend before it's drawn, so the page doesn't jump (UI review C10). */
 .profile { width: 100%; min-height: 22.5rem; }
+/* The dive page's profile is the hero: taller (DepthProfile's HERO_HEIGHT, 440px, and the legend). */
+.dive-sheet .profile { min-height: 30rem; }
 .profile .u-legend { color: var(--color-text); font-size: var(--text-sm); }
 /* The legend names the lines; values appear only while the pointer is on the chart (UI review B6). */
 .profile:not(:hover) .u-legend .u-value,

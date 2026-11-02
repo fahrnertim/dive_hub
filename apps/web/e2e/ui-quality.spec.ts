@@ -195,6 +195,8 @@ for (const v of variants) {
       const lane = page.getByRole('group', { name: v.english ? 'Findings along the dive' : 'Hinweise im Verlauf des Tauchgangs' });
       // Selecting a bar opens its finding: the page is checked with one finding open and the others one row each.
       await lane.getByRole('button', { name: v.english ? /^Fast ascent/ : /^Schneller Aufstieg/ }).click();
+      // The fixed note is behind the assessment's Notes line.
+      await page.getByRole('button', { name: v.english ? 'Notes' : 'Anmerkungen', exact: true }).click();
       await expect(page.getByText(v.english ? /Not medical advice/ : /Kein medizinischer Rat/)).toBeVisible();
       await expect(page.getByRole('button', { name: v.english ? /^Put aside on this dive: Fast ascent/ : /: Schneller Aufstieg$/ }).first()).toBeVisible();
       await goodPage(page, title(`Dive ${n}`), v);
@@ -436,7 +438,7 @@ for (const v of variants) {
 
     test('choosing a dive site on a dive', { tag: ['@sites', '@dives'] }, async ({ page }) => {
       await page.goto(`/#/dives/${diveId}`);
-      await page.getByRole('button', { name: v.english ? 'Choose dive site' : 'Tauchplatz wählen' }).click();
+      await page.getByRole('button', { name: v.english ? 'Add site' : 'Tauchplatz hinzufügen' }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
       await goodPage(page, title('Dive 42'), v);
       // Results while typing, and the way on when nothing matches.

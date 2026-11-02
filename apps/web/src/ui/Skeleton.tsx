@@ -83,8 +83,8 @@ export function DiveSkeleton() {
     <Skeleton>
       <div className="skeleton-dive">
         <SkeletonBlock height="2rem" width="50%" />
-        <SkeletonBlock height="8rem" />
-        <SkeletonBlock height="24rem" />
+        <SkeletonBlock height="5.5rem" />
+        <SkeletonBlock height="30rem" />
       </div>
     </Skeleton>
   );

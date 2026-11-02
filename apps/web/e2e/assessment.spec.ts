@@ -66,6 +66,9 @@ test('shows each finding as one row with its numbers; guidance, sources and acti
   await expect(panel.getByText(/^Flying after this dive: not before .+ \(12 hours after a single dive without decompression stops\)\./)).toBeVisible();
   // No score, no verdict. The fixed note is short, and its full text one step away.
   await expect(panel).not.toContainText(/score|unsafe|dangerous/i);
+  // The note is in a disclosure, closed until asked for.
+  await expect(panel.getByText(/^Not medical advice/)).toBeHidden();
+  await panel.getByRole('button', { name: 'Notes', exact: true }).click();
   await expect(panel.getByText(/^Not medical advice, and no measure of how safe a dive was\. With symptoms after a dive, call DAN or the emergency services\./)).toBeVisible();
   await expect(page.getByText(/decompression sickness can happen within every limit/)).toHaveCount(0);
   await panel.getByRole('button', { name: 'What the assessment can and can’t tell' }).click();
