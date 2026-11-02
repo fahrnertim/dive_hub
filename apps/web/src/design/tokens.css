@@ -7,8 +7,8 @@
   /* Palette: the water column, from the surface to the abyss, and the diver-down flag. */
   --palette-surface-light: #8fd3e8;
   --palette-open-water: #0f5e8c;
-  --palette-abyss: #0b2236;
-  --palette-slate: #e9eef2;
+  --palette-abyss: #0e1a23;
+  --palette-slate: #eef3f6;
   --palette-wet-notes: #ffffff;
   --palette-dive-flag: #c8102e;
   --palette-kelp: #2a7150;
@@ -16,11 +16,14 @@
   /* Semantic colors, light ("day dive") */
   --color-bg: var(--palette-slate);
   --color-surface: var(--palette-wet-notes);
-  --color-surface-sunken: #e8eef2;
+  --color-surface-sunken: #f4f7f9;
+  --color-active: #e2e9ee;          /* the current page's pill in the navigation */
   --color-text: var(--palette-abyss);
-  --color-text-muted: #4e6578;
-  --color-border: #d5dfe6;          /* dividers between rows (decorative); panels have no outline (ADR 0019) */
+  --color-text-muted: #52626f;
+  --color-border: #e1e7ec;          /* hairline edges and row rules (decorative); panels have no outline (ADR 0019) */
   --color-border-strong: #6e8497;   /* input and control boundaries: ≥ 3:1 on panel, page and tint */
+  --color-primary: var(--palette-abyss);   /* the ink button; the accent means link, focus or data only */
+  --color-on-primary: #ffffff;
   --color-accent: var(--palette-open-water);
   --color-on-accent: #ffffff;
   --color-accent-soft: #e1eef6;
@@ -39,14 +42,16 @@
   --color-ascent-2: #c2570c;
   --color-ascent-3: #8a2f0a;
 
-  /* Type: IBM Plex Sans, minor-third scale (1.2) on a 16 px base */
+  /* Type: IBM Plex Sans, six sizes 12/14/16/20/28/32 (xl and 2xl are the title size) */
   --font-sans: 'IBM Plex Sans Variable', 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --text-xs: 0.694rem;
-  --text-sm: 0.833rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
   --text-md: 1rem;
-  --text-lg: 1.2rem;
-  --text-xl: 1.44rem;
-  --text-2xl: 1.728rem;
+  --text-lg: 1.25rem;
+  --text-title: 1.75rem;
+  --text-xl: var(--text-title);
+  --text-2xl: var(--text-title);
+  --text-hero: 2rem;
   --leading-tight: 1.25;
   --leading-normal: 1.5;
   /* Large headings sit slightly tighter (better-typography). */
@@ -66,8 +71,11 @@
 
   /* Radius by hierarchy: small marks, controls, panels */
   --radius-sm: 2px;
-  --radius-md: 6px;
-  --radius-lg: 14px;
+  --radius-control: 8px;
+  --radius-box: 10px;
+  --radius-sheet: 16px;
+  --radius-md: var(--radius-control);
+  --radius-lg: var(--radius-box);
 
   /* Panels lift off the page by tone, not outline or shadow (ADR 0019). */
   --panel-padding: var(--space-6);
@@ -75,12 +83,17 @@
   /* Elevation only for things that float above the page (dialogs, popovers) */
   --shadow-overlay: 0 12px 32px rgb(11 34 54 / 0.24);
 
+  --shell-sidebar: 14.5rem;
+  --shell-topbar: 3.25rem;
   --width-content: 72rem;
   --width-form: 28rem;
 
   --duration-fast: 120ms;
   --duration-popover: 150ms;
   --duration-normal: 200ms;
+  --duration-hover: 120ms;
+  --duration-reveal: 150ms;
+  --duration-disclosure: 200ms;
   /* Strong ease-out: starts fast, settles softly (ADR 0018, emil-design-eng). */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
@@ -90,16 +103,19 @@
 /* Night dive */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #061522;
-    --color-surface: #0e2338;
-    --color-surface-sunken: #0a1c2e;
-    --color-text: #dce8f0;
-    --color-text-muted: #8fa6b8;
-    --color-border: #1d3a55;
-    --color-border-strong: #6a849d;
+    --color-bg: #0b0d0f;
+    --color-surface: #131619;
+    --color-surface-sunken: #1a1e22;
+    --color-active: #23292e;
+    --color-text: #e9eef2;
+    --color-text-muted: #a1acb5;
+    --color-border: #22272c;
+    --color-border-strong: #6b7782;
+    --color-primary: #e9eef2;
+    --color-on-primary: #0b0d0f;
     --color-accent: #62b6e6;
     --color-on-accent: #071827;
-    --color-accent-soft: #12324d;
+    --color-accent-soft: #14303f;
     --color-danger: #ff7a7a;
     --color-on-danger: #071827;
     --color-danger-soft: #3a1620;
@@ -107,7 +123,7 @@
     --color-success-soft: #10301f;
     --color-focus: #62b6e6;
     --color-depth-shallow: #62b6e6;
-    --color-depth-deep: #12324d;
+    --color-depth-deep: #1b4867;
     --color-ascent-1: #e6c04a;
     --color-ascent-2: #f29a4a;
     --color-ascent-3: #ffb9a3;
@@ -121,5 +137,8 @@
     --duration-fast: 0ms;
     --duration-popover: 0ms;
     --duration-normal: 0ms;
+    --duration-hover: 0ms;
+    --duration-reveal: 0ms;
+    --duration-disclosure: 0ms;
   }
 }

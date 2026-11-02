@@ -20,10 +20,12 @@ and keeping dive records: dense numbers, profiles, lists.
 **Vocabulary taken from diving:** the water column getting darker with depth, the red-and-white
 diver-down flag, the plain clarity of a wet-notes slate.
 
-**One bold element, everything else quiet.** The depth profile's area darkens from the surface to
-the deepest point, like the water column. The diver-down flag is the brand mark. Everything else is
-calm: panels set off from the page by tone alone (no outline, no shadow), one typeface, no decoration
-that carries no information.
+**One framed sheet, the water face and the profile as the signature.** The app is a white sheet (16 px
+radius) on a pale frame; the logbook and the dive page stand on it, and everything else is calm. The depth
+profile's area darkens from the surface to the deepest point, like the water column, and is the one bold
+element. The diver-down flag is the brand mark. The primary button is ink (near-black, inverted in the dark);
+the accent colour means only "link, focus or data". One typeface, no decoration that carries no information.
+Design of the overhaul: [spec](../superpowers/specs/2026-11-02-ui-overhaul-design.md).
 
 Checked against generic defaults (frontend-design skill). No cream background, no all-caps labels,
 no identical shadowed cards, no gradients as decoration (the only gradient encodes depth), no
@@ -38,41 +40,48 @@ Defined once in `design/tokens.css`. Components use only the **semantic** tokens
 
 | Palette name | Hex | Role |
 |---|---|---|
-| Slate | `#e9eef2` | page background (light); panels lift off it by tone |
+| Slate | `#eef3f6` | the frame around the sheet (light) |
 | Wet notes | `#ffffff` | panels, inputs (light) |
-| Abyss | `#0b2236` | text (light) |
-| Open water | `#0f5e8c` | accent: links, primary buttons, focus (light) |
+| Abyss | `#0e1a23` | ink: text and the primary button (light) |
+| Open water | `#0f5e8c` | accent: links, focus, data (light) |
 | Surface light | `#8fd3e8` | shallow end of the depth ramp |
 | Dive flag | `#c8102e` | brand mark only |
 | Kelp | `#2a7150` | success |
 
-Dark mode ("night dive") follows `prefers-color-scheme`. Background `#061522`, panels `#0e2338`,
-text `#dce8f0`, accent `#62b6e6`.
+Dark mode follows `prefers-color-scheme` and is a near-neutral with a faint cool tint, not navy. Frame
+`#0b0d0f`, sheet `#131619`, text `#e9eef2`, primary `#e9eef2` with `#0b0d0f` on it, accent `#62b6e6`.
+New semantic tokens: `--color-active` (the navigation pill), `--color-primary` and `--color-on-primary`.
+`apps/web/test/contrast.test.ts` reads `tokens.css` and checks the pairs below in both schemes.
 
 **Contrast (WCAG 2.2 AA), measured:**
 
 | Pair | Light | Dark |
 |---|---|---|
-| Text on background / panel / attention tint | 13.9 / 16.2 / 13.7 | 14.8 / 12.8 / 10.6 |
-| Muted text on background / panel / tint | 5.2 / 6.1 / 5.1 | 7.3 / 6.3 / 5.2 |
-| Accent on background / panel; text on accent | 6.0 / 7.0; 7.0 | 8.2 / 7.1; 8.0 |
-| Danger on panel; text on danger | 6.9; 6.9 | 6.3; 7.1 |
-| Success on panel | 5.9 | 7.5 |
-| Badges: neutral, success, danger on their fill | 5.2, 5.1, 5.9 | 6.8, 6.7, 6.3 |
-| Control border on background / panel / tint (≥ 3:1, WCAG 1.4.11) | 3.3 / 3.9 / 3.3 | 4.7 / 4.1 / 3.4 |
-| Panel on background (decorative, no meaning) | 1.17 | 1.19 |
+| Text on frame / sheet / sunken | 15.8 / 17.6 / 16.4 | 16.7 / 15.5 / 14.4 |
+| Muted text on frame / sheet / sunken | 5.6 / 6.3 / 5.9 | 8.4 / 7.9 / 7.3 |
+| Accent on frame / sheet / accent tint; text on accent | 6.3 / 7.0 / 5.9; 7.0 | 8.7 / 8.1 / 6.1; 8.0 |
+| Text on primary (the ink button) | 17.6 | 16.7 |
+| Danger on sheet | 6.9 | 7.2 |
+| Success on sheet | 5.9 | 8.5 |
+| Control border on frame / sheet / sunken (≥ 3:1, WCAG 1.4.11) | 3.5 / 3.9 / 3.6 | 4.3 / 4.0 / 3.7 |
+| Sheet on frame (decorative, no meaning) | 1.1 | 1.1 |
 
 `--color-border` (dividers between rows) is decorative and lighter; anything that marks a control's
-boundary uses `--color-border-strong`. Panels have no outline (ADR 0019).
+boundary uses `--color-border-strong`. Panels have no outline (ADR 0019); the sheet is set off by tone.
 
 ### Type, space, shape
 
 - **Typeface:** IBM Plex Sans (variable, OFL, bundled, never from a CDN), one family.
   Numbers in tables and facts use tabular figures.
-- **Scale:** minor third (×1.2) on 16 px: `--text-xs` … `--text-2xl`.
+- **Scale:** six sizes in rem: `--text-xs` 12, `--text-sm` 14, `--text-md` 16 (body and inputs), `--text-lg` 20
+  (section heading), `--text-title` 28 (page title; `--text-xl` and `--text-2xl` are the same), `--text-hero` 32
+  (the dive page's facts). Weights 400, 500, 600.
 - **Space:** 4 px steps, `--space-1` (4 px) … `--space-7` (48 px).
-- **Radius by hierarchy:** `--radius-sm` 2 px (small marks, badges), `--radius-md` 6 px (controls, rows inside a
-  panel), `--radius-lg` 14 px (panels).
+- **Radius by hierarchy:** `--radius-sm` 2 px (small marks), `--radius-control` 8 px (controls; `--radius-md`),
+  `--radius-box` 10 px (boxes inside the sheet; `--radius-lg`), `--radius-sheet` 16 px (the sheet); chips, badges
+  and avatars are fully round.
+- **Shell and durations:** `--shell-sidebar` 14.5 rem, `--shell-topbar` 3.25 rem; `--duration-hover` 120 ms,
+  `--duration-reveal` 150 ms, `--duration-disclosure` 200 ms (all 0 with reduced motion).
 - **Surfaces** ([ADR 0019](../decisions/0019-tonal-surfaces.md)): white panels on the slightly deeper page tone,
   no outline, `--panel-padding` 32 px (24/16 px on a phone). Something that waits for the User (Duplicate
   candidates) is tinted with `--color-accent-soft` (`Panel attention`). Terms to confirm before going on (the ODbL before an OSM import) use the same tint in a box (`.terms`), not a `Notice`, which announces itself. One comfortable density: table rows
@@ -95,7 +104,7 @@ boundary uses `--color-border-strong`. Panels have no outline (ADR 0019).
   its border. CSS `:hover` rules sit inside `@media (hover: hover)`, so they don't stick on touch screens.
 - **Touch** (mobile-native skill): links and buttons have `touch-action: manipulation` and no tap highlight;
   buttons, tabs and menu items don't select their label on a long press. Inputs stay at 16 px or more (iOS zooms
-  into smaller ones). The browser bar (`theme-color`) has the header's colour per scheme. Quiet buttons are 32 px tall.
+  into smaller ones). The browser bar (`theme-color`) has the frame's colour per scheme. Quiet buttons are 32 px tall.
 - **Layout:** content up to `--width-content` (72 rem), left-aligned. Every page starts with `PageHeader`
   (h1, meta, lead, the page's actions), then its panels. Single forms (sign-in, setup) are a narrow centered
   panel (`--width-form`, 28 rem) whose title is the h1.
