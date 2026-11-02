@@ -8,7 +8,7 @@ import { useProviders, useProviderText } from './lib/providers.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading } from './lib/focus.ts';
 import { SITE_IMPORTS_HREF } from './lib/settings.ts';
-import { Badge, Button, Checkbox, ConfirmButton, CopyField, Dialog, Form, Icon, Notice, Panel, Table, TextField } from './ui/index.ts';
+import { ActionMenu, Badge, Button, Checkbox, ConfirmButton, ConfirmDialog, CopyField, Dialog, Form, Icon, Notice, Panel, Table, TextField } from './ui/index.ts';
 
 /**
  * Settings' Administration section: admins invite people (copy the link, there's no mail yet) and manage Users (ADR 0012,
@@ -243,24 +243,22 @@ function UserRow({ user: u, isMe, isLastAdmin, onRemoved }: { user: UserView; is
   /** Names the User for screen readers: every row has the same buttons (WCAG 2.4.6). */
   const label = (action: string) => t('common.forItem', { action, item: u.name });
   /** Disabling and signing out everywhere end someone's sessions: those ask first (UI review B2). */
-  const confirmed = (action: 'disable' | 'sign-out', text: string, title: string, body: string) => (
-    <ConfirmButton
-      variant="quiet" aria-label={label(text)} isDisabled={act.isPending}
-      title={title} body={body} confirmLabel={text}
-      onConfirm={() => act.mutateAsync(action)}
-    >
-      {text}
-    </ConfirmButton>
-  );
-  const actionButton = (action: 'make-admin' | 'make-user' | 'enable', text: string) => (
-    <Button
-      variant="quiet" aria-label={label(text)}
-      isPending={act.isPending && act.variables === action} isDisabled={act.isPending}
-      onPress={() => (isMe && action === 'make-user' ? setDemotingSelf(true) : act.mutate(action))}
-    >
-      {text}
-    </Button>
-  );
+  const [confirming, setConfirming] = useState<'disable' | 'sign-out'>();
+  const roleAction = (action: 'make-admin' | 'make-user') => (isMe && action === 'make-user' ? setDemotingSelf(true) : act.mutate(action));
+  const actions: { id: string; label: string; pendingNow?: boolean | undefined; run: () => void }[] = [
+    ...(u.role === 'user' ? [{ id: 'make-admin', label: t('admin.makeAdmin'), run: () => roleAction('make-admin') }] : []),
+    ...(u.role === 'admin' && !isLastAdmin ? [{ id: 'make-user', label: t('admin.makeUser'), run: () => roleAction('make-user') }] : []),
+    ...(!u.disabled ? [{ id: 'reset', label: t('admin.createResetLink'), pendingNow: reset.isPending, run: () => reset.mutate() }] : []),
+    ...(!isMe ? [
+      { id: 'sign-out', label: t('admin.signOutEverywhere'), run: () => setConfirming('sign-out') },
+      u.disabled
+        ? { id: 'enable', label: t('admin.enable'), run: () => act.mutate('enable') }
+        : { id: 'disable', label: t('admin.disable'), run: () => setConfirming('disable') },
+      { id: 'delete', label: t('admin.delete'), run: () => setDeleting(true) },
+    ] : []),
+  ];
+  // More than two actions go in one menu, as on the Divers page; its dialogs below stay mounted when the menu closes.
+  const inMenu = actions.length > 2;
 
   return (
     <>
@@ -271,22 +269,19 @@ function UserRow({ user: u, isMe, isLastAdmin, onRemoved }: { user: UserView; is
         <td className="date">{display.dateTime(u.createdAt)}</td>
         <td>
           <div className="actions">
-            {u.role === 'user' && actionButton('make-admin', t('admin.makeAdmin'))}
-            {u.role === 'admin' && !isLastAdmin && actionButton('make-user', t('admin.makeUser'))}
-            {!u.disabled && (
-              <Button variant="quiet" aria-label={label(t('admin.createResetLink'))} isPending={reset.isPending} onPress={() => reset.mutate()}>
-                {t('admin.createResetLink')}
+            {inMenu ? (
+              <ActionMenu
+                label={t('common.actions')} aria-label={label(t('common.actions'))}
+                actions={actions.map((a) => ({ id: a.id, label: a.label, onAction: () => { if (!act.isPending) a.run(); } }))}
+              />
+            ) : actions.map((a) => (
+              <Button
+                key={a.id} variant="quiet" aria-label={label(a.label)}
+                isPending={act.isPending && act.variables === a.id || !!a.pendingNow} isDisabled={act.isPending} onPress={a.run}
+              >
+                {a.label}
               </Button>
-            )}
-            {!isMe && (
-              <>
-                {confirmed('sign-out', t('admin.signOutEverywhere'), t('admin.signOutTitle', { name: u.name }), t('admin.signOutBody'))}
-                {u.disabled
-                  ? actionButton('enable', t('admin.enable'))
-                  : confirmed('disable', t('admin.disable'), t('admin.disableTitle', { name: u.name }), t('admin.disableBody'))}
-                <Button variant="quiet" aria-label={label(t('admin.delete'))} onPress={() => setDeleting(true)}>{t('admin.delete')}</Button>
-              </>
-            )}
+            ))}
           </div>
         </td>
       </tr>
@@ -299,6 +294,16 @@ function UserRow({ user: u, isMe, isLastAdmin, onRemoved }: { user: UserView; is
           </td>
         </tr>
       )}
+      <ConfirmDialog
+        isOpen={confirming === 'sign-out'} onOpenChange={(open) => !open && setConfirming(undefined)}
+        title={t('admin.signOutTitle', { name: u.name })} body={t('admin.signOutBody')} confirmLabel={t('admin.signOutEverywhere')}
+        onConfirm={() => act.mutateAsync('sign-out')}
+      />
+      <ConfirmDialog
+        isOpen={confirming === 'disable'} onOpenChange={(open) => !open && setConfirming(undefined)}
+        title={t('admin.disableTitle', { name: u.name })} body={t('admin.disableBody')} confirmLabel={t('admin.disable')}
+        onConfirm={() => act.mutateAsync('disable')}
+      />
       <DeleteUserDialog
         user={u} isOpen={deleting} onOpenChange={setDeleting}
         // The row is gone afterwards; focus goes to the Users heading instead of the page top.

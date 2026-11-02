@@ -1839,6 +1839,23 @@ test.describe('behaviour', () => {
     await expect(me.getByRole('button', { name: /Password reset link/ })).toBeVisible();
     await expect(me.getByRole('button', { name: /Remove admin role/ })).toHaveCount(0);
   });
+
+  test('a user with more than two actions has them in one menu', { tag: ['@admin'] }, async ({ page }) => {
+    await page.goto('/#/admin');
+    const row = page.getByRole('row').filter({ hasText: 'Bartholomäus Oberhuber-Kirchmayr' });
+    // Five actions: none is a button of the row, they are the items of the Actions menu.
+    await expect(row.getByRole('button', { name: /Password reset link|Make admin|Sign out everywhere|Disable|Delete/ })).toHaveCount(0);
+    await row.getByRole('button', { name: /^Actions: / }).click();
+    for (const name of ['Make admin', 'Password reset link', 'Sign out everywhere', 'Disable', 'Delete…']) {
+      await expect(page.getByRole('menuitem', { name })).toBeVisible();
+    }
+    // A dialog opened from the menu stays after the menu closes; cancelling changes nothing.
+    await page.getByRole('menuitem', { name: 'Sign out everywhere' }).click();
+    const dialog = page.getByRole('dialog', { name: /out everywhere?/ });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toHaveCount(0);
+  });
 });
 
 /** Drops files on the page the way a browser does when they're dragged from the desktop. */
