@@ -38,6 +38,7 @@
   "form": {
     "required": "Fill in this field.",
     "requiredLegend": "* required",
+    "show": "Show",
     "invalidEmail": "Enter an e-mail address like name@example.com.",
     "tooShort_one": "Use at least {{count}} character.",
     "tooShort_other": "Use at least {{count}} characters.",

@@ -209,6 +209,19 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
 .input[data-disabled], .field [data-disabled] { opacity: 0.55; cursor: not-allowed; }
 .input[readonly] { background: var(--color-surface-sunken); }
 
+/* A button inside a field, at its end: a password field's eye (backlog 0016). 40 px square, over the input's padding. */
+.input-with-button { position: relative; display: grid; }
+.input-with-button .input { padding-inline-end: 2.75rem; }
+.input-button { position: absolute; inset-block: 0; inset-inline-end: 0; width: 2.5rem; display: grid; place-items: center;
+  padding: 0; border: 0; background: none; color: var(--color-text-muted); border-radius: var(--radius-md); cursor: pointer;
+  transition: color var(--duration-hover) var(--ease-out); }
+.input-button[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: -4px; }
+.input-button[data-pressed], .input-button[data-selected] { color: var(--color-text); }
+.input-button[data-disabled] { cursor: not-allowed; }
+@media (hover: hover) {
+  .input-button[data-hovered] { color: var(--color-text); }
+}
+
 /* The box sits on the label's first line, also when the label wraps (the ODbL confirmation on a phone); one line stays 2.5rem tall. */
 .checkbox, .radio { display: inline-flex; align-items: flex-start; gap: var(--space-2); cursor: pointer; min-height: 2.5rem; padding-block: calc((2.5rem - 1lh) / 2); }
 .checkbox-box, .radio-dot { flex: none; width: 1.125rem; height: 1.125rem; margin-top: calc((1lh - 1.125rem) / 2); border: 1px solid var(--color-border-strong);

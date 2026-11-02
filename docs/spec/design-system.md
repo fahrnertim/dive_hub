@@ -103,7 +103,8 @@ boundary uses `--color-border-strong`. A panel is a section of the sheet, divide
   All `--duration-*` drop to 0 with `prefers-reduced-motion`, and the pulse stops.
 - **Icons** ([ADR 0018](../decisions/0018-icons-and-motion.md)): Lucide through `ui/Icon.tsx`
   (`<Icon name="edit" />`, or `icon="edit"` on `Button` and menu actions), always beside a visible
-  label, `aria-hidden`, in the colour of the text. Table row actions stay text only.
+  label, `aria-hidden`, in the colour of the text. Table row actions stay text only. Icon-only: only a dialog's close
+  button and a password field's eye (ADR 0018 amendment of 2026-11-02).
 - **Interaction states** (React Aria data attributes, `ui/ui.css`): hover darkens control borders
   (inputs, select, checkbox, radio) or the background (buttons); pressed buttons scale to 0.97
   (`--duration-fast`, ease-out); disabled controls are dimmed with `cursor: not-allowed`; busy
@@ -126,6 +127,7 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 |---|---|
 | `Button` | `primary`: the one main action of a form or panel. `secondary`: other actions. `quiet`: inline, text-like (table actions). `danger`: destructive confirmation. `size="small"` (32 px) for an action inside a row (Add to this dive, pager). |
 | `TextField` | Label, input, description and error. Validation messages come from our translations. |
+| `PasswordField` | Every password or secret (sign-in, new and current password, a Provider's password or token): a `TextField` with an eye button inside the field that shows the text and hides it again. The button keeps its name, "Show: <label>" (with the account in a sign-in dialog, whose form can show the same field behind it), and says its state with `aria-pressed`; the input keeps its `name` and `autocomplete`, so password managers still fill it; sending or resetting the form hides it. Never `type="password"` on a plain `TextField` (`source-rules.test.ts`). |
 | `Checkbox`, `RadioGroup` | Choices. A radio group saves immediately where that is expected (display settings). |
 | `Switch` | A setting that takes effect at once (role `switch`, `apps/web/src/ui/Choice.tsx`). `Checkbox` is for a choice submitted with a form. |
 | `Form` | React Aria's form with native validation on submit, and the line "* required" at its top while a field carries the mark (hidden in one-line `form-inline` forms). |

@@ -5,7 +5,7 @@ import { resetDeletion } from './lib/deletion.ts';
 import { useErrorText } from './lib/display.ts';
 import { formValues } from './lib/form.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Form, Muted, Notice, Panel, TextField } from './ui/index.ts';
+import { Button, Form, Muted, Notice, Panel, PasswordField, TextField } from './ui/index.ts';
 
 const MIN_PASSWORD_LENGTH = 15;
 const MAX_PASSWORD_LENGTH = 128;
@@ -28,8 +28,8 @@ export function useUserChanged() {
 export function NewPasswordField({ label }: { label: string }) {
   const { t } = useTranslation();
   return (
-    <TextField
-      label={label} name="password" type="password" autoComplete="new-password" isRequired
+    <PasswordField
+      label={label} name="password" autoComplete="new-password" isRequired
       minLength={MIN_PASSWORD_LENGTH} maxLength={MAX_PASSWORD_LENGTH}
       description={t('form.passwordHint', { count: MIN_PASSWORD_LENGTH })}
     />
@@ -56,7 +56,7 @@ export function SignIn() {
       <p className="muted">{t('signIn.about')}</p>
       <Form className="form" onSubmit={(e) => signIn.mutate(formValues(e))}>
         <TextField label={t('form.email')} name="email" type="email" autoComplete="username" spellCheck="false" isRequired />
-        <TextField label={t('form.password')} name="password" type="password" autoComplete="current-password" isRequired />
+        <PasswordField label={t('form.password')} name="password" autoComplete="current-password" isRequired />
         {signIn.error && <Notice tone="danger">{signIn.error.message}</Notice>}
         <div className="form-actions"><Button type="submit" variant="primary" isPending={signIn.isPending}>{t('signIn.submit')}</Button></div>
       </Form>

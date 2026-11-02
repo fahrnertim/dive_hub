@@ -10,7 +10,7 @@ import { ProviderAutomation } from './ProviderAutomation.tsx';
 import { ProviderBuddies } from './ProviderBuddies.tsx';
 import { ProviderDiveImport } from './ProviderDiveImport.tsx';
 import { ProviderDiveNumbers } from './ProviderDiveNumbers.tsx';
-import { Badge, Button, ConfirmButton, Dialog, Form, Icon, Muted, Notice, Panel, RadioGroup, Select, Table, TextField } from './ui/index.ts';
+import { Badge, Button, ConfirmButton, Dialog, Form, Icon, Muted, Notice, Panel, PasswordField, RadioGroup, Select, Table, TextField } from './ui/index.ts';
 
 /** A choice with its explanation under it, read together by screen readers. */
 const choice = (label: string, hint: string): ReactNode => (
@@ -44,13 +44,13 @@ function CreateKeyLink({ provider: p }: { provider: ProviderView }) {
 }
 
 /** The fields the Provider's sign-in asks for. Its secrets are the Provider's: never saved as Dive Hub's (autocomplete off). */
-function SignInFields({ provider: p, withLogin, autoFocus }: { provider: ProviderView; withLogin: boolean; autoFocus?: boolean }) {
+function SignInFields({ provider: p, withLogin, autoFocus, account }: { provider: ProviderView; withLogin: boolean; autoFocus?: boolean; account?: string }) {
   const pt = useProviderText(p);
   if (p.signIn.kind === 'token') {
     return (
       <>
-        <TextField
-          label={pt('token')} name="token" type="password" autoComplete="off" isRequired {...(autoFocus && { autoFocus })}
+        <PasswordField
+          label={pt('token')} buttonItem={account ? `${pt('token')}, ${account}` : undefined} name="token" autoComplete="off" isRequired {...(autoFocus && { autoFocus })}
           description={<>{pt('tokenHint')}{p.signIn.createUrl && <>{' '}<CreateKeyLink provider={p} /></>}</>}
         />
         {p.signIn.expires && <TextField label={pt('keyExpiresOn')} description={pt('keyExpiresOnHint')} name="keyExpiresOn" type="date" />}
@@ -62,7 +62,7 @@ function SignInFields({ provider: p, withLogin, autoFocus }: { provider: Provide
       {withLogin && (p.signIn.login === 'username'
         ? <TextField label={pt('username')} name="login" autoComplete="off" isRequired />
         : <TextField label={pt('email')} name="login" type="email" autoComplete="off" isRequired />)}
-      <TextField label={pt('password')} name="password" type="password" autoComplete="off" isRequired {...(autoFocus && { autoFocus })} />
+      <PasswordField label={pt('password')} buttonItem={account ? `${pt('password')}, ${account}` : undefined} name="password" autoComplete="off" isRequired {...(autoFocus && { autoFocus })} />
     </>
   );
 }
@@ -249,7 +249,8 @@ function SignInDialog({ provider: p, connection: c, onClose }: { provider: Provi
     <Dialog title={pt('signInTitle')} isOpen onOpenChange={(open) => !open && onClose()}>
       <p>{pt(p.signIn.kind === 'token' ? 'signInBodyToken' : 'signInBody', { account: c.accountLabel })}</p>
       <Form className="form" onSubmit={(e) => signIn.mutate(signInBody(p, formValues(e), keep))}>
-        <SignInFields provider={p} withLogin={false} autoFocus />
+        {/* The account names the eye button: the Connection's own form may show the same field behind the dialog. */}
+        <SignInFields provider={p} withLogin={false} autoFocus account={c.accountLabel} />
         <KeepSignedIn provider={p} value={keep} onChange={setKeep} />
         {signIn.error && <Notice tone="danger">{errorText(signIn.error)}</Notice>}
         <div className="form-actions">

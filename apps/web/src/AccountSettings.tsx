@@ -8,7 +8,7 @@ import { LANGUAGES } from './i18n/languages.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
-import { Button, ConfirmButton, Form, Notice, Panel, RadioGroup, Table, TextField } from './ui/index.ts';
+import { Button, ConfirmButton, Form, Notice, Panel, PasswordField, RadioGroup, Table } from './ui/index.ts';
 
 const AUTO = 'auto';
 
@@ -95,7 +95,7 @@ function ChangePassword() {
           change.mutate(values, { onSuccess: () => form.reset() });
         }}
       >
-        <TextField label={t('account.currentPassword')} name="currentPassword" type="password" autoComplete="current-password" isRequired />
+        <PasswordField label={t('account.currentPassword')} name="currentPassword" autoComplete="current-password" isRequired />
         <NewPasswordField label={t('account.newPassword')} />
         {change.error && <Notice tone="danger">{change.error.message}</Notice>}
         {done && <Notice tone="success">{t('account.changed')}</Notice>}
