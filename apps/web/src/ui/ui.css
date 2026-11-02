@@ -363,6 +363,7 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
   padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px)); }
 .menu-sheet[data-entering] { animation: enter-sheet var(--duration-normal) var(--ease-out); }
 .menu-sheet .menu-item { min-height: 3rem; border-radius: var(--radius-control); }
+.menu-sheet-dialog { outline: none; }
 /* A disclosure opens by height (the grid row grows from 0fr, the one allowed exception to transform and opacity),
    fading in. The panel clips only while it grows, so focus rings and shadows at its edge are whole at rest. */
 @media (prefers-reduced-motion: no-preference) {

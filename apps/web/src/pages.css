@@ -541,10 +541,22 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 /* The Tools page (ADR 0032) */
 .tools-cylinder { border: 0; padding: 0; margin: 0 0 var(--space-5); min-width: 0; }
 .tools-cylinder > legend { font-weight: var(--weight-semibold); padding: 0; margin-bottom: var(--space-3); }
-.tools-answer { display: grid; gap: var(--space-3); margin-top: var(--space-4); }
+.tools-answer { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); margin-top: var(--space-4); }
 .tools-answer > p, .tools-answer .muted, .tools-answer .notice, .tools-answer .subheading { margin: 0; }
-.tools-result { font-size: var(--text-lg); }
-.tools-result strong { font-size: var(--text-lg); }
+/* The estimate notice is one quiet line under the title; it stays fully readable (a safety line). */
+.tools-notice { margin: 0 0 var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); max-width: 60ch; }
+/* Inputs and answer side by side from 64rem; below, the answer follows the inputs. */
+.tools-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+.tools-layout > *, .tools-results > * { min-width: 0; margin-block: 0; }
+.tools-results { display: grid; gap: var(--space-4); }
+/* Columns only while both fit: with text zoomed (the viewport's rem stays 16px) they stack instead of scrolling sideways. */
+@media (min-width: 64rem) { .tools-layout { grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); } }
+.tools-settings > .disclosure-head { align-items: baseline; }
+.tools-settings-summary { color: var(--color-text-muted); font-size: var(--text-sm); overflow-wrap: anywhere; }
+.tools-settings > .disclosure-panel > .disclosure-body { padding-top: var(--space-3); }
+.tools-result { margin: 0; }
+.tools-result strong { font-size: var(--text-hero); line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tools-bottom .tools-answer > .disclosure { margin-top: var(--space-1); }
 .tools-limits { width: 100%; border-collapse: collapse; }
 .tools-limits th, .tools-limits td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border, currentColor); }
 .tools-limits th { text-align: left; font-weight: var(--weight-regular); }

@@ -2449,6 +2449,20 @@
       "ascentRate": "Ascent rate",
       "hintPlan": "Leave a field empty to use the value shown in grey. The list under the plan says where each value came from."
     },
+    "settingsSummary": "{{water}} · {{altitude}} · {{rule}} · {{sac}} L/min · GF {{gf}}",
+    "settingsSummaryPlan": "{{water}} · {{altitude}} · {{rule}}",
+    "summary": {
+      "seaLevel": "sea level",
+      "altitude": "{{value}} altitude",
+      "rule": {
+        "rock_bottom": "rock bottom",
+        "reserve": "fixed reserve {{bar}}",
+        "ascent_pressure": "fixed ascent pressure {{bar}}",
+        "halves": "halves",
+        "thirds": "thirds",
+        "sixths": "sixths"
+      }
+    },
     "rules": {
       "label": "Gas rule",
       "rock_bottom": {

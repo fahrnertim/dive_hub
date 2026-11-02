@@ -41,6 +41,9 @@ test('gas numbers and a bottom time for 30 m on EAN32, with the assumptions and 
   // Each limit is shown, and the values that were assumed say where they came from (the Diver's own computer, once
   // other tests have imported a Recording with a gradient factor, else the default).
   for (const limit of ['No-decompression limit', 'Oxygen', 'Gas']) await expect(bottom.getByRole('row', { name: new RegExp(`^${limit}`) })).toBeVisible();
+  // "What this assumes" is one step away, in a disclosure.
+  await expect(bottom.getByText('Water: salt (default)')).toBeHidden();
+  await bottom.getByRole('button', { name: 'What this assumes' }).click();
   await expect(bottom.getByText(/^Gradient factor high: \d+ % \((default|from your computer)\)$/)).toBeVisible();
   await expect(bottom.getByText(/^Gas use: [\d.]+ L\/min \((default|from your recent dives)(, \d+ dives?)?\)$/)).toBeVisible();
   await expect(bottom.getByText('Water: salt (default)')).toBeVisible();
@@ -240,4 +243,46 @@ test('a gas plan that does not fit says when to leave, and one beyond the limits
   await plan.getByRole('button', { name: 'Remove level 2' }).click();
   await expect(plan.getByTestId('plan-fits')).toBeVisible();
   await expect(page).toHaveURL(/lv=20x5&/);
+});
+
+test('Settings is folded into one summary line, and the bottom time follows the reserve', { tag: ['@tools'] }, async ({ page }) => {
+  await page.goto('/#/tools');
+  const settings = page.getByRole('button', { name: 'Settings' });
+  const summary = page.getByTestId('settings-summary');
+  await expect(settings).toHaveAttribute('aria-expanded', 'false');
+  await expect(summary).toHaveText(/^Salt · sea level · rock bottom · [\d.]+ L\/min · GF \d+$/);
+  // The estimate notice is one quiet line under the title, not a box.
+  await expect(page.locator('#main .notice')).toHaveCount(0);
+  await expect(page.locator('#main').getByText(/estimate, not advice/i)).toBeVisible();
+
+  // A setting in the address opens Settings by itself, and the summary names it.
+  await page.goto('/#/tools?o2=32&depth=30&volume=11.1&pressure=200&rule=reserve&bar=60');
+  await expect(settings).toHaveAttribute('aria-expanded', 'true');
+  await expect(summary).toContainText('fixed reserve 60 bar');
+  const bottom = page.getByTestId('bottom-time');
+  await expect(bottom).toHaveText(/^\d+ min$/);
+  const minutes = async () => Number((await bottom.innerText()).replace(/\D/g, ''));
+  const before = await minutes();
+
+  // A bigger reserve leaves less gas to use: the summary and the bottom time change.
+  const reserve = page.getByRole('textbox', { name: /^Reserve at the end/ });
+  await reserve.fill('150');
+  await reserve.press('Tab');
+  await expect(summary).toContainText('fixed reserve 150 bar');
+  await expect(page).toHaveURL(/bar=150/);
+  await expect.poll(minutes).toBeLessThan(before);
+  await expectGoodPage(page, 'Tools');
+});
+
+test('the answer sits beside the inputs from 64rem and right under them below', { tag: ['@tools', '@layout'] }, async ({ page }) => {
+  const box = async (name: RegExp | string) => (await page.getByRole('region', { name }).boundingBox())!;
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/#/tools?o2=32&depth=30&volume=11.1&pressure=200');
+  await expect(page.getByTestId('bottom-time')).toBeVisible();
+  const [wideDive, wideBottom] = [await box('Your dive'), await box('Bottom time')];
+  expect(wideBottom.x).toBeGreaterThan(wideDive.x + wideDive.width - 1);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const [narrowDive, narrowBottom] = [await box('Your dive'), await box('Bottom time')];
+  expect(narrowBottom.y).toBeGreaterThanOrEqual(narrowDive.y + narrowDive.height - 1);
+  expect(Math.abs(narrowBottom.x - narrowDive.x)).toBeLessThan(2);
 });

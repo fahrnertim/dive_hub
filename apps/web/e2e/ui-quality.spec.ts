@@ -1771,6 +1771,8 @@ test.describe('behaviour', () => {
     });
     expect(await open()).toBeGreaterThan(0);
     await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
+    // The open sheet passes axe as it is: no rule is left out for it.
+    await expectAccessible(page);
     const box = await sheet.evaluate((el) => new Promise<{ bottom: number; width: number; height: number }>((resolve) => {
       // After the rise has settled.
       setTimeout(() => { const r = el.getBoundingClientRect(); resolve({ bottom: r.bottom, width: r.width, height: innerHeight }); }, 400);

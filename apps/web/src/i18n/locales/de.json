@@ -2449,6 +2449,20 @@
       "ascentRate": "Aufstiegsgeschwindigkeit",
       "hintPlan": "Lass ein Feld leer, um den grau angezeigten Wert zu verwenden. Die Liste unter dem Plan sagt, woher jeder Wert kommt."
     },
+    "settingsSummary": "{{water}} · {{altitude}} · {{rule}} · {{sac}} L/min · GF {{gf}}",
+    "settingsSummaryPlan": "{{water}} · {{altitude}} · {{rule}}",
+    "summary": {
+      "seaLevel": "Meereshöhe",
+      "altitude": "{{value}} Höhe",
+      "rule": {
+        "rock_bottom": "Rock Bottom",
+        "reserve": "feste Reserve {{bar}}",
+        "ascent_pressure": "fester Aufstiegsdruck {{bar}}",
+        "halves": "Halbe-Halbe",
+        "thirds": "Drittel",
+        "sixths": "Sechstel"
+      }
+    },
     "rules": {
       "label": "Gasregel",
       "rock_bottom": {

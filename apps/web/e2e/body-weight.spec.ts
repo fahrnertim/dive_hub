@@ -1,7 +1,7 @@
 // A Diver's body weight (ADR 0031, slice A part 3) in a real browser: set on a date from a Diver's page, shown in kg or
 // lb, replaced by setting the same date again and removed; the dialog says who sees it, and a Diver nobody keeps has none.
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, expectGoodPage, externalDiver, forgetDivers, setPreferences } from './support.ts';
+import { E2E_BASE_URL, expectGoodPage, externalDiver, forgetDivers, setPreferences, uniqueWord } from './support.ts';
 
 const headers = { origin: E2E_BASE_URL };
 
@@ -55,7 +55,7 @@ test('a body weight is set on a date, shown in kg or lb, replaced and removed', 
 
 test('a Diver nobody keeps has no body weight section', { tag: ['@divers'] }, async ({ page, request }) => {
   await setPreferences(request, { units: 'metric' });
-  const name = 'Weight Probe';
+  const name = `Weight Probe ${uniqueWord()}`;
   await externalDiver(request, name);
   try {
     await page.goto('/#/divers');

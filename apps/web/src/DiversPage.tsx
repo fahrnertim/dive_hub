@@ -56,10 +56,10 @@ function Divers({ open }: { open: string | undefined }) {
   return (
     <Panel title={t('divers.logbooks')}>
       <Muted>{t('divers.intro')}</Muted>
-      {divers.isPending && <RowsSkeleton rows={3} />}
+      {(divers.isPending || (!!open && !divers.error)) && <RowsSkeleton rows={3} />}
       {divers.error && <Notice tone="danger">{errorText(divers.error)}</Notice>}
       <ul className="diver-list">
-        {divers.data?.map((d) => <DiverRow key={d.id} diver={d} />)}
+        {!open && divers.data?.map((d) => <DiverRow key={d.id} diver={d} />)}
       </ul>
       <Form className="form-inline" onSubmit={submit}>
         <TextField

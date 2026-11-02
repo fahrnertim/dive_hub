@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { Menu, MenuItem, MenuTrigger, Modal, ModalOverlay, Popover } from 'react-aria-components';
+import { useId, type ReactNode } from 'react';
+import { Dialog, Menu, MenuItem, MenuTrigger, Modal, ModalOverlay, Popover } from 'react-aria-components';
 import { useNarrow } from '../lib/narrow.ts';
 import { Button } from './Button.tsx';
 import { Icon, type IconName } from './Icon.tsx';
@@ -22,6 +22,7 @@ export function ActionMenu({ label, 'aria-label': ariaLabel, actions, variant = 
   label: ReactNode; 'aria-label'?: string; actions: MenuAction[]; variant?: 'quiet' | 'secondary'; className?: string; icon?: IconName;
 }) {
   const narrow = useNarrow();
+  const triggerId = useId();
   if (actions.length === 0) return null;
   const list = (
     <Menu className="menu" onAction={(key) => actions.find((a) => a.id === key)?.onAction?.()}>
@@ -34,12 +35,12 @@ export function ActionMenu({ label, 'aria-label': ariaLabel, actions, variant = 
   );
   return (
     <MenuTrigger>
-      <Button variant={variant} icon={icon} {...(ariaLabel && { 'aria-label': ariaLabel })} {...(className && { className })}>
+      <Button id={triggerId} variant={variant} icon={icon} {...(ariaLabel && { 'aria-label': ariaLabel })} {...(className && { className })}>
         {label}<span className="menu-chevron"><Icon name="open" /></span>
       </Button>
-      {/* On a phone the menu is a sheet from the bottom edge, within reach of the thumb. */}
+      {/* On a phone the menu is a sheet from the bottom edge, within reach of the thumb; a dialog named by its button. */}
       {narrow
-        ? <ModalOverlay isDismissable className="menu-sheet-overlay"><Modal className="menu-sheet">{list}</Modal></ModalOverlay>
+        ? <ModalOverlay isDismissable className="menu-sheet-overlay"><Modal className="menu-sheet"><Dialog className="menu-sheet-dialog" aria-labelledby={triggerId}>{list}</Dialog></Modal></ModalOverlay>
         : <Popover className="popover" placement="bottom end">{list}</Popover>}
     </MenuTrigger>
   );

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { diversQuery, leadEstimateQuery, toolsBottomTimeQuery, toolsGasQuery, toolsPlanQuery, type ToolsBottomTime, type ToolsGas } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -47,18 +47,20 @@ export function ToolsPage({ params }: { params: ToolsParams }) {
   return (
     <>
       <PageHeader title={t('tools.title')} lead={t('tools.lead')} />
-      <Notice>{t('tools.notice')}</Notice>
+      <p className="tools-notice">{t('tools.notice')}</p>
       <nav className="subnav" aria-label={t('tools.parts')}>
         {TOOLS.map((id) => (
           <a key={id} href={toolsTabHref(params, id)} {...(id === tool && { 'aria-current': 'page' as const })}>{t(`tools.tab.${id}`)}</a>
         ))}
       </nav>
       {tool === 'gas' ? (
-        <>
+        <div className="tools-layout">
           <Inputs params={params} assumed={bottom.data} />
-          <GasSection params={params} gas={gas} />
-          <BottomTimeSection params={params} bottom={bottom} />
-        </>
+          <div className="tools-results">
+            <BottomTimeSection params={params} bottom={bottom} />
+            <GasSection params={params} gas={gas} />
+          </div>
+        </div>
       ) : tool === 'plan' ? (
         <PlanSection params={params} plan={plan} managed={divers.data ?? []} settings={<Settings params={params} tool="plan" />} />
       ) : (
@@ -75,7 +77,7 @@ function Inputs({ params, assumed }: { params: ToolsParams; assumed: ToolsBottom
   const set = (change: Partial<ToolsParams>) => replaceToolsAddress({ ...params, ...change });
   const used = assumed?.used;
   return (
-    <Section title={t('tools.dive.title')} id="tools-dive">
+    <Section title={t('tools.dive.title')} id="tools-dive" className="tools-inputs">
       <div className="form-grid tools-grid">
         <NumberField label={t('tools.mix.oxygen')} unit="%" value={params.o2 ?? Number.NaN} onChange={(v) => set({ o2: num(v) })} minValue={1} maxValue={100} formatOptions={{ maximumFractionDigits: 0 }} />
         <NumberField label={t('tools.mix.helium')} unit="%" placeholder="0" value={params.he ?? Number.NaN} onChange={(v) => set({ he: num(v) })} minValue={0} maxValue={99} formatOptions={{ maximumFractionDigits: 0 }} />
@@ -115,8 +117,26 @@ function Settings({ params, tool, used }: { params: ToolsParams; tool: 'gas' | '
   /** A default as the field's placeholder, in the User's units. */
   const inDepth = (m: number) => String(Math.round(depthIn(m, units)));
   const inPressure = (bar: number) => String(Math.round(pressureIn(bar, units)));
+  /** The values in force, in one line: what was entered, else what the answer assumed, else the default. */
+  const rule = params.rule ?? 'rock_bottom';
+  const reserveBar = params.bar ?? (rule === 'ascent_pressure' ? DEFAULTS.ascentBar : DEFAULTS.reserveBar);
+  const altitudeM = params.altitude ?? used?.altitudeM.value ?? DEFAULTS.altitudeM;
+  /** Closed unless the address carries a setting; one arriving later (a link) opens it too. */
+  const carried = SETTINGS[tool].some((k) => params[k] !== undefined);
+  const [open, setOpen] = useState(carried);
+  useEffect(() => { if (carried) setOpen(true); }, [carried]);
+  const summary = t(tool === 'plan' ? 'tools.settingsSummaryPlan' : 'tools.settingsSummary', {
+    water: t(`tools.water.${params.water ?? used?.water.value ?? 'salt'}`),
+    altitude: altitudeM === 0 ? t('tools.summary.seaLevel') : t('tools.summary.altitude', { value: display.depth(altitudeM) }),
+    rule: t(`tools.summary.rule.${rule}`, { bar: display.pressure(reserveBar) }),
+    sac: used?.sacLpm.value ?? params.sac ?? DEFAULTS.sac,
+    gf: used?.gfHigh.value ?? params.gf ?? DEFAULTS.gf,
+  });
   return (
-    <Disclosure title={t('tools.settings.title')} defaultExpanded={SETTINGS[tool].some((k) => params[k] !== undefined)}>
+    <Disclosure
+      className="tools-settings" title={t('tools.settings.title')} isExpanded={open} onExpandedChange={setOpen}
+      summary={<span className="tools-settings-summary" data-testid="settings-summary">{summary}</span>}
+    >
       <Muted>{t(tool === 'plan' ? 'tools.settings.hintPlan' : 'tools.settings.hint')}</Muted>
       <div className="form-grid tools-grid">
         <Select
@@ -210,7 +230,7 @@ function BottomTimeSection({ params, bottom }: { params: ToolsParams; bottom: { 
   const errorText = useErrorText();
   const b = bottom.data;
   return (
-    <Section title={t('tools.bottom.title')} id="tools-bottom">
+    <Section title={t('tools.bottom.title')} id="tools-bottom" className="tools-bottom">
       {(params.o2 === undefined || params.depth === undefined) && <Muted>{t('tools.bottom.empty')}</Muted>}
       {bottom.error != null && <Notice tone="danger">{errorText(bottom.error)}</Notice>}
       {b && <BottomTimeAnswer b={b} />}
@@ -235,7 +255,7 @@ function BottomTimeAnswer({ b }: { b: ToolsBottomTime }) {
       ) : (
         <>
           <p className="tools-result">
-            <span className="tools-result-label">{t('tools.bottom.result')}</span>{' '}
+            <span className="tools-result-label visually-hidden">{t('tools.bottom.result')}</span>{' '}
             <strong data-testid="bottom-time">{t('tools.bottom.minutes', { count: b.minutes ?? 0 })}</strong>
           </p>
           <p>{t('tools.bottom.limitedBy', { limits: (b.binding ?? []).map((l) => t(`tools.limit.${l}`)).join(` ${t('tools.bottom.and')} `) })}</p>
@@ -252,27 +272,28 @@ function BottomTimeAnswer({ b }: { b: ToolsBottomTime }) {
           {b.otu !== undefined && <Muted>{t('tools.bottom.otu', { otu: Math.round(b.otu) })}</Muted>}
         </>
       )}
-      <h3 className="subheading">{t('tools.bottom.assumptions')}</h3>
-      <ul className="tools-assumptions">
-        <li>{t('tools.assumed.gf', { value: used.gfHigh.value, source: source(used.gfHigh.source) })}</li>
-        <li>
-          {used.sacLpm.basedOn !== undefined && used.sacLpm.source !== 'request'
-            ? t('tools.assumed.sacBased', { value: used.sacLpm.value, source: source(used.sacLpm.source), count: used.sacLpm.basedOn })
-            : t('tools.assumed.sac', { value: used.sacLpm.value, source: source(used.sacLpm.source) })}
-        </li>
-        <li>{t('tools.assumed.water', { value: t(`tools.water.${used.water.value}`).toLowerCase(), source: source(used.water.source) })}</li>
-        <li>{used.altitudeM.source === 'default' ? t('tools.assumed.noAltitude') : t('tools.assumed.altitude', { value: display.depth(used.altitudeM.value), source: source(used.altitudeM.source) })}</li>
-        <li>{t('tools.assumed.rule', { rule: t(`tools.rules.${used.gasRule.value.kind}.name`), source: source(used.gasRule.source) })}</li>
-        <li>{t('tools.assumed.model')}</li>
-      </ul>
+      <Disclosure title={t('tools.bottom.assumptions')}>
+        <ul className="tools-assumptions">
+          <li>{t('tools.assumed.gf', { value: used.gfHigh.value, source: source(used.gfHigh.source) })}</li>
+          <li>
+            {used.sacLpm.basedOn !== undefined && used.sacLpm.source !== 'request'
+              ? t('tools.assumed.sacBased', { value: used.sacLpm.value, source: source(used.sacLpm.source), count: used.sacLpm.basedOn })
+              : t('tools.assumed.sac', { value: used.sacLpm.value, source: source(used.sacLpm.source) })}
+          </li>
+          <li>{t('tools.assumed.water', { value: t(`tools.water.${used.water.value}`).toLowerCase(), source: source(used.water.source) })}</li>
+          <li>{used.altitudeM.source === 'default' ? t('tools.assumed.noAltitude') : t('tools.assumed.altitude', { value: display.depth(used.altitudeM.value), source: source(used.altitudeM.source) })}</li>
+          <li>{t('tools.assumed.rule', { rule: t(`tools.rules.${used.gasRule.value.kind}.name`), source: source(used.gasRule.source) })}</li>
+          <li>{t('tools.assumed.model')}</li>
+        </ul>
+      </Disclosure>
       <Muted>{t('tools.flying')}</Muted>
     </div>
   );
 }
 
-function Section({ title, id, children }: { title: string; id: string; children: ReactNode }) {
+function Section({ title, id, className, children }: { title: string; id: string; className?: string; children: ReactNode }) {
   return (
-    <section className="panel" aria-labelledby={id}>
+    <section className={className ? `panel ${className}` : 'panel'} aria-labelledby={id}>
       <div className="panel-head"><h2 id={id}>{title}</h2></div>
       {children}
     </section>
