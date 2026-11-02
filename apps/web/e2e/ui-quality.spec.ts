@@ -37,6 +37,8 @@ test.afterEach(async ({ page }, testInfo) => {
 async function openDiver(page: Page, name: string) {
   await page.goto('/#/divers');
   await page.getByRole('link', { name, exact: true }).click();
+  // The list's rows carry the same summaries as the Diver's page: wait until the page has replaced it.
+  await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible();
 }
 let diveId: string;
 let invitationToken: string;
