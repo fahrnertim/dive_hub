@@ -81,7 +81,7 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
       {unsentDives.length > 0 && (
         <div role="group" aria-labelledby={offerId}>
           <Notice tone="info">
-            <p id={offerId}>{pt('automation.unsent' as 'automation.unsent_one', { count: unsentDives.length })}</p>
+            <p id={offerId}>{pt('automation.unsent', { count: unsentDives.length })}</p>
             <div className="form-actions">
               <Button variant="primary" icon="send" onPress={() => setSending(true)}>{pt('automation.unsentSend')}</Button>
               <Button isPending={dismiss.isPending} onPress={() => dismiss.mutate()}>{t('common.dismiss')}</Button>
@@ -146,7 +146,7 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
           )}
           {/* Conflicts aren't decided by an import: they wait in Needs your decision. */}
           {lastFetch.conflicts > 0 && (
-            <p><a href={reviewHref('decide')}>{pt('automation.conflicts' as 'automation.conflicts_one', { count: lastFetch.conflicts })}</a></p>
+            <p><a href={reviewHref('decide')}>{pt('automation.conflicts', { count: lastFetch.conflicts })}</a></p>
           )}
         </div>
       )}
