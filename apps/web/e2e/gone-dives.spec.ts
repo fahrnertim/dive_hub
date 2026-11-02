@@ -2,7 +2,12 @@
 // by the Connection's check, shows on the Review page and in the logbook's strip, and waits for the User's choice. "Keep
 // here" and "Delete here too" both ask SSI once more first; nothing is deleted or sent unasked.
 import { expect, test } from '@playwright/test';
-import { deletableDive, diveNumber, goneAtSsi, readyForSsi, E2E_BASE_URL, SSI_ACCOUNT, connectSsi } from './support.ts';
+import { connectSsi, deletableDive, diveNumber, E2E_BASE_URL, goneAtSsi, readyForSsi, setPreferences, SSI_ACCOUNT } from './support.ts';
+
+// Another spec in this worker may have left German or imperial units set.
+test.beforeAll(async ({ request }) => {
+  await setPreferences(request, { language: null, units: null });
+});
 
 // Each test makes its own gone dive; the Connection they all need is made first.
 test.beforeAll(async ({ request }) => connectSsi(request));

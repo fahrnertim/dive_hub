@@ -7,7 +7,7 @@ import {
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
 import { useProviderText } from './lib/providers.ts';
-import { Button, Dialog, Muted, Notice, SearchList, Table, type SearchListItem } from './ui/index.ts';
+import { Button, Dialog, Muted, Notice, RowsSkeleton, SearchList, Table, type SearchListItem } from './ui/index.ts';
 
 /**
  * The account's own list of people at a Provider (ADR 0029; SSI's buddy list), read only when asked: who is a Diver
@@ -65,7 +65,7 @@ export function ProviderBuddies({ provider: p, connection: c }: { provider: Prov
     <section className="provider-buddies">
       <h3>{pt('buddyList')}</h3>
       <Muted>{pt('buddiesIntro')}</Muted>
-      {buddies.isPending && <Muted>{t('common.loading')}</Muted>}
+      {buddies.isPending && <RowsSkeleton rows={2} />}
       {buddies.error && <Notice tone="danger">{errorText(buddies.error)}</Notice>}
       {buddies.data && list.length === 0 && <Muted>{pt('noBuddies')}</Muted>}
       {list.length > 0 && (

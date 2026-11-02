@@ -5,7 +5,7 @@ import { FileTrigger } from 'react-aria-components';
 import { api, importsQuery, keys, unwrap, uploadFile, type ImportView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
-import { connectionHref } from './lib/account-tabs.ts';
+import { connectionHref } from './lib/settings.ts';
 import { IMPORTABLE, splitImportable } from './lib/importable.ts';
 import { useProviders, useProviderText } from './lib/providers.ts';
 import { Badge, Button, Checkbox, Muted, Notice, Panel } from './ui/index.ts';
@@ -116,7 +116,7 @@ export function ImportProvider({ children }: { children: ReactNode }) {
   return (
     <ImportContext value={state}>
       {children}
-      {dragging && <div className="page-drop" aria-hidden="true"><p>{t('import.dropNow')}</p></div>}
+      {dragging && <div className="page-drop" aria-hidden="true"><div><p>{t('import.dropNow')}</p><p className="muted">{t('import.drop')}</p></div></div>}
     </ImportContext>
   );
 }

@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectAccessible, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, surfaceBreakPair, tankPodDive
+  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, goToMore, leaveLena, openFilters, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, surfaceBreakPair, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -33,6 +33,13 @@ test.afterEach(async ({ page }, testInfo) => {
   // A test that already failed has its own error to show.
   if (owed && testInfo.status === testInfo.expectedStatus) await expectAccessible(page);
 });
+/** A kept Diver's own page, reached from the Divers list by the name (UI overhaul). */
+async function openDiver(page: Page, name: string) {
+  await page.goto('/#/divers');
+  await page.getByRole('link', { name, exact: true }).click();
+  // The list's rows carry the same summaries as the Diver's page: wait until the page has replaced it.
+  await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible();
+}
 let diveId: string;
 let invitationToken: string;
 let resetToken: string;
@@ -102,7 +109,7 @@ for (const v of variants) {
       try {
         await page.goto('/');
         await expect(diveRows(page).first()).toBeVisible();
-        await openChoices(page);
+        await openFilters(page);
         await expect(page.getByRole('group', { name: v.english ? 'Show only' : 'Nur anzeigen' })).toBeVisible();
         await goodPage(page, title('Logbook'), v);
         // A filter pressed, and sorted by depth: no month headings, the day with its year.
@@ -195,6 +202,8 @@ for (const v of variants) {
       const lane = page.getByRole('group', { name: v.english ? 'Findings along the dive' : 'Hinweise im Verlauf des Tauchgangs' });
       // Selecting a bar opens its finding: the page is checked with one finding open and the others one row each.
       await lane.getByRole('button', { name: v.english ? /^Fast ascent/ : /^Schneller Aufstieg/ }).click();
+      // The fixed note is behind the assessment's Notes line.
+      await page.getByRole('button', { name: v.english ? 'Notes' : 'Anmerkungen', exact: true }).click();
       await expect(page.getByText(v.english ? /Not medical advice/ : /Kein medizinischer Rat/)).toBeVisible();
       await expect(page.getByRole('button', { name: v.english ? /^Put aside on this dive: Fast ascent/ : /: Schneller Aufstieg$/ }).first()).toBeVisible();
       await goodPage(page, title(`Dive ${n}`), v);
@@ -436,7 +445,7 @@ for (const v of variants) {
 
     test('choosing a dive site on a dive', { tag: ['@sites', '@dives'] }, async ({ page }) => {
       await page.goto(`/#/dives/${diveId}`);
-      await page.getByRole('button', { name: v.english ? 'Choose dive site' : 'Tauchplatz wählen' }).click();
+      await page.getByRole('button', { name: v.english ? 'Add site' : 'Tauchplatz hinzufügen' }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
       await goodPage(page, title('Dive 42'), v);
       // Results while typing, and the way on when nothing matches.
@@ -459,31 +468,37 @@ for (const v of variants) {
       const n = await diveNumber(request, id);
       try {
         await putAside(request, id, { mute: ['ascent_rate', 'safety_stop'] });
-        await page.goto('/#/divers');
+        await openDiver(page, 'Erika');
         await expect(page.getByRole('button', { name: v.english ? /^Show again: Fast ascent, / : /^Wieder zeigen: Schneller Aufstieg, / })).toBeVisible();
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, 'Erika', v);
       } finally {
         await assessedDive(request);
       }
     });
 
-    test('Divers and Devices', { tag: ['@divers'] }, async ({ page, request }) => {
+    test('Divers and Devices', { tag: ['@divers', '@account'] }, async ({ page, request }) => {
       // Someone without a logbook here (ADR 0028), listed under "Other divers".
       await externalDiver(request, 'Ulla Berg');
       await page.goto('/#/divers');
       await expect(page.getByText('Ulla Berg')).toBeVisible();
-      await expect(page.getByRole('table')).toBeVisible();
       // A circle beside each name: decoration (the name is the text), the same two letters as in the logbook row.
       const ulla = page.getByRole('listitem').filter({ hasText: 'Ulla Berg' }).first();
       await expect(ulla.locator('.avatar[aria-hidden="true"]')).toHaveText('UB');
       await goodPage(page, title('Divers'), v);
       await expectCirclesFit(page);
+      // The Devices are a section of Settings (UI overhaul).
+      await page.goto('/#/settings/devices');
+      await expect(page.getByRole('table')).toBeVisible();
+      await goodPage(page, title('Devices'), v);
     });
 
-    test('my account', { tag: ['@account'] }, async ({ page }) => {
+    test('my account: display, and sign-in and security', { tag: ['@account'] }, async ({ page }) => {
       await page.goto('/#/account');
+      await expect(page.getByRole('radiogroup').first()).toBeVisible();
+      await goodPage(page, title('Display'), v);
+      await page.goto('/#/settings/security');
       await expect(page.getByRole('table').first()).toBeVisible();
-      await goodPage(page, title('My account'), v);
+      await goodPage(page, title('Sign-in and security'), v);
     });
 
     test('my account, AI access: none yet, then a new key shown once', { tag: ['@account'] }, async ({ page, request }) => {
@@ -491,12 +506,12 @@ for (const v of variants) {
       try {
         await page.goto('/#/account?tab=ai');
         await expect(page.getByText(v.english ? 'You have no AI access yet.' : 'Du hast noch keinen KI-Zugang.')).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('AI access'), v);
         // A long name, as someone might type it.
         await page.getByRole('textbox', { name: 'Name' }).fill(`Claude Code on the old laptop in the dive shop ${v.locale}`);
         await page.getByRole('button', { name: v.english ? 'Create AI access' : 'KI-Zugang erstellen' }).click();
         await expect(page.getByRole('button', { name: v.english ? 'Copy: Key' : 'Kopieren: Schlüssel' })).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('AI access'), v);
       } finally {
         await aiAccessReady(request);
       }
@@ -510,7 +525,7 @@ for (const v of variants) {
         await askMcp(request, access.key, 'logbook_get_dive', { dive_id: '00000000-0000-7000-8000-000000000000' });
         await page.goto('/#/account?tab=ai');
         await expect(page.getByRole('region', { name: v.english ? 'What was read' : 'Was gelesen wurde' }).getByText('logbook_get_dive').first()).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('AI access'), v);
       } finally {
         await aiAccessReady(request);
       }
@@ -521,7 +536,7 @@ for (const v of variants) {
       await page.goto('/#/account?tab=connections');
       await page.getByRole('button', { name: v.english ? /^Sign in again: / : /^Neu anmelden: / }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
-      await goodPage(page, title('My account'), v);
+      await goodPage(page, title('Connections'), v);
     });
 
     test('my account, connected to Garmin, the key expires soon', { tag: ['@account'] }, async ({ page, request }) => {
@@ -529,7 +544,7 @@ for (const v of variants) {
       try {
         await page.goto('/#/account?tab=connections');
         await expect(page.locator('#main').getByText(v.english ? /The key expires on / : /Der Schlüssel läuft am /)).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await leaveGarmin(request);
       }
@@ -635,7 +650,7 @@ for (const v of variants) {
       await page.goto('/#/account?tab=connections');
       await page.getByRole('button', { name: v.english ? /^Show your SSI buddy list/ : /^Deine SSI-Buddyliste zeigen/ }).click();
       await expect(page.getByRole('row', { name: /Mia Stone/ })).toBeVisible();
-      await goodPage(page, title('My account'), v);
+      await goodPage(page, title('Connections'), v);
     });
 
     // What the Connection does by itself (ADR 0056): the switches, the last fetch with what waits, and the offer of unsent new dives.
@@ -648,7 +663,7 @@ for (const v of variants) {
         await page.goto('/#/account?tab=connections');
         await expect(page.getByRole('region', { name: v.english ? /^Automatic/ : /^Automatisch/ })).toBeVisible();
         await expect(page.getByText(v.english ? /^Last fetched / : /^Zuletzt abgerufen /)).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await fetchState(request, connectionId, { clear: true });
       }
@@ -677,10 +692,10 @@ for (const v of variants) {
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show what the import would do' : 'Zeigen, was der Import tun würde' }).click();
         await expect(section.getByRole('radiogroup', { name: v.english ? /^SSI dive 15: / : /^SSI-Tauchgang 15: / })).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
         await section.getByRole('button', { name: v.english ? 'Import from SSI' : 'Aus SSI importieren' }).click();
         await expect(section.getByRole('link', { name: v.english ? 'Go to the logbook' : 'Zum Logbuch' })).toBeVisible({ timeout: 30_000 });
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await leaveLena(request);
       }
@@ -693,7 +708,7 @@ for (const v of variants) {
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show when each dive was made' : 'Zeigen, wann jeder Tauchgang angelegt wurde' }).click();
         await expect(section.getByRole('region', { name: v.english ? 'Dives in SSI with start and origin' : 'Tauchgänge in SSI mit Beginn und Herkunft' })).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await leaveLena(request);
       }
@@ -706,7 +721,7 @@ for (const v of variants) {
         const section = page.getByRole('region', { name: v.english ? 'Dives of Lena from SSI' : 'Tauchgänge von Lena aus SSI' });
         await section.getByRole('button', { name: v.english ? 'Show what the import would do' : 'Zeigen, was der Import tun würde' }).click();
         await expect(section.getByRole('heading', { name: v.english ? 'Changed in both places' : 'An beiden Stellen geändert' })).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await leaveLena(request);
       }
@@ -723,7 +738,7 @@ for (const v of variants) {
         await panel.getByRole('textbox', { name: v.english ? 'SSI password' : 'SSI-Passwort' }).fill(LENA_SSI.password);
         await panel.getByRole('button', { name: v.english ? 'Connect to SSI' : 'Mit SSI verbinden' }).click();
         await expect(panel.getByRole('button', { name: v.english ? /^Yes, I am Lena Berger/ : /^Ja, ich bin Lena Berger/ })).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await leaveLena(request);
         // The question was left open: Lena's account stays with the external Diver; give it back to her.
@@ -743,7 +758,9 @@ for (const v of variants) {
       await request.post('/api/divers/from-code', { data: { text: code(account), create: true }, headers });
       try {
         await page.goto('/#/divers');
-        await page.getByRole('button', { name: `Codes: ${name}` }).click();
+        // The row's menu holds the Diver's codes (UI overhaul).
+        await page.getByRole('button', { name: `${v.english ? 'Actions' : 'Aktionen'}: ${name}` }).click();
+        await page.getByRole('menuitem', { name: v.english ? 'Codes' : 'Codes' }).click();
         await expect(page.getByRole('dialog').getByRole('img')).toHaveCount(2);
         await goodPage(page, title('Divers'), v);
         await page.getByRole('button', { name: v.english ? 'Edit details' : 'Angaben bearbeiten' }).click();
@@ -770,14 +787,14 @@ for (const v of variants) {
       const name = `Gewicht Probe ${v.locale} ${Date.now()}`;
       const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
       try {
-        await page.goto('/#/divers');
+        await openDiver(page, name);
         await page.getByRole('button', { name: `${v.english ? 'Body weight' : 'Körpergewicht'}: ${name}` }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
         await page.getByRole('dialog').getByRole('textbox', { name: v.english ? /^Weight/ : /^Gewicht/ }).fill('78');
         await page.getByRole('dialog').getByRole('button', { name: v.english ? 'Add weight' : 'Gewicht hinzufügen' }).click();
         await expect(page.getByRole('dialog').getByRole('listitem')).toHaveCount(1);
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
       }
@@ -787,20 +804,20 @@ for (const v of variants) {
       const name = `Karte Probe ${v.locale} ${Date.now()}`;
       const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
       try {
-        await page.goto('/#/divers');
-        const row = page.getByRole('listitem').filter({ hasText: name });
+        await openDiver(page, name);
+        const row = page.locator('#main');
         await expect(row.getByText(v.english ? 'No cards yet' : 'Noch keine Karten')).toBeVisible();
         await row.getByRole('button', { name: v.english ? /^Certifications: / : /^Zertifizierungen: / }).click();
         await expect(row.getByText(v.english ? 'No certifications yet.' : 'Noch keine Zertifizierungen.')).toBeVisible();
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
         await row.getByRole('button', { name: v.english ? 'Add certification' : 'Zertifizierung hinzufügen' }).click();
         const dialog = page.getByRole('dialog');
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
         await dialog.getByRole('textbox', { name: v.english ? /^Agency/ : /^Organisation/ }).fill('PADI');
         await dialog.getByRole('textbox', { name: v.english ? /^Course or level/ : /^Kurs oder Stufe/ }).fill('Open Water Diver');
         await dialog.getByRole('button', { name: v.english ? 'Save certification' : 'Zertifizierung speichern' }).click();
         await expect(row.getByRole('list', { name: v.english ? 'Certification cards' : 'Zertifizierungskarten' }).getByRole('listitem')).toHaveCount(1);
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
         // An expired card, in words (C21), and the line counting it.
         await request.post(`/api/divers/${created.id}/certifications`, {
           data: { agency: 'DAN', level: 'First Aid', issuedOn: '2020-01-01', expiresOn: '2021-01-01' }, headers,
@@ -810,7 +827,7 @@ for (const v of variants) {
         // The address says the section is open, so it is still open after the reload.
         await expect(row.getByRole('button', { name: v.english ? /^Certifications: / : /^Zertifizierungen: / })).toHaveAttribute('aria-expanded', 'true');
         await expect(row.getByRole('listitem').filter({ hasText: 'First Aid' })).toContainText(v.english ? 'Expired' : 'Abgelaufen');
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
       }
@@ -821,7 +838,7 @@ for (const v of variants) {
       const name = `Schließen Probe ${v.locale} ${Date.now()}`;
       const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
       try {
-        await page.goto('/#/divers');
+        await openDiver(page, name);
         const dialog = page.getByRole('dialog');
         const close = dialog.getByRole('button', { name: v.english ? 'Close dialog' : 'Dialog schließen' });
         const openers = [
@@ -838,10 +855,11 @@ for (const v of variants) {
           await expect(trigger).toBeFocused();
         }
         // A question before something is lost (C8), and the confirmation also has a close button.
-        await page.getByRole('button', { name: `${v.english ? 'Delete' : 'Löschen'}: ${name}` }).click();
+        await page.getByRole('button', { name: `${v.english ? 'Actions' : 'Aktionen'}: ${name}` }).click();
+        await page.getByRole('menuitem', { name: v.english ? 'Delete' : 'Löschen' }).click();
         await expect(dialog.getByRole('heading', { name: v.english ? `Delete ${name}?` : `${name} löschen?` })).toBeVisible();
         await expect(close).toBeVisible();
-        await goodPage(page, title('Divers'), v);
+        await goodPage(page, name, v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
       }
@@ -851,20 +869,25 @@ for (const v of variants) {
       const name = `Löschen Probe ${v.locale} ${Date.now()}`;
       const created = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
       try {
-        await page.goto('/#/divers');
-        const row = page.getByRole('listitem').filter({ hasText: name });
+        await openDiver(page, name);
         const dialog = page.getByRole('dialog');
-        await page.getByRole('button', { name: `${v.english ? 'Delete' : 'Löschen'}: ${name}` }).click();
+        const deleteItem = async () => {
+          await page.getByRole('button', { name: `${v.english ? 'Actions' : 'Aktionen'}: ${name}` }).click();
+          await page.getByRole('menuitem', { name: v.english ? 'Delete' : 'Löschen' }).click();
+        };
+        await deleteItem();
         // Cancel leaves the diver where it is.
         await dialog.getByRole('button', { name: v.english ? 'Cancel' : 'Abbrechen' }).click();
         await expect(dialog).toHaveCount(0);
-        await expect(row).toHaveCount(1);
+        await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
         // The main action comes before Cancel (C14).
-        await page.getByRole('button', { name: `${v.english ? 'Delete' : 'Löschen'}: ${name}` }).click();
+        await deleteItem();
         const actions = dialog.locator('.form-actions').getByRole('button');
         await expect(actions.nth(0)).toHaveText(v.english ? 'Delete' : 'Löschen');
         await actions.nth(0).click();
-        await expect(row).toHaveCount(0);
+        // The page is gone with the Diver: the list is where it leads.
+        await expect(page).toHaveURL(/#[/]divers$/);
+        await expect(page.getByRole('link', { name, exact: true })).toHaveCount(0);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
       }
@@ -875,7 +898,8 @@ for (const v of variants) {
       const id = await externalDiver(request, name);
       try {
         await page.goto('/#/divers');
-        await page.getByRole('button', { name: v.english ? `Merge into…: ${name}` : `Zusammenführen mit\u00a0…: ${name}` }).click();
+        await page.getByRole('button', { name: `${v.english ? 'Actions' : 'Aktionen'}: ${name}` }).click();
+        await page.getByRole('menuitem', { name: v.english ? 'Merge into…' : 'Zusammenführen mit …' }).click();
         await expect(page.getByRole('dialog').getByRole('searchbox')).toBeFocused();
         await goodPage(page, title('Divers'), v);
       } finally {
@@ -1078,7 +1102,7 @@ for (const v of variants) {
         await page.goto('/#/account?tab=connections');
         await page.getByRole('button', { name: v.english ? /^Check for dives deleted in SSI/ : /^Nach in SSI gelöschten Tauchgängen suchen/ }).click();
         await expect(page.locator('#main').getByText(v.english ? /dive is no longer in your SSI logbook/ : /Tauchgang ist nicht mehr in deinem SSI-Logbuch/)).toBeVisible();
-        await goodPage(page, title('My account'), v);
+        await goodPage(page, title('Connections'), v);
       } finally {
         await deletableDive(request);
         await request.post('/e2e/fake-ssi/clear-dives', { data: { email: 'erika@example.com' }, headers });
@@ -1131,7 +1155,7 @@ for (const v of variants) {
       await page.getByRole('textbox', { name: v.english ? 'E-mail' : 'E-Mail' }).fill(`shown-${v.locale}@example.com`);
       await page.getByRole('button', { name: v.english ? 'Create invitation link' : 'Einladungslink erstellen' }).click();
       await expect(page.getByRole('button', { name: v.english ? 'Copy' : 'Kopieren' })).toBeVisible();
-      await goodPage(page, title('Admin'), v);
+      await goodPage(page, title('Administration'), v);
       // On a phone the rows are cards: the actions stay in sight instead of scrolling away sideways.
       // (Below the fold is fine on a short screen; off to the right is not.)
       const revoke = await page.getByRole('button', { name: v.english ? /^Revoke:/ : /^Zurückziehen:/ }).first().boundingBox();
@@ -1146,7 +1170,7 @@ for (const v of variants) {
         await expect(page.getByRole('button', { name: v.english ? 'Revoke all AI accesses…' : 'Alle KI-Zugänge zurückziehen…' })).toBeVisible();
         await page.getByRole('button', { name: v.english ? 'Switch AI access off…' : 'KI-Zugang ausschalten…' }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
-        await goodPage(page, title('Admin'), v);
+        await goodPage(page, title('Administration'), v);
       } finally {
         await aiAccessReady(request);
       }
@@ -1157,7 +1181,7 @@ for (const v of variants) {
       try {
         await page.goto('/#/admin');
         await expect(page.getByRole('button', { name: v.english ? 'Stop making sites' : 'Keine Tauchplätze mehr anlegen' })).toBeVisible();
-        await goodPage(page, title('Admin'), v);
+        await goodPage(page, title('Administration'), v);
       } finally {
         await request.put('/api/admin/provider-site-data/ssi', { data: { allowed: false }, headers });
       }
@@ -1203,8 +1227,9 @@ test.describe('behaviour', () => {
     ['logbook', () => '/', ['@dives']], ['dive', () => `/#/dives/${diveId}`, ['@dives']], ['Divers', () => '/#/divers', ['@divers']],
     ['Dive sites', () => '/#/sites', ['@sites']], ['a dive site', () => `/#/sites/${siteId}`, ['@sites']],
     ['an imported dive site', () => `/#/sites/${importedSiteId}`, ['@sites']],
-    ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a gas plan', () => '/#/tools/plan?water=fresh&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~', ['@tools']], ['the lead calculator', () => '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['account', () => '/#/account', ['@account']], ['account connections', () => '/#/account?tab=connections', ['@account']], ['account AI access', () => '/#/account?tab=ai', ['@account']],
-    ['Review', () => '/#/review', ['@dives']], ['admin', () => '/#/admin', ['@admin']], ['site import', () => '/#/admin/site-imports', ['@admin', '@sites']],
+    ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a gas plan', () => '/#/tools/plan?water=fresh&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~', ['@tools']], ['the lead calculator', () => '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['Settings', () => '/#/settings', ['@account']], ['Display', () => '/#/settings/display', ['@account']], ['Sign-in and security', () => '/#/settings/security', ['@account']],
+    ['Connections', () => '/#/settings/connections', ['@account']], ['AI access', () => '/#/settings/ai-access', ['@account']], ['Devices', () => '/#/settings/devices', ['@account', '@divers']],
+    ['Review', () => '/#/review', ['@dives']], ['Administration', () => '/#/settings/admin', ['@admin']], ['site import', () => '/#/settings/admin/site-imports', ['@admin', '@sites']],
   ];
   for (const [name, path, tag] of sweep) {
     test(`${name} fits every width from 320 to 1440 px: no page or table scrolls sideways`, { tag: [...tag, '@layout'] }, async ({ page }) => {
@@ -1222,7 +1247,7 @@ test.describe('behaviour', () => {
   }
 
   test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', { tag: ['@layout'] }, async ({ page }) => {
-    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', '/#/review', '/#/account', '/#/account?tab=connections', '/#/account?tab=ai', '/#/admin', '/#/admin/site-imports']) {
+    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', '/#/review', '/#/settings', '/#/settings/display', '/#/settings/security', '/#/settings/connections', '/#/settings/ai-access', '/#/settings/devices', '/#/settings/admin', '/#/settings/admin/site-imports']) {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).waitFor();
       await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
@@ -1434,8 +1459,8 @@ test.describe('behaviour', () => {
     ]);
     await expect(page.getByText('Skipped notes.txt')).toBeVisible();
     await expect(page.locator('[data-announcer]')).toHaveText('main-computer.fit: already imported');
-    // The Imports are on the Review page, one link away from the logbook.
-    await page.getByRole('link', { name: 'Imports', exact: true }).click();
+    // The Imports are on the Review page, one step away from the logbook (behind More).
+    await goToMore(page, 'Imports');
     const imports = page.locator('section.panel').filter({ has: page.getByRole('heading', { name: 'Imports' }) });
     await expect(imports.getByText('main-computer.fit').first()).toBeVisible();
     await expect(imports.getByText('already imported').first()).toBeVisible();
@@ -1459,7 +1484,7 @@ test.describe('behaviour', () => {
       await choice.getByRole('button', { name: 'Import', exact: true }).click();
       await expect(choice).toHaveCount(0);
       // The scuba dive is the seeded one, so it is recognised; the rest is named as left out.
-      await page.getByRole('link', { name: 'Imports', exact: true }).click();
+      await goToMore(page, 'Imports');
       const row = page.getByRole('listitem').filter({ hasText: 'account-export.zip' }).first();
       await expect(row.getByText('already imported')).toBeVisible();
       await expect(row.getByText('1 apnea session was left out by you. 2 other files are no dives and are not kept.')).toBeVisible();
@@ -1504,15 +1529,20 @@ test.describe('behaviour', () => {
     await resetDive(request);
   });
 
-  test('the account is a labelled menu with "My account" and "Sign out"', { tag: ['@account'] }, async ({ page }) => {
+  test('the account is a labelled menu with "My certifications" and "Sign out"; Settings is in the sidebar, and in the menu below 64rem', { tag: ['@account'] }, async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /^Erika\s*, account$/ }).click();
     await expect(page.getByRole('menuitem', { name: 'Sign out' })).toBeVisible();
-    // Administration is for admins only and lives here, not in the bar (the test User is the admin).
-    await expect(page.getByRole('menuitem', { name: 'Administration' })).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Admin' })).toHaveCount(0);
-    await page.getByRole('menuitem', { name: 'My account' }).click();
-    await expect(page.getByRole('heading', { name: 'My account', level: 1 })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'My certifications' })).toBeVisible();
+    // The account, its Connections and Administration are sections of Settings (UI overhaul), not in the bar.
+    // Beside the sidebar, Settings is its link; the menu repeats it only where the bottom bar has no room for it.
+    await expect(page.getByRole('menuitem', { name: 'Settings' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '#/settings');
+    await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Administration' })).toHaveCount(0);
+    // The account page's old address leads to the first section of Settings.
+    await page.goto('/#/account');
+    await expect(page.getByRole('heading', { name: 'Display', level: 1 })).toBeVisible();
+    await expect(page).toHaveURL(/#\/settings\/display$/);
   });
 
   test('a second Diver with the same name is allowed, with a warning', { tag: ['@divers'] }, async ({ page }) => {
@@ -1532,44 +1562,43 @@ test.describe('behaviour', () => {
     await expect(page.locator('section', { has: page.getByRole('heading', { name: 'Other divers' }) }).getByRole('button', { name: 'Add buddy' })).toBeVisible();
   });
 
-  test('the account page has its parts as tabs in the address, and the profile menu links the connections (slice 25e, C10)', { tag: ['@account'] }, async ({ page }) => {
-    await page.goto('/#/account');
-    const parts = page.getByRole('navigation', { name: 'Parts of the account' });
-    await expect(parts.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');
+  test('Settings has a view per section, each at its own address, and the connections have their own (slice 25e, C10; UI overhaul)', { tag: ['@account'] }, async ({ page }) => {
+    await page.goto('/#/settings/security');
+    const sections = page.getByRole('navigation', { name: 'Settings' });
+    await expect(sections.getByRole('link', { name: 'Sign-in and security' })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { name: 'Where you’re signed in' })).toBeVisible();
-    // Connections and AI access are not on the first part: the page is not one long scroll.
+    // Connections and AI access are not on this view: Settings is not one long scroll.
     await expect(page.getByRole('heading', { name: 'AI access' })).toHaveCount(0);
 
-    await parts.getByRole('link', { name: 'Connections' }).click();
-    await expect(page).toHaveURL(/#\/account\?tab=connections$/);
-    await expect(parts.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
+    await sections.getByRole('link', { name: 'Connections' }).click();
+    await expect(page).toHaveURL(/#\/settings\/connections$/);
+    await expect(sections.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { name: 'Where you’re signed in' })).toHaveCount(0);
     await page.reload();
-    await expect(parts.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
+    await expect(sections.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
 
-    await parts.getByRole('link', { name: 'AI access' }).click();
-    await expect(page).toHaveURL(/#\/account\?tab=ai$/);
-    await expect(page.getByRole('heading', { name: 'AI access' }).first()).toBeVisible();
+    await sections.getByRole('link', { name: 'AI access' }).click();
+    await expect(page).toHaveURL(/#\/settings\/ai-access$/);
+    await expect(page.getByRole('heading', { name: 'AI access', level: 1 })).toBeVisible();
 
-    // The profile menu goes straight to the connections.
-    await page.goto('/');
-    await page.getByRole('button', { name: /, account$/ }).click();
-    await page.getByRole('menuitem', { name: 'Connections' }).click();
-    await expect(page).toHaveURL(/#\/account\?tab=connections$/);
-    await expect(page.getByRole('heading', { name: 'My account', level: 1 })).toBeVisible();
+    // The connections' old address leads to their section.
+    await page.goto('/#/account?tab=connections');
+    await expect(sections.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('heading', { name: 'Connections', level: 1 })).toBeVisible();
   });
 
-  test('Imports and Deleted dives are linked from the logbook, even with nothing waiting (slice 25e, C9)', { tag: ['@dives'] }, async ({ page }) => {
+  test('Imports and Deleted dives are in More on the logbook, even with nothing waiting (slice 25e, C9)', { tag: ['@dives'] }, async ({ page }) => {
     await page.goto('/');
     await expect(diveRows(page).first()).toBeVisible();
-    const more = page.getByRole('main').getByRole('navigation', { name: 'Review' });
-    await expect(more.getByRole('link', { name: 'Imports' })).toHaveAttribute('href', '#/review?tab=imports');
-    await expect(more.getByRole('link', { name: 'Deleted dives' })).toHaveAttribute('href', '#/review?tab=deleted');
-    // Above the list, not below it: they are found without scrolling past the Dives.
-    const link = await more.boundingBox();
+    const button = page.getByRole('main').getByRole('button', { name: 'More' });
+    await button.click();
+    await expect(page.getByRole('menuitem', { name: 'Imports' })).toHaveAttribute('href', '#/review?tab=imports');
+    await expect(page.getByRole('menuitem', { name: 'Deleted dives' })).toHaveAttribute('href', '#/review?tab=deleted');
+    // In the title row, not below the list: found without scrolling past the Dives.
+    const more = await button.boundingBox();
     const list = await diveRows(page).first().boundingBox();
-    expect(link!.y).toBeLessThan(list!.y);
-    await more.getByRole('link', { name: 'Deleted dives' }).click();
+    expect(more!.y).toBeLessThan(list!.y);
+    await page.getByRole('menuitem', { name: 'Deleted dives' }).click();
     // The Review page's Deleted dives part. (Its list, with a heading of its own, shows only once a spec deleted a dive.)
     await expect(page.getByRole('navigation', { name: 'Parts of the review' }).getByRole('link', { name: 'Deleted dives' }))
       .toHaveAttribute('aria-current', 'page');
@@ -1594,8 +1623,16 @@ test.describe('behaviour', () => {
   // Slice 25f (C11, C12): on a phone the first Dive is on the first screen, and Save stays in view while a Dive is edited.
   for (const size of [{ width: 390, height: 844 }, { width: 320, height: 640 }]) {
     test(`on a ${size.width} px phone the first Dive is on the first screen (slice 25f, C11)`, { tag: ['@dives', '@layout'] }, async ({ page }) => {
+      // With the decision line showing, the tallest the head gets. It is made in the page, not in the data: the specs
+      // run side by side on one server, and a recording waiting for a decision would show in their logbooks too.
+      await page.route('**/api/duplicate-candidates?status=open', (route) => route.fulfill({ json: [{ id: 'waiting' }] }));
       await page.setViewportSize(size);
       await page.goto('/');
+      await expect(page.getByText(/needs? your decision/)).toBeVisible();
+      await expectFirstDiveInView(page);
+    });
+
+    async function expectFirstDiveInView(page: Page) {
       const first = diveRows(page).first();
       await expect(first).toBeVisible();
       const bar = (await page.getByRole('navigation', { name: 'Main' }).boundingBox())!;
@@ -1611,7 +1648,7 @@ test.describe('behaviour', () => {
       await expect(page.getByRole('button', { name: /Sort by$/ })).toBeVisible();
       // The control stays reachable by keyboard and the page doesn't scroll sideways.
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    });
+    }
 
     test(`on a ${size.width} px phone Save is in view while a Dive is edited (slice 25f, C12)`, { tag: ['@dives', '@layout'] }, async ({ page, request }) => {
       await resetDive(request);
@@ -1721,7 +1758,81 @@ test.describe('behaviour', () => {
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
     expect((await open()).filter((a) => a.duration > 0)).toEqual([]);
-    await expect(page.getByRole('menuitem', { name: 'My account' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'My certifications' })).toBeVisible();
+  });
+
+  test('on a phone the user menu is a bottom sheet that rises; with reduced motion, nothing runs', { tag: ['@layout'] }, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await expect(diveRows(page).first()).toBeVisible();
+    const menu = page.getByRole('button', { name: /^Erika\s*, account$/ });
+    const sheet = page.locator('.menu-sheet');
+    // Opens the menu and counts the sheet's running animations a frame later.
+    const open = () => menu.evaluate(async (button) => {
+      (button as HTMLElement).click();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      return document.querySelector('.menu-sheet')?.getAnimations().length ?? -1;
+    });
+    expect(await open()).toBeGreaterThan(0);
+    await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
+    // The open sheet passes axe as it is: no rule is left out for it.
+    await expectAccessible(page);
+    const box = await sheet.evaluate((el) => new Promise<{ bottom: number; width: number; height: number }>((resolve) => {
+      // After the rise has settled.
+      setTimeout(() => { const r = el.getBoundingClientRect(); resolve({ bottom: r.bottom, width: r.width, height: innerHeight }); }, 400);
+    }));
+    expect(box.bottom).toBeCloseTo(box.height, 0);
+    expect(box.width).toBeCloseTo(390, 0);
+    await page.getByRole('menu').press('Escape');
+    await expect(sheet).toHaveCount(0);
+
+    // A disclosure opens by height, with motion on.
+    await page.goto('/');
+    await expect(diveRows(page).first()).toBeVisible();
+    const grown = await page.locator('.disclosure-trigger').first().evaluate(async (button) => {
+      (button as HTMLElement).click();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      return document.getAnimations().map((x) => (x as CSSAnimation).animationName);
+    });
+    expect(grown).toContain('open-panel');
+    // At rest nothing clips, so focus rings and shadows at the panel's edge stay whole.
+    const overflow = () => page.locator('.disclosure[data-expanded] .disclosure-body').first().evaluate((el) => getComputedStyle(el).overflow);
+    await expect.poll(overflow).toBe('visible');
+
+    // A disclosure that is open when the page loads stays still: only a toggle by the User animates (ADR 0018).
+    await page.goto('/#/?only=no-site');
+    await page.reload(); // a fresh page: the disclosure above was toggled by hand, and this one was not
+    const loaded = page.locator('.disclosure[data-expanded] .disclosure-panel').first();
+    await expect(loaded).toBeVisible();
+    expect(await loaded.evaluate((el) => el.getAnimations().map((x) => (x as CSSAnimation).animationName))).toEqual([]);
+
+    // Reduced motion: the sheet, an opened disclosure and a skeleton bar run nothing.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await open()).toBe(0);
+    await page.getByRole('menu').press('Escape');
+    await expect(sheet).toHaveCount(0);
+    await page.goto('/');
+    await expect(diveRows(page).first()).toBeVisible();
+    await page.locator('.disclosure-trigger').first().click();
+    const panel = page.locator('.disclosure[data-expanded] .disclosure-panel').first();
+    await expect(panel).toBeVisible();
+    expect(await panel.evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
+    expect(await overflow()).toBe('visible');
+    await page.route(/\/api\/sites(\?|$)/, () => new Promise(() => {})); // never answers: the skeleton stays
+    await page.goto('/#/sites');
+    await expect(page.locator('.skeleton-bar').first()).toBeVisible();
+    expect(await page.locator('.skeleton-bar').first().evaluate((el) => el.getAnimations().length)).toBe(0);
+  });
+
+  test('the logbook shows its skeleton while the first request is out, and the dives once it answers', { tag: ['@dives'] }, async ({ page }) => {
+    let release = () => {};
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    await page.route(/\/api\/dives(\?.*)?$/, async (route) => { await held; await route.continue(); });
+    await page.goto('/');
+    await expect(page.locator('.skeleton-bar').first()).toBeVisible();
+    release();
+    await expect(diveRows(page).first()).toBeVisible();
+    await expect(page.locator('.skeleton-bar')).toHaveCount(0);
   });
 
   test('the only admin is not offered to remove their own admin role', { tag: ['@admin'] }, async ({ page }) => {
@@ -1729,6 +1840,23 @@ test.describe('behaviour', () => {
     const me = page.getByRole('row').filter({ hasText: 'erika@example.com' });
     await expect(me.getByRole('button', { name: /Password reset link/ })).toBeVisible();
     await expect(me.getByRole('button', { name: /Remove admin role/ })).toHaveCount(0);
+  });
+
+  test('a user with more than two actions has them in one menu', { tag: ['@admin'] }, async ({ page }) => {
+    await page.goto('/#/admin');
+    const row = page.getByRole('row').filter({ hasText: 'Bartholomäus Oberhuber-Kirchmayr' });
+    // Five actions: none is a button of the row, they are the items of the Actions menu.
+    await expect(row.getByRole('button', { name: /Password reset link|Make admin|Sign out everywhere|Disable|Delete/ })).toHaveCount(0);
+    await row.getByRole('button', { name: /^Actions: / }).click();
+    for (const name of ['Make admin', 'Password reset link', 'Sign out everywhere', 'Disable', 'Delete…']) {
+      await expect(page.getByRole('menuitem', { name })).toBeVisible();
+    }
+    // A dialog opened from the menu stays after the menu closes; cancelling changes nothing.
+    await page.getByRole('menuitem', { name: 'Sign out everywhere' }).click();
+    const dialog = page.getByRole('dialog', { name: /out everywhere?/ });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toHaveCount(0);
   });
 });
 

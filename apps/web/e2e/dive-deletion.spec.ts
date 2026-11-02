@@ -2,7 +2,7 @@
 // deleted dives; and a Dive in SSI, kept there with a reminder and deleted there later, or deleted in both at once.
 // Fixture: e2e/fixtures/deletable-computer.fit, dive 9 (apps/server/test/fixtures/write-deletion-fixture.ts).
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_BASE_URL, deletableDive, diveNumber, diveRows, sendToSsi, setPreferences } from './support.ts';
+import { E2E_BASE_URL, deletableDive, diveNumber, diveRows, goToMore, sendToSsi, setPreferences } from './support.ts';
 
 test.beforeAll(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
@@ -44,14 +44,15 @@ test('deletes a dive after asking, offers Undo, and restores it from the deleted
   const { version } = await (await request.get(`/api/dives/${id}`)).json() as { version: number };
   await request.delete(`/api/dives/${id}`, { data: { version }, headers: { origin: E2E_BASE_URL } });
   await page.reload();
-  await page.getByRole('link', { name: 'Deleted dives (1)' }).click();
+  await goToMore(page, 'Deleted dives (1)');
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'Deleted dives' }) });
   await expect(page.getByRole('heading', { name: 'Review', level: 1 })).toBeFocused();
   await expect(panel).toContainText(/Deleted .*2026/);
   await panel.getByRole('button', { name: /^Restore: .*2026/ }).click();
   await expect(panel).toHaveCount(0);
   await page.getByRole('main').getByRole('link', { name: 'Logbook' }).click();
-  await expect(diveRow(page, n)).toBeVisible();
+  // The logbook may show its list from before the restore while it refreshes, where Number n is still the next dive.
+  await expect(diveRow(page, n).locator(`a[href="#/dives/${id}"]`)).toBeVisible();
   await diveRow(page, n).click();
   await expect(page.locator('.history > li').first()).toContainText('Restored');
 });
@@ -96,4 +97,33 @@ test('deletes a dive here and in SSI at once; Undo brings it back here only', { 
   await diveRow(page, n).click();
   const ssi = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
   await expect(ssi.getByText('Not in SSI yet.')).toBeVisible();
+});
+
+test('a deleted dive with two copies at a Provider keeps Restore and puts the "Delete in" actions in one menu', { tag: ['@dives'] }, async ({ page }) => {
+  // Stubbed: two Dives of one append, each still at SSI; the shared server holds no such data.
+  const dive = (id: string, number: number, startsAt: string) => ({
+    id, diverId: 'stub-diver', version: 1, number, startsAt, utcOffsetSeconds: 0, utcOffsetSource: 'device', durationSeconds: 1800, maxDepthM: 20, site: null,
+    deletedAt: '2026-10-01T10:00:00.000Z', mergedInto: null, movedTo: null, continuedInto: null,
+    stillAt: [{ provider: 'ssi', remoteNumber: number }], waiting: [],
+  });
+  const first = { ...dive('stub-a', 101, '2026-09-01T08:00:00.000Z'), appendedWith: ['stub-b'] };
+  const second = { ...dive('stub-b', 102, '2026-09-01T09:00:00.000Z'), appendedWith: ['stub-a'] };
+  await page.route('**/api/dives/deleted', (route) => route.fulfill({ json: [first, second] }));
+  let deleted = 0;
+  await page.route('**/api/dives/stub-*/providers/ssi', (route) => {
+    if (route.request().method() === 'DELETE') { deleted += 1; return route.fulfill({ status: 204 }); }
+    return route.fallback();
+  });
+  await page.goto('/#/review?tab=deleted');
+  const panel = page.locator('section', { has: page.getByRole('heading', { name: 'Deleted dives' }) });
+  await expect(panel.getByRole('button', { name: /^Restore: / })).toBeVisible();
+  // More than two actions: no loose "Delete in SSI" buttons.
+  await expect(panel.getByRole('button', { name: /^Delete in SSI: / })).toHaveCount(0);
+  await panel.getByRole('button', { name: /^Actions: / }).click();
+  await expect(page.getByRole('menuitem', { name: 'Delete in SSI' })).toHaveCount(2);
+  await page.getByRole('menuitem', { name: 'Delete in SSI' }).first().click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('button', { name: 'Delete in SSI' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Delete in SSI' }).click();
+  await expect.poll(() => deleted).toBe(1);
 });

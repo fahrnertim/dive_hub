@@ -3,7 +3,12 @@
 // number; a code of someone already here says so; and a professional on a dive puts their code on that dive.
 // The person, account, e-mail and leader number are made up: no real person's code is in this repository.
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, clearParticipants, forgetDivers, resetDive, setBuddies } from './support.ts';
+import { clearParticipants, E2E_BASE_URL, forgetDivers, resetDive, setBuddies, setPreferences } from './support.ts';
+
+// Another spec in this worker may have left German or imperial units set.
+test.beforeAll(async ({ request }) => {
+  await setPreferences(request, { language: null, units: null });
+});
 
 const headers = { origin: E2E_BASE_URL };
 const NAME = 'Pia Probe';
@@ -51,7 +56,8 @@ test('a diver is added from the text of a professional’s code, and shows both 
 
 test('the details are edited where the codes are shown; without a leader number there is no professional’s code', { tag: ['@divers', '@dives'] }, async ({ page }) => {
   await page.goto('/#/divers');
-  await page.getByRole('button', { name: `Codes: ${NAME}` }).click();
+  await page.getByRole('button', { name: `Actions: ${NAME}` }).click();
+  await page.getByRole('menuitem', { name: 'Codes' }).click();
   const codes = page.getByRole('dialog', { name: `${NAME}: codes and details` });
   await codes.getByRole('button', { name: 'Edit details' }).click();
   await codes.getByRole('textbox', { name: 'SSI leader number' }).fill('');

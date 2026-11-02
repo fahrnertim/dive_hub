@@ -8,7 +8,8 @@ date: 2026-10-04
 # ADR 0019: Tonal surfaces, comfortable density, and no component library
 
 ## Status
-Accepted – 2026-10-04. Amends [ADR 0014](0014-design-system-and-localization.md).
+Accepted – 2026-10-04. Amends [ADR 0014](0014-design-system-and-localization.md). Partly superseded by
+[ADR 0064](0064-ui-overhaul.md) (2026-11-02): one white sheet in a tinted frame, sections set apart by space and rules.
 
 ## Context
 The project owner asked for a "clean and modern" look ([visual refresh](../research/2026-10-03-visual-refresh.md)).

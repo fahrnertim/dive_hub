@@ -1,7 +1,7 @@
 // The dive page in a real browser (ADR 0015): reading a Dive (its facts and profile in one panel, the rest a step
 // away), editing it, going back to the recording's values, switching the Primary recording, the history, other
 // languages and units.
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { editElsewhere, openLine, resetDive, setPreferences } from './support.ts';
 
 let diveId: string;
@@ -22,12 +22,12 @@ test('shows the dive with the recording\'s values, the device data and how it ca
   // In the facts only: the history may say "Edited" when other specs changed this Dive on this server before.
   await expect(page.locator('dl.facts').first().getByText('edited')).toHaveCount(0);
   // The facts and the profile share one panel, so the profile is on the first screen. Who dived along and the notes
-  // are facts too: empty, each is its own way in, not a panel.
+  // are details too: empty, each is a chip in the "Add details" row, not a panel.
   const panel = page.locator('section', { has: page.getByRole('img', { name: 'Depth profile' }) });
   await expect(panel).toContainText('18.5 m');
   await expect(facts).toContainText('GasEAN32');
-  await expect(facts.getByRole('button', { name: 'Add someone' })).toBeVisible();
-  await expect(facts.getByRole('button', { name: 'Add notes' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Add details' }).getByRole('button', { name: 'Add buddies' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Add details' }).getByRole('button', { name: 'Add notes' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Buddies and guides' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Notes' })).toHaveCount(0);
   // The tabs name the devices. Under the chart, one line says how it was recorded; the computer's other values are a
@@ -152,11 +152,68 @@ test('the dive number is not typed: the form has no field for it; the Diver\'s s
   await page.getByText('All values').first().click();
   await expect(page.getByText('Number on the computer').first()).toBeVisible();
 
+  // The Diver's own page: behind a line that shows the current values (C7); opened, the fields are there.
   await page.goto('/#/divers');
-  // Behind a line that shows the current values (C7); opened, the fields are there.
+  await page.getByRole('link', { name: 'Erika', exact: true }).first().click();
   await expect(page.getByText('starts at 42 · apnea sessions counted').first()).toBeVisible();
   await page.getByRole('button', { name: /^Dive numbers: / }).first().click();
   const settings = page.getByRole('group', { name: /^Dive numbers of Erika/ });
   await expect(settings.getByRole('textbox', { name: 'Dives before this logbook' })).toHaveValue('41');
   await expect(settings.getByRole('checkbox', { name: 'Count apnea sessions' })).toBeChecked();
+});
+
+// A dive as the server sends it, with nothing in the details (no site, buddies, cylinders, suit, lead or notes) and the
+// given Recordings, so the test doesn't depend on what other specs added to the shared dive.
+async function stubDive(page: Page, id: string, recordings: (all: unknown[]) => unknown[]) {
+  await page.route(`**/api/dives/${id}`, async (route) => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    const body = await (await route.fetch()).json();
+    const shown = recordings(body.recordings);
+    return route.fulfill({
+      json: {
+        ...body, site: null, participants: [], cylinders: [], suit: null, lead: [], weightingFeedback: null, notes: null,
+        recordings: shown, primaryRecordingId: (shown[0] as { id: string }).id,
+      },
+    });
+  });
+}
+
+test('a dive with only how its weighting felt shows that fact and no "Add suit and lead" chip', { tag: ['@dives'] }, async ({ page }) => {
+  await page.route(`**/api/dives/${diveId}`, async (route) => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    const body = await (await route.fetch()).json();
+    return route.fulfill({ json: { ...body, site: null, participants: [], suit: null, lead: [], weightingFeedback: { felt: 'too_heavy', amountKg: null } } });
+  });
+  await page.goto(`/#/dives/${diveId}`);
+  await expect(page.locator('.dive-details')).toBeVisible();
+  await expect(page.locator('.dive-details').getByText('Too heavy')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add suit and lead' })).toHaveCount(0);
+});
+
+test('empty details are one row of "Add" chips, each opening its editor', { tag: ['@dives'] }, async ({ page }) => {
+  await stubDive(page, diveId, (all) => all);
+  await page.goto(`/#/dives/${diveId}`);
+  const chips = page.getByRole('group', { name: 'Add details' });
+  await expect(chips.getByRole('button')).toHaveText(['Add site', 'Add buddies', 'Add cylinders', 'Add suit and lead', 'Add notes']);
+  await expect(page.getByRole('term').filter({ hasText: /^(Dive site|Buddies and guides)$/ })).toHaveCount(0);
+  await chips.getByRole('button', { name: 'Add cylinders' }).click();
+  await expect(page.getByRole('group', { name: 'Cylinder 1' }).getByRole('textbox', { name: 'Volume' })).toBeFocused();
+});
+
+test('one Recording has no tabs; its device is named under the profile and More holds the dive\'s own actions', { tag: ['@dives'] }, async ({ page }) => {
+  // A Dive's last Recording can't be split off, so a single Recording has no action of its own to move into More.
+  await stubDive(page, diveId, (all) => all.slice(0, 1));
+  await page.goto(`/#/dives/${diveId}`);
+  await expect(page.getByRole('img', { name: 'Depth profile' })).toBeVisible();
+  await expect(page.getByRole('tablist')).toHaveCount(0);
+  await expect(page.getByRole('listitem').filter({ hasText: /^Garmin Descent Mk3 \(\d+\)$/ })).toBeVisible();
+  await page.getByRole('button', { name: /^More/ }).click();
+  await expect(page.getByRole('menuitem', { name: 'Delete dive…' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /Split off/ })).toHaveCount(0);
+});
+
+test('two Recordings are tabs', { tag: ['@dives'] }, async ({ page }) => {
+  await page.goto(`/#/dives/${diveId}`);
+  await expect(page.getByRole('tablist', { name: 'Recordings' })).toBeVisible();
+  await expect(page.getByRole('tab')).toHaveCount(2);
 });

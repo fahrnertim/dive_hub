@@ -7,14 +7,14 @@ import { Icon } from './Icon.tsx';
  * A titled area of a page. `narrow` for single forms (sign-in, setup). `level={1}` when the panel's
  * title is the page's title: every page has exactly one h1 (checked by e2e/accessibility.spec.ts).
  */
-export function Panel({ title, children, narrow, actions, level = 2, attention }: {
-  title?: ReactNode; children: ReactNode; narrow?: boolean; actions?: ReactNode; level?: 1 | 2;
+export function Panel({ title, children, narrow, actions, level = 2, attention, className }: {
+  title?: ReactNode; children: ReactNode; narrow?: boolean; actions?: ReactNode; level?: 1 | 2; className?: string;
   /** Something that waits for the User: the panel is tinted (ADR 0019). */
   attention?: boolean;
 }) {
   const Heading = level === 1 ? 'h1' : 'h2';
   return (
-    <section className={['panel', narrow && 'panel-narrow', attention && 'panel-attention'].filter(Boolean).join(' ')}>
+    <section className={['panel', narrow && 'panel-narrow', attention && 'panel-attention', className].filter(Boolean).join(' ')}>
       {(title || actions) && (
         <div className="panel-head">
           {title && <Heading>{title}</Heading>}
@@ -31,11 +31,11 @@ export function Panel({ title, children, narrow, actions, level = 2, attention }
  * sentence, and the page's actions beside it. Sections follow as panels. Single forms (sign-in, setup)
  * use a narrow `Panel level={1}` instead.
  */
-export function PageHeader({ title, meta, lead, actions, back }: { title: ReactNode; meta?: ReactNode; lead?: ReactNode; actions?: ReactNode; back?: { href: string; label: string } }) {
+export function PageHeader({ title, meta, lead, actions, back, className }: { title: ReactNode; meta?: ReactNode; lead?: ReactNode; actions?: ReactNode; back?: { href: string; label: string }; className?: string }) {
   return (
     <>
       {back && <BackLink {...back} />}
-      <div className="page-head">
+      <div className={className ? `page-head ${className}` : 'page-head'}>
         <div className="page-head-text">
           <h1>{title}</h1>
           {meta}
@@ -133,8 +133,8 @@ const header = (c: Column, i: number) => {
  * `stacked`: on a phone each row becomes two lines, the cell marked `cell-main` beside `cell-lead`, the
  * `cell-sub` cells joined below it, e.g. the logbook's date over "Erika · 18.5 m · 30 min" (visual refresh 6).
  */
-export function Table({ label, head, children, cards, stacked }: {
-  label: string; head: Column[]; children: ReactNode; cards?: boolean; stacked?: boolean;
+export function Table({ label, head, children, cards, stacked, className }: {
+  label: string; head: Column[]; children: ReactNode; cards?: boolean; stacked?: boolean; className?: string;
 }) {
   const table = useRef<HTMLTableElement>(null);
   // Cards show each cell's column name (data-label, via CSS). Explicit roles keep the table a
@@ -156,7 +156,7 @@ export function Table({ label, head, children, cards, stacked }: {
     }
   });
   return (
-    <div className="table-scroll" role="region" aria-label={label} tabIndex={0}>
+    <div className={className ? `table-scroll ${className}` : 'table-scroll'} role="region" aria-label={label} tabIndex={0}>
       <table className={['table', cards && 'table-cards', stacked && 'table-stacked'].filter(Boolean).join(' ')} ref={table}>
         <thead>
           <tr>{head.map(header)}</tr>

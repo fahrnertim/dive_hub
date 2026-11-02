@@ -2,7 +2,7 @@
 title: Design system
 summary: Visual direction, tokens, components, writing, localization and units of the web client; the brief every screen follows.
 status: living
-date: 2026-10-05
+date: 2026-11-02
 ---
 
 # Design system
@@ -20,10 +20,12 @@ and keeping dive records: dense numbers, profiles, lists.
 **Vocabulary taken from diving:** the water column getting darker with depth, the red-and-white
 diver-down flag, the plain clarity of a wet-notes slate.
 
-**One bold element, everything else quiet.** The depth profile's area darkens from the surface to
-the deepest point, like the water column. The diver-down flag is the brand mark. Everything else is
-calm: panels set off from the page by tone alone (no outline, no shadow), one typeface, no decoration
-that carries no information.
+**One framed sheet, the water face and the profile as the signature.** The app is a white sheet (16 px
+radius) on a pale frame; the logbook and the dive page stand on it, and everything else is calm. The depth
+profile's area darkens from the surface to the deepest point, like the water column, and is the one bold
+element. The diver-down flag is the brand mark. The primary button is ink (near-black, inverted in the dark);
+the accent colour means only "link, focus or data". One typeface, no decoration that carries no information.
+Design of the overhaul: [spec](../superpowers/specs/2026-11-02-ui-overhaul-design.md).
 
 Checked against generic defaults (frontend-design skill). No cream background, no all-caps labels,
 no identical shadowed cards, no gradients as decoration (the only gradient encodes depth), no
@@ -38,53 +40,67 @@ Defined once in `design/tokens.css`. Components use only the **semantic** tokens
 
 | Palette name | Hex | Role |
 |---|---|---|
-| Slate | `#e9eef2` | page background (light); panels lift off it by tone |
+| Slate | `#eef3f6` | the frame around the sheet (light) |
 | Wet notes | `#ffffff` | panels, inputs (light) |
-| Abyss | `#0b2236` | text (light) |
-| Open water | `#0f5e8c` | accent: links, primary buttons, focus (light) |
+| Abyss | `#0e1a23` | ink: text and the primary button (light) |
+| Open water | `#0f5e8c` | accent: links, focus, data (light) |
 | Surface light | `#8fd3e8` | shallow end of the depth ramp |
 | Dive flag | `#c8102e` | brand mark only |
 | Kelp | `#2a7150` | success |
 
-Dark mode ("night dive") follows `prefers-color-scheme`. Background `#061522`, panels `#0e2338`,
-text `#dce8f0`, accent `#62b6e6`.
+Dark mode follows `prefers-color-scheme` and is a near-neutral with a faint cool tint, not navy. Frame
+`#0b0d0f`, sheet `#131619`, text `#e9eef2`, primary `#e9eef2` with `#0b0d0f` on it, accent `#62b6e6`.
+New semantic tokens: `--color-active` (the navigation pill), `--color-primary` and `--color-on-primary`.
+`apps/web/test/contrast.test.ts` reads `tokens.css` and checks the pairs below in both schemes.
 
 **Contrast (WCAG 2.2 AA), measured:**
 
 | Pair | Light | Dark |
 |---|---|---|
-| Text on background / panel / attention tint | 13.9 / 16.2 / 13.7 | 14.8 / 12.8 / 10.6 |
-| Muted text on background / panel / tint | 5.2 / 6.1 / 5.1 | 7.3 / 6.3 / 5.2 |
-| Accent on background / panel; text on accent | 6.0 / 7.0; 7.0 | 8.2 / 7.1; 8.0 |
-| Danger on panel; text on danger | 6.9; 6.9 | 6.3; 7.1 |
-| Success on panel | 5.9 | 7.5 |
-| Badges: neutral, success, danger on their fill | 5.2, 5.1, 5.9 | 6.8, 6.7, 6.3 |
-| Control border on background / panel / tint (≥ 3:1, WCAG 1.4.11) | 3.3 / 3.9 / 3.3 | 4.7 / 4.1 / 3.4 |
-| Panel on background (decorative, no meaning) | 1.17 | 1.19 |
+| Text on frame / sheet / sunken | 15.8 / 17.6 / 16.4 | 16.7 / 15.5 / 14.4 |
+| Muted text on frame / sheet / sunken | 5.6 / 6.3 / 5.9 | 8.4 / 7.9 / 7.3 |
+| Accent on frame / sheet / accent tint | 6.3 / 7.0 / 5.9 | 8.7 / 8.1 / 6.1 |
+| Text on primary (the ink button) | 17.6 | 16.7 |
+| Text on accent; text on danger (filled buttons) | 7.0; 6.9 | 8.7; 7.7 |
+| Badges: success, danger on their tint | 5.1, 5.9 | 6.7, 6.3 |
+| Danger on sheet | 6.9 | 7.2 |
+| Success on sheet | 5.9 | 8.5 |
+| Control border on frame / sheet / sunken (≥ 3:1, WCAG 1.4.11) | 3.5 / 3.9 / 3.6 | 4.3 / 4.0 / 3.7 |
+| Sheet on frame (decorative, no meaning) | 1.1 | 1.1 |
 
 `--color-border` (dividers between rows) is decorative and lighter; anything that marks a control's
-boundary uses `--color-border-strong`. Panels have no outline (ADR 0019).
+boundary uses `--color-border-strong`. A panel is a section of the sheet, divided from the section before by a hairline, with no outline of its own (the [overhaul design](../superpowers/specs/2026-11-02-ui-overhaul-design.md), "Surfaces").
 
 ### Type, space, shape
 
 - **Typeface:** IBM Plex Sans (variable, OFL, bundled, never from a CDN), one family.
   Numbers in tables and facts use tabular figures.
-- **Scale:** minor third (×1.2) on 16 px: `--text-xs` … `--text-2xl`.
+- **Scale:** six sizes in rem: `--text-xs` 12, `--text-sm` 14, `--text-md` 16 (body and inputs), `--text-lg` 20
+  (section heading), `--text-title` 28 (page title; `--text-xl` and `--text-2xl` are the same), `--text-hero` 32
+  (the dive page's facts). Weights 400, 500, 600.
 - **Space:** 4 px steps, `--space-1` (4 px) … `--space-7` (48 px).
-- **Radius by hierarchy:** `--radius-sm` 2 px (small marks, badges), `--radius-md` 6 px (controls, rows inside a
-  panel), `--radius-lg` 14 px (panels).
-- **Surfaces** ([ADR 0019](../decisions/0019-tonal-surfaces.md)): white panels on the slightly deeper page tone,
-  no outline, `--panel-padding` 32 px (24/16 px on a phone). Something that waits for the User (Duplicate
+- **Radius by hierarchy:** `--radius-sm` 2 px (small marks), `--radius-control` 8 px (controls; `--radius-md`),
+  `--radius-box` 10 px (boxes inside the sheet; `--radius-lg`), `--radius-sheet` 16 px (the sheet); chips, badges
+  and avatars are fully round.
+- **Shell and durations:** `--shell-sidebar` 14.5 rem, `--shell-topbar` 3.25 rem; `--duration-hover` 120 ms,
+  `--duration-reveal` 150 ms, `--duration-disclosure` 200 ms (all 0 with reduced motion).
+- **Surfaces** (the [overhaul design](../superpowers/specs/2026-11-02-ui-overhaul-design.md), which replaces ADR 0019's white panels): the page is one
+  white sheet on the tinted frame; a `Panel` on it is a section, not a box. It has no edge, corners or padding of its own;
+  the sheet's padding holds it, and a hairline with `--space-5` above sets it off from the section before. A box inside
+  the sheet is one tone step (the candidate cards, `.terms`). Something that waits for the User (Duplicate
   candidates) is tinted with `--color-accent-soft` (`Panel attention`). Terms to confirm before going on (the ODbL before an OSM import) use the same tint in a box (`.terms`), not a `Notice`, which announces itself. One comfortable density: table rows
   keep `--space-3` vertical padding.
 - **Text roles:** `.muted` is colour only, so leads and sentences stay at body size; `.meta` is small, muted
   secondary text (counts, entry dates). Large headings use `--tracking-heading` (−0.01em).
 - **Elevation:** only things floating above the page (dialogs) get `--shadow-overlay`.
-- **Motion** ([ADR 0018](../decisions/0018-icons-and-motion.md)): only entries that explain where
+- **Motion** ([ADR 0018](../decisions/0018-icons-and-motion.md), extended by the overhaul design): only entries that explain where
   something came from. Menus and selects grow from their trigger (`--duration-popover`, 150 ms),
-  dialogs fade and scale in (200 ms), notices rise in (200 ms). The curve is always `--ease-out`, and
-  only `transform` and `opacity` animate. Pages, table rows, the chart, tabs and focus never move.
-  All `--duration-*` drop to 0 with `prefers-reduced-motion`.
+  dialogs fade and scale in (200 ms), notices rise in (200 ms), a phone menu rises from the bottom as a sheet.
+  Content fades in where data replaces a skeleton (`.reveal`, `--duration-reveal`); a skeleton's bars pulse gently
+  (`--duration-pulse`); a disclosure opens by height (`--duration-disclosure`); hover changes `background-color` or
+  `color` over `--duration-hover`. The curve is `--ease-out` (the pulse `--ease-pulse`), and only `transform` and
+  `opacity` animate, besides the hover colours. Pages, table rows, the chart, tabs and focus never move.
+  All `--duration-*` drop to 0 with `prefers-reduced-motion`, and the pulse stops.
 - **Icons** ([ADR 0018](../decisions/0018-icons-and-motion.md)): Lucide through `ui/Icon.tsx`
   (`<Icon name="edit" />`, or `icon="edit"` on `Button` and menu actions), always beside a visible
   label, `aria-hidden`, in the colour of the text. Table row actions stay text only.
@@ -95,10 +111,11 @@ boundary uses `--color-border-strong`. Panels have no outline (ADR 0019).
   its border. CSS `:hover` rules sit inside `@media (hover: hover)`, so they don't stick on touch screens.
 - **Touch** (mobile-native skill): links and buttons have `touch-action: manipulation` and no tap highlight;
   buttons, tabs and menu items don't select their label on a long press. Inputs stay at 16 px or more (iOS zooms
-  into smaller ones). The browser bar (`theme-color`) has the header's colour per scheme. Quiet buttons are 32 px tall.
-- **Layout:** content up to `--width-content` (72 rem), left-aligned. Every page starts with `PageHeader`
-  (h1, meta, lead, the page's actions), then its panels. Single forms (sign-in, setup) are a narrow centered
-  panel (`--width-form`, 28 rem) whose title is the h1.
+  into smaller ones). The browser bar (`theme-color`) has the frame's colour per scheme. Quiet buttons are 32 px tall.
+- **Layout:** content up to `--width-content` (72 rem) on the sheet, centered. Every page starts with `PageHeader`
+  (h1, meta, lead, the page's actions), then its sections (`Panel`), set off by hairlines. Single forms (sign-in,
+  setup) are a narrow centered section (`--width-form`, 28 rem) whose title is the h1. The shell is a sidebar from
+  64 rem; below, a top bar and a bottom bar.
 
 ## Components
 
@@ -113,13 +130,16 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `Switch` | A setting that takes effect at once (role `switch`, `apps/web/src/ui/Choice.tsx`). `Checkbox` is for a choice submitted with a form. |
 | `Form` | React Aria's form with native validation on submit, and the line "* required" at its top while a field carries the mark (hidden in one-line `form-inline` forms). |
 | `PageHeader` | The page's h1 with optional meta (a dive's date and Diver), a lead sentence and the page's actions. |
-| `Panel` | A titled area of a page; `narrow` for single forms; `attention` for something waiting for the User. |
+| `Shell` (`ui/Shell.tsx`) | The tinted frame around the sheet: a sidebar (Logbook, Divers, Dive sites, Dive centres, Tools; Settings and the user menu at its foot) from 64 rem; below it a top bar (brand, user menu) and a bottom bar with the five places. `PlainShell` is the frame without navigation (sign-in, invitation). |
+| `Panel` | A titled section of the sheet; `narrow` for single forms; `attention` for something waiting for the User (a tinted box). |
+| `Skeleton`, `RowsSkeleton`, `LogbookSkeleton`, `DiveSkeleton` (`ui/Skeleton.tsx`) | Loading: flat bars in the final layout instead of "Loading…", shown after 150 ms so a fast load shows nothing. One hidden "Loading…" for screen readers and `aria-busy`; the bars are decoration. Labels and headings that don't depend on the data render at once. The data fades in over them (`.reveal`). |
+| Settings (`SettingsPage`) | One area at `#/settings/<section>` (Display, Sign-in and security, Connections, AI access, Devices, Administration). From 90 rem the sections are a list beside the view; from 64 rem a row of tabs above it; on a phone `#/settings` is the list and each section its own view. A kept Diver has a page at `#/divers/<id>`. |
 | `Notice` | What just happened: `info`, `success`, `danger` (announced at once). |
-| `Table` | Data tables; numeric columns are right-aligned, header included. The first and last columns line up with the panel's text. A table switches layout by its own width (container query), not the window's: `cards` (tables with an actions column) below 48rem become blocks of label–value lines separated by dividers, and below 22rem the label sits above its value; `stacked` (the Dive sites list) below 40rem becomes two lines per row (`cell-lead` and `cell-main`, then the `cell-sub` cells). Date cells (`date`) don't wrap; e-mail cells (`email`) may break anywhere. |
+| `Table` | Data tables (`className` adds a class to the table); numeric columns are right-aligned, header included. The first and last columns line up with the panel's text. A table switches layout by its own width (container query), not the window's: `cards` (tables with an actions column) below 48rem, which a narrow sheet (the page next to the sidebar, up to about 1100px of window) is, become blocks of label–value lines separated by dividers, and below 22rem the label sits above its value; `stacked` (the Dive sites list) below 40rem becomes two lines per row (`cell-lead` and `cell-main`, then the `cell-sub` cells). Date cells (`date`) don't wrap; e-mail cells (`email`) may break anywhere. |
 | `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). Its title row has a close button ("Close dialog"), so no dialog is closed only by Esc or a tap on the rim. |
 | `Disclosure` | One line that opens what is behind it (a finding's details, the Dive at a Provider, a Dive's history): the title is the button, with an arrow as the cue; a `summary` stays in sight beside it; the whole line can be pressed. Only the arrow moves. For what most Users need now and then; what waits for the User opens by itself. |
 | `ConfirmButton`, `ConfirmDialog` | An action that is hard to undo asks first, in a dialog that says what will happen. The dialog alone serves menu items. |
-| `ActionMenu` | Secondary actions behind one button ("Recording actions", "More", the account menu). The panel shows only its main action. |
+| `ActionMenu` | Secondary actions behind one button ("Recording actions", "More", the account menu). The panel shows only its main action. Above 40 rem a popover; below, a bottom sheet in a `Dialog` labelled by its trigger (rows 48 px tall, a hairline at its top edge). A list row with more than two actions gets one as its row menu, labelled with `common.forItem` ("Actions: Kai Lund"). |
 | `CopyField` | A value shown once with a copy button (invitation and reset links). |
 | `NumberField` | Numbers in the UI language's format ("18,5" in German), with a unit after the input. The value commits on blur; `onInput` reacts while typing (the dive form marks a field "edited" then, so nothing moves under a pointer about to press Save). |
 | `Select` | One choice from a short list (e.g. a site's water type). `size="small"` inside a table row. |

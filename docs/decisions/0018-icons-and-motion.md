@@ -8,7 +8,8 @@ date: 2026-10-03
 # ADR 0018: Lucide icons beside text; motion only where it explains
 
 ## Status
-Accepted – 2026-10-03
+Accepted – 2026-10-03. Partly superseded by [ADR 0064](0064-ui-overhaul.md) (2026-11-02): more motion (skeleton
+pulse, content arrival, disclosures, hover colours, phone bottom sheets), and loading placeholders now pulse.
 
 ## Context
 After the [UI review](../research/2026-10-03-ui-review.md), the project owner asked for icons and

@@ -15,7 +15,7 @@ import { SendToProvider } from './PushRun.tsx';
 import { ProfileSketch } from './ProfileSketch.tsx';
 import { WaitingPushState } from './WaitingPush.tsx';
 import { sketchScale } from './lib/sketch.ts';
-import { Avatar, Button, DiverAvatar, Disclosure, Icon, Muted, Notice, PageHeader, Panel, Select, TextField, ToggleChip } from './ui/index.ts';
+import { Avatar, Button, Disclosure, DiverAvatar, Icon, LogbookSkeleton, Muted, Notice, PageHeader, Panel, Select, TextField, ToggleChip } from './ui/index.ts';
 
 const ALL = 'all';
 /** A stack shows this many circles, then "+2". */
@@ -28,15 +28,19 @@ const COUNT_OF = {
 } as const;
 
 /**
- * The logbook page's head (visual refresh 2): the title and the import button for a returning User, with the hint
- * that files can be dropped. What filters the list is in the list's toolbar (UI redesign 3.7).
+ * The logbook page's title row (UI overhaul): the title with one line of the logbook's whole figures, the import button
+ * for a returning User and More. What filters the list is in the list's toolbar (UI redesign 3.7).
  */
-export function LogbookHeader({ importAction }: { importAction?: ReactNode }) {
+export function LogbookHeader({ params, importAction, more }: { params: LogbookParams; importAction?: ReactNode; more?: ReactNode }) {
   const { t } = useTranslation();
-  const narrow = useNarrow();
+  const display = useDisplay();
+  const dives = useQuery(divesQuery(params));
   usePageTitle(t('logbook.title'));
-  // Dropping files is for a pointer; on a phone the hint would only push the first Dive down (C11).
-  return <PageHeader title={t('logbook.title')} lead={importAction && !narrow ? t('import.dropAnywhere') : undefined} actions={importAction} />;
+  const totals = dives.data?.totals;
+  // Dropping files is for a pointer, and is said where it happens: in the drop overlay and the empty logbook.
+  const summary = totals && totals.dives > 0
+    && t('logbook.summary', { count: totals.dives, formatted: totals.dives.toLocaleString(display.locale), time: display.duration(totals.durationSeconds), depth: display.depth(totals.deepestM) });
+  return <PageHeader className="logbook-head" title={t('logbook.title')} lead={summary || undefined} actions={<>{importAction}{more}</>} />;
 }
 
 /**
@@ -117,9 +121,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
       <SendToProvider params={params} filterName={filterName} />
     </>
   );
-  const showOnly = dives.data && <ShowOnly params={params} counts={dives.data.counts} />;
-  // On a phone the totals close the list instead of opening it: the Dives come first (C11).
-  const totals = searchable && dives.data && dives.data.totals.dives > 0 && <Totals totals={dives.data.totals} />;
+  const showOnly = dives.data && <ShowOnly params={params} counts={dives.data.counts} folded={!narrow} />;
   // What the collapsed control says is set: a sort other than the default, one Diver, the filters.
   const active = [
     params.sort && t(`logbook.sort.${sortChoice(params)}`),
@@ -127,29 +129,31 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
     filters,
   ].filter(Boolean).join(' · ');
   return (
-    <Panel>
+    <Panel className="logbook-panel">
       {params.siteId && <SiteFilter params={params} />}
       {/* Nothing to count, search or sort before the first dive (visual refresh 8). */}
       {searchable && (
         <>
-          {!narrow && totals}
           {/* On a phone only the search stays in sight; the other choices sit behind one control that says what is set (C11). */}
           <div className="logbook-toolbar">
             <div className="logbook-search" ref={search}>
               <TextField label={t('logbook.search')} description={t('logbook.searchHint')} type="search" value={text} onChange={setText} autoComplete="off" />
             </div>
             {!narrow && choices}
+            {/* Folded behind Filters, whose button stands in the row; its chips open under the row. */}
+            {!narrow && showOnly}
           </div>
-          {!narrow && showOnly}
           {narrow && (
-            <Disclosure className="logbook-more" title={t('logbook.filterAndSort')} summary={active && <span className="meta">{active}</span>}>
+            <Disclosure
+              className="logbook-more" defaultExpanded={(params.only?.length ?? 0) > 0}
+              title={params.only?.length ? t('logbook.filterAndSortOn', { count: params.only.length }) : t('logbook.filterAndSort')} summary={active && <span className="meta">{active}</span>}>
               <div className="logbook-toolbar">{choices}</div>
               {showOnly}
             </Disclosure>
           )}
         </>
       )}
-      {dives.isPending && <Muted>{t('common.loading')}</Muted>}
+      {dives.isPending && <LogbookSkeleton />}
       {dives.error && <Notice tone="danger">{errorText(dives.error)}</Notice>}
       {dives.data?.total === 0 && (
         <div className="logbook-nothing">
@@ -171,7 +175,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
       {dives.data && dives.data.total > 0 && (
         <>
           <p className="logbook-range meta">{range}</p>
-          <section className="dive-list" aria-label={t('logbook.dives')}>
+          <section className="dive-list reveal" aria-label={t('logbook.dives')}>
             <div className="dive-grid">
             {monthGroups(dives.data.dives, dives.data.months).map((group) => (
               <div className="dive-group" key={group.month ?? 'all'}>
@@ -197,24 +201,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
           )}
         </>
       )}
-      {narrow && totals}
     </Panel>
-  );
-}
-
-/** The four numbers every logbook has on its first page (UI redesign 3.6): the Diver's whole logbook, whatever is searched or shown. */
-function Totals({ totals }: { totals: LogbookPage['totals'] }) {
-  const { t } = useTranslation();
-  const display = useDisplay();
-  return (
-    <div className="logbook-totals" role="group" aria-label={t('logbook.totals.label')}>
-      <dl>
-        <div><dt>{t('logbook.totals.dives')}</dt><dd>{totals.dives.toLocaleString(display.locale)}</dd></div>
-        <div><dt>{t('logbook.totals.underWater')}</dt><dd>{display.duration(totals.durationSeconds)}</dd></div>
-        <div><dt>{t('logbook.totals.deepest')}</dt><dd>{display.depth(totals.deepestM)}</dd></div>
-        {totals.lastDiveAt && <div><dt>{t('logbook.totals.lastDive')}</dt><dd>{display.date(totals.lastDiveAt)}</dd></div>}
-      </dl>
-    </div>
   );
 }
 
@@ -235,7 +222,7 @@ function useFilterNames() {
  * "Show only": toggles that narrow the logbook to the dives that lack something, each with how many it would show.
  * The counts don't change when a filter is pressed. A filter that would show nothing isn't offered, unless it is pressed.
  */
-function ShowOnly({ params, counts }: { params: LogbookParams; counts: LogbookPage['counts'] }) {
+function ShowOnly({ params, counts, folded }: { params: LogbookParams; counts: LogbookPage['counts']; folded: boolean }) {
   const { t } = useTranslation();
   const label = useId();
   const filterName = useFilterNames();
@@ -244,7 +231,7 @@ function ShowOnly({ params, counts }: { params: LogbookParams; counts: LogbookPa
   const pressed = params.only ?? [];
   const offered = LOGBOOK_FILTERS.filter((f) => counts[COUNT_OF[f]] > 0 || pressed.includes(f) || kept === f);
   if (offered.length === 0) return null;
-  return (
+  const chips = (
     <div className="chips" role="group" aria-labelledby={label}>
       <span id={label} className="chips-label">{t('logbook.showOnly')}</span>
       {offered.map((f) => (
@@ -263,6 +250,10 @@ function ShowOnly({ params, counts }: { params: LogbookParams; counts: LogbookPa
       ))}
     </div>
   );
+  // The panel opens by itself while a filter is on, so what narrows the list is never out of sight.
+  return folded
+    ? <Disclosure className="logbook-filters" title={pressed.length > 0 ? t('logbook.filtersOn', { count: pressed.length }) : t('logbook.filters')} defaultExpanded={pressed.length > 0}>{chips}</Disclosure>
+    : chips;
 }
 
 /** "April 2026" over its rows, with all the month's dives and their time, not only this page's share (ADR 0040). */

@@ -17,7 +17,14 @@ describe('the tab an address belongs to', () => {
     expect(navSection('/tools/plan?gas=air')).toBe('tools');
   });
 
-  it('gives pages outside the bar none', () => {
-    for (const route of ['/account', '/account?tab=ai', '/admin', '/setup', '/diversity']) expect(navSection(route)).toBeNull();
+  it('puts Settings and the old account and admin pages under Settings', () => {
+    expect(navSection('/settings/display')).toBe('settings');
+    expect(navSection('/account')).toBe('settings');
+    expect(navSection('/admin')).toBe('settings');
+    for (const route of ['/settings', '/account?tab=ai', '/admin/site-imports']) expect(navSection(route)).toBe('settings');
+  });
+
+  it('gives pages outside the navigation none', () => {
+    for (const route of ['/setup', '/diversity', '/settingsx']) expect(navSection(route)).toBeNull();
   });
 });

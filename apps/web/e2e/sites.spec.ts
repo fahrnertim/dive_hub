@@ -38,7 +38,7 @@ test('a dive with a position: a new dive site is made from it and chosen', { tag
   await expect(facts).toContainText('28.5003° N, 34.5197° E');
   await expect(page.getByRole('link', { name: 'Open in maps' })).toHaveAttribute('href', /openstreetmap\.org\/\?mlat=28\.50030&mlon=34\.51970/);
 
-  await page.getByRole('button', { name: 'Choose dive site' }).click();
+  await page.getByRole('button', { name: 'Add site' }).click();
   const dialog = page.getByRole('dialog', { name: 'Dive site' });
   await expect(dialog).toContainText('No dive sites within 2 km of this dive yet.');
   await dialog.getByRole('button', { name: 'New dive site' }).click();
@@ -54,10 +54,10 @@ test('a dive with a position: a new dive site is made from it and chosen', { tag
 
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Change dive site' })).toBeFocused();
-  await expect(facts.getByRole('link', { name: 'Lighthouse' })).toBeVisible();
+  await expect(page.locator('dl.dive-details').getByRole('link', { name: 'Lighthouse' })).toBeVisible();
   await expect(page.locator('.history > li').first()).toContainText('Dive site: – → Lighthouse');
 
-  await facts.getByRole('link', { name: 'Lighthouse' }).click();
+  await page.locator('dl.dive-details').getByRole('link', { name: 'Lighthouse' }).click();
   await expect(page.getByRole('heading', { name: 'Lighthouse', level: 1 })).toBeVisible();
   await expect(page.getByText('Egypt · Red Sea')).toBeVisible();
   await expectGoodPage(page, 'Lighthouse');
@@ -71,7 +71,7 @@ test('a dive with a position: a new dive site is made from it and chosen', { tag
 
 test('a dive without a position picks a site from the results while typing, and can go back to none', { tag: ['@sites', '@dives'] }, async ({ page }) => {
   await page.goto(`/#/dives/${diveId}`);
-  await page.getByRole('button', { name: 'Choose dive site' }).click();
+  await page.getByRole('button', { name: 'Add site' }).click();
   const dialog = page.getByRole('dialog', { name: 'Dive site' });
   const search = dialog.getByRole('searchbox', { name: 'Find a dive site' });
   await expect(search).toBeFocused();
@@ -86,17 +86,17 @@ test('a dive without a position picks a site from the results while typing, and 
   await search.press('ArrowDown');
   await search.press('Enter');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.locator('dl.facts').first().getByRole('link', { name: 'Lighthouse' })).toBeVisible();
+  await expect(page.locator('dl.dive-details').getByRole('link', { name: 'Lighthouse' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Change dive site' }).click();
   await expect(dialog.getByRole('option', { name: /Lighthouse/ })).toContainText('current');
   await dialog.getByRole('button', { name: 'Remove dive site' }).click();
-  await expect(page.getByRole('button', { name: 'Choose dive site' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add site' })).toBeVisible();
 });
 
 test('a search without results offers to create the site, with the name filled in', { tag: ['@sites', '@dives'] }, async ({ page }) => {
   await page.goto(`/#/dives/${diveId}`);
-  await page.getByRole('button', { name: 'Choose dive site' }).click();
+  await page.getByRole('button', { name: 'Add site' }).click();
   const dialog = page.getByRole('dialog', { name: 'Dive site' });
   await dialog.getByRole('searchbox', { name: 'Find a dive site' }).fill('Nowhere Pinnacle');
   await expect(dialog.getByRole('status')).toHaveText('No dive sites match “Nowhere Pinnacle”.');

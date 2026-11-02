@@ -17,13 +17,17 @@ const NEW = '__new__';
  * Who else was on the Dive (ADR 0028): any Diver of the instance, as buddy, guide or instructor. Saved as one list with
  * the Dive's version; Providers that take buddies see the Dive changed.
  * One of the Dive's facts (a `dt` and `dd` for its list): the names with their roles, and beside them the ways to add
- * someone and to change roles or take someone off, each in a dialog. With nobody, the fact is the way to add someone.
+ * someone and to change roles or take someone off, each in a dialog. With nobody there is no fact: the page offers "Add
+ * buddies" (its `adding` state is the page's), and this still holds the dialog that opens.
  */
-export function Participants({ dive: d }: { dive: DiveView }) {
+export function Participants({ dive: d, adding, onAddingChange: setAdding, emptied }: {
+  dive: DiveView; adding: boolean; onAddingChange: (adding: boolean) => void;
+  /** Taking the last one off: the page puts focus on its way to add someone. */
+  emptied: () => void;
+}) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
-  const [adding, setAdding] = useState(false);
   const [changing, setChanging] = useState(false);
   const labelId = useId();
   const addButton = useRef<HTMLButtonElement>(null);
@@ -33,8 +37,15 @@ export function Participants({ dive: d }: { dive: DiveView }) {
   useEffect(() => {
     if (!changing || !nobody) return;
     setChanging(false);
+    requestAnimationFrame(emptied);
+  }, [changing, nobody, emptied]);
+  // The first one added from the page's "Add buddies" chip: the chip goes with it, so focus goes to the fact's own way to add someone.
+  const firstAdded = useRef(false);
+  useEffect(() => {
+    if (nobody || !firstAdded.current) return;
+    firstAdded.current = false;
     requestAnimationFrame(() => addButton.current?.focus());
-  }, [changing, nobody]);
+  }, [nobody, adding]);
   const save = useMutation({
     mutationFn: async (participants: { diverId: string; role: ParticipantRole }[]) => unwrap(await api.PUT('/api/dives/{id}/participants', {
       params: { path: { id: d.id } }, body: { version: d.version, participants },
@@ -60,25 +71,25 @@ export function Participants({ dive: d }: { dive: DiveView }) {
   const problem = save.error && <Notice tone="danger">{stale ? t('participants.changedMeanwhile') : errorText(save.error)}</Notice>;
 
   return (
-    <div className="fact-wide">
-      <dt id={labelId}>{t('participants.title')}</dt>
-      <dd>
-        <div className="site-fact" role="group" aria-labelledby={labelId}>
-          {!nobody && (
-            <ul className="people-fact">
-              {d.participants.map((p) => <li key={p.diverId}><DiverAvatar inline name={p.name} diverId={p.diverId} /><span>{t('participants.withRole', { name: p.name, role: t(`participants.role.${p.role}`) })}</span></li>)}
-            </ul>
-          )}
-          {!nobody && (
-            <Button variant="quiet" size="small" icon="edit" aria-label={t('common.forItem', { action: t('participants.change'), item: t('participants.title') })}
-              onPress={() => { save.reset(); setChanging(true); }}>
-              {t('participants.change')}
-            </Button>
-          )}
-          <Button ref={addButton} variant="quiet" size="small" icon="add" onPress={() => { save.reset(); setAdding(true); }}>{t('participants.add')}</Button>
+    <>
+      {!nobody && (
+        <div className="fact-wide">
+          <dt id={labelId}>{t('participants.title')}</dt>
+          <dd>
+            <div className="site-fact" role="group" aria-labelledby={labelId}>
+              <ul className="people-fact">
+                {d.participants.map((p) => <li key={p.diverId}><DiverAvatar inline name={p.name} diverId={p.diverId} /><span>{t('participants.withRole', { name: p.name, role: t(`participants.role.${p.role}`) })}</span></li>)}
+              </ul>
+              <Button variant="quiet" size="small" icon="edit" aria-label={t('common.forItem', { action: t('participants.change'), item: t('participants.title') })}
+                onPress={() => { save.reset(); setChanging(true); }}>
+                {t('participants.change')}
+              </Button>
+              <Button ref={addButton} variant="quiet" size="small" icon="add" onPress={() => { save.reset(); setAdding(true); }}>{t('participants.add')}</Button>
+            </div>
+            {!adding && !changing && problem}
+          </dd>
         </div>
-        {!adding && !changing && problem}
-      </dd>
+      )}
       <Dialog title={t('participants.title')} isOpen={changing && !nobody} onOpenChange={setChanging}>
         <ul className="diver-list" ref={rows}>
           {d.participants.map((p, index) => (
@@ -112,11 +123,15 @@ export function Participants({ dive: d }: { dive: DiveView }) {
         <AddParticipant
           dive={d} onClose={() => setAdding(false)} isPending={save.isPending} error={save.error}
           onAdd={(diverId, role, name) => save.mutate([...list, { diverId, role }], {
-            onSuccess: () => { announce(t('participants.added', { name, role: t(`participants.role.${role}`) })); setAdding(false); },
+            onSuccess: () => {
+              firstAdded.current = list.length === 0;
+              announce(t('participants.added', { name, role: t(`participants.role.${role}`) }));
+              setAdding(false);
+            },
           })}
         />
       )}
-    </div>
+    </>
   );
 }
 

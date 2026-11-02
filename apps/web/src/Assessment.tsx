@@ -199,18 +199,20 @@ export function AssessmentPanel({ dive, diverName }: { dive: DiveView; diverName
 }
 
 /**
- * The note that stands under every assessment (ADR 0036, as amended 2026-10-07): two sentences in the panel, and the
- * full text one step away, with what an assessment is and what the no-fly time rests on.
+ * The note that stands under every assessment (ADR 0036, as amended 2026-10-07): two sentences in a disclosure, and the
+ * full text one step further, with what an assessment is and what the no-fly time rests on.
  */
 function FixedNote({ noFly }: { noFly: boolean }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <>
-      <p className="assessment-note">
-        {t('assessment.noteShort')}{' '}
-        <Button variant="quiet" size="small" onPress={() => setOpen(true)}>{t('assessment.aboutLink')}</Button>
-      </p>
+      <Disclosure className="assessment-notes" title={t('assessment.notes')}>
+        <p className="assessment-note">
+          {t('assessment.noteShort')}{' '}
+          <Button variant="quiet" size="small" onPress={() => setOpen(true)}>{t('assessment.aboutLink')}</Button>
+        </p>
+      </Disclosure>
       <Dialog title={t('assessment.aboutLink')} isOpen={open} onOpenChange={setOpen}>
         <div className="assessment-about">
           <p>{t('assessment.aboutWhat')}</p>

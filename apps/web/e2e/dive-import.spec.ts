@@ -2,7 +2,12 @@
 // typed by hand, one from a Mares, and entries between two of her dives here. What the import may do, the window, the
 // preview with the computer and a decision, the outcome, and the dives it made or linked.
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, LENA_SSI, conflictForLena, externalDiver, leaveLena, lenaClaimable, lenaReady, uniqueWord } from './support.ts';
+import { E2E_BASE_URL, LENA_SSI, conflictForLena, externalDiver, leaveLena, lenaClaimable, lenaReady, uniqueWord, setPreferences } from './support.ts';
+
+// Another spec in this worker may have left German or imperial units set.
+test.beforeAll(async ({ request }) => {
+  await setPreferences(request, { language: null, units: null });
+});
 
 const headers = { origin: E2E_BASE_URL };
 
@@ -125,7 +130,7 @@ test('a buddy imported earlier is claimed by connecting their own SSI account, a
     await panel.getByRole('button', { name: 'Connect to SSI' }).click();
     await expect(panel.getByText(/^This SSI account is Lena Berger \d+ here, a buddy on 0 dives\. Is that you\?$/)).toBeVisible();
     await panel.getByRole('button', { name: /^Yes, I am Lena Berger/ }).click();
-    await expect(panel.getByRole('cell', { name: LENA_SSI.login, exact: true })).toBeVisible();
+    await expect(panel.getByRole('cell').getByText(LENA_SSI.login, { exact: true })).toBeVisible(); // a table or, with less room, cards
     await page.goto('/#/divers');
     await expect(page.getByText(/^Lena Berger/)).toHaveCount(0);
   } finally {
@@ -137,11 +142,12 @@ test('an admin merges an external diver into another one', { tag: ['@divers'] },
   const name = `Merge me ${Date.now()}`;
   await externalDiver(request, name);
   await page.goto('/#/divers');
-  await page.getByRole('button', { name: `Merge into…: ${name}` }).click();
+  await page.getByRole('button', { name: `Actions: ${name}` }).click();
+  await page.getByRole('menuitem', { name: 'Merge into…' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('searchbox').fill('Lena');
   await dialog.getByRole('option', { name: /^Lena/ }).first().click();
   await expect(dialog).toBeHidden();
   // Gone from Other divers (the announcement still names it).
-  await expect(page.getByRole('button', { name: `Merge into…: ${name}` })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: `Actions: ${name}` })).toHaveCount(0);
 });

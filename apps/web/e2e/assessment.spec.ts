@@ -66,6 +66,9 @@ test('shows each finding as one row with its numbers; guidance, sources and acti
   await expect(panel.getByText(/^Flying after this dive: not before .+ \(12 hours after a single dive without decompression stops\)\./)).toBeVisible();
   // No score, no verdict. The fixed note is short, and its full text one step away.
   await expect(panel).not.toContainText(/score|unsafe|dangerous/i);
+  // The note is in a disclosure, closed until asked for.
+  await expect(panel.getByText(/^Not medical advice/)).toBeHidden();
+  await panel.getByRole('button', { name: 'Notes', exact: true }).click();
   await expect(panel.getByText(/^Not medical advice, and no measure of how safe a dive was\. With symptoms after a dive, call DAN or the emergency services\./)).toBeVisible();
   await expect(page.getByText(/decompression sickness can happen within every limit/)).toHaveCount(0);
   await panel.getByRole('button', { name: 'What the assessment can and can’t tell' }).click();
@@ -128,7 +131,8 @@ test('puts a finding aside on the dive and mutes a rule for the Diver; the logbo
 
   // The muted rule is listed with its Diver, and comes back from there.
   await page.goto('/#/divers');
-  const erika = page.getByRole('listitem').filter({ hasText: 'Not shown in Erika’s assessments:' });
+  await page.getByRole('link', { name: 'Erika', exact: true }).first().click();
+  const erika = page.locator('.muted-rules');
   await expect(erika).toContainText('Fast ascent');
   await erika.getByRole('button', { name: 'Show again: Fast ascent, Erika' }).click();
   await expect(page.getByText('Not shown in Erika’s assessments:')).toHaveCount(0);

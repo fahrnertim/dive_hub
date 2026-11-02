@@ -24,18 +24,16 @@
     "main": "Hauptmenü",
     "skipToContent": "Zum Inhalt springen",
     "logbook": "Logbuch",
-    "admin": "Verwaltung",
-    "account": "Mein Konto",
     "myCertifications": "Meine Zertifizierungen",
-    "connections": "Verbindungen",
     "divers": "Taucher",
     "accountMenu": ", Konto",
-    "administration": "Verwaltung",
     "toDecide_one": "{{count}} zu entscheiden",
     "toDecide_other": "{{count}} zu entscheiden",
     "sites": "Tauchplätze",
     "centres": "Tauchbasen",
-    "tools": "Werkzeuge"
+    "tools": "Werkzeuge",
+    "settings": "Einstellungen",
+    "short": { "sites": "Plätze", "centres": "Basen", "tools": "Werkzeug" }
   },
   "form": {
     "requiredLegend": "* erforderlich",
@@ -80,9 +78,6 @@
     "submit": "Passwort festlegen"
   },
   "account": {
-    "title": "Mein Konto",
-    "parts": "Teile des Kontos",
-    "tab": { "account": "Konto", "connections": "Verbindungen", "ai": "KI-Zugang" },
     "changePassword": "Passwort ändern",
     "currentPassword": "Aktuelles Passwort",
     "newPassword": "Neues Passwort",
@@ -99,7 +94,6 @@
     "signOutOthers": "Überall sonst abmelden",
     "unknownDevice": "Unbekanntes Gerät",
     "agent": "{{browser}} auf {{os}}",
-    "display": "Anzeige",
     "language": "Sprache",
     "languageAuto": "Wie im Browser",
     "units": "Einheiten",
@@ -112,6 +106,17 @@
     "signOutOthersBody": "Alle anderen Browser und Geräte, auf denen du angemeldet bist, müssen sich neu anmelden.",
     "signOutThisTitle": "Auf diesem Gerät abmelden?",
     "signOutThisBody": "Zum erneuten Anmelden brauchst du dein Passwort."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "section": {
+      "display": "Anzeige",
+      "security": "Anmeldung und Sicherheit",
+      "connections": "Verbindungen",
+      "ai-access": "KI-Zugang",
+      "devices": "Geräte",
+      "admin": "Verwaltung"
+    }
   },
   "admin": {
     "inviteTitle": "Jemanden einladen",
@@ -243,7 +248,6 @@
     "uploading_other": "{{count}} Dateien werden hochgeladen …",
     "finished": "{{name}}: {{result}}",
     "importFiles": "Dateien importieren",
-    "dropAnywhere": "Du kannst Tauchgangsdateien und ZIPs auch irgendwo auf dieser Seite ablegen.",
     "dropNow": "Zum Importieren ablegen",
     "recent": "Importe",
     "none": "Noch nichts importiert.",
@@ -275,13 +279,6 @@
     "allSites": "Alle Tauchgänge zeigen",
     "findings_one": "{{count}} Hinweis",
     "findings_other": "{{count}} Hinweise",
-    "totals": {
-      "label": "Insgesamt",
-      "dives": "Tauchgänge",
-      "underWater": "Unter Wasser",
-      "deepest": "Größte Tiefe",
-      "lastDive": "Letzter Tauchgang"
-    },
     "sortBy": "Sortieren nach",
     "sort": {
       "newest": "Neueste zuerst",
@@ -295,6 +292,7 @@
     },
     "showOnly": "Nur anzeigen",
     "filterAndSort": "Filtern und sortieren",
+    "filterAndSortOn": "Filtern und sortieren, {{count}} an",
     "only": {
       "noRecording": "Keine Aufzeichnung",
       "noSite": "Kein Tauchplatz",
@@ -304,6 +302,11 @@
     },
     "monthFigures_one": "{{count}} Tauchgang · {{time}}",
     "monthFigures_other": "{{count}} Tauchgänge · {{time}}",
+    "summary_one": "{{formatted}} Tauchgang · {{time}} unter Wasser · am tiefsten {{depth}}",
+    "summary_other": "{{formatted}} Tauchgänge · {{time}} unter Wasser · am tiefsten {{depth}}",
+    "filters": "Filter",
+    "filtersOn": "Filter, {{count}} an",
+    "more": "Mehr",
     "numberLabel": "Nummer",
     "noSite": "Kein Tauchplatz",
     "noRecording": "Keine Aufzeichnung",
@@ -355,6 +358,10 @@
     "waterTemperature": "Wassertemperatur",
     "notes": "Notizen",
     "addNotes": "Notizen hinzufügen",
+    "addSite": "Tauchplatz hinzufügen",
+    "addBuddies": "Buddys hinzufügen",
+    "addDetails": "Angaben hinzufügen",
+    "about": "Über diesen Tauchgang",
     "edited": "bearbeitet",
     "fromRecording": "Aufzeichnung: {{value}}",
     "resetToRecording": "Wert der Aufzeichnung verwenden",
@@ -927,7 +934,7 @@
     "others": "Andere Taucher",
     "othersIntro": "Leute, mit denen du oder andere Benutzer getaucht sind und die hier kein Logbuch führen. Alle Benutzer sehen ihre Namen und was in ihrem SSI-Code steht; wer jemanden hinzugefügt hat, oder ein Admin, kann ihn löschen, solange kein Tauchgang ihn nennt.",
     "findOther": "Nach Namen suchen",
-    "noOthers": "Noch keine anderen Taucher. Füge sie hier hinzu, bei einem Tauchgang oder aus deiner SSI-Buddyliste auf deiner Kontoseite.",
+    "noOthers": "Noch keine anderen Taucher. Füge sie hier hinzu, bei einem Tauchgang oder aus deiner SSI-Buddyliste unter Einstellungen → Verbindungen.",
     "noOtherMatch": "Kein anderer Taucher namens „{{q}}“.",
     "addOther": "Jemanden hinzufügen, mit dem du getaucht bist",
     "createOther": "Buddy hinzufügen",
@@ -944,7 +951,14 @@
     "mergeIntro": "Wähle den Taucher, der {{name}} ist. Die Tauchgänge, die {{name}} nennen, nennen dann diesen Taucher, und die Konten von {{name}} gehen auf ihn über. Das lässt sich nicht rückgängig machen.",
     "merged": "{{name}} mit {{into}} zusammengeführt.",
     "mutedRules": "In den Auswertungen von {{name}} ausgeblendet:",
-    "showRule": "Wieder zeigen"
+    "showRule": "Wieder zeigen",
+    "actions": "Aktionen",
+    "cards_one": "{{count}} Karte",
+    "cards_other": "{{count}} Karten",
+    "back": "Taucher",
+    "backToDivers": "Zu den Tauchern",
+    "notFound": "Taucher nicht gefunden",
+    "notFoundBody": "Dieser Taucher gehört nicht zu deinen Tauchern: Er wurde vielleicht gelöscht, oder du führst sein Logbuch nicht."
   },
   "geo": {
     "north": "N",
@@ -1851,7 +1865,7 @@
     "title": "KI-Zugang",
     "lead": "Lass einen KI-Assistenten wie Claude Code oder VS Code dein Logbuch lesen. Er verbindet sich mit diesem Dive Hub über einen Schlüssel, den du hier erstellst. Er kann nur lesen: An deinem Logbuch lässt sich darüber nichts ändern.",
     "off": "Der KI-Zugang ist auf diesem Dive Hub ausgeschaltet. Ein Admin kann ihn einschalten.",
-    "offAdmin": "Der KI-Zugang ist auf diesem Dive Hub ausgeschaltet. Du kannst ihn unter <a>Admin</a> einschalten.",
+    "offAdmin": "Der KI-Zugang ist auf diesem Dive Hub ausgeschaltet. Du kannst ihn unter <a>Verwaltung</a> einschalten.",
     "offExisting": "Deine KI-Zugänge funktionieren bis dahin nicht.",
     "sharedTitle": "Was dein KI-Anbieter bekommt",
     "sharedLead": "Was der Assistent liest, geht an das Unternehmen dahinter, etwa Anthropic oder OpenAI, und wird nach dessen Bedingungen verarbeitet, nicht nach denen dieses Dive Hub:",
@@ -1929,6 +1943,7 @@
     "notCovered": "Die Auswertung deckt diese Art Tauchgang (Apnoe, Kreislaufgerät) noch nicht ab.",
     "pending": "Dieser Tauchgang wird gerade mit neueren Regeln erneut ausgewertet. Lade gleich neu.",
     "note": "Kein medizinischer Rat und kein Maß dafür, wie sicher ein Tauchgang war: Eine Dekompressionskrankheit kann innerhalb aller Grenzen auftreten, und die meisten Tauchgänge mit Hinweisen enden ohne Schaden. Bei Beschwerden nach einem Tauchgang (ungewöhnliche Müdigkeit, Gelenkschmerzen, Hautveränderungen, Taubheit, Schwindel) ruf DAN oder den Notruf an.",
+    "notes": "Anmerkungen",
     "noteShort": "Kein medizinischer Rat und kein Maß dafür, wie sicher ein Tauchgang war. Bei Beschwerden nach einem Tauchgang ruf DAN oder den Notruf an.",
     "aboutLink": "Was die Auswertung sagen kann und was nicht",
     "aboutWhat": "Die Auswertung zeigt, was an einem Tauchgang gegenüber veröffentlichten Empfehlungen auffällt, mit den Zahlen und der Quelle der Empfehlung. Ihre Regeln und Schwellen sind für jeden Tauchgang dieselben.",
@@ -2433,6 +2448,20 @@
       "descentRate": "Abstiegsgeschwindigkeit",
       "ascentRate": "Aufstiegsgeschwindigkeit",
       "hintPlan": "Lass ein Feld leer, um den grau angezeigten Wert zu verwenden. Die Liste unter dem Plan sagt, woher jeder Wert kommt."
+    },
+    "settingsSummary": "{{water}} · {{altitude}} · {{rule}} · {{sac}} L/min · GF {{gf}}",
+    "settingsSummaryPlan": "{{water}} · {{altitude}} · {{rule}}",
+    "summary": {
+      "seaLevel": "Meereshöhe",
+      "altitude": "{{value}} Höhe",
+      "rule": {
+        "rock_bottom": "Rock Bottom",
+        "reserve": "feste Reserve {{bar}}",
+        "ascent_pressure": "fester Aufstiegsdruck {{bar}}",
+        "halves": "Halbe-Halbe",
+        "thirds": "Drittel",
+        "sixths": "Sechstel"
+      }
     },
     "rules": {
       "label": "Gasregel",

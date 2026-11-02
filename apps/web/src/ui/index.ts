@@ -15,3 +15,4 @@ export { DateTimeField, NumberField, Select, TextArea } from './Fields.tsx';
 export { TextField } from './TextField.tsx';
 export { SEARCH_SHOWN, SearchList, type SearchListItem } from './SearchList.tsx';
 export { QrCode } from './QrCode.tsx';
+export { DiveSkeleton, LogbookSkeleton, RowsSkeleton, Skeleton, SkeletonBlock, SkeletonLine, useDelayed } from './Skeleton.tsx';

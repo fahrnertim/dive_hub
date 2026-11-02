@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { keys, pushRunPreviewQuery, startPushRun, type PushRunChoices, type PushRunPreview } from './api.ts';
 import { announce } from './lib/announce.ts';
-import { accountHref } from './lib/account-tabs.ts';
+import { settingsHref } from './lib/settings.ts';
 import { useErrorText } from './lib/display.ts';
 import { Button, ConfirmButton, Dialog, Muted, Notice } from './ui/index.ts';
 
@@ -35,7 +35,7 @@ export function HeldAtProvider({ held, name, onNavigate }: { held: PushRunPrevie
           <li key={h.diveId}>{t('pushRun.heldLine', { wanted: h.wanted, when: h.holder?.startsAt ?? '?', name })}</li>
         ))}
       </ul>
-      <p><a href={accountHref('connections')} onClick={onNavigate}>{t('pushRun.heldImport', { name })}</a></p>
+      <p><a href={settingsHref('connections')} onClick={onNavigate}>{t('pushRun.heldImport', { name })}</a></p>
     </div>
   );
 }

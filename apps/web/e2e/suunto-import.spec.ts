@@ -2,7 +2,7 @@
 // Suunto's model in our words and what the computer noted beside the assessment.
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, setPreferences } from './support.ts';
+import { E2E_BASE_URL, diveRows, setPreferences } from './support.ts';
 
 test.beforeEach(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
@@ -44,5 +44,12 @@ test('imports a Suunto JSON export and shows its computer\'s data', { tag: ['@di
 
 test('says in the import texts that Suunto files are read', { tag: ['@dives'] }, async ({ page }) => {
   await page.goto('/#/');
-  await expect(page.getByText('You can also drop dive files and zips anywhere on this page.')).toBeVisible();
+  await expect(diveRows(page).first()).toBeVisible();
+  // The hint is where the files are dropped: the overlay that shows while they are dragged over the page.
+  await page.evaluate(() => {
+    const data = new DataTransfer();
+    data.items.add(new File([new Uint8Array([0])], 'dive.fit'));
+    document.querySelector('main')!.dispatchEvent(new DragEvent('dragenter', { dataTransfer: data, bubbles: true, cancelable: true }));
+  });
+  await expect(page.getByText('Drop Garmin or Suunto dive files or zips here')).toBeVisible();
 });

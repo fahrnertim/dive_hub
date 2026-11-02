@@ -23,12 +23,16 @@ const AREAS = [
   [/^apps\/web\/src\/(DivePage|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|AppendDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|answer|sketch|logbook|review|devices|importable|deletion|assessment|waiting-push)\.ts$/, ['@dives']],
   // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
   [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
-  [/^apps\/web\/src\/DiversPage\.tsx$/, ['@divers']],
-  // A Diver's body weight (ADR 0031), a dialog on the divers page.
+  [/^apps\/web\/src\/DiversPage\.tsx$|^apps\/web\/src\/DiverPage\.tsx$|^apps\/web\/src\/lib\/divers\.ts$/, ['@divers']],
+  [/^apps\/web\/src\/Devices\.tsx$/, ['@divers', '@account']],
+  // A Diver's body weight (ADR 0031), a dialog on a Diver's page.
   [/^apps\/web\/src\/BodyWeight\.tsx$/, ['@divers']],
-  // A Diver certification cards (ADR 0050), a section of the divers page (slice 25c); their server side also takes part in the import.
+  // A Diver certification cards (ADR 0050), a section of a Diver's page (slice 25c); their server side also takes part in the import.
   [/^apps\/web\/src\/Certifications\.tsx$|^apps\/server\/src\/certifications\//, ['@divers', '@account']],
-  [/^apps\/web\/src\/(SignedOut|AccountPage|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/(account-tabs|form)\.ts$/, ['@account']],
+  [/^apps\/web\/src\/(SignedOut|AccountSettings|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
+  [/^apps\/web\/src\/SettingsPage\.tsx$/, ['@account', '@admin']],
+  // The Settings addresses: also the links to a Connection's settings from a Dive's panels, an Import and a push run.
+  [/^apps\/web\/src\/lib\/settings\.ts$/, ['@account', '@admin', '@dives']],
   // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
   [/^apps\/web\/src\/(ProviderDiveImport|GoneDives|ProviderAutomation)\.tsx$/, ['@account', '@dives']],
   // A Dive at a Provider, and a Conflict with it asked on the Dive's page and waiting on the Review page (ADR 0056).
@@ -37,7 +41,7 @@ const AREAS = [
   [/^apps\/web\/src\/(NumberChain|ProviderDiveNumbers)\.tsx$/, ['@dives', '@account']],
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
-  [/^apps\/web\/src\/AdminPage\.tsx$/, ['@admin']],
+  [/^apps\/web\/src\/AdminSettings.tsx$/, ['@admin']],
   // The Tools page (ADR 0032): gas numbers and bottom time; its server computation and the MCP tool that answers the same.
   [/^apps\/web\/src\/Tools(Page|Plan|PlanProfile|Lead)\.tsx$|^apps\/web\/src\/ProfilePlot\.tsx$|^apps\/web\/src\/lib\/tools\.ts$|^apps\/server\/src\/planning\/|^apps\/server\/src\/lead\/|^apps\/server\/src\/mcp\/tools-planning(-gas-plan)?.ts$/, ['@tools']],
   // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.

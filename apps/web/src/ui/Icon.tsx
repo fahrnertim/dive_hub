@@ -3,7 +3,7 @@
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
   ArrowDown, ArrowLeftToLine, ArrowRightLeft, ArrowUp, Award, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, TriangleAlert,
-  CircleCheck, CircleUser, Clock, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Shield, ShieldOff,
+  CircleCheck, CircleUser, Clock, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Settings, Shield, ShieldOff,
   Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, Wrench, X, type LucideIcon,
 } from 'lucide-react';
 
@@ -22,6 +22,8 @@ const ICONS = {
   external: ExternalLink,
   admin: Shield,
   account: CircleUser,
+  /** Settings: the account, Connections, AI access, Devices and Administration (UI overhaul). */
+  settings: Settings,
   user: User,
   /** A certification card (ADR 0050). */
   certification: Award,

@@ -24,18 +24,16 @@
     "main": "Main",
     "skipToContent": "Skip to content",
     "logbook": "Logbook",
-    "admin": "Admin",
-    "account": "My account",
     "myCertifications": "My certifications",
-    "connections": "Connections",
     "divers": "Divers",
     "accountMenu": ", account",
-    "administration": "Administration",
     "toDecide_one": "{{count}} to decide",
     "toDecide_other": "{{count}} to decide",
     "sites": "Dive sites",
     "centres": "Dive centres",
-    "tools": "Tools"
+    "tools": "Tools",
+    "settings": "Settings",
+    "short": { "sites": "Sites", "centres": "Centres", "tools": "Tools" }
   },
   "form": {
     "required": "Fill in this field.",
@@ -80,9 +78,6 @@
     "submit": "Set password"
   },
   "account": {
-    "title": "My account",
-    "parts": "Parts of the account",
-    "tab": { "account": "Account", "connections": "Connections", "ai": "AI access" },
     "changePassword": "Change password",
     "currentPassword": "Current password",
     "newPassword": "New password",
@@ -99,7 +94,6 @@
     "signOutOthers": "Sign out everywhere else",
     "unknownDevice": "Unknown device",
     "agent": "{{browser}} on {{os}}",
-    "display": "Display",
     "language": "Language",
     "languageAuto": "Same as the browser",
     "units": "Units",
@@ -112,6 +106,17 @@
     "signOutOthersBody": "Every other browser and device where you’re signed in has to sign in again.",
     "signOutThisTitle": "Sign out on this device?",
     "signOutThisBody": "You’ll need your password to sign in again."
+  },
+  "settings": {
+    "title": "Settings",
+    "section": {
+      "display": "Display",
+      "security": "Sign-in and security",
+      "connections": "Connections",
+      "ai-access": "AI access",
+      "devices": "Devices",
+      "admin": "Administration"
+    }
   },
   "admin": {
     "inviteTitle": "Invite someone",
@@ -243,7 +248,6 @@
     "uploading_other": "Uploading {{count}} files…",
     "finished": "{{name}}: {{result}}",
     "importFiles": "Import files",
-    "dropAnywhere": "You can also drop dive files and zips anywhere on this page.",
     "dropNow": "Drop to import",
     "recent": "Imports",
     "none": "Nothing imported yet.",
@@ -275,13 +279,6 @@
     "allSites": "Show all dives",
     "findings_one": "{{count}} finding",
     "findings_other": "{{count}} findings",
-    "totals": {
-      "label": "In total",
-      "dives": "Dives",
-      "underWater": "Under water",
-      "deepest": "Deepest",
-      "lastDive": "Last dive"
-    },
     "sortBy": "Sort by",
     "sort": {
       "newest": "Newest first",
@@ -295,6 +292,7 @@
     },
     "showOnly": "Show only",
     "filterAndSort": "Filter and sort",
+    "filterAndSortOn": "Filter and sort, {{count}} on",
     "only": {
       "noRecording": "No recording",
       "noSite": "No dive site",
@@ -304,6 +302,11 @@
     },
     "monthFigures_one": "{{count}} dive · {{time}}",
     "monthFigures_other": "{{count}} dives · {{time}}",
+    "summary_one": "{{formatted}} dive · {{time}} under water · deepest {{depth}}",
+    "summary_other": "{{formatted}} dives · {{time}} under water · deepest {{depth}}",
+    "filters": "Filters",
+    "filtersOn": "Filters, {{count}} on",
+    "more": "More",
     "numberLabel": "Number",
     "noSite": "No dive site",
     "noRecording": "No recording",
@@ -355,6 +358,10 @@
     "waterTemperature": "Water temperature",
     "notes": "Notes",
     "addNotes": "Add notes",
+    "addSite": "Add site",
+    "addBuddies": "Add buddies",
+    "addDetails": "Add details",
+    "about": "About this dive",
     "edited": "edited",
     "fromRecording": "Recording: {{value}}",
     "resetToRecording": "Use the recording’s value",
@@ -927,7 +934,7 @@
     "others": "Other divers",
     "othersIntro": "People you or other users dived with who keep no logbook here. Every user sees their names and what their SSI code says; whoever added someone, or an admin, can delete them while no dive lists them.",
     "findOther": "Find by name",
-    "noOthers": "No other divers yet. Add them here, from a dive, or from your SSI buddy list on your account page.",
+    "noOthers": "No other divers yet. Add them here, from a dive, or from your SSI buddy list under Settings → Connections.",
     "noOtherMatch": "No other diver called “{{q}}”.",
     "addOther": "Add someone you dived with",
     "createOther": "Add buddy",
@@ -944,7 +951,14 @@
     "mergeIntro": "Pick the diver who is {{name}}. The dives that list {{name}} then list that diver, and {{name}}’s accounts move to them. This can’t be undone.",
     "merged": "{{name}} merged into {{into}}.",
     "mutedRules": "Not shown in {{name}}’s assessments:",
-    "showRule": "Show again"
+    "showRule": "Show again",
+    "actions": "Actions",
+    "cards_one": "{{count}} card",
+    "cards_other": "{{count}} cards",
+    "back": "Divers",
+    "backToDivers": "To the Divers",
+    "notFound": "Diver not found",
+    "notFoundBody": "This Diver isn’t in your Divers: it may have been deleted, or its logbook isn’t one you keep."
   },
   "geo": {
     "north": "N",
@@ -1851,7 +1865,7 @@
     "title": "AI access",
     "lead": "Let an AI assistant such as Claude Code or VS Code read your logbook. It connects to this Dive Hub with a key you create here. It can only read: nothing in your logbook can be changed through it.",
     "off": "AI access is switched off on this Dive Hub. An admin can switch it on.",
-    "offAdmin": "AI access is switched off on this Dive Hub. You can switch it on under <a>Admin</a>.",
+    "offAdmin": "AI access is switched off on this Dive Hub. You can switch it on under <a>Administration</a>.",
     "offExisting": "Your AI accesses don’t work until then.",
     "sharedTitle": "What your AI provider gets",
     "sharedLead": "Whatever the assistant reads is sent to the company behind it, such as Anthropic or OpenAI, and handled under that company’s terms, not this Dive Hub’s:",
@@ -1929,6 +1943,7 @@
     "notCovered": "The assessment doesn’t cover this kind of dive (freediving, rebreathers) yet.",
     "pending": "This dive is being assessed again with newer rules. Reload in a moment.",
     "note": "Not medical advice, and no measure of how safe a dive was: decompression sickness can happen within every limit, and most dives with findings end without harm. With symptoms after a dive (unusual tiredness, joint pain, skin changes, numbness, dizziness), call DAN or the emergency services.",
+    "notes": "Notes",
     "noteShort": "Not medical advice, and no measure of how safe a dive was. With symptoms after a dive, call DAN or the emergency services.",
     "aboutLink": "What the assessment can and can’t tell",
     "aboutWhat": "The assessment shows what stands out on a dive against published guidance, with the numbers and where the guidance comes from. Its rules and thresholds are the same for every dive.",
@@ -2433,6 +2448,20 @@
       "descentRate": "Descent rate",
       "ascentRate": "Ascent rate",
       "hintPlan": "Leave a field empty to use the value shown in grey. The list under the plan says where each value came from."
+    },
+    "settingsSummary": "{{water}} · {{altitude}} · {{rule}} · {{sac}} L/min · GF {{gf}}",
+    "settingsSummaryPlan": "{{water}} · {{altitude}} · {{rule}}",
+    "summary": {
+      "seaLevel": "sea level",
+      "altitude": "{{value}} altitude",
+      "rule": {
+        "rock_bottom": "rock bottom",
+        "reserve": "fixed reserve {{bar}}",
+        "ascent_pressure": "fixed ascent pressure {{bar}}",
+        "halves": "halves",
+        "thirds": "thirds",
+        "sixths": "sixths"
+      }
     },
     "rules": {
       "label": "Gas rule",

@@ -1,7 +1,12 @@
 // SSI as a Target in a real browser (ADR 0024), against the e2e server's fake SSI: connecting the account,
 // signing in again, disconnecting; picking the SSI site, sending a Dive, updating it and deleting it there.
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, SSI_ACCOUNT, connectSsi, disconnectSsi, editElsewhere, expectGoodPage, leaveSsi, openLine, readyForSsi, resetDive } from './support.ts';
+import { E2E_BASE_URL, SSI_ACCOUNT, connectSsi, disconnectSsi, editElsewhere, expectGoodPage, leaveSsi, openLine, readyForSsi, resetDive, setPreferences } from './support.ts';
+
+// Another spec in this worker may have left German or imperial units set.
+test.beforeAll(async ({ request }) => {
+  await setPreferences(request, { language: null, units: null });
+});
 
 test('connects a Diver to SSI, signs in again with another choice, and disconnects', { tag: ['@account'] }, async ({ page, request }) => {
   await resetDive(request);
@@ -20,7 +25,7 @@ test('connects a Diver to SSI, signs in again with another choice, and disconnec
   await panel.getByText('Keep me signed in').click();
   await panel.getByRole('button', { name: 'Connect to SSI' }).click();
   await expect(panel.getByText('Connected, password kept')).toBeVisible();
-  await expect(panel.getByRole('cell', { name: SSI_ACCOUNT.login, exact: true })).toBeVisible();
+  await expect(panel.getByRole('cell').getByText(SSI_ACCOUNT.login, { exact: true })).toBeVisible(); // a table or, with less room, cards
 
   // The e2e instance keeps several Divers, so each row names its Diver too.
   await panel.getByRole('button', { name: `Sign in again: Erika, ${SSI_ACCOUNT.login}` }).click();

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useId, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
@@ -26,7 +26,7 @@ import { SitePicker } from './SitePicker.tsx';
 import { Participants } from './Participants.tsx';
 import { ProviderPanels } from './ProviderPanel.tsx';
 import { DiveCodes } from './DiveCodes.tsx';
-import { ActionMenu, BackLink, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, NotFoundPage, Notice, PageHeader, Panel, Select } from './ui/index.ts';
+import { ActionMenu, BackLink, Button, ConfirmDialog, Dialog, DiveSkeleton, ErrorBoundary, Icon, Muted, NotFoundPage, Notice, PageHeader, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
 export function DivePage({ id, recordingId, list = '' }: { id: string; recordingId?: string | undefined; list?: string }) {
@@ -37,6 +37,7 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
   const divers = useQuery(diversQuery());
   // Appending this Dive to the one before it as its continuation (ADR 0063), when it may be.
   const append = useAppend(id);
+  const aboutId = useId();
   const neighbours = useQuery(diveNeighboursQuery(id, neighbourParams(logbookParams(new URLSearchParams(list)))));
   // "Logbook" goes back to the list as it was, on the page this Dive is on now (ADR 0042).
   const position = neighbours.data?.position;
@@ -53,7 +54,7 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
     : v.number !== null ? t('dive.title', { number: v.number }) : t('dive.titleNoNumber');
   usePageTitle(title);
 
-  if (dive.isPending) return <DiveLoading />;
+  if (dive.isPending) return <DiveSkeleton />;
   if (notFound) return <NotFoundPage title={title} message={errorText(dive.error)} back={{ href: logbook, label: t('dive.backToLogbook') }} />;
   // Only a first load that failed replaces the page; a failed refetch keeps the Dive already shown (below).
   if (dive.isLoadingError) {
@@ -70,13 +71,10 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
 
   return (
     <>
-      <div className="dive-trail">
-        <BackLink href={logbook} label={t('dive.back')} />
-        <Neighbours n={neighbours.data} list={list} />
-      </div>
       {dive.isRefetchError && <Notice tone="danger">{errorText(dive.error)}</Notice>}
-      <div className="dive-head">
+      <div className="dive-head reveal">
         <PageHeader
+          back={{ href: logbook, label: t('dive.back') }}
           title={title}
           meta={(
             <>
@@ -88,10 +86,11 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
               {several && diverName && <p className="title-meta">{t('dive.diver')}: {diverName}</p>}
             </>
           )}
-          actions={!editing && (
+          actions={(
             <>
-              <Button ref={editButton} icon="edit" onPress={() => setEditing('values')}>{t('dive.edit')}</Button>
-              <ActionMenu
+              <Neighbours n={neighbours.data} list={list} />
+              {!editing && <Button ref={editButton} icon="edit" onPress={() => setEditing('values')}>{t('dive.edit')}</Button>}
+              {!editing && <ActionMenu
                 label={t('dive.moreActions')} aria-label={t('common.forItem', { action: t('dive.moreActions'), item: title ?? '' })}
                 actions={[
                   ...(several ? [{ id: 'move', label: t('dive.moveTo'), icon: 'move' as const, onAction: () => setMoving(true) }] : []),
@@ -99,7 +98,7 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
                   ...append.actions,
                   { id: 'delete', label: t('dive.deleteMenu'), icon: 'delete', onAction: () => setDeleting(true) },
                 ]}
-              />
+              />}
             </>
           )}
         />
@@ -107,21 +106,23 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
       {!editing && <MergeHint dive={d} />}
       {/* The assessment belongs to the Primary recording's profile and to the panel under it (ADR 0036). */}
       <AssessmentProvider diveId={d.id}>
-        {/* The dive's facts and its profile are one panel: the profile is on the first screen (UI redesign, slice A). */}
-        <Panel>
+        {/* The facts strip, the profile under it and the details under that are one panel: the profile is on the first screen. */}
+        <Panel className="reveal dive-sheet">
           {editing
             ? <DiveEditForm key={d.version} dive={d} focus={editing === 'values' ? undefined : editing} onDone={() => setEditing(false)} />
-            : <DiveFacts dive={d} onAddNotes={() => setEditing('notes')} onAddCylinders={() => setEditing('cylinders')} onAddWeighting={() => setEditing('weighting')} />}
+            : <DiveFacts dive={d} />}
           <Recordings dive={d} initial={recordingId} list={list} />
+          {!editing && <DiveDetails dive={d} onAddNotes={() => setEditing('notes')} onAddCylinders={() => setEditing('cylinders')} onAddWeighting={() => setEditing('weighting')} />}
         </Panel>
         <AssessmentPanel dive={d} diverName={diverName} />
       </AssessmentProvider>
       {/* What is looked at now and then is one line each, until it is opened. */}
-      <div className="panel dive-lines">
+      <section className="panel dive-lines reveal" aria-labelledby={aboutId}>
+        <h2 id={aboutId} className="dive-about">{t('dive.about')}</h2>
         <ProviderPanels dive={d} diverName={diverName} />
         <DiveCodes dive={d} />
         <DiveHistory dive={d} />
-      </div>
+      </section>
       {moving && <MoveDialog dive={d} onClose={() => setMoving(false)} />}
       {merging && <MergePicker dive={d} onClose={() => setMerging(false)} />}
       {append.dialog(d)}
@@ -138,18 +139,6 @@ function TimeZoneNote({ dive: d }: { dive: DiveView }) {
   const { t } = useTranslation();
   if (d.utcOffsetSource === 'device' || d.overrides.includes('startsAt')) return null;
   return <p className="title-meta">{t(`dive.timeZone.${d.utcOffsetSource}`)}</p>;
-}
-
-/** Space for the dive while it loads, so the page doesn't jump when it arrives (UI review C10). */
-function DiveLoading() {
-  const { t } = useTranslation();
-  return (
-    <div className="loading" aria-busy="true">
-      <Muted>{t('common.loading')}</Muted>
-      <div className="panel skeleton skeleton-facts" />
-      <div className="panel skeleton skeleton-chart" />
-    </div>
-  );
 }
 
 /**
@@ -238,9 +227,10 @@ function EditedMark({ dive, field }: { dive: DiveView; field: OverridableField }
   );
 }
 
-/** One value of the facts grid; `wide` for values that need two columns, such as a position. */
-function Fact({ label, children, mark, wide }: { label: string; children: ReactNode; mark?: ReactNode; wide?: boolean }) {
-  return <div {...(wide && { className: 'fact-wide' })}><dt>{label}</dt><dd>{children}{mark}</dd></div>;
+/** One value of the facts grid; `wide` for values that need two columns, such as a position; `hero` for the four at the top. */
+function Fact({ label, children, mark, wide, hero }: { label: string; children: ReactNode; mark?: ReactNode; wide?: boolean; hero?: boolean }) {
+  const className = [wide && 'fact-wide', hero && 'fact-hero'].filter(Boolean).join(' ');
+  return <div {...(className && { className })}><dt>{label}</dt><dd>{children}{mark}</dd></div>;
 }
 
 /**
@@ -276,71 +266,82 @@ function useGasNames() {
 }
 
 /**
- * What the Dive was: its values, the gas of the Primary recording, where, with whom, and the notes. Who dived along
- * and the notes are facts too; empty, each is the way to add them.
+ * What the Dive was, at a glance: the four figures that say it at hero size (max depth, duration, water temperature, gas),
+ * then average depth, the water and the position smaller. The profile follows; the details with values come under it.
  */
-function DiveFacts({ dive: d, onAddNotes, onAddCylinders, onAddWeighting }: {
-  dive: DiveView; onAddNotes: () => void; onAddCylinders: () => void; onAddWeighting: () => void;
-}) {
+function DiveFacts({ dive: d }: { dive: DiveView }) {
   const { t } = useTranslation();
   const format = useFormatValue();
   const display = useDisplay();
-  const [picking, setPicking] = useState(false);
-  const weighting = useWeightingText();
   const primary = d.recordings.find((r) => r.isPrimary);
   const gases = useGasNames()(primary?.summary.gases);
   // A joined Recording's Surface breaks (ADR 0063): their time is said with the duration, which includes it.
   const atSurface = (primary?.summary.surfaceBreaks ?? []).reduce((sum, b) => sum + b.endS - b.startS, 0);
-  const fact = (field: OverridableField, label: string) => (
-    <Fact label={label} mark={<EditedMark dive={d} field={field} />}>{format(field, d.values[field])}</Fact>
+  const fact = (field: OverridableField, label: string, hero?: boolean) => (
+    <Fact label={label} mark={<EditedMark dive={d} field={field} />} {...(hero && { hero })}>{format(field, d.values[field])}</Fact>
   );
   return (
+    <dl className="facts">
+      {fact('maxDepthM', t('dive.maxDepth'), true)}
+      <Fact label={t('dive.duration')} hero mark={<EditedMark dive={d} field="durationSeconds" />}>
+        {format('durationSeconds', d.values.durationSeconds)}
+        {atSurface > 0 && <> <span className="recorded-value">{t('dive.atSurface', { duration: display.duration(atSurface) })}</span></>}
+      </Fact>
+      {fact('waterTemperatureC', t('dive.waterTemperature'), true)}
+      {gases && <Fact label={t('dive.gas')} hero>{gases}</Fact>}
+      {fact('avgDepthM', t('dive.avgDepth'))}
+      <WaterFact dive={d} />
+      {d.position && (
+        <Fact label={t('dive.position')} wide>
+          {display.position(d.position)}{' '}
+          <a href={mapsUrl(d.position)} target="_blank" rel="noopener noreferrer" className="external-link">
+            {t('sites.openInMaps')}<Icon name="external" />
+          </a>
+        </Fact>
+      )}
+    </dl>
+  );
+}
+
+/**
+ * The details of the Dive that have values: the site, who dived along, the cylinders, suit and lead, the notes. Each
+ * that is empty is a chip in one row, "Add …", that opens the same editor the old "Add" link did.
+ */
+function DiveDetails({ dive: d, onAddNotes, onAddCylinders, onAddWeighting }: {
+  dive: DiveView; onAddNotes: () => void; onAddCylinders: () => void; onAddWeighting: () => void;
+}) {
+  const { t } = useTranslation();
+  const [picking, setPicking] = useState(false);
+  const [addingPerson, setAddingPerson] = useState(false);
+  const weighting = useWeightingText();
+  const buddiesChip = useRef<HTMLButtonElement>(null);
+  // The way to the site picker is a chip or the "Change" button, whichever there is; focus goes to whichever there is then.
+  const siteButton = useFocusBackWhenClosed(picking);
+  const hasWeighting = !!d.suit || d.lead.length > 0 || !!d.weightingFeedback;
+  const chips: { id: string; label: string; onPress: () => void; ref?: RefObject<HTMLButtonElement | null> }[] = [
+    ...(!d.site ? [{ id: 'site', label: t('dive.addSite'), onPress: () => setPicking(true), ref: siteButton }] : []),
+    ...(d.participants.length === 0 ? [{ id: 'buddies', label: t('dive.addBuddies'), onPress: () => setAddingPerson(true), ref: buddiesChip }] : []),
+    ...(d.cylinders.length === 0 ? [{ id: 'cylinders', label: t('cylinders.addFirst'), onPress: onAddCylinders }] : []),
+    ...(!hasWeighting ? [{ id: 'weighting', label: t('weighting.addFirst'), onPress: onAddWeighting }] : []),
+    ...(!d.notes ? [{ id: 'notes', label: t('dive.addNotes'), onPress: onAddNotes }] : []),
+  ];
+  // Without any of these the list is not there; it stays mounted, hidden, because the buddies' dialogs belong to it.
+  const hasDetails = !!d.site || d.participants.length > 0 || hasWeighting;
+  return (
     <>
-      <dl className="facts">
-        {fact('maxDepthM', t('dive.maxDepth'))}
-        {fact('avgDepthM', t('dive.avgDepth'))}
-        <Fact label={t('dive.duration')} mark={<EditedMark dive={d} field="durationSeconds" />}>
-          {format('durationSeconds', d.values.durationSeconds)}
-          {atSurface > 0 && <> <span className="recorded-value">{t('dive.atSurface', { duration: display.duration(atSurface) })}</span></>}
-        </Fact>
-        {fact('waterTemperatureC', t('dive.waterTemperature'))}
-        {gases && <Fact label={t('dive.gas')}>{gases}</Fact>}
-        <WaterFact dive={d} />
-        <Fact label={t('dive.site')}>
-          <span className="site-fact">
-            {d.site ? <a href={`#/sites/${d.site.id}`}>{d.site.name}</a> : t('common.none')}
-            <Button variant="quiet" size="small" icon="site" onPress={() => setPicking(true)}>
-              {d.site ? t('dive.changeSite') : t('dive.chooseSite')}
-            </Button>
-          </span>
-        </Fact>
-        {d.position && (
-          <Fact label={t('dive.position')} wide>
-            {display.position(d.position)}{' '}
-            <a href={mapsUrl(d.position)} target="_blank" rel="noopener noreferrer" className="external-link">
-              {t('sites.openInMaps')}<Icon name="external" />
-            </a>
+      <dl className="facts dive-details" hidden={!hasDetails}>
+        {d.site && (
+          <Fact label={t('dive.site')}>
+            <span className="site-fact">
+              <a href={`#/sites/${d.site.id}`}>{d.site.name}</a>
+              <Button ref={siteButton} variant="quiet" size="small" icon="site" onPress={() => setPicking(true)}>{t('dive.changeSite')}</Button>
+            </span>
           </Fact>
         )}
-        <Participants dive={d} />
-        {d.cylinders.length === 0 && (
-          <Fact label={t('cylinders.title')}>
-            <Button variant="quiet" size="small" icon="add" onPress={onAddCylinders}>{t('cylinders.addFirst')}</Button>
-          </Fact>
-        )}
+        <Participants dive={d} adding={addingPerson} onAddingChange={setAddingPerson} emptied={() => buddiesChip.current?.focus()} />
         {d.suit && <Fact label={t('weighting.suit')}>{weighting.suit(d.suit)}</Fact>}
         {d.lead.length > 0 && <Fact label={t('weighting.lead')} wide={d.lead.length > 1}>{weighting.lead(d.lead)}</Fact>}
         {d.weightingFeedback && <Fact label={t('weighting.weighting')}>{weighting.feedback(d.weightingFeedback)}</Fact>}
-        {!d.suit && d.lead.length === 0 && !d.weightingFeedback && (
-          <Fact label={t('weighting.title')}>
-            <Button variant="quiet" size="small" icon="add" onPress={onAddWeighting}>{t('weighting.addFirst')}</Button>
-          </Fact>
-        )}
-        {!d.notes && (
-          <Fact label={t('dive.notes')}>
-            <Button variant="quiet" size="small" icon="add" onPress={onAddNotes}>{t('dive.addNotes')}</Button>
-          </Fact>
-        )}
       </dl>
       {picking && <SitePicker dive={d} onClose={() => setPicking(false)} />}
       <CylinderList dive={d} />
@@ -349,6 +350,13 @@ function DiveFacts({ dive: d, onAddNotes, onAddCylinders, onAddWeighting }: {
           <h2 className="subheading">{t('dive.notes')}</h2>
           <p className="notes">{d.notes}</p>
         </>
+      )}
+      {chips.length > 0 && (
+        <div className="add-chips" role="group" aria-label={t('dive.addDetails')}>
+          {chips.map(({ id, label, onPress, ref }) => (
+            <Button key={id} {...(ref && { ref })} variant="secondary" size="small" icon="add" onPress={onPress}>{label}</Button>
+          ))}
+        </div>
       )}
     </>
   );

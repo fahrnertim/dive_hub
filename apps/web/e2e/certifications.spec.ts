@@ -1,7 +1,7 @@
-// A Diver's certification cards (ADR 0050) in a real browser, as a section of the Divers page (slice 25c): typed by hand,
+// A Diver's certification cards (ADR 0050) in a real browser, as a section of a Diver's own page (slice 25c; UI overhaul): typed by hand,
 // edited and deleted in a dialog; read from SSI against the e2e server's fake account (two invented cards) with their
 // pictures, the imported card read-only apart from its notes; a card deleted stays deleted when the import runs again;
-// an expired card says so and goes last; the profile menu's link lands on the open section.
+// an expired card says so and goes last; the profile menu's link lands on the own Diver's page with the section open.
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { E2E_BASE_URL, connectSsi, expectGoodPage, setPreferences } from './support.ts';
 
@@ -20,27 +20,28 @@ test.afterAll(async ({ request }) => {
   await withoutCards(request);
 });
 
-/** The own Diver's row (the first), found by its Certifications line. */
-const ownRow = (page: Page) => page.getByRole('listitem').filter({ has: page.getByRole('button', { name: /^Certifications: / }) }).first();
-const sectionButton = (page: Page) => ownRow(page).getByRole('button', { name: /^Certifications: / });
+/** The Diver's page is the row: the section is in place on it, not a dialog. */
+const ownRow = (page: Page) => page.locator('#main');
+const sectionButton = (page: Page) => page.getByRole('button', { name: /^Certifications: / });
+const ownId = async (api: APIRequestContext) => ((await (await api.get('/api/divers')).json()) as { id: string }[])[0]!.id;
 
-/** The own Diver's row with its section open: in place on the page, not a dialog. */
-const open = async (page: Page) => {
-  await page.goto('/#/divers');
-  if ((await sectionButton(page).getAttribute('aria-expanded')) !== 'true') await sectionButton(page).click();
+/** The own Diver's page with the certifications section open. */
+const open = async (page: Page, api: APIRequestContext) => {
+  await page.goto(`/#/divers/${await ownId(api)}?open=certifications`);
+  await expect(sectionButton(page)).toHaveAttribute('aria-expanded', 'true');
   return ownRow(page);
 };
 
 test('a certification is typed, seen, edited and deleted', { tag: ['@divers'] }, async ({ page, request }) => {
-  await withoutCards(request);
-  await page.goto('/#/divers');
+  const own = await withoutCards(request);
+  await page.goto(`/#/divers/${own}`);
   const row = ownRow(page);
   // Closed, the Diver's line already says there are no cards yet.
   await expect(row.getByText('No cards yet')).toBeVisible();
   await sectionButton(page).click();
   await expect(row.getByText('Only you and the other Users who keep this Diver see them.')).toBeVisible();
   await expect(row.getByText('No certifications yet.')).toBeVisible();
-  await expectGoodPage(page, 'Divers');
+  await expectGoodPage(page);
 
   await row.getByRole('button', { name: 'Add certification' }).click();
   const dialog = page.getByRole('dialog');
@@ -53,7 +54,7 @@ test('a certification is typed, seen, edited and deleted', { tag: ['@divers'] },
   await expect(card).toContainText('Self-declared');
   // The Diver's line follows without opening anything.
   await expect(row.getByText('1 card · Rescue Diver (PADI)')).toBeVisible();
-  await expectGoodPage(page, 'Divers');
+  await expectGoodPage(page);
 
   await card.getByRole('button', { name: /^Edit: / }).click();
   await dialog.getByText('I have seen the card').click();
@@ -68,8 +69,8 @@ test('a certification is typed, seen, edited and deleted', { tag: ['@divers'] },
   await expect(row.getByText('No cards yet')).toBeVisible();
 });
 
-test('the instructor and the centre sit behind "More details", and Save stays in view on a phone', { tag: ['@divers'] }, async ({ page }) => {
-  const row = await open(page);
+test('the instructor and the centre sit behind "More details", and Save stays in view on a phone', { tag: ['@divers'] }, async ({ page, request }) => {
+  const row = await open(page, request);
   await row.getByRole('button', { name: 'Add certification' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('textbox', { name: 'Instructor', exact: true })).toBeHidden();
@@ -84,7 +85,7 @@ test('the instructor and the centre sit behind "More details", and Save stays in
 
 test('cards are imported from SSI with their pictures, an imported card takes only notes, and a deleted one stays deleted', { tag: ['@divers', '@account'] }, async ({ page, request }) => {
   await connectSsi(request);
-  const row = await open(page);
+  const row = await open(page, request);
   await row.getByRole('button', { name: 'Import from SSI' }).click();
   await expect(row.getByText('SSI: 2 new, 0 updated, 0 unchanged.')).toBeVisible();
   const owd = row.getByRole('listitem').filter({ hasText: 'SSI Open Water Diver' });
@@ -94,7 +95,7 @@ test('cards are imported from SSI with their pictures, an imported card takes on
   const enlarge = owd.getByRole('button', { name: /^Show picture large/ });
   await expect(enlarge).toBeVisible({ timeout: 20_000 });
   await expect.poll(() => enlarge.locator('img').evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
-  await expectGoodPage(page, 'Divers');
+  await expectGoodPage(page);
 
   // Pressed, the picture opens large in a dialog that closes again (the counter case: "show me your card").
   await enlarge.click();
@@ -132,7 +133,7 @@ test('an expired card says so in words, goes last and is counted on the Diver’
   await post({ agency: 'DAN', level: 'Oxygen Provider', issuedOn: '2020-06-01', expiresOn: day(30) });
   await post({ agency: 'CMAS', level: 'Two Star', issuedOn: '2019-06-01' });
 
-  await page.goto('/#/divers');
+  await page.goto(`/#/divers/${own}`);
   const row = ownRow(page);
   // Said while closed: the count, the newest valid card, what expires soon and what has expired.
   await expect(row.getByText('3 cards · Oxygen Provider (DAN)')).toBeVisible();
@@ -147,21 +148,45 @@ test('an expired card says so in words, goes last and is counted on the Diver’
   await expect(tiles.nth(1)).toContainText('Two Star');
   await expect(tiles.nth(2)).toContainText('Emergency First Response');
   await expect(tiles.nth(2)).toContainText('Expired');
-  await expectGoodPage(page, 'Divers');
+  await expectGoodPage(page);
   await page.setViewportSize({ width: 320, height: 700 });
-  await expectGoodPage(page, 'Divers');
+  await expectGoodPage(page);
 });
 
-test('"My certifications" in the profile menu lands on the own Diver’s open section, and the address says which is open', { tag: ['@divers', '@account'] }, async ({ page }) => {
-  await page.goto('/#/account');
+test('"My certifications" in the profile menu lands on the own Diver’s page with the section open, and the address says which is open', { tag: ['@divers', '@account'] }, async ({ page, request }) => {
+  const own = await ownId(request);
+  await page.goto('/#/settings/display');
   await page.getByRole('button', { name: /, account$/ }).click();
   await page.getByRole('menuitem', { name: 'My certifications' }).click();
-  await expect(page).toHaveURL(/#\/divers\?certifications=/);
+  // The old address is replaced, so Back doesn't come round to it again.
+  await expect(page).toHaveURL(new RegExp(`#/divers/${own}\\?open=certifications$`));
+  await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Divers');
   await expect(sectionButton(page)).toHaveAttribute('aria-expanded', 'true');
   await expect(ownRow(page).getByText('Only you and the other Users who keep this Diver see them.')).toBeVisible();
   // A reload keeps it open; closing it takes it out of the address.
   await page.reload();
   await expect(sectionButton(page)).toHaveAttribute('aria-expanded', 'true');
   await sectionButton(page).click();
-  await expect(page).not.toHaveURL(/certifications=/);
+  await expect(page).not.toHaveURL(/open=/);
+});
+
+test('the Divers list names each kept Diver with a link to their page and their cards; an unknown Diver is not found', { tag: ['@divers'] }, async ({ page, request }) => {
+  const own = await withoutCards(request);
+  await request.post(`/api/divers/${own}/certifications`, { data: { agency: 'PADI', level: 'Open Water Diver', issuedOn: '2020-01-01' }, headers });
+  await page.goto('/#/divers');
+  const row = page.locator('.diver-list').first().getByRole('listitem').first();
+  await expect(row).toContainText('1 card');
+  await row.getByRole('link').first().click();
+  await expect(page).toHaveURL(new RegExp(`#/divers/${own}$`));
+  await expect(page.locator('#main').getByRole('link', { name: 'Divers', exact: true })).toBeVisible();
+  // The old address with a Diver nobody has goes to the list.
+  await page.goto('/#/divers?certifications=00000000-0000-4000-8000-000000000000');
+  await expect(page).toHaveURL(/#\/divers$/);
+  // The list is there, not left behind its skeleton.
+  await expect(page.locator('.diver-list').first().getByRole('listitem').first()).toBeVisible();
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  await page.goto('/#/divers/00000000-0000-4000-8000-000000000000');
+  await expect(page.getByRole('heading', { level: 1, name: 'Diver not found' })).toBeVisible();
+  await page.getByRole('link', { name: 'To the Divers' }).click();
+  await expect(page).toHaveURL(/#\/divers$/);
 });

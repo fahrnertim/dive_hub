@@ -11,20 +11,20 @@ import { pickLanguage } from './i18n/languages.ts';
 import { DeletedNotices } from './DeletedDives.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
 import { PushRunStrip, RunMark } from './PushRun.tsx';
-import { ReviewLinks, ReviewStrip } from './ReviewStrip.tsx';
+import { ReviewMore, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
-import { navSection, type NavSection } from './lib/nav.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
-import { accountHref, accountTab } from './lib/account-tabs.ts';
-import { reviewTab, useToDecideCounts } from './lib/review.ts';
-import { ActionMenu, BrandMark, ErrorBoundary, Icon, Muted, Notice, PageHeader } from './ui/index.ts';
+import { reviewTab } from './lib/review.ts';
+import { legacyRedirect } from './lib/settings.ts';
+import { ErrorBoundary, LogbookSkeleton, Notice, PageHeader, RowsSkeleton } from './ui/index.ts';
+import { PlainShell, Shell } from './ui/Shell.tsx';
 
-// Pages most visits don't need load on demand: the chart library, account settings, admin.
+// Pages most visits don't need load on demand: the chart library, Settings.
 const DivePage = lazy(() => import('./DivePage.tsx').then((m) => ({ default: m.DivePage })));
-const AccountPage = lazy(() => import('./AccountPage.tsx').then((m) => ({ default: m.AccountPage })));
-const AdminPage = lazy(() => import('./AdminPage.tsx').then((m) => ({ default: m.AdminPage })));
+const SettingsPage = lazy(() => import('./SettingsPage.tsx').then((m) => ({ default: m.SettingsPage })));
 const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
+const DiverPage = lazy(() => import('./DiverPage.tsx').then((m) => ({ default: m.DiverPage })));
 const SitesPage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
 const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
 const CentresPage = lazy(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentresPage })));
@@ -35,10 +35,11 @@ const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ 
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers" ("?certifications=own|<diver id>": that Diver's certifications open), "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/tools/lead" ("?lw=salt&suit=wetsuit&mm=5&cyl=12~steel"), "#/account" ("?tab=connections|ai"), "#/admin", "#/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers" ("?certifications=own|<diver id>" leads on to the Diver's page), "#/divers/<id>" ("?open=certifications"), "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/tools/lead" ("?lw=salt&suit=wetsuit&mm=5&cyl=12~steel"), "#/settings" ("#/settings/<section>", "#/settings/connections?connection=<id>"), "#/settings/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * The addresses from before Settings ("#/account…", "#/admin…") are replaced by their new ones before routing.
  */
 function useRoute(): string {
-  const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
+  const [route, setRoute] = useState(currentRoute);
   useEffect(() => {
     const onChange = (event: HashChangeEvent) => {
       // A form with unsaved changes may keep the User here; then the address goes back, too.
@@ -46,12 +47,20 @@ function useRoute(): string {
         history.replaceState(null, '', new URL(event.oldURL).hash || '#/');
         return;
       }
-      setRoute(location.hash.slice(1) || '/');
+      setRoute(currentRoute());
     };
     addEventListener('hashchange', onChange);
     return () => removeEventListener('hashchange', onChange);
   }, []);
   return route;
+}
+
+function currentRoute(): string {
+  const route = location.hash.slice(1) || '/';
+  const moved = legacyRedirect(route);
+  if (!moved) return route;
+  location.replace(moved);
+  return moved.slice(1);
 }
 
 /** The UI language follows the User's preference, else the browser (ADR 0014). */
@@ -85,76 +94,29 @@ export function App() {
   useFetchOnOpening(!!me.data);
   useFocusOnNavigate(route);
   useTypingMark();
+  const signOut = useSignOut();
 
+  // Keyed by the page, not its query: a search or filter in the address must not rebuild the page (focus, table).
+  const page = (
+    <ErrorBoundary key={route.split('?')[0]} fallback={<Notice tone="danger">{t('errors.unknown')}</Notice>}>
+      <Suspense fallback={<RowsSkeleton rows={3} />}>
+        <Main route={route} me={me} />
+      </Suspense>
+    </ErrorBoundary>
+  );
   return (
     <>
       <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }}>
         {t('nav.skipToContent')}
       </a>
-      <header className="app-header">
-        <div className="app-header-inner">
-          <a href="#/" className="brand" translate="no"><BrandMark />{t('common.appName')}</a>
-          {me.data && <Navigation route={route} me={me.data} />}
-        </div>
-      </header>
-      <main id="main" className="app-main" tabIndex={-1}>
-        {/* Keyed by the page, not its query: a search or filter in the address must not rebuild the page (focus, table). */}
-        <ErrorBoundary key={route.split('?')[0]} fallback={<Notice tone="danger">{t('errors.unknown')}</Notice>}>
-          <Suspense fallback={<Muted>{t('common.loading')}</Muted>}>
-            <Main route={route} me={me} />
-          </Suspense>
-        </ErrorBoundary>
-      </main>
-    </>
-  );
-}
-
-function Navigation({ route, me }: { route: string; me: Me }) {
-  const { t } = useTranslation();
-  const signOut = useSignOut();
-  const section = navSection(route);
-  const current = (tab: NavSection) => (tab === section ? { 'aria-current': 'page' as const } : {});
-  // What waits for a decision is counted beside the logbook, visible from every page (UI redesign 4.3).
-  const { total: toDecide } = useToDecideCounts();
-  return (
-    <>
-      <nav className="app-nav" aria-label={t('nav.main')}>
-        <a href="#/" {...current('logbook')}>
-          <Icon name="logbook" />{t('nav.logbook')}
-          <RunMark />
-          {toDecide > 0 && <span className="count"><span aria-hidden="true">{toDecide}</span><span className="visually-hidden">{t('nav.toDecide', { count: toDecide })}</span></span>}
-        </a>
-        <a href="#/divers" {...current('divers')}><Icon name="divers" />{t('nav.divers')}</a>
-        <a href="#/sites" {...current('sites')}><Icon name="site" />{t('nav.sites')}</a>
-        <a href="#/centres" {...current('centres')}><Icon name="centre" />{t('nav.centres')}</a>
-        <a href="#/tools" {...current('tools')}><Icon name="tools" />{t('nav.tools')}</a>
-      </nav>
-      {/* The account is a labelled menu, not a bare name link (UI review C6). */}
-      <div className="user-menu">
-        <ActionMenu
-          className="user-menu-button"
-          icon="account"
-          label={<>{me.user.name}<span className="visually-hidden">{t('nav.accountMenu')}</span></>}
-          actions={[
-            { id: 'account', label: t('nav.account'), href: accountHref('account'), icon: 'user' },
-            // Where a Provider is connected is found here, not by knowing it is a part of the account page (UI review C10).
-            { id: 'connections', label: t('nav.connections'), href: accountHref('connections'), icon: 'link' },
-            // The own Diver's cards are a section of the Divers page; this is only a link to it (ADR 0050).
-            { id: 'certifications', label: t('nav.myCertifications'), href: '#/divers?certifications=own', icon: 'certification' },
-            // Rare and for one role: not in the bar (UI redesign 5.1).
-            ...(me.user.role === 'admin' ? [{ id: 'admin', label: t('nav.administration'), href: '#/admin', icon: 'admin' as const }] : []),
-            { id: 'sign-out', label: t('common.signOut'), onAction: () => void signOut(), icon: 'signOut' },
-          ]}
-        />
-      </div>
+      {me.data ? <Shell me={me.data} route={route} logbookMark={<RunMark />} onSignOut={() => void signOut()}>{page}</Shell> : <PlainShell>{page}</PlainShell>}
     </>
   );
 }
 
 function Main({ route, me }: { route: string; me: UseQueryResult<Me | null> }) {
-  const { t } = useTranslation();
   const errorText = useErrorText();
-  if (me.isPending) return <Muted>{t('common.loading')}</Muted>;
+  if (me.isPending) return <RowsSkeleton rows={3} />;
   if (me.error) return <Notice tone="danger">{errorText(me.error)}</Notice>;
   return me.data ? <SignedIn route={route} me={me.data} /> : <SignedOut route={route} />;
 }
@@ -165,8 +127,9 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const params = new URLSearchParams(query);
   const diveId = /^\/dives\/([\w-]+)$/.exec(path!)?.[1];
   if (diveId) return <DivePage key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
-  if (path === '/account') return <AccountPage tab={accountTab(params)} connection={params.get('connection') ?? undefined} />;
   if (path === '/divers') return <DiversPage open={params.get('certifications') ?? undefined} />;
+  const diverId = /^\/divers\/([\w-]+)$/.exec(path!)?.[1];
+  if (diverId) return <DiverPage key={diverId} id={diverId} open={params.get('open') === 'certifications' ? 'certifications' : undefined} />;
   if (path === '/review') return <ReviewPage tab={reviewTab(params)} />;
   if (path === '/sites') return <SitesPage params={sitesParams(params)} />;
   const siteId = /^\/sites\/([\w-]+)$/.exec(path!)?.[1];
@@ -175,9 +138,10 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (path === '/centres') return <CentresPage />;
   const centreId = /^\/centres\/([\w-]+)$/.exec(path!)?.[1];
   if (centreId) return <CentrePage key={centreId} id={centreId} />;
-  if (route === '/admin' || route === '/admin/site-imports') {
-    if (me.user.role !== 'admin') return <><PageHeader title={t('nav.admin')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
-    return route === '/admin' ? <AdminPage /> : <SiteImportPage />;
+  const settings = /^\/settings(?:\/([\w-]+))?$/.exec(path!);
+  if (settings) return <SettingsPage section={settings[1]} me={me} params={params} />;
+  if (path === '/settings/admin/site-imports') {
+    return me.user.role === 'admin' ? <SiteImportPage /> : <><PageHeader title={t('siteImport.title')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
   }
   return <Logbook params={logbookParams(params)} />;
 }
@@ -193,12 +157,11 @@ function Logbook({ params }: { params: LogbookParams }) {
   const returning = (all.data?.total ?? 0) > 0;
   return (
     <ImportProvider>
-      <LogbookHeader importAction={returning && <ImportFilesButton />} />
-      <ReviewLinks />
+      <LogbookHeader params={params} importAction={returning && <ImportFilesButton />} more={<ReviewMore />} />
       <DeletedNotices />
       <ReviewStrip />
       <PushRunStrip />
-      {returning ? (
+      {all.isPending ? <LogbookSkeleton /> : returning ? (
         <>
           <DiveList params={params} />
           <RecentImports />

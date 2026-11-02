@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useProviders } from './lib/providers.ts';
 import { reviewHref, useReviewCounts, useToDecideCounts } from './lib/review.ts';
-import { LinkButton } from './ui/index.ts';
+import { ActionMenu } from './ui/index.ts';
 
 /**
  * On the logbook, one line for what waits for a decision, with the way to the Review page (UI redesign 4.1). Nothing
@@ -25,23 +25,27 @@ export function ReviewStrip() {
   return (
     <div className="strip">
       <p>{t('review.strip.things', { count: total, parts: list })}</p>
-      <LinkButton size="small" href={reviewHref('decide')}>{t('review.strip.go')}</LinkButton>
+      <a href={reviewHref('decide')}>{t('review.strip.go')}</a>
     </div>
   );
 }
 
 /**
- * Above the logbook's list: the other parts of the Review page, always there for those who look for them (UI review C9).
- * What was decided is a link only while there is something in it; the Imports and the deleted dives are always one.
+ * The other parts of the Review page, one step away behind More in the logbook's title row (UI review C9), always there
+ * for those who look for them. What was decided is an item only while there is something in it; the Imports and the
+ * deleted dives always are one.
  */
-export function ReviewLinks() {
+export function ReviewMore() {
   const { t } = useTranslation();
   const { decided, deleted } = useReviewCounts();
   return (
-    <nav className="review-links" aria-label={t('review.title')}>
-      <a href={reviewHref('imports')}>{t('review.tab.imports')}</a>
-      {decided > 0 && <a href={reviewHref('decided')}>{t('review.tab.decided')} ({decided})</a>}
-      <a href={reviewHref('deleted')}>{t('review.tab.deleted')}{deleted > 0 && <> ({deleted})</>}</a>
-    </nav>
+    <ActionMenu
+      label={t('logbook.more')}
+      actions={[
+        { id: 'imports', label: t('review.tab.imports'), href: reviewHref('imports') },
+        ...(decided > 0 ? [{ id: 'decided', label: `${t('review.tab.decided')} (${decided})`, href: reviewHref('decided') }] : []),
+        { id: 'deleted', label: `${t('review.tab.deleted')}${deleted > 0 ? ` (${deleted})` : ''}`, href: reviewHref('deleted') },
+      ]}
+    />
   );
 }

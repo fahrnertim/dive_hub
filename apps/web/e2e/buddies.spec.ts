@@ -5,8 +5,13 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 import { picture } from './qr-picture.ts';
 import {
   clearParticipants, clearPushRuns, connectSsi, externalDiver, forgetDivers, importSsiBuddies, leaveSsi, openLine, pushRunSetup, readyForSsi,
-  resetDive, resetSsiBuddies, setBuddies,
+  resetDive, resetSsiBuddies, setBuddies, setPreferences,
 } from './support.ts';
+
+// Another spec in this worker may have left German or imperial units set.
+test.beforeAll(async ({ request }) => {
+  await setPreferences(request, { language: null, units: null });
+});
 
 // The diver made here is taken off the dive and deleted again: another spec on the same server adds a Diver of the
 // same name, and two of them make buttons with the same name on the Divers page.
@@ -52,17 +57,19 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await importSsiBuddies(request, ['4989164']);
 
   await page.goto(`/#/dives/${dive.id}`);
-  // Who dived along is one of the dive's facts: with nobody yet, it is the way to add someone.
+  // Who dived along is one of the dive's facts: with nobody yet, "Add buddies" is the way to add someone.
   const people = page.getByRole('group', { name: 'Buddies and guides' });
-  await expect(people.getByRole('listitem')).toHaveCount(0);
+  await expect(people).toHaveCount(0);
 
-  await people.getByRole('button', { name: 'Add someone' }).click();
+  await page.getByRole('group', { name: 'Add details' }).getByRole('button', { name: 'Add buddies' }).click();
   let dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('radio', { name: 'Buddy' })).toBeChecked();
   await dialog.getByRole('searchbox', { name: 'Find a diver' }).fill('kai');
   await dialog.getByRole('option', { name: /Kai Lund/ }).click();
   await expect(dialog).toBeHidden();
   await expect(people.locator('li > :not(.avatar)')).toHaveText(['Kai Lund (Buddy)']);
+  // The chip that opened the dialog is gone: focus goes to the fact's own way to add someone, not to the page.
+  await expect(people.getByRole('button', { name: 'Add someone' })).toBeFocused();
 
   await people.getByRole('button', { name: 'Add someone' }).click();
   dialog = page.getByRole('dialog');

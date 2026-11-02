@@ -73,8 +73,8 @@ test.describe('on a phone', () => {
       expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     }
     await expect(bar.getByRole('link', { name: 'Logbook' })).toHaveAttribute('aria-current', 'page');
-    // The header keeps the brand and the account, on one row.
-    expect((await page.locator('.app-header').boundingBox())!.height).toBeLessThan(80);
+    // The top bar keeps the brand and the account, on one row.
+    expect((await page.getByRole('banner').boundingBox())!.height).toBeLessThan(80);
 
     // The end of the page can be scrolled clear of the bar.
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -96,9 +96,36 @@ test.describe('on a phone', () => {
   });
 });
 
-test('on a wide screen the navigation stays in the header', { tag: ['@layout'] }, async ({ page }) => {
+test('on a wide screen the navigation is a sidebar beside the page', { tag: ['@layout'] }, async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  const box = (await page.getByRole('navigation', { name: 'Main' }).boundingBox())!;
-  expect(box.y).toBeLessThan(100);
+  const nav = page.getByRole('navigation', { name: 'Main' });
+  const box = (await nav.boundingBox())!;
+  const main = (await page.getByRole('main').boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(main.x);
+  await expect(nav.getByRole('link', { name: 'Logbook' })).toHaveAttribute('aria-current', 'page');
+});
+
+test.describe('on the narrowest phone, in German', () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+  test.beforeEach(async ({ request }) => {
+    await setPreferences(request, { language: 'de' });
+  });
+
+  test('every destination of the bottom bar fits, and the page does not scroll sideways', { tag: ['@layout'] }, async ({ page }) => {
+    await page.goto('/');
+    await expect(diveRows(page).first()).toBeVisible();
+    const bar = page.getByRole('navigation', { name: 'Hauptmenü' });
+    const links = await bar.getByRole('link').all();
+    expect(links).toHaveLength(5);
+    for (const link of links) {
+      const box = (await link.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(320);
+      expect(box.y + box.height).toBeLessThanOrEqual(640);
+      // The label is not cut off inside its item.
+      expect(await link.evaluate((a) => a.scrollWidth - a.clientWidth), `${await link.innerText()} is cut off`).toBeLessThanOrEqual(0);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  });
 });

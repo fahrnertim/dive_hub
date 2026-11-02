@@ -1,7 +1,12 @@
 // Sending many Dives to SSI from the logbook (ADR 0047), against the e2e server's fake SSI: the dialog says what goes and
 // what is held back, a run shows its progress and its result, and a run stopped by a sign-in need goes on after it.
 import { expect, test } from '@playwright/test';
-import { clearPushRuns, deletableDive, diveNumber, expireSsiTokens, headers, leaveSsi, pushRunSetup, readyForSsi, resetDive, signInSsi } from './support.ts';
+import { clearPushRuns, deletableDive, diveNumber, expireSsiTokens, headers, leaveSsi, openFilters, pushRunSetup, readyForSsi, resetDive, signInSsi, setPreferences } from './support.ts';
+
+// Another spec in this worker may have left German or imperial units set.
+test.beforeAll(async ({ request }) => {
+  await setPreferences(request, { language: null, units: null });
+});
 
 test.afterEach(async ({ request }) => {
   await clearPushRuns(request);
@@ -67,7 +72,7 @@ test('a run stopped by a sign-in need goes on after signing in', { tag: ['@dives
   await expect(page.getByText('SSI wants you to sign in again')).toBeVisible();
   // The way on is the sign-in, first; "Continue" would fail until then (C4).
   const signIn = page.getByRole('link', { name: 'Sign in to SSI again' });
-  await expect(signIn).toHaveAttribute('href', '#/account?tab=connections');
+  await expect(signIn).toHaveAttribute('href', '#/settings/connections');
   const actions = page.locator('.push-run-actions').locator('a, button');
   await expect(actions.nth(0)).toHaveText('Sign in to SSI again');
   await expect(actions.nth(1)).toHaveText('Continue');
@@ -96,6 +101,7 @@ test('a dive changed since it was sent has its own filter, and the send dialog l
   const patched = await request.patch(`/api/dives/${dive.id}`, { data: { version: now.version, notes: 'Changed after sending' }, headers });
   expect(patched.ok(), await patched.text()).toBe(true);
   await page.reload();
+  await openFilters(page);
   await expect(chip).toHaveText('Changed since sent1');
   await chip.click();
   await expect(page).toHaveURL(/only=changed-since-sent/);

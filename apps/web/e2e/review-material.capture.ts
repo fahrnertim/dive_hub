@@ -10,7 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, diveNumber, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, surfaceBreakPair, tankPodDive,
-  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, queueEntry, ssiConnectionOf, expireSsiTokens, leaveConflict, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
+  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, queueEntry, ssiConnectionOf, expireSsiTokens, leaveConflict, goneAtSsi, goToMore, leaveLena, leaveSsi, lenaReady, openFilters, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
@@ -88,6 +88,17 @@ test('review material', async ({ page, request, browser }) => {
     await page.goto('/'); await page.getByRole('heading', { name: 'Logbook' }).waitFor();
     await capture(page, '01-logbook');
     await tabOrder(page, '01-logbook');
+    // A skeleton (UI overhaul): the logbook's request is held until the bars show, so they can be looked at. The held
+    // request is in flight, so this shot is taken without capture(), which waits for none.
+    let release = () => {};
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    const logbookRequest = /\/api\/dives(\?.*)?$/;
+    await page.route(logbookRequest, async (route) => { await held; await route.continue(); });
+    await page.reload(); await page.locator('.skeleton-bar').first().waitFor({ timeout: 15_000 });
+    await page.screenshot({ path: `${out}01f-logbook-skeleton.png` });
+    release();
+    await page.getByRole('heading', { name: 'Logbook' }).waitFor(); await expect(page.locator('.skeleton-bar')).toHaveCount(0);
+    await page.unroute(logbookRequest);
     // The odd computer's recording waits: the logbook says it in one line, the Review page decides.
     await page.getByRole('link', { name: 'Review them' }).click(); await page.getByRole('heading', { name: 'Review', level: 1 }).waitFor();
     await capture(page, '01a-review');
@@ -101,8 +112,17 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, '01c-logbook-import-choice');
     await page.setViewportSize({ width: 390, height: 844 });
     await capture(page, '01c-logbook-import-choice-phone');
+    // The user menu on a phone is a bottom sheet (UI overhaul), light and dark.
+    await page.getByRole('button', { name: /, account$/ }).click(); await page.locator('.menu-sheet').waitFor();
+    await capture(page, '01d-user-menu-sheet-phone', { aria: false });
+    await page.keyboard.press('Escape');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.getByRole('button', { name: /, account$/ }).click(); await page.locator('.menu-sheet').waitFor();
+    await capture(page, '01e-user-menu-sheet-phone-dark', { aria: false });
+    await page.keyboard.press('Escape');
+    await page.emulateMedia({ colorScheme: 'light' });
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.getByRole('link', { name: 'Imports', exact: true }).click(); await page.getByRole('heading', { name: 'Imports', level: 2 }).waitFor();
+    await goToMore(page, 'Imports'); await page.getByRole('heading', { name: 'Imports', level: 2 }).waitFor();
     await capture(page, '01b-review-imports');
     await cancelWaitingImports(request);
     await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Dive \d+/ }).waitFor();
@@ -115,6 +135,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.goto(`/#/dives/${assessed}`); await page.getByRole('heading', { name: 'Assessment' }).waitFor();
     await page.getByRole('group', { name: 'Findings along the dive' }).getByRole('button', { name: /^Fast ascent/ }).click();
     await capture(page, '03b-dive-assessment');
+    await page.getByRole('button', { name: 'Notes', exact: true }).click();
     await page.getByRole('button', { name: /^What the assessment can/ }).click(); await page.getByRole('dialog').waitFor();
     await capture(page, '03c-dive-assessment-about', { full: false });
     await page.keyboard.press('Escape');
@@ -129,6 +150,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.setViewportSize({ width: 320, height: 640 });
     await capture(page, '03e-logbook-rows-buddies-320', { aria: false, axe: false });
     await page.setViewportSize({ width: 1280, height: 900 });
+    await openFilters(page);
     await page.getByRole('group', { name: 'Show only' }).getByRole('button').first().click();
     await page.getByRole('group', { name: 'Show only' }).getByRole('button', { pressed: true }).waitFor();
     await capture(page, '03f-logbook-show-only');
@@ -194,14 +216,31 @@ test('review material', async ({ page, request, browser }) => {
   if (want('divers')) {
     // A dive professional taken from a code (ADR 0043); person, account, e-mail and leader number are made up.
     await request.post('/api/divers/from-code', { headers, data: { text: 'buddy;4600002;firstName:Pia;lastName:Probe;email:pia@example.com;leaderNr:70001', create: true } });
-    await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Devices' }).waitFor(); await page.locator('table').waitFor();
+    await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Other divers' }).waitFor();
     await capture(page, '04-divers');
-    await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
+    // The row menu of an other diver (UI overhaul), then its codes.
+    await page.getByRole('button', { name: 'Actions: Pia Probe' }).click();
+    await capture(page, '04h-divers-row-menu', { full: false, aria: false });
+    await page.getByRole('menuitem', { name: 'Codes' }).click();
     await page.getByRole('dialog').getByRole('img').nth(1).waitFor();
     await capture(page, '04a-divers-codes', { full: false, aria: false });
-    // A Diver's body weight (ADR 0031): the dialog with one value, removed again.
+    // A kept Diver's own page, with a body weight (ADR 0031): the dialog with one value, removed again.
     await page.keyboard.press('Escape');
     const [ownDiver] = (await (await request.get('/api/divers')).json()) as { id: string; name: string }[];
+    await page.goto(`/#/divers/${ownDiver!.id}`); await page.getByRole('heading', { level: 1, name: ownDiver!.name }).waitFor();
+    await capture(page, '04i-divers-page');
+    // Dark, and the Diver page on a phone (UI overhaul).
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await capture(page, '04j-divers-page-dark', { aria: false });
+    await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Other divers' }).waitFor();
+    await capture(page, '04k-divers-dark', { aria: false });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await capture(page, '04l-divers-phone-dark', { aria: false });
+    await page.goto(`/#/divers/${ownDiver!.id}`); await page.getByRole('heading', { level: 1, name: ownDiver!.name }).waitFor();
+    await capture(page, '04m-divers-page-phone-dark', { aria: false });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await capture(page, '04n-divers-page-phone', { aria: false });
+    await page.setViewportSize({ width: 1280, height: 900 });
     await request.put(`/api/divers/${ownDiver!.id}/body-weights/2026-03-01`, { headers, data: { kg: 82 } });
     await page.getByRole('button', { name: `Body weight: ${ownDiver!.name}` }).click();
     await page.getByRole('dialog').getByText('82 kg').waitFor();
@@ -232,7 +271,9 @@ test('review material', async ({ page, request, browser }) => {
     const cards = (await (await request.get(`/api/divers/${ownDiver!.id}/certifications`)).json()) as { id: string }[];
     for (const c of cards) await request.delete(`/api/divers/${ownDiver!.id}/certifications/${c.id}`, { headers });
     void typed;
-    await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
+    await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Other divers' }).waitFor();
+    await page.getByRole('button', { name: 'Actions: Pia Probe' }).click();
+    await page.getByRole('menuitem', { name: 'Codes' }).click();
     await page.getByRole('button', { name: 'Edit details' }).click();
     await capture(page, '04b-divers-codes-edit', { full: false, aria: false });
     await page.keyboard.press('Escape');
@@ -254,9 +295,11 @@ test('review material', async ({ page, request, browser }) => {
     await askMcp(request, access.key, 'logbook_search_dives', { query: 'wreck', country: 'EG', limit: 5 });
     await askMcp(request, access.key, 'logbook_get_dive', { dive_id: '00000000-0000-7000-8000-000000000000' });
     await askMcp(request, access.key, 'logbook_stats', { group_by: 'year' });
-    await page.goto('/#/account'); await page.getByRole('heading', { name: 'My account' }).waitFor(); await page.locator('table').first().waitFor();
+    await page.goto('/#/settings/display'); await page.getByRole('heading', { name: 'Display', level: 1 }).waitFor();
     await capture(page, '05-account');
-    await page.goto('/#/account?tab=connections'); await page.getByRole('heading', { name: 'SSI', exact: true }).waitFor();
+    await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
+    await capture(page, '05a-account-security');
+    await page.goto('/#/settings/connections'); await page.getByRole('heading', { name: 'SSI', exact: true }).waitFor();
     await capture(page, '05c-account-connections');
     // Garmin (ADR 0062): its key form is on the page above; now connected with a key that expires in 5 days, its kinds under the import.
     await connectGarmin(request, 5);
@@ -270,16 +313,42 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByText(/you don’t fetch: left out/).waitFor();
     await capture(page, '05f-account-connections-garmin-connected');
     await leaveGarmin(request);
-    await page.goto('/#/account?tab=ai'); await page.getByRole('region', { name: 'What was read' }).waitFor();
+    await page.goto('/#/settings/ai-access'); await page.getByRole('region', { name: 'What was read' }).waitFor();
     await capture(page, '05d-account-ai-access');
     await page.getByRole('textbox', { name: 'Name' }).fill('VS Code at the dive centre');
     await page.getByRole('button', { name: 'Create AI access' }).click();
     await page.getByRole('button', { name: 'Copy: Key' }).waitFor();
     await capture(page, '05b-account-ai-access-key');
     await page.getByRole('button', { name: 'Done, I copied the key' }).click();
+    // Settings (UI overhaul): the Devices under the sections' tabs; from 90rem the sections beside; dark; on a phone the list of sections, then a section with
+    // its way back to it.
+    await page.goto('/#/settings/devices'); await page.locator('table').waitFor();
+    await capture(page, '05g-account-settings-devices');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
+    await capture(page, '05k-account-settings-security-1440');
+    // Just past the sidebar's breakpoint the sheet is narrow (about 720px at 1024): its tables are cards, as the 48rem container query wants; they are tables again from about 1100.
+    for (const width of [1024, 1100]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
+      await capture(page, `05l-account-settings-security-${width}`, { aria: false });
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
+    await capture(page, '05h-account-settings-security-dark', { aria: false });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#/settings'); await page.getByRole('navigation', { name: 'Settings' }).waitFor();
+    await capture(page, '05i-account-settings-phone');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/#/settings/display'); await page.getByRole('radiogroup').first().waitFor();
+    await capture(page, '05j-account-settings-display-phone-dark', { aria: false });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 1280, height: 900 });
   }
   if (want('admin')) {
-    await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Users' }).waitFor();
+    await page.goto('/#/settings/admin'); await page.getByRole('heading', { name: 'Users' }).waitFor();
     await page.getByRole('textbox', { name: 'E-mail' }).fill('second@example.com');
     await page.getByRole('button', { name: 'Create invitation link' }).click();
     await page.getByRole('button', { name: 'Copy' }).waitFor(); // the notice's text is also in the live region
@@ -311,8 +380,11 @@ test('review material', async ({ page, request, browser }) => {
       await capture(page, '09b-dive-assessment-de-phone', { aria: false });
     }
     if (want('divers')) {
-      await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Geräte' }).waitFor();
+      await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Andere Taucher' }).waitFor();
       await capture(page, '10-divers-de-phone', { aria: false });
+      await page.getByRole('button', { name: 'Aktionen: Pia Probe' }).click();
+      await capture(page, '10e-divers-row-menu-de-phone', { full: false, aria: false });
+      await page.keyboard.press('Escape');
       // A Diver's certification cards at phone width, in German: a typed and an imported one (ADR 0050), and the form.
       const [diver] = (await (await request.get('/api/divers')).json()) as { id: string; name: string }[];
       await request.post(`/api/divers/${diver!.id}/certifications`, {
@@ -324,7 +396,9 @@ test('review material', async ({ page, request, browser }) => {
       await request.post(`/api/divers/${diver!.id}/certifications`, {
         headers, data: { agency: 'ERC', level: 'Emergency First Response', issuedOn: '2023-02-01', expiresOn: new Date(Date.now() - 20 * 86_400_000).toISOString().slice(0, 10) },
       });
-      await page.reload();
+      await page.goto(`/#/divers/${diver!.id}`);
+      await page.getByRole('button', { name: `Zertifizierungen: ${diver!.name}` }).waitFor();
+      await capture(page, '10f-divers-page-de-phone', { aria: false });
       await page.getByRole('button', { name: `Zertifizierungen: ${diver!.name}` }).click();
       await page.getByRole('button', { name: /^Bild groß anzeigen/ }).first().waitFor({ timeout: 20_000 }).catch(() => undefined);
       await capture(page, '10c-divers-certifications-de-phone', { aria: false });
@@ -335,7 +409,9 @@ test('review material', async ({ page, request, browser }) => {
       for (const c of (await (await request.get(`/api/divers/${diver!.id}/certifications`)).json()) as { id: string }[]) {
         await request.delete(`/api/divers/${diver!.id}/certifications/${c.id}`, { headers });
       }
-      await page.getByRole('button', { name: 'Codes: Pia Probe' }).click();
+      await page.goto('/#/divers'); await page.getByRole('heading', { name: 'Andere Taucher' }).waitFor();
+      await page.getByRole('button', { name: 'Aktionen: Pia Probe' }).click();
+      await page.getByRole('menuitem', { name: 'Codes' }).click();
       await page.getByRole('dialog').getByRole('img').nth(1).waitFor();
       await capture(page, '10a-divers-codes-de-phone', { aria: false });
       await page.keyboard.press('Escape');
@@ -347,11 +423,11 @@ test('review material', async ({ page, request, browser }) => {
       await page.keyboard.press('Escape');
     }
     if (want('admin')) {
-      await page.goto('/#/admin'); await page.getByRole('heading', { name: 'Benutzer' }).waitFor();
+      await page.goto('/#/settings/admin'); await page.getByRole('heading', { name: 'Benutzer' }).waitFor();
       await capture(page, '11-admin-de-phone', { aria: false });
     }
     if (want('account')) {
-      await page.goto('/#/account?tab=ai'); await page.getByRole('region', { name: 'Was gelesen wurde' }).waitFor();
+      await page.goto('/#/settings/ai-access'); await page.getByRole('region', { name: 'Was gelesen wurde' }).waitFor();
       await capture(page, '11b-account-de-phone', { aria: false });
     }
     await setPreferences(request, { language: null });
@@ -484,7 +560,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.keyboard.press('Escape');
     await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: de ? /Tauchgang \d+/ : /Dive \d+/ }).waitFor();
     await capture(page, `${prefix}-dive-at-fresh-water-site`, { aria: false, axe });
-    await page.goto('/#/admin/site-imports'); await page.locator('.site-imports > li').first().waitFor();
+    await page.goto('/#/settings/admin/site-imports'); await page.locator('.site-imports > li').first().waitFor();
     await capture(page, `${prefix}-site-import`, { aria: false, axe });
     await page.getByText(de ? 'Ein Gebiet nach Koordinaten' : 'An area by coordinates').click();
     await page.getByRole('button', { name: de ? 'Import starten' : 'Start import' }).click();
@@ -575,7 +651,7 @@ test('review material', async ({ page, request, browser }) => {
     await setPreferences(request, { language: 'en' });
     // Changing the hash doesn't reload the app, which keeps the language it had: reload to take the new one.
     if (want('account')) {
-      await page.goto('/#/account?tab=connections'); await page.reload(); await page.getByRole('button', { name: 'Connect to SSI' }).waitFor();
+      await page.goto('/#/settings/connections'); await page.reload(); await page.getByRole('button', { name: 'Connect to SSI' }).waitFor();
       await capture(page, '24-account-ssi-connect');
     }
     await connectSsi(request);
@@ -595,12 +671,12 @@ test('review material', async ({ page, request, browser }) => {
       await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
       await page.reload(); await page.getByText(/^SSI hat schon einen Tauchgang/).waitFor();
       await capture(page, '25a3-account-review-dive-already-at-ssi-de-phone', { aria: false });
-      await page.goto('/#/account?tab=connections'); await page.getByText(/^Zuletzt abgerufen/).waitFor();
+      await page.goto('/#/settings/connections'); await page.getByText(/^Zuletzt abgerufen/).waitFor();
       await capture(page, '25a4-account-ssi-automatic-de-phone', { aria: false });
       await fetchState(request, automaticConnection, { clear: true }); await clearQueue(request);
       await setPreferences(request, { language: 'en' });
       await page.setViewportSize({ width: 1280, height: 900 }); await page.emulateMedia({ colorScheme: 'light' });
-      await page.goto('/#/account?tab=connections'); await page.reload(); await page.getByText('Connected, password kept').waitFor();
+      await page.goto('/#/settings/connections'); await page.reload(); await page.getByText('Connected, password kept').waitFor();
       // The SSI buddy list (ADR 0029): who is in Dive Hub already, adding and linking.
       await page.getByRole('button', { name: /^Show your SSI buddy list/ }).click();
       await page.getByRole('row', { name: /Mia Stone/ }).waitFor();
@@ -660,7 +736,7 @@ test('review material', async ({ page, request, browser }) => {
       await capture(page, '30-dive-ssi-de-dark-390', { aria: false });
     }
     if (want('account')) {
-      await page.goto('/#/account?tab=connections'); await page.reload(); await page.getByText('Verbunden, Passwort gespeichert').waitFor();
+      await page.goto('/#/settings/connections'); await page.reload(); await page.getByText('Verbunden, Passwort gespeichert').waitFor();
       await capture(page, '31-account-ssi-de-dark-390', { aria: false });
     }
     // Sending many dives (ADR 0047): the dialog with a dive held back, and a run stopped by a sign-in need; German on a dark phone.
@@ -728,7 +804,7 @@ test('review material', async ({ page, request, browser }) => {
       await setPreferences(request, { language: 'en' });
       await page.emulateMedia({ colorScheme: 'light' });
       await page.setViewportSize({ width: 1280, height: 900 });
-      await page.reload(); await page.getByRole('button', { name: /^Changed since sent \d+$/ }).waitFor();
+      await page.reload(); await openFilters(page); await page.getByRole('button', { name: /^Changed since sent \d+$/ }).waitFor();
       await capture(page, '35d-logbook-changed-since-sent');
       await clearPushRuns(request);
       await leaveSsi(request, dive42);
@@ -750,7 +826,7 @@ test('review material', async ({ page, request, browser }) => {
     await setPreferences(request, { language: 'en' });
     await lenaReady(request);
     if (want('account')) {
-      await page.goto('/#/account?tab=connections'); await page.reload();
+      await page.goto('/#/settings/connections'); await page.reload();
       const section = page.getByRole('region', { name: 'Dives of Lena from SSI' });
       await section.getByRole('button', { name: 'Show what the import would do' }).click();
       await section.getByRole('radiogroup', { name: /^SSI dive 15: / }).waitFor();
@@ -768,7 +844,7 @@ test('review material', async ({ page, request, browser }) => {
       await setPreferences(request, { language: 'de' });
       await page.emulateMedia({ colorScheme: 'dark' });
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto('/#/account?tab=connections'); await page.reload();
+      await page.goto('/#/settings/connections'); await page.reload();
       const section = page.getByRole('region', { name: 'Tauchgänge von Lena aus SSI' });
       await section.getByRole('button', { name: 'Zeigen, was der Import tun würde' }).click();
       await section.getByRole('radiogroup', { name: /^SSI-Tauchgang 15: / }).waitFor();
@@ -1010,7 +1086,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('link', { name: 'Review them' }).click();
     await page.getByRole('button', { name: /^Delete here too: / }).waitFor();
     await capture(page, '79b-review-gone-dive');
-    await page.goto('/#/account?tab=connections');
+    await page.goto('/#/settings/connections');
     await page.getByRole('button', { name: /^Check for dives deleted in SSI/ }).click();
     await page.getByRole('link', { name: 'Show them' }).waitFor();
     await capture(page, '79c-account-gone-check');
@@ -1082,7 +1158,7 @@ test('review material', async ({ page, request, browser }) => {
     await p2.getByRole('button', { name: 'Create account' }).click();
     await p2.getByRole('heading', { name: 'Logbook' }).waitFor();
     await capture(p2, '14-empty-logbook');
-    await p2.goto('/#/divers'); await p2.getByRole('heading', { name: 'Devices' }).waitFor();
+    await p2.goto('/#/divers'); await p2.getByRole('heading', { name: 'Other divers' }).waitFor();
     await capture(p2, '15-empty-divers');
     await p2.goto('/#/dives/00000000-0000-7000-8000-000000000000'); await p2.getByRole('heading', { name: 'Dive not found' }).waitFor();
     await capture(p2, '16-dive-not-found', { aria: false });

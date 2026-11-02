@@ -40,7 +40,7 @@ const LINE_DASHES: number[][] = [[], [8, 4], [2, 4], [10, 4, 2, 4]];
 /** Canvas fonts need px; the tokens are in rem. */
 function plotFont(el: Element) {
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  return `${Math.round(parseFloat(token(el, '--text-sm', '0.833rem')) * rem)}px ${token(el, '--font-sans', 'sans-serif')}`;
+  return `${Math.round(parseFloat(token(el, '--text-sm', '0.875rem')) * rem)}px ${token(el, '--font-sans', 'sans-serif')}`;
 }
 
 /**
@@ -49,7 +49,7 @@ function plotFont(el: Element) {
  * axis of its own on the right; without, `rightSpace` stays free there. `draw` paints over the profile, and `plotRef` lets
  * the caller redraw. The arrays are compared by identity: keep them the same between renders.
  */
-export function DepthPlot({ minutes, depthsM, temperaturesC, syncKey, draw, plotRef, onBox, label, describedBy, rightSpace = RIGHT_AXIS }: {
+export function DepthPlot({ minutes, depthsM, temperaturesC, syncKey, draw, plotRef, onBox, label, describedBy, rightSpace = RIGHT_AXIS, height = 320 }: {
   minutes: number[]; depthsM: number[]; temperaturesC?: (number | null)[] | undefined;
   /** The pointer's moment shows in every plot with this key. */
   syncKey: string;
@@ -57,7 +57,7 @@ export function DepthPlot({ minutes, depthsM, temperaturesC, syncKey, draw, plot
   plotRef?: MutableRefObject<uPlot | null> | undefined;
   /** Where the plot area sits in the figure, in CSS pixels. */
   onBox?: ((box: { left: number; width: number }) => void) | undefined;
-  label: string; describedBy?: string | undefined; rightSpace?: number | undefined;
+  label: string; describedBy?: string | undefined; rightSpace?: number | undefined; height?: number;
 }) {
   const { t } = useTranslation();
   const display = useDisplay();
@@ -76,7 +76,7 @@ export function DepthPlot({ minutes, depthsM, temperaturesC, syncKey, draw, plot
       ...(temperaturesC ? [temperaturesC.map((c) => (c === null ? null : temperatureIn(c, units)))] : []),
     ];
     const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
-    const text = token(el, '--color-text', '#0b2236');
+    const text = token(el, '--color-text', '#0e1a23');
     const muted = token(el, '--color-text-muted', '#4e6578');
     const grid = token(el, '--color-border', '#d5dfe6');
     const line = token(el, '--color-accent', '#0f5e8c');
@@ -102,7 +102,7 @@ export function DepthPlot({ minutes, depthsM, temperaturesC, syncKey, draw, plot
     const plot = new uPlot(
       {
         width: el.clientWidth,
-        height: 320,
+        height,
         ...(!temperaturesC && { padding: [8, rightSpace, 0, 0] as uPlot.Padding }),
         scales: { x: { time: false }, ...(temperaturesC && { temp: { auto: true } }) },
         cursor: { sync: { key: syncKey } },
@@ -132,7 +132,7 @@ export function DepthPlot({ minutes, depthsM, temperaturesC, syncKey, draw, plot
       el,
     );
     if (plotRef) plotRef.current = plot;
-    const resize = new ResizeObserver(() => plot.setSize({ width: el.clientWidth, height: 320 }));
+    const resize = new ResizeObserver(() => plot.setSize({ width: el.clientWidth, height }));
     resize.observe(el);
     return () => {
       resize.disconnect();
@@ -140,7 +140,7 @@ export function DepthPlot({ minutes, depthsM, temperaturesC, syncKey, draw, plot
       plot.destroy();
     };
   // display.duration is recreated each render; units and locale capture what it depends on. onBox and plotRef are the caller's own.
-  }, [minutes, depthsM, temperaturesC, syncKey, draw, rightSpace, units, locale, depthUnit, temperatureUnit, t, dark]);
+  }, [minutes, depthsM, temperaturesC, syncKey, draw, rightSpace, height, units, locale, depthUnit, temperatureUnit, t, dark]);
 
   return <div ref={container} className="profile" role="img" aria-label={label} aria-describedby={describedBy} />;
 }
@@ -183,7 +183,7 @@ export function PressureStrip({ series, labels, range, syncKey, describedBy, tit
       }),
     ];
     const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
-    const text = token(el, '--color-text', '#0b2236');
+    const text = token(el, '--color-text', '#0e1a23');
     const grid = token(el, '--color-border', '#d5dfe6');
     const line = token(el, '--color-accent', '#0f5e8c');
     const font = plotFont(el);

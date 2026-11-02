@@ -28,6 +28,19 @@
 .facts:first-child { margin-top: 0; }
 .facts dt { color: var(--color-text-muted); font-size: var(--text-sm); }
 .facts dd { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+/* The dive page: four figures at hero size, the rest of the facts smaller, then the profile and the details (UI overhaul). */
+.dive-sheet > .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 var(--space-5); }
+@media (min-width: 40rem) { .dive-sheet > .facts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.dive-sheet .fact-wide { grid-column: auto; }
+@media (min-width: 40rem) { .dive-sheet .fact-wide { grid-column: span 2; } }
+.dive-sheet > .facts dd { font-size: var(--text-md); }
+.dive-sheet > .facts .fact-hero dd { font-size: var(--text-hero); line-height: 1.15; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.dive-sheet .facts.dive-details { margin: var(--space-5) 0 var(--space-4); grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); }
+.dive-sheet .facts.dive-details[hidden] { display: none; }
+.dive-sheet .facts.dive-details dd { font-size: var(--text-md); font-weight: var(--weight-regular); }
+/* Empty details: one row of chips, each opens its editor. */
+.add-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+.dive-about { margin: 0; font-size: var(--text-lg); }
 /* What the recording says, next to a value set by hand. */
 .recorded-value { display: block; font-size: var(--text-sm); font-weight: var(--weight-regular); color: var(--color-text-muted); }
 .title-meta .recorded-value { display: inline; margin-left: var(--space-2); }
@@ -36,6 +49,8 @@
 
 /* Room for the chart and its legend before it's drawn, so the page doesn't jump (UI review C10). */
 .profile { width: 100%; min-height: 22.5rem; }
+/* The dive page's profile is the hero: taller (DepthProfile's HERO_HEIGHT, 440px, and the legend). */
+.dive-sheet .profile:not(.profile-tanks) { min-height: 30rem; }
 .profile .u-legend { color: var(--color-text); font-size: var(--text-sm); }
 /* The legend names the lines; values appear only while the pointer is on the chart (UI review B6). */
 .profile:not(:hover) .u-legend .u-value,
@@ -86,7 +101,7 @@
 .dive-lines:empty { display: none; }
 .dive-line { min-width: 0; }
 .dive-line > .disclosure > .disclosure-head > :not(.disclosure-title), .dive-line-plain > :not(h2) { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
-.dive-line > .disclosure > .disclosure-panel { padding-top: var(--space-3); }
+.dive-line > .disclosure > .disclosure-panel > .disclosure-body { padding-top: var(--space-3); }
 /* Without an arrow, the name still starts where the names of the lines that open do. */
 .dive-line-plain { padding-inline-start: 1.5rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
 .dive-line-plain > h2 { margin: 0; font-size: inherit; line-height: inherit; }
@@ -169,26 +184,37 @@
 .participant-row .diver-name { flex: 1 1 12rem; }
 .participant-role .field { gap: 0; }
 /* ---------- Logbook (UI redesign 3, ADR 0040) ---------- */
-/* The four numbers every logbook has: small names over tabular figures. */
-.logbook-totals { margin-bottom: var(--space-5); }
-.logbook-totals dl { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); margin: 0; }
-.logbook-totals dt { font-size: var(--text-sm); color: var(--color-text-muted); }
-.logbook-totals dd { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
 /* One toolbar for what narrows and orders the list: the search takes the room, the choices keep their width. */
 .logbook-toolbar { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-3) var(--space-4); margin-bottom: var(--space-4); }
 .logbook-search { flex: 1 1 16rem; max-width: 24rem; }
 .logbook-choice { flex: 0 1 14rem; min-width: min(100%, 11rem); }
-/* On a phone the first Dive is on the first screen (C11): the totals are one tight row, the search is the only open control,
-   and Diver, sort, Send and the chips sit behind "Filter and sort". */
+/* Filters stands in the row as its last control and opens its chips under the row: the disclosure's head and panel
+   become the toolbar's own items. */
+.logbook-filters { display: contents; }
+.logbook-filters > .disclosure-head { display: grid; gap: var(--space-1); align-content: start; align-self: flex-start; }
+/* The room a field's label takes, so the button stands level with the inputs. */
+.logbook-filters > .disclosure-head::before { content: ''; font-size: var(--text-sm); line-height: var(--leading-normal); height: 1lh; }
+.logbook-filters .disclosure-trigger { min-height: 2.5rem; align-items: center; }
+.logbook-filters > .disclosure-panel { flex: 0 0 100%; }
+.logbook-filters .chips { padding-top: var(--space-1); }
+/* On a phone the first Dive is on the first screen (C11): the search is the only open control, and Diver, sort, Send
+   and the chips sit behind "Filter and sort". */
 @media (max-width: 40rem) {
-  /* The totals close the list on a phone: two by two. */
-  .logbook-totals { margin: var(--space-5) 0 0; padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
-  .logbook-totals dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); }
   .logbook-toolbar { margin-bottom: var(--space-3); }
   .logbook-search { flex-basis: 100%; max-width: none; }
   .logbook-more { margin-bottom: var(--space-3); }
   .logbook-more .logbook-toolbar { padding-top: var(--space-3); }
   .logbook-more .logbook-choice { flex: 1 1 100%; }
+}
+/* On a phone the first Dive is on the first screen even with the decision line showing (C11): the head, the line and the
+   panel sit tighter, and the line's link follows its words instead of taking a line of its own. */
+@media (max-width: 40rem) {
+  .logbook-head { gap: var(--space-2) var(--space-4); }
+  .logbook-head .page-head-text > p { font-size: var(--text-sm); line-height: 1.35; }
+  .app-main:has(.logbook-head) { gap: var(--space-3); padding-top: var(--space-3); }
+  .logbook-head + .strip { display: block; margin: 0; }
+  .logbook-head + .strip > p { display: inline; margin-inline-end: var(--space-2); }
+  .logbook-panel { padding: var(--space-3) var(--space-4); }
 }
 .logbook-range { margin: 0 0 var(--space-2); }
 .logbook-nothing { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
@@ -204,11 +230,12 @@
 .dive-group:first-child .month-head { padding-top: var(--space-2); }
 .month-head h2 { margin: 0; font-size: var(--text-md); letter-spacing: 0; }
 .month-head p { margin: 0; }
-.dive-row { align-items: center; padding: var(--space-3); border-bottom: 1px solid var(--color-border); cursor: pointer; }
+.dive-row { align-items: center; padding: var(--space-3); border-bottom: 1px solid var(--color-border); cursor: pointer;
+  transition: background-color var(--duration-hover) var(--ease-out); }
 .dive-group:last-child .dive-row:last-child { border-bottom: none; }
 .dive-no { min-width: 2ch; text-align: right; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
 .dive-main { display: grid; gap: 2px; min-width: 0; }
-.dive-title { justify-self: start; font-weight: var(--weight-semibold); overflow-wrap: anywhere; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.dive-title { justify-self: start; font-weight: var(--weight-semibold); overflow-wrap: anywhere; text-decoration: none; }
 .dive-facts { display: flex; flex-wrap: wrap; align-items: center; row-gap: 2px; margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
 /* The dot is decoration, and it ends a line rather than starting the next one. */
 .dive-facts > span:not(.badge):not(:last-child):not(:has(+ .badge))::after { content: '·' / ''; margin: 0 var(--space-2); }
@@ -216,7 +243,7 @@
 .dive-buddies { display: inline-flex; }
 /* The profile sketch (UI redesign 3.1): the same box in every row, so rows line up; the box is empty while there is
    nothing to draw, and dashed for a Dive without a Recording. */
-.sketch { display: block; box-sizing: border-box; width: 7rem; height: 2.5rem; border-radius: var(--radius-sm); overflow: hidden; }
+.sketch { display: block; box-sizing: border-box; width: 9rem; height: 3rem; border-radius: var(--radius-sm); overflow: hidden; }
 .sketch-empty { border: 1px dashed var(--color-border-strong, var(--color-border)); }
 .sketch-shallow { stop-color: var(--color-depth-shallow); }
 .sketch-deep { stop-color: var(--color-depth-deep); }
@@ -240,7 +267,7 @@
   .dive-row { align-items: start; row-gap: 2px; }
   /* The sketch is the third column, beside the title and the line under it. Every row has its box, so no row loses
      width to another's. */
-  .sketch { grid-area: 1 / 3 / 3 / 3; align-self: center; width: 5.25rem; height: 2rem; }
+  .sketch { grid-area: 1 / 3 / 3 / 3; align-self: center; width: 6.5rem; height: 2.5rem; }
   .dive-main { grid-column: 2; }
   .dive-figures { grid-area: 2 / 2; align-self: center; justify-self: start; display: flex; flex-wrap: wrap; font-size: var(--text-sm); color: var(--color-text-muted); }
   .dive-figures > .num + .num::before { content: '·' / ''; margin: 0 var(--space-2); }
@@ -250,7 +277,7 @@
 @container dives (max-width: 26rem) {
   /* Too narrow for a column beside the text (a 320 px phone, or larger text): the sketch gets a line of its own. */
   .dive-grid { grid-template-columns: auto minmax(0, 1fr); }
-  .sketch { grid-area: 3 / 2; justify-self: start; align-self: start; width: min(100%, 7rem); height: 1.75rem; margin-top: var(--space-1); }
+  .sketch { grid-area: 3 / 2; justify-self: start; align-self: start; width: min(100%, 9rem); height: 2.25rem; margin-top: var(--space-1); }
 }
 .sort-button { font: inherit; color: inherit; background: none; border: none; padding: var(--space-1) 0; cursor: pointer;
   display: inline-flex; align-items: center; gap: var(--space-1); min-height: 1.5rem; }
@@ -264,7 +291,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .page-drop { position: fixed; inset: var(--space-3); z-index: 30; pointer-events: none; display: grid; place-items: center;
   border: 3px dashed var(--color-accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-accent-soft) 85%, transparent);
   animation: enter-fade var(--duration-popover) var(--ease-out); }
-.page-drop p { font-size: var(--text-xl); font-weight: var(--weight-semibold); color: var(--color-text); }
+.page-drop p { font-size: var(--text-lg); font-weight: var(--weight-semibold); color: var(--color-text); }
 .device-owner { min-width: 10rem; }
 
 /* Recordings as tabs (UI review C3) */
@@ -285,12 +312,6 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .find-title { font-size: var(--text-md); margin: var(--space-4) 0 var(--space-2); }
 .find-list { margin: 0; padding-left: var(--space-5); font-size: var(--text-sm); }
 .find-list li + li { margin-top: var(--space-1); }
-
-/* Loading: the shapes of what comes, without motion (UI review C10). */
-.loading { display: grid; gap: var(--space-5); }
-.skeleton { background: var(--color-surface); }
-.skeleton-facts { min-height: 14rem; }
-.skeleton-chart { min-height: 28rem; }
 
 /* Empty and error states that lead somewhere (visual refresh 8). */
 .empty-state { display: grid; justify-items: start; gap: var(--space-4); }
@@ -314,6 +335,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
   .table-stacked tr:not(:has(.cell-lead)) .cell-main + .cell-sub { margin-left: 0; }
   /* The dot is decoration; screen readers read the cells as cells. */
   .table-stacked .cell-sub + .cell-sub::before { content: '·' / ''; margin: 0 var(--space-2); }
+  .table-stacked .cell-sub:empty { display: none; }
 }
 
 /* Providers (ADR 0024, 0027): a choice with its explanation under it; the state of a Dive at a Provider. */
@@ -423,7 +445,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .finding-sources a { display: inline-block; min-height: 1.5rem; }
 /* Findings for information only, behind their line. */
 .findings-more > .disclosure-head .disclosure-trigger { font-weight: var(--weight-regular); color: var(--color-text-muted); }
-.findings-more > .disclosure-panel > .findings { margin-top: var(--space-2); }
+.findings-more > .disclosure-panel > .disclosure-body > .findings { margin-top: var(--space-2); }
 /* Put aside: what it said, and the way back. */
 .findings-aside { margin-top: var(--space-3); }
 .finding-aside { display: grid; gap: var(--space-2); padding-block: var(--space-3); }
@@ -443,13 +465,41 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .dive-numbers .field { max-width: 14rem; }
 
 /* Review page and the logbook's strip (UI redesign 4) */
-.strip { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4);
-  padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-accent-soft); margin-bottom: var(--space-4); }
+.strip { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); margin-bottom: var(--space-4); }
 .strip > p { margin: 0; }
 .back { margin: 0; font-size: var(--text-sm); }
 .subnav { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-4); }
 .subnav a { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); text-decoration: none; padding: var(--space-2) 0; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .subnav a[aria-current='page'] { color: var(--color-text); font-weight: var(--weight-semibold); border-bottom-color: var(--color-accent); }
+
+/* Settings (UI overhaul, "The shell"): from 90rem (SettingsPage renders .settings-beside then) the sections are a list
+   beside the section's view, the current one a pill like the sidebar's; from 64rem (.settings-above) a row of tabs above
+   it, so the view keeps the page's width and its tables their columns; below that the list is a view of its own, a row
+   per section. Classes, not media queries, so the layout changes with what React shows, not a frame before. */
+.settings-nav ul { margin: 0; padding: 0; list-style: none; }
+.settings-nav a { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); color: var(--color-text); text-decoration: none; }
+.settings-view { display: grid; gap: var(--space-5); align-content: start; min-width: 0; }
+.settings-rows li + li { border-top: 1px solid var(--color-border); }
+.settings-rows a { min-height: 3rem; padding: var(--space-2) 0; }
+.settings-rows .icon { color: var(--color-text-muted); }
+/* The view wraps under the list when there's no room beside it (text at 200 %: rem in a media query ignores the page's size). */
+.settings-beside { display: flex; flex-wrap: wrap; gap: var(--space-5) var(--space-6); align-items: flex-start; }
+.settings-beside > .settings-nav { flex: 0 0 11rem; }
+.settings-beside > .settings-view { flex: 1 1 30rem; }
+.settings-list ul { display: grid; gap: 2px; }
+.settings-list a { min-height: 2.25rem; padding: var(--space-1) 0.625rem; border-radius: var(--radius-control); color: var(--color-text-muted);
+  font-size: var(--text-sm); transition: background-color var(--duration-hover) var(--ease-out); }
+.settings-list a[aria-current='page'] { background: var(--color-active); color: var(--color-text); }
+/* The tabs wrap in their own row when they don't fit (text at 200 %), never widening the page. */
+.settings-above { display: grid; gap: var(--space-5); min-width: 0; }
+.settings-tabs ul { display: flex; flex-wrap: wrap; gap: 0 var(--space-5); border-bottom: 1px solid var(--color-border); }
+.settings-tabs a { min-height: 2.75rem; padding: var(--space-2) 0; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--color-text-muted);
+  transition: color var(--duration-hover) var(--ease-out); }
+.settings-tabs a[aria-current='page'] { color: var(--color-text); font-weight: var(--weight-semibold); border-bottom-color: var(--color-accent); }
+@media (hover: hover) {
+  .settings-list a:not([aria-current='page']):hover { background: color-mix(in srgb, var(--color-active) 60%, transparent); color: var(--color-text); }
+  .settings-tabs a:not([aria-current='page']):hover { color: var(--color-text); }
+}
 /* The count of what waits: beside the navigation's Logbook and the Review page's first part. */
 .count { display: inline-block; min-width: 1.5em; padding: 0 var(--space-1); border-radius: var(--radius-sm); background: var(--color-accent-soft); color: var(--color-text);
   font-size: var(--text-sm); font-weight: var(--weight-semibold); text-align: center; line-height: 1.4; }
@@ -460,7 +510,6 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .candidate-title { font-weight: var(--weight-semibold); font-size: var(--text-md); }
 .candidate-facts { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); overflow-wrap: anywhere; }
 .diff { background: var(--color-accent-soft); color: var(--color-text); border-radius: var(--radius-sm); padding-inline: var(--space-1); font-weight: var(--weight-semibold); }
-.review-links { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin-block: var(--space-2) var(--space-4); font-size: var(--text-sm); }
 
 /* A verification code (ADR 0043). The code itself is black on white in both themes: a scanner needs that contrast. */
 .code-figures { display: flex; flex-wrap: wrap; gap: var(--space-5); margin-bottom: var(--space-4); }
@@ -493,10 +542,22 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 /* The Tools page (ADR 0032) */
 .tools-cylinder { border: 0; padding: 0; margin: 0 0 var(--space-5); min-width: 0; }
 .tools-cylinder > legend { font-weight: var(--weight-semibold); padding: 0; margin-bottom: var(--space-3); }
-.tools-answer { display: grid; gap: var(--space-3); margin-top: var(--space-4); }
+.tools-answer { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); margin-top: var(--space-4); }
 .tools-answer > p, .tools-answer .muted, .tools-answer .notice, .tools-answer .subheading { margin: 0; }
-.tools-result { font-size: var(--text-lg); }
-.tools-result strong { font-size: var(--text-xl, var(--text-lg)); }
+/* The estimate notice is one quiet line under the title; it stays fully readable (a safety line). */
+.tools-notice { margin: 0 0 var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); max-width: 60ch; }
+/* Inputs and answer side by side from 64rem; below, the answer follows the inputs. */
+.tools-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+.tools-layout > *, .tools-results > * { min-width: 0; margin-block: 0; }
+.tools-results { display: grid; gap: var(--space-4); }
+/* Columns only while both fit: with text zoomed (the viewport's rem stays 16px) they stack instead of scrolling sideways. */
+@media (min-width: 64rem) { .tools-layout { grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); } }
+.tools-settings > .disclosure-head { align-items: baseline; }
+.tools-settings-summary { color: var(--color-text-muted); font-size: var(--text-sm); overflow-wrap: anywhere; }
+.tools-settings > .disclosure-panel > .disclosure-body { padding-top: var(--space-3); }
+.tools-result { margin: 0; }
+.tools-result strong { font-size: var(--text-hero); line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tools-bottom .tools-answer > .disclosure { margin-top: var(--space-1); }
 .tools-limits { width: 100%; border-collapse: collapse; }
 .tools-limits th, .tools-limits td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border, currentColor); }
 .tools-limits th { text-align: left; font-weight: var(--weight-regular); }
@@ -611,7 +672,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .certification-more-fields { display: grid; gap: var(--space-3); padding-top: var(--space-3); }
 /* A Diver's row has sections under the line: Certifications, Dive numbers. */
 .diver-section { flex-basis: 100%; min-width: 0; }
-.diver-section > .disclosure-panel { padding-top: var(--space-2); }
+.diver-section > .disclosure-panel > .disclosure-body { padding-top: var(--space-2); }
 .certification-summary { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
 .certification-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-3); }
 .certification-suggestions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
