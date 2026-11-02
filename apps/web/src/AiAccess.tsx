@@ -27,11 +27,11 @@ export function AiAccess() {
   const access = useQuery(aiAccessQuery());
   const [created, setCreated] = useState<{ name: string; key: string } | null>(null);
   if (!access.data) {
-    return access.error ? <Panel title={t('aiAccess.title')}><Notice tone="danger">{errorText(access.error)}</Notice></Panel> : null;
+    return access.error ? <Panel><Notice tone="danger">{errorText(access.error)}</Notice></Panel> : null;
   }
   const { enabled, endpoint, accesses } = access.data;
   return (
-    <Panel title={t('aiAccess.title')}>
+    <Panel>
       <div className="ai-access">
       <p>{t('aiAccess.lead')}</p>
       {!enabled && (
@@ -47,7 +47,7 @@ export function AiAccess() {
       {enabled && (
         <>
           <div className="ai-access-part">
-            <h3 className="subheading">{t('aiAccess.sharedTitle')}</h3>
+            <h2 className="subheading">{t('aiAccess.sharedTitle')}</h2>
             <p>{t('aiAccess.sharedLead')}</p>
             <ul className="ai-access-shared">
               <li>{t('aiAccess.sharedDives')}</li>
@@ -82,7 +82,7 @@ function CreateAccess({ onCreated }: { onCreated: (created: { name: string; key:
   });
   return (
     <Form className="form narrow-form" onSubmit={(e) => create.mutate(formValues(e).name!.trim())}>
-      <h3 className="subheading">{t('aiAccess.createTitle')}</h3>
+      <h2 className="subheading">{t('aiAccess.createTitle')}</h2>
       <TextField label={t('aiAccess.name')} description={t('aiAccess.nameHint')} name="name" maxLength={NAME_MAX} isRequired autoComplete="off" />
       <Checkbox isSelected={positions} onChange={setPositions}>
         <span className="radio-text"><span>{t('aiAccess.positions')}</span><span className="field-description">{t('aiAccess.positionsHint')}</span></span>
@@ -99,7 +99,7 @@ function CreatedAccess({ created, endpoint, onDone }: { created: { name: string;
   const lines = setupLines(endpoint, created.key);
   return (
     <div className="ai-access-part">
-      <h3 className="subheading">{t('aiAccess.createdTitle', { name: created.name })}</h3>
+      <h2 className="subheading">{t('aiAccess.createdTitle', { name: created.name })}</h2>
       {/* The key stays out of the notice: a notice's text is also read out through the page's live region. */}
       <Notice tone="success">{t('aiAccess.createdBody')}</Notice>
       <LabelledCopy label={t('aiAccess.key')} value={created.key} />
@@ -139,7 +139,7 @@ function Accesses({ accesses }: { accesses: AiAccessView[] }) {
   });
   return (
     <div className="ai-access-part" ref={list}>
-      <h3 className="subheading">{t('aiAccess.list')}</h3>
+      <h2 className="subheading">{t('aiAccess.list')}</h2>
       {revoke.error && <Notice tone="danger">{errorText(revoke.error)}</Notice>}
       {accesses.length === 0 ? <Muted>{t('aiAccess.empty')}</Muted> : (
         <Table cards label={t('aiAccess.list')} head={[
@@ -181,7 +181,7 @@ function AccessLog() {
     : <Badge tone="danger">{t('aiAccess.outcome.error', { code: e.errorCode ?? '' })}</Badge>);
   return (
     <div className="ai-access-part">
-      <h3 className="subheading">{t('aiAccess.logTitle')}</h3>
+      <h2 className="subheading">{t('aiAccess.logTitle')}</h2>
       <Muted>{t('aiAccess.logLead')}</Muted>
       {log.error && <Notice tone="danger">{errorText(log.error)}</Notice>}
       {log.data && (log.data.total === 0 ? <Muted>{t('aiAccess.logEmpty')}</Muted> : (

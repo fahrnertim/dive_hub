@@ -1856,7 +1856,7 @@
     "title": "AI access",
     "lead": "Let an AI assistant such as Claude Code or VS Code read your logbook. It connects to this Dive Hub with a key you create here. It can only read: nothing in your logbook can be changed through it.",
     "off": "AI access is switched off on this Dive Hub. An admin can switch it on.",
-    "offAdmin": "AI access is switched off on this Dive Hub. You can switch it on under <a>Admin</a>.",
+    "offAdmin": "AI access is switched off on this Dive Hub. You can switch it on under <a>Administration</a>.",
     "offExisting": "Your AI accesses don’t work until then.",
     "sharedTitle": "What your AI provider gets",
     "sharedLead": "Whatever the assistant reads is sent to the company behind it, such as Anthropic or OpenAI, and handled under that company’s terms, not this Dive Hub’s:",

@@ -18,10 +18,14 @@ test('an admin switches AI access on; a User creates one, uses its key, reads th
 
   // Off: the account page says so and offers nothing to create.
   await page.goto('/#/account?tab=ai');
-  const panel = page.locator('section', { has: page.getByRole('heading', { name: 'AI access', exact: true }) });
-  await expect(panel.getByText('AI access is switched off on this Dive Hub.')).toBeVisible();
+  // The section's h1 is its only heading "AI access".
+  await expect(page.getByRole('heading', { name: 'AI access', exact: true })).toHaveCount(1);
+  const panel = page.getByRole('main');
+  const off = panel.getByText('AI access is switched off on this Dive Hub.');
+  await expect(off).toBeVisible();
   await expect(panel.getByRole('button', { name: 'Create AI access' })).toHaveCount(0);
-  await panel.getByRole('link', { name: 'Admin' }).click();
+  await off.getByRole('link', { name: 'Administration', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Administration', level: 1 })).toBeVisible();
 
   const admin = page.locator('section', { has: page.getByRole('heading', { name: 'AI access', exact: true }) });
   await expect(admin.getByText('Off', { exact: true })).toBeVisible();
@@ -30,7 +34,7 @@ test('an admin switches AI access on; a User creates one, uses its key, reads th
   await expect(admin.getByText(/Switched on by Erika/)).toBeVisible();
 
   // On: what the AI provider gets is said before anything can be created.
-  await page.goto('/#/account?tab=ai');
+  await page.goto('/#/settings/ai-access');
   await expect(panel.getByRole('heading', { name: 'What your AI provider gets' })).toBeVisible();
   await expect(panel.getByText('the names of the people you dived with, which is other people’s data')).toBeVisible();
   await expect(panel.getByText('You have no AI access yet.')).toBeVisible();

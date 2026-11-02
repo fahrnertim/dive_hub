@@ -1856,7 +1856,7 @@
     "title": "KI-Zugang",
     "lead": "Lass einen KI-Assistenten wie Claude Code oder VS Code dein Logbuch lesen. Er verbindet sich mit diesem Dive Hub über einen Schlüssel, den du hier erstellst. Er kann nur lesen: An deinem Logbuch lässt sich darüber nichts ändern.",
     "off": "Der KI-Zugang ist auf diesem Dive Hub ausgeschaltet. Ein Admin kann ihn einschalten.",
-    "offAdmin": "Der KI-Zugang ist auf diesem Dive Hub ausgeschaltet. Du kannst ihn unter <a>Admin</a> einschalten.",
+    "offAdmin": "Der KI-Zugang ist auf diesem Dive Hub ausgeschaltet. Du kannst ihn unter <a>Verwaltung</a> einschalten.",
     "offExisting": "Deine KI-Zugänge funktionieren bis dahin nicht.",
     "sharedTitle": "Was dein KI-Anbieter bekommt",
     "sharedLead": "Was der Assistent liest, geht an das Unternehmen dahinter, etwa Anthropic oder OpenAI, und wird nach dessen Bedingungen verarbeitet, nicht nach denen dieses Dive Hub:",

@@ -12,7 +12,7 @@ export function Devices() {
   const devices = useQuery(devicesQuery());
   const divers = useQuery(diversQuery());
   return (
-    <Panel title={t('divers.devices')}>
+    <Panel>
       <Muted>{t('divers.devicesIntro')}</Muted>
       {/* Said once here, not under every device's select (UI review A2). */}
       {(divers.data?.length ?? 0) > 1 && (devices.data?.length ?? 0) > 0 && <Muted>{t('divers.assignHint')}</Muted>}

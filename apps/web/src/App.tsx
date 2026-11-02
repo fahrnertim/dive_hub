@@ -16,7 +16,7 @@ import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
 import { reviewTab } from './lib/review.ts';
-import { isSettingsSection, legacyRedirect } from './lib/settings.ts';
+import { legacyRedirect } from './lib/settings.ts';
 import { ErrorBoundary, Muted, Notice, PageHeader } from './ui/index.ts';
 import { PlainShell, Shell } from './ui/Shell.tsx';
 
@@ -137,7 +137,7 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const centreId = /^\/centres\/([\w-]+)$/.exec(path!)?.[1];
   if (centreId) return <CentrePage key={centreId} id={centreId} />;
   const settings = /^\/settings(?:\/([\w-]+))?$/.exec(path!);
-  if (settings) return <SettingsPage section={isSettingsSection(settings[1]) ? settings[1] : null} me={me} params={params} />;
+  if (settings) return <SettingsPage section={settings[1]} me={me} params={params} />;
   if (path === '/settings/admin/site-imports') {
     return me.user.role === 'admin' ? <SiteImportPage /> : <><PageHeader title={t('siteImport.title')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
   }

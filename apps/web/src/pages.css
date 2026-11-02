@@ -451,9 +451,10 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .subnav a { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); text-decoration: none; padding: var(--space-2) 0; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .subnav a[aria-current='page'] { color: var(--color-text); font-weight: var(--weight-semibold); border-bottom-color: var(--color-accent); }
 
-/* Settings (UI overhaul, "The shell"): from 64rem (SettingsPage renders .settings then) the sections are a list beside the
-   section's view, the current one a pill like the sidebar's; below that the list is a view of its own, a row per section.
-   Classes, not media queries, so the layout changes with what React shows, not a frame before. */
+/* Settings (UI overhaul, "The shell"): from 90rem (SettingsPage renders .settings-beside then) the sections are a list
+   beside the section's view, the current one a pill like the sidebar's; from 64rem (.settings-above) a row of tabs above
+   it, so the view keeps the page's width and its tables their columns; below that the list is a view of its own, a row
+   per section. Classes, not media queries, so the layout changes with what React shows, not a frame before. */
 .settings-nav ul { margin: 0; padding: 0; list-style: none; }
 .settings-nav a { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); color: var(--color-text); text-decoration: none; }
 .settings-view { display: grid; gap: var(--space-5); align-content: start; min-width: 0; }
@@ -461,15 +462,22 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .settings-rows a { min-height: 3rem; padding: var(--space-2) 0; }
 .settings-rows .icon { color: var(--color-text-muted); }
 /* The view wraps under the list when there's no room beside it (text at 200 %: rem in a media query ignores the page's size). */
-.settings { display: flex; flex-wrap: wrap; gap: var(--space-5) var(--space-6); align-items: flex-start; }
-.settings > .settings-nav { flex: 0 0 11rem; }
-.settings > .settings-view { flex: 1 1 30rem; }
-.settings .settings-nav ul { display: grid; gap: 2px; }
-.settings .settings-nav a { min-height: 2.25rem; padding: var(--space-1) 0.625rem; border-radius: var(--radius-control); color: var(--color-text-muted);
+.settings-beside { display: flex; flex-wrap: wrap; gap: var(--space-5) var(--space-6); align-items: flex-start; }
+.settings-beside > .settings-nav { flex: 0 0 11rem; }
+.settings-beside > .settings-view { flex: 1 1 30rem; }
+.settings-list ul { display: grid; gap: 2px; }
+.settings-list a { min-height: 2.25rem; padding: var(--space-1) 0.625rem; border-radius: var(--radius-control); color: var(--color-text-muted);
   font-size: var(--text-sm); transition: background-color var(--duration-hover) var(--ease-out); }
-.settings .settings-nav a[aria-current='page'] { background: var(--color-active); color: var(--color-text); }
+.settings-list a[aria-current='page'] { background: var(--color-active); color: var(--color-text); }
+/* The tabs wrap in their own row when they don't fit (text at 200 %), never widening the page. */
+.settings-above { display: grid; gap: var(--space-5); min-width: 0; }
+.settings-tabs ul { display: flex; flex-wrap: wrap; gap: 0 var(--space-5); border-bottom: 1px solid var(--color-border); }
+.settings-tabs a { min-height: 2.75rem; padding: var(--space-2) 0; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--color-text-muted);
+  transition: color var(--duration-hover) var(--ease-out); }
+.settings-tabs a[aria-current='page'] { color: var(--color-text); font-weight: var(--weight-semibold); border-bottom-color: var(--color-accent); }
 @media (hover: hover) {
-  .settings .settings-nav a:not([aria-current='page']):hover { background: color-mix(in srgb, var(--color-active) 60%, transparent); color: var(--color-text); }
+  .settings-list a:not([aria-current='page']):hover { background: color-mix(in srgb, var(--color-active) 60%, transparent); color: var(--color-text); }
+  .settings-tabs a:not([aria-current='page']):hover { color: var(--color-text); }
 }
 /* The count of what waits: beside the navigation's Logbook and the Review page's first part. */
 .count { display: inline-block; min-width: 1.5em; padding: 0 var(--space-1); border-radius: var(--radius-sm); background: var(--color-accent-soft); color: var(--color-text);

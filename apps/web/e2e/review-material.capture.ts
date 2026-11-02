@@ -279,10 +279,14 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('button', { name: 'Copy: Key' }).waitFor();
     await capture(page, '05b-account-ai-access-key');
     await page.getByRole('button', { name: 'Done, I copied the key' }).click();
-    // Settings (UI overhaul): the Devices beside the sections; dark; on a phone the list of sections, then a section with
+    // Settings (UI overhaul): the Devices under the sections' tabs; from 90rem the sections beside; dark; on a phone the list of sections, then a section with
     // its way back to it.
     await page.goto('/#/settings/devices'); await page.locator('table').waitFor();
     await capture(page, '05g-account-settings-devices');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
+    await capture(page, '05k-account-settings-security-1440');
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
     await capture(page, '05h-account-settings-security-dark', { aria: false });

@@ -4,6 +4,8 @@ import { useSyncExternalStore } from 'react';
 const NARROW = '(max-width: 40rem)';
 /** The sidebar's breakpoint: the same width as the shell's media queries in `ui/ui.css`; below it the bottom bar shows. */
 const WIDE = '(min-width: 64rem)';
+/** Room for a list beside a page's view next to the sidebar (Settings' sections). */
+const ROOMY = '(min-width: 90rem)';
 
 const subscribeTo = (query: string) => (notify: () => void) => {
   const list = matchMedia(query);
@@ -12,6 +14,7 @@ const subscribeTo = (query: string) => (notify: () => void) => {
 };
 const subscribeNarrow = subscribeTo(NARROW);
 const subscribeWide = subscribeTo(WIDE);
+const subscribeRoomy = subscribeTo(ROOMY);
 
 /** Whether the page is laid out for a phone. Only for a choice of *what* shows; spacing and sizes stay in CSS. */
 export function useNarrow(): boolean {
@@ -21,4 +24,9 @@ export function useNarrow(): boolean {
 /** Whether the shell is a sidebar beside the page (from 64rem). Like `useNarrow`, only for a choice of what shows. */
 export function useWide(): boolean {
   return useSyncExternalStore(subscribeWide, () => matchMedia(WIDE).matches, () => false);
+}
+
+/** Whether there's room beside the sidebar for a list next to a view (from 90rem). Only for a choice of what shows. */
+export function useRoomy(): boolean {
+  return useSyncExternalStore(subscribeRoomy, () => matchMedia(ROOMY).matches, () => false);
 }

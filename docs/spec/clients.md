@@ -841,7 +841,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **An Import's result links to that offer** (`unsentTo` on `GET /api/imports` and `/api/imports/{id}`: per Connection of
   the User that left the Import's new Dives out, `connectionId`, `provider` and `count`, how many of them are still
   unsent): say "{{count}} new dives weren't sent to {{provider}} by themselves" with a link to that Connection's settings,
-  where the offer is. Empty: say nothing. *Web:* `ImportPanel.tsx` (`#/account?tab=connections&connection=<id>`).
+  where the offer is. Empty: say nothing. *Web:* `ImportPanel.tsx` (`#/settings/connections?connection=<id>`).
 - **Must call `POST /api/connections/fetch-due` once per app start** (after sign-in); it answers `{ queued }`, fetches
   nothing itself, and queues a fetch only for Connections with the schedule on whose last fetch is more than an hour
   old. Don't poll it.
