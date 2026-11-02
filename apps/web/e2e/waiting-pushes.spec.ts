@@ -193,7 +193,16 @@ test('a Dive without a site says it needs one', { tag: ['@dives'] }, async ({ pa
     await page.keyboard.press('Escape');
     await expect(picker).toHaveCount(0);
     await expect(addSite).toBeFocused();
+    // Choosing a site removes the button: focus goes to the Provider's line, not to the page.
+    await addSite.click();
+    await picker.getByRole('searchbox').fill('Ras Mohammed');
+    await picker.getByRole('option', { name: /Ras Mohammed/ }).first().click();
+    await expect(picker).toHaveCount(0);
+    await expect(addSite).toHaveCount(0);
+    await expect(page.locator('#main').getByRole('button', { name: 'SSI', exact: true })).toBeFocused();
   } finally {
+    const { version } = await (await request.get(`/api/dives/${id}`)).json() as { version: number };
+    await request.patch(`/api/dives/${id}`, { headers, data: { version, siteId: null } });
     await leave(request);
   }
 });
@@ -427,6 +436,31 @@ test('a switch is busy while its setting saves', { tag: ['@account'] }, async ({
     await expect(changes).not.toHaveAttribute('aria-busy', 'true');
     await expect(newDives).toBeChecked();
     expect(changesSaves).toBe(1);
+  } finally {
+    await leave(request);
+  }
+});
+
+test('a save that fails says so while another setting saves', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  try {
+    // The save of "send changes" waits, then fails; "send new dives" saves meanwhile.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    await page.route('**/api/connections/*', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      if (!('sendChanges' in (route.request().postDataJSON() as object))) return route.fallback();
+      await held;
+      return route.fulfill({ status: 500, json: { code: 'internal_error' } });
+    });
+    await openConnections(page);
+    const settingsOf = automatic(page);
+    await settingsOf.getByText('Send changes automatically', { exact: true }).click();
+    await settingsOf.getByText('Send new dives automatically', { exact: true }).click();
+    await expect(settingsOf.getByRole('switch', { name: 'Send new dives automatically' })).toBeChecked();
+    release();
+    await expect(settingsOf.getByRole('alert')).toBeVisible();
+    await expect(settingsOf.getByRole('switch', { name: 'Send changes automatically' })).not.toBeChecked();
   } finally {
     await leave(request);
   }

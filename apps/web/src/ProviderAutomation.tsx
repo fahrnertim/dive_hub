@@ -38,6 +38,10 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
   // The settings whose save runs: their controls are busy, the others stay usable and save at once.
   const [pending, setPending] = useState<ReadonlySet<keyof Settings>>(new Set());
   const keysOf = (body: Settings) => Object.keys(body) as (keyof Settings)[];
+  // Each setting's last save error: a second save of another setting must not hide it.
+  const [failed, setFailed] = useState<Partial<Record<keyof Settings, Error>>>({});
+  const without = (now: Partial<Record<keyof Settings, Error>>, body: Settings) =>
+    Object.fromEntries(Object.entries(now).filter(([k]) => !keysOf(body).includes(k as keyof Settings)));
   useEffect(() => {
     if (!focused) return;
     heading.current?.focus();
@@ -45,7 +49,11 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
   }, [focused]);
   const save = useMutation({
     mutationFn: async (body: Settings) => unwrap(await api.PATCH('/api/connections/{id}', { params: { path: { id: c.id } }, body })),
-    onMutate: (body) => setPending((now) => new Set([...now, ...keysOf(body)])),
+    onMutate: (body) => {
+      setPending((now) => new Set([...now, ...keysOf(body)]));
+      setFailed((now) => without(now, body));
+    },
+    onError: (error, body) => setFailed((now) => ({ ...now, ...Object.fromEntries(keysOf(body).map((k) => [k, error])) })),
     onSettled: (_data, _error, body) => setPending((now) => new Set([...now].filter((k) => !keysOf(body).includes(k)))),
     onSuccess: (updated) => {
       queryClient.setQueryData<ConnectionView[]>(keys.connections, (all) => all?.map((x) => (x.id === updated.id ? updated : x)));
@@ -143,7 +151,7 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
               )}
             </>
           )}
-          {save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
+          {[...new Map(Object.values(failed).map((e) => [e.message, e])).values()].map((error) => <Notice key={error.message} tone="danger">{errorText(error)}</Notice>)}
         </div>
       )}
       {lastFetch && (

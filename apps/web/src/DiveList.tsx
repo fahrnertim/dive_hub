@@ -317,7 +317,7 @@ function DiveRow({ dive: d, diver, from, providerName, year, scaleM, list }: {
           {d.findings > 0 && <span className="badge">{t('logbook.findings', { count: d.findings })}</span>}
         </p>
         {d.waiting.length > 0 && (
-          // A div: Retry's error is a Notice, which a paragraph can't hold.
+          // A div, not a paragraph: each entry is a group of words, Retry and its error.
           <div className="dive-facts dive-waiting">
             {d.waiting.map((w) => <WaitingPushState key={w.provider} push={w} providerName={providerName(w.provider)} variant="row" diveId={d.id} itemName={itemName} list={list} />)}
           </div>

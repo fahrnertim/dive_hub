@@ -11,7 +11,7 @@ import { announce } from './lib/announce.ts';
 import { LinkOrAddDialog, ListChangeNotice, type ListChange } from './LinkOrAdd.tsx';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { diveTargets, typedSiteId, useFieldNames, useJoinNames, useProviders, useProviderText, waitsForUser, type SyncedField } from './lib/providers.ts';
-import { useFocusBackWhenClosed } from './lib/focus.ts';
+import { focusFirstIn, useFocusBackWhenClosed } from './lib/focus.ts';
 import { settingsHref } from './lib/settings.ts';
 import { SitePicker } from './SitePicker.tsx';
 import { NumberChainDialog } from './NumberChain.tsx';
@@ -344,6 +344,31 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
   const [picking, setPicking] = useState<RequirementView | null>(null);
   const [choosingSite, setChoosingSite] = useState(false);
   const siteButton = useFocusBackWhenClosed(choosingSite);
+  const needs = useRef<HTMLDivElement>(null);
+  // Escape gives focus back to the button. A chosen site removes it (and may release what waited), now or when the
+  // Dive refreshes; focus that was lost then goes to the line's own button, which stays.
+  const line = useRef<HTMLElement | null>(null);
+  const rescueFocus = () => {
+    const target = line.current;
+    line.current = null;
+    // The closing dialog may still hold focus for a few frames; wait until it lets go (at most a second).
+    let frames = 60;
+    const attempt = () => {
+      const active = document.activeElement;
+      if (!active || active === document.body) focusFirstIn(target);
+      else if (active.closest('[role="dialog"]') && frames-- > 0) requestAnimationFrame(attempt);
+    };
+    requestAnimationFrame(attempt);
+  };
+  const closeSitePicker = () => {
+    line.current = needs.current?.closest<HTMLElement>('.dive-line') ?? null;
+    setChoosingSite(false);
+    if (!siteButton.current) rescueFocus();
+  };
+  const siteButtonRef = (el: HTMLButtonElement | null) => {
+    siteButton.current = el;
+    if (!el && line.current) rescueFocus();
+  };
   if (s.unmet.length === 0) return null;
   const sites = s.unmet.filter((u) => u.type === 'site_external_id');
   const people = s.unmet.filter((u) => u.type === 'diver_mapping');
@@ -352,7 +377,7 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
   const canFindSites = !!p.data.diveSites?.import?.operations.includes('find') && !!s.connection;
 
   return (
-    <div className="provider-needs">
+    <div className="provider-needs" ref={needs}>
       {sites.map((u) => {
         const r = requirementOf(p, u);
         // No site: a button chooses one (the fix button above focuses it). A site without a position has nothing to fix here.
@@ -360,7 +385,7 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
           return (
             <div className="form" key={u.source}>
               <Muted>{pt('needsSite')}</Muted>
-              <div className="form-actions"><Button ref={siteButton} icon="site" onPress={() => setChoosingSite(true)}>{t('dive.chooseSite')}</Button></div>
+              <div className="form-actions"><Button ref={siteButtonRef} icon="site" onPress={() => setChoosingSite(true)}>{t('dive.chooseSite')}</Button></div>
             </div>
           );
         }
@@ -396,7 +421,7 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
       {picking && d.site && (
         <ProviderSitePicker provider={p} requirement={picking} connectionId={s.connection!.id} diveId={d.id} diveSiteId={d.site.id} siteName={d.site.name} onClose={() => setPicking(null)} />
       )}
-      {choosingSite && <SitePicker dive={d} onClose={() => setChoosingSite(false)} />}
+      {choosingSite && <SitePicker dive={d} onClose={closeSitePicker} />}
     </div>
   );
 }
