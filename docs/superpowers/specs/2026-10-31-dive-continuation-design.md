@@ -9,7 +9,7 @@ date: 2026-10-31
 
 **Built** on branch `dive-continuation` (PR to follow); the client duties below are in the [client contract](../../spec/clients.md)
 and the data in the [data model](../../spec/data-model.md). **ADR 0063 status: to be set to Built by the owner** (the ready
-text is in `.superpowers/sdd/2026-11-01-dive-continuation/adr-0063-draft.md`). Rulings made during the build: a later Dive that
+text is in [Pending ADR 0063 change](#pending-adr-0063-change) at the end of this document; remove that section once applied). Rulings made during the build: a later Dive that
 starts exactly when the earlier ends can't be appended (the gap must be more than 0); break lengths show in the app's duration
 format; "two dives" on a chain answers every pair of it and "ask again" reopens all of them; restoring an appended Dive undoes its
 whole append and every later one to the same joined Recording, recording "two dives" so the check doesn't ask again;
@@ -265,3 +265,31 @@ The joined Recording and its parts are one unit: they move together and are neve
 - The joined sample series' layout across channels; how rules skip the break's edges.
 - The route names (`POST /api/dives/{id}/continuation`-style) and response shape, following the merge routes.
 - Which module computes the joined summary; reusing the Recording summary code where it exists.
+
+## Pending ADR 0063 change
+
+For the owner: paste into `docs/decisions/0063-dive-continuation.md`, then delete this section.
+
+*Links below are written from this document; in the ADR they are relative to `docs/decisions/`.*
+
+Frontmatter `summary`: replace "Planned - " with "Built - ".
+
+### Status (replace the section)
+Accepted – 2026-11-01 (owner, after the design; proposed 2026-10-31). **Built** – 2026-11-02, PR <number>. Designed in
+Continuation (this document). Amends
+[ADR 0016](../../decisions/0016-recording-decisions-and-divers.md) (a Recording may be derived from others; a Device can have two
+Recordings on one Dive, as parts), [ADR 0026](../../decisions/0026-deleting-dives.md) (restoring an appended Dive gives its Recording
+back) and [ADR 0038](../../decisions/0038-logbook-checks-and-merging-dives.md) (a fifth rule, `surface_break`; a second way to fold one
+Dive into another).
+
+### Consequences (append)
+- Built as decided; the client duties are in [the client contract](../../spec/clients.md) and the data in the
+  [data model](../../spec/data-model.md). Rulings made during the build:
+  - A later Dive that starts exactly when the earlier ends cannot be appended (the gap must be more than 0).
+  - The same file uploaded again answers `unchanged` (a part is found by its key).
+  - "Two dives" on a chain answers every pair of it; "ask again" on an answered chain reopens all its pairs.
+  - Restoring an appended Dive undoes its whole append and every later append to the same joined Recording, and records
+    "two dives" for the pairs separated, so the check does not ask again.
+  - The assessment `ENGINE_VERSION` went 3 to 4 (the edges of a Surface break give no rate); `LOGBOOK_CHECKS_VERSION` 4 to 5.
+  - Break samples: 0 m every first-part sample interval, from one interval after its last sample to one interval before the
+    next part's first; joined `recording_key` `continuation:<its own id>`, `parser` `continuation`, version 1.
