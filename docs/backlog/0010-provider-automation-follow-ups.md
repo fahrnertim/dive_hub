@@ -94,7 +94,8 @@ Points 12-14 are done ([plan of 2026-11-03](../superpowers/plans/2026-11-03-auto
 - A Push run doesn't clear the offer when it starts, because it sends at most the Provider's cap. The offer shrinks by
   what is sent.
 - Point 14 (owner, 2026-10-28): the deleted dives list **hides "Delete in SSI" while an automatic delete waits**; the
-  button shows only when automatic deleting is off.
+  button shows only when automatic deleting is off. Refined (2026-11-03): it is hidden only while the entry is
+  `waiting`; a held or stopped delete shows it again, as nothing deletes by itself then.
 - Point 4 (2026-10-29): a conflict entry is `queued` when the Dive's send entry carries a choice made after the Conflict
   was found, in any state (waiting, held, stopped). The logbook row shows a held or stopped one.
 - Point 5 (2026-10-29): a "keep Dive Hub's" choice with no Connection to send through leaves the field open, so the
