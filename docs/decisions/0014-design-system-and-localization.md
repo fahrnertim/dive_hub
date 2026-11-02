@@ -9,7 +9,8 @@ date: 2026-10-03
 
 ## Status
 Accepted – 2026-10-03. Surfaces and density amended by [ADR 0019](0019-tonal-surfaces.md) (2026-10-04): panels are
-set off by tone, without outline; no component library or Tailwind.
+set off by tone, without outline; no component library or Tailwind. Partly superseded by
+[ADR 0064](0064-ui-overhaul.md) (2026-11-02): the palette and direction.
 
 ## Context
 After three slices the web client had about ten screens, roughly 150 hard-coded English strings,
