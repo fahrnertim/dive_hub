@@ -252,6 +252,8 @@ test('the delete dialog doesn\'t ask for a Provider that deletes by itself, and 
     await page.goto('/#/review?tab=deleted');
     const panel = deletedPanel(page);
     await expect(panel.getByText('Will be deleted in SSI in 5 min')).toBeVisible();
+    // While the automatic delete waits, there is no manual one beside it.
+    await expect(panel.getByRole('listitem').filter({ hasText: 'Will be deleted in SSI in 5 min' }).getByRole('button', { name: /^Delete in SSI/ })).toHaveCount(0);
     // Restoring cancels it (the click is strict: this is the only deleted dive of that day).
     const restore = panel.getByRole('button', { name: /^Restore: Mar 5, 2026/ });
     await restore.click();
@@ -278,6 +280,8 @@ test('a delete that stopped shows the error in the deleted dives and Retry puts 
     await page.goto('/#/review?tab=deleted');
     const panel = deletedPanel(page);
     await expect(panel.getByText(/^Couldn’t delete it in SSI: SSI didn’t answer as expected/)).toBeVisible();
+    // A stopped delete offers the manual one again, beside Retry.
+    await expect(panel.getByRole('listitem').filter({ hasText: /Couldn’t delete it in SSI/ }).getByRole('button', { name: /^Delete in SSI/ })).toBeVisible();
     await panel.getByRole('button', { name: /^Retry/ }).click();
     // Due at once, so the worker may have deleted it by the time the list refreshes: either way the error is gone.
     await expect(panel.getByText(/^Couldn’t delete it in SSI/)).toBeHidden();
