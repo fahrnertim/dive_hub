@@ -206,3 +206,11 @@ no new module.
 - [ ] Backlog 0010: points 12-14 marked done with this plan's link, `status: done`; this plan `status: done` with any
   ruling made while executing. Docs only, no check. Commit, then the final review, the `architecture-review` subagent,
   push and the PR (skills.md, Superpowers overrides 4-5).
+
+## Deferred minors (final review, 2026-11-03)
+
+- Two "Choose dive site" buttons when a Dive is held by several Providers (latent: only SSI asks for a site).
+- The settings cache can go stale when two saves answer out of order.
+- `i18n.exists(own)` is checked without a count, so a plural-only key is not found.
+- A dot after the Retry error when several Providers wait in one row.
+- `useRetry`'s `diveId!` has no guard for a missing id.
