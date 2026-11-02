@@ -95,7 +95,8 @@ test('lists two dives at the same time on the logbook, keeps them apart when tol
     await expect(main.getByText('Kept as two dives.')).toBeVisible();
     await page.reload();
     await page.getByRole('link', { name: 'Decided' }).click();
-    await page.getByRole('button', { name: /^Ask again: Dive \d+ and Dive \d+$/ }).click();
+    // Other specs' pairs may be decided too (the surface break pair is kept as two dives): this pair's button.
+    await page.getByRole('button', { name: new RegExp(`^Ask again: (Dive ${n} and Dive \\d+|Dive \\d+ and Dive ${n})$`) }).click();
     await page.getByRole('link', { name: /^To decide/ }).click();
     await expect(main.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ })).toBeVisible();
 
@@ -118,7 +119,7 @@ test('lists two dives at the same time on the logbook, keeps them apart when tol
 // deleting, kept when told so, and deleted only through the delete dialog, with its Undo.
 test('offers a short and shallow dive for deleting, keeps it when told so, and deletes it only after asking', { tag: ['@dives'] }, async ({ page, request }) => {
   await mergePair(request); // the false start is the one thing to decide
-  await falseStart(request);
+  const n = await diveNumber(request, await falseStart(request));
   try {
     await page.goto('/');
     const main = page.locator('#main');
@@ -139,7 +140,8 @@ test('offers a short and shallow dive for deleting, keeps it when told so, and d
     await main.getByRole('button', { name: /^Keep it: / }).click();
     await page.getByRole('link', { name: 'Decided' }).click();
     await expect(main.getByRole('heading', { name: 'Short dives you kept', level: 2 })).toBeVisible();
-    await main.getByRole('button', { name: /^Ask again: / }).click();
+    // Other specs' pairs may be decided too: this dive's button.
+    await main.getByRole('button', { name: `Ask again: Dive ${n}`, exact: true }).click();
     await page.getByRole('link', { name: /^To decide/ }).click();
 
     // Deleting asks first, in the delete dialog; nothing is deleted by the button on the row.

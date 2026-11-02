@@ -1,7 +1,12 @@
 // Sending many Dives to SSI from the logbook (ADR 0047), against the e2e server's fake SSI: the dialog says what goes and
 // what is held back, a run shows its progress and its result, and a run stopped by a sign-in need goes on after it.
 import { expect, test } from '@playwright/test';
-import { clearPushRuns, deletableDive, diveNumber, expireSsiTokens, headers, leaveSsi, openFilters, pushRunSetup, readyForSsi, resetDive, signInSsi } from './support.ts';
+import { clearPushRuns, deletableDive, diveNumber, expireSsiTokens, headers, leaveSsi, openFilters, pushRunSetup, readyForSsi, resetDive, signInSsi, setPreferences } from './support.ts';
+
+// Another spec in this worker may have left German or imperial units set.
+test.beforeAll(async ({ request }) => {
+  await setPreferences(request, { language: null, units: null });
+});
 
 test.afterEach(async ({ request }) => {
   await clearPushRuns(request);

@@ -2,7 +2,12 @@
 // typed by hand, one from a Mares, and entries between two of her dives here. What the import may do, the window, the
 // preview with the computer and a decision, the outcome, and the dives it made or linked.
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, LENA_SSI, conflictForLena, externalDiver, leaveLena, lenaClaimable, lenaReady, uniqueWord } from './support.ts';
+import { E2E_BASE_URL, LENA_SSI, conflictForLena, externalDiver, leaveLena, lenaClaimable, lenaReady, uniqueWord, setPreferences } from './support.ts';
+
+// Another spec in this worker may have left German or imperial units set.
+test.beforeAll(async ({ request }) => {
+  await setPreferences(request, { language: null, units: null });
+});
 
 const headers = { origin: E2E_BASE_URL };
 

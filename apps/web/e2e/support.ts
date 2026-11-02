@@ -98,6 +98,9 @@ export async function expectAccessible(page: Page) {
   // reference is on the page. One that stays broken still fails.
   await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('[aria-activedescendant]')]
     .every((el) => !!document.getElementById(el.getAttribute('aria-activedescendant')!)))).toBe(true);
+  // A part still loading fades its content in when it arrives, and axe would measure it mid-fade (CI on PR #17, the
+  // logbook's list after its decision line): wait until no skeleton is left.
+  await expect(page.locator('.skeleton')).toHaveCount(0);
   // A notice or dialog fades in from opacity 0, and axe would measure its contrast mid-fade (backlog 0006, seen in CI
   // 2026-10-26): wait until every animation and transition that ends has ended. Endless ones (a spinner) are skipped.
   // An animation starts a frame after the render that asked for it (the logbook's reveal, a hover transition), so a

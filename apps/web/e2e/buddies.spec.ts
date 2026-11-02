@@ -5,8 +5,13 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 import { picture } from './qr-picture.ts';
 import {
   clearParticipants, clearPushRuns, connectSsi, externalDiver, forgetDivers, importSsiBuddies, leaveSsi, openLine, pushRunSetup, readyForSsi,
-  resetDive, resetSsiBuddies, setBuddies,
+  resetDive, resetSsiBuddies, setBuddies, setPreferences,
 } from './support.ts';
+
+// Another spec in this worker may have left German or imperial units set.
+test.beforeAll(async ({ request }) => {
+  await setPreferences(request, { language: null, units: null });
+});
 
 // The diver made here is taken off the dive and deleted again: another spec on the same server adds a Diver of the
 // same name, and two of them make buttons with the same name on the Divers page.

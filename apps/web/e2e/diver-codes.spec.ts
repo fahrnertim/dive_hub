@@ -3,7 +3,12 @@
 // number; a code of someone already here says so; and a professional on a dive puts their code on that dive.
 // The person, account, e-mail and leader number are made up: no real person's code is in this repository.
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, clearParticipants, forgetDivers, resetDive, setBuddies } from './support.ts';
+import { clearParticipants, E2E_BASE_URL, forgetDivers, resetDive, setBuddies, setPreferences } from './support.ts';
+
+// Another spec in this worker may have left German or imperial units set.
+test.beforeAll(async ({ request }) => {
+  await setPreferences(request, { language: null, units: null });
+});
 
 const headers = { origin: E2E_BASE_URL };
 const NAME = 'Pia Probe';

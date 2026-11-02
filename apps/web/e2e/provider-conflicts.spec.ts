@@ -3,8 +3,13 @@
 // until the User chooses), and a run leaves such a dive waiting on the Review page, where the same choice sends it.
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import {
-  clearPushRuns, conflictAtSsi, diveNumber, editAtSsi, editElsewhere, headers, leaveConflict, openLine, sentWithNotes,
+  clearPushRuns, conflictAtSsi, diveNumber, editAtSsi, editElsewhere, headers, leaveConflict, openLine, sentWithNotes, setPreferences,
 } from './support.ts';
+
+// Another spec in this worker may have left German or imperial units set.
+test.beforeAll(async ({ request }) => {
+  await setPreferences(request, { language: null, units: null });
+});
 
 test.describe.configure({ mode: 'serial' });
 
