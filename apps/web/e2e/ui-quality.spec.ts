@@ -1813,6 +1813,17 @@ test.describe('behaviour', () => {
     expect(await page.locator('.skeleton-bar').first().evaluate((el) => el.getAnimations().length)).toBe(0);
   });
 
+  test('the logbook shows its skeleton while the first request is out, and the dives once it answers', { tag: ['@dives'] }, async ({ page }) => {
+    let release = () => {};
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    await page.route(/\/api\/dives(\?.*)?$/, async (route) => { await held; await route.continue(); });
+    await page.goto('/');
+    await expect(page.locator('.skeleton-bar').first()).toBeVisible();
+    release();
+    await expect(diveRows(page).first()).toBeVisible();
+    await expect(page.locator('.skeleton-bar')).toHaveCount(0);
+  });
+
   test('the only admin is not offered to remove their own admin role', { tag: ['@admin'] }, async ({ page }) => {
     await page.goto('/#/admin');
     const me = page.getByRole('row').filter({ hasText: 'erika@example.com' });

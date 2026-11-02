@@ -178,6 +178,18 @@ async function stubDive(page: Page, id: string, recordings: (all: unknown[]) => 
   });
 }
 
+test('a dive with only how its weighting felt shows that fact and no "Add suit and lead" chip', { tag: ['@dives'] }, async ({ page }) => {
+  await page.route(`**/api/dives/${diveId}`, async (route) => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    const body = await (await route.fetch()).json();
+    return route.fulfill({ json: { ...body, site: null, participants: [], suit: null, lead: [], weightingFeedback: { felt: 'too_heavy', amountKg: null } } });
+  });
+  await page.goto(`/#/dives/${diveId}`);
+  await expect(page.locator('.dive-details')).toBeVisible();
+  await expect(page.locator('.dive-details').getByText('Too heavy')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add suit and lead' })).toHaveCount(0);
+});
+
 test('empty details are one row of "Add" chips, each opening its editor', { tag: ['@dives'] }, async ({ page }) => {
   await stubDive(page, diveId, (all) => all);
   await page.goto(`/#/dives/${diveId}`);

@@ -35,11 +35,13 @@ function Divers({ open }: { open: string | undefined }) {
   const errorText = useErrorText();
   const queryClient = useQueryClient();
   const divers = useQuery(diversQuery());
+  const target = open ? divers.data?.find((d) => (open === 'own' ? d.isOwn : d.id === open)) : undefined;
+  // The list stays behind the skeleton only while the address is on its way to a page; an unknown id shows the list at once.
+  const leaving = !!target;
   useEffect(() => {
     if (!open || !divers.data) return;
-    const target = divers.data.find((d) => (open === 'own' ? d.isOwn : d.id === open));
     location.replace(target ? `#/divers/${target.id}?open=certifications` : '#/divers');
-  }, [open, divers.data]);
+  }, [open, divers.data, target]);
   const sameName = useSameName();
   const create = useMutation({
     mutationFn: async (name: string) => unwrap(await api.POST('/api/divers', { body: { name } })),
@@ -56,10 +58,10 @@ function Divers({ open }: { open: string | undefined }) {
   return (
     <Panel title={t('divers.logbooks')}>
       <Muted>{t('divers.intro')}</Muted>
-      {(divers.isPending || (!!open && !divers.error)) && <RowsSkeleton rows={3} />}
+      {(divers.isPending || leaving) && <RowsSkeleton rows={3} />}
       {divers.error && <Notice tone="danger">{errorText(divers.error)}</Notice>}
       <ul className="diver-list">
-        {!open && divers.data?.map((d) => <DiverRow key={d.id} diver={d} />)}
+        {!leaving && divers.data?.map((d) => <DiverRow key={d.id} diver={d} />)}
       </ul>
       <Form className="form-inline" onSubmit={submit}>
         <TextField

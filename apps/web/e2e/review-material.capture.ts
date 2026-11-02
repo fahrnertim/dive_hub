@@ -88,6 +88,17 @@ test('review material', async ({ page, request, browser }) => {
     await page.goto('/'); await page.getByRole('heading', { name: 'Logbook' }).waitFor();
     await capture(page, '01-logbook');
     await tabOrder(page, '01-logbook');
+    // A skeleton (UI overhaul): the logbook's request is held until the bars show, so they can be looked at. The held
+    // request is in flight, so this shot is taken without capture(), which waits for none.
+    let release = () => {};
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    const logbookRequest = /\/api\/dives(\?.*)?$/;
+    await page.route(logbookRequest, async (route) => { await held; await route.continue(); });
+    await page.reload(); await page.locator('.skeleton-bar').first().waitFor({ timeout: 15_000 });
+    await page.screenshot({ path: `${out}01f-logbook-skeleton.png` });
+    release();
+    await page.getByRole('heading', { name: 'Logbook' }).waitFor(); await expect(page.locator('.skeleton-bar')).toHaveCount(0);
+    await page.unroute(logbookRequest);
     // The odd computer's recording waits: the logbook says it in one line, the Review page decides.
     await page.getByRole('link', { name: 'Review them' }).click(); await page.getByRole('heading', { name: 'Review', level: 1 }).waitFor();
     await capture(page, '01a-review');
@@ -316,6 +327,12 @@ test('review material', async ({ page, request, browser }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
     await capture(page, '05k-account-settings-security-1440');
+    // Just past the sidebar's breakpoint the sheet is narrow: its tables stay tables, not cards.
+    for (const width of [1024, 1100]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
+      await capture(page, `05l-account-settings-security-${width}`, { aria: false });
+    }
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();

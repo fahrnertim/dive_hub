@@ -335,6 +335,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
   .table-stacked tr:not(:has(.cell-lead)) .cell-main + .cell-sub { margin-left: 0; }
   /* The dot is decoration; screen readers read the cells as cells. */
   .table-stacked .cell-sub + .cell-sub::before { content: '·' / ''; margin: 0 var(--space-2); }
+  .table-stacked .cell-sub:empty { display: none; }
 }
 
 /* Providers (ADR 0024, 0027): a choice with its explanation under it; the state of a Dive at a Provider. */

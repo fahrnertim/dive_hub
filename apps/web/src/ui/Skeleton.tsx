@@ -83,7 +83,7 @@ export function DiveSkeleton() {
     <Skeleton>
       <div className="skeleton-dive">
         <SkeletonBlock height="2rem" width="50%" />
-        <SkeletonBlock height="10rem" />
+        <span className="skeleton-bar skeleton-block skeleton-dive-facts" />
         <SkeletonBlock height="30rem" />
       </div>
     </Skeleton>

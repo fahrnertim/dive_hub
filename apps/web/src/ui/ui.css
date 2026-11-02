@@ -30,8 +30,11 @@
 .app-main { display: grid; grid-template-columns: minmax(0, var(--width-content)); justify-content: center; align-content: start;
   gap: var(--space-5); padding: var(--space-5) var(--space-4) var(--space-7); background: var(--color-surface); }
 .app-main:focus { outline: none; }
-/* Panels stay boxes on the sheet until the pages turn them into sheet sections; a hairline keeps them apart. */
-.app-main .panel { border: 1px solid var(--color-border); }
+/* On the sheet a Panel is a section, not a box: no edge, corners or inset of its own; a hairline and space set it off from the
+   section before it. A tinted one (waiting for the User) stays a box, by one tone step. */
+.app-main .panel { border-radius: 0; padding: 0; }
+.app-main .panel ~ .panel { border-top: 1px solid var(--color-border); padding-top: var(--space-5); }
+.app-main .panel-attention { border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); border-top: none; }
 
 @media (hover: hover) {
   .shell-nav a:not([aria-current='page']):hover, .shell-settings:not([aria-current='page']):hover,
@@ -438,6 +441,9 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
 .skeleton-row { display: grid; padding: var(--space-3) 0; border-top: 1px solid var(--color-border); }
 .skeleton-row:first-child { border-top: none; }
 .skeleton-dive { display: grid; gap: var(--space-5); }
+/* The facts strip is two rows of figures on a phone and one on a tablet. */
+.skeleton-dive-facts { height: 16rem; }
+@media (min-width: 40rem) { .skeleton-dive-facts { height: 10rem; } }
 .skeleton .dive-row { cursor: default; }
 .skeleton .dive-no { min-width: 2ch; }
 @keyframes skeleton-pulse { 50% { opacity: 0.55; } }

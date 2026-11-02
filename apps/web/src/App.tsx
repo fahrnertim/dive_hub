@@ -17,7 +17,7 @@ import { mayLeave } from './lib/leave-guard.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
 import { reviewTab } from './lib/review.ts';
 import { legacyRedirect } from './lib/settings.ts';
-import { ErrorBoundary, Notice, PageHeader, RowsSkeleton } from './ui/index.ts';
+import { ErrorBoundary, LogbookSkeleton, Notice, PageHeader, RowsSkeleton } from './ui/index.ts';
 import { PlainShell, Shell } from './ui/Shell.tsx';
 
 // Pages most visits don't need load on demand: the chart library, Settings.
@@ -161,7 +161,7 @@ function Logbook({ params }: { params: LogbookParams }) {
       <DeletedNotices />
       <ReviewStrip />
       <PushRunStrip />
-      {returning ? (
+      {all.isPending ? <LogbookSkeleton /> : returning ? (
         <>
           <DiveList params={params} />
           <RecentImports />

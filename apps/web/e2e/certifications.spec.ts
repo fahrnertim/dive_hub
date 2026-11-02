@@ -182,6 +182,9 @@ test('the Divers list names each kept Diver with a link to their page and their 
   // The old address with a Diver nobody has goes to the list.
   await page.goto('/#/divers?certifications=00000000-0000-4000-8000-000000000000');
   await expect(page).toHaveURL(/#\/divers$/);
+  // The list is there, not left behind its skeleton.
+  await expect(page.locator('.diver-list').first().getByRole('listitem').first()).toBeVisible();
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
   await page.goto('/#/divers/00000000-0000-4000-8000-000000000000');
   await expect(page.getByRole('heading', { level: 1, name: 'Diver not found' })).toBeVisible();
   await page.getByRole('link', { name: 'To the Divers' }).click();

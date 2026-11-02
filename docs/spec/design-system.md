@@ -2,7 +2,7 @@
 title: Design system
 summary: Visual direction, tokens, components, writing, localization and units of the web client; the brief every screen follows.
 status: living
-date: 2026-10-05
+date: 2026-11-02
 ---
 
 # Design system
@@ -84,18 +84,23 @@ boundary uses `--color-border-strong`. Panels have no outline (ADR 0019); the sh
   and avatars are fully round.
 - **Shell and durations:** `--shell-sidebar` 14.5 rem, `--shell-topbar` 3.25 rem; `--duration-hover` 120 ms,
   `--duration-reveal` 150 ms, `--duration-disclosure` 200 ms (all 0 with reduced motion).
-- **Surfaces** ([ADR 0019](../decisions/0019-tonal-surfaces.md)): white panels on the slightly deeper page tone,
-  no outline, `--panel-padding` 32 px (24/16 px on a phone). Something that waits for the User (Duplicate
+- **Surfaces** (the [overhaul design](../superpowers/specs/2026-11-02-ui-overhaul-design.md), which replaces ADR 0019's white panels): the page is one
+  white sheet on the tinted frame; a `Panel` on it is a section, not a box. It has no edge, corners or padding of its own;
+  the sheet's padding holds it, and a hairline with `--space-5` above sets it off from the section before. A box inside
+  the sheet is one tone step (the candidate cards, `.terms`). Something that waits for the User (Duplicate
   candidates) is tinted with `--color-accent-soft` (`Panel attention`). Terms to confirm before going on (the ODbL before an OSM import) use the same tint in a box (`.terms`), not a `Notice`, which announces itself. One comfortable density: table rows
   keep `--space-3` vertical padding.
 - **Text roles:** `.muted` is colour only, so leads and sentences stay at body size; `.meta` is small, muted
   secondary text (counts, entry dates). Large headings use `--tracking-heading` (−0.01em).
 - **Elevation:** only things floating above the page (dialogs) get `--shadow-overlay`.
-- **Motion** ([ADR 0018](../decisions/0018-icons-and-motion.md)): only entries that explain where
+- **Motion** ([ADR 0018](../decisions/0018-icons-and-motion.md), extended by the overhaul design): only entries that explain where
   something came from. Menus and selects grow from their trigger (`--duration-popover`, 150 ms),
-  dialogs fade and scale in (200 ms), notices rise in (200 ms). The curve is always `--ease-out`, and
-  only `transform` and `opacity` animate. Pages, table rows, the chart, tabs and focus never move.
-  All `--duration-*` drop to 0 with `prefers-reduced-motion`.
+  dialogs fade and scale in (200 ms), notices rise in (200 ms), a phone menu rises from the bottom as a sheet.
+  Content fades in where data replaces a skeleton (`.reveal`, `--duration-reveal`); a skeleton's bars pulse gently
+  (`--duration-pulse`); a disclosure opens by height (`--duration-disclosure`); hover changes `background-color` or
+  `color` over `--duration-hover`. The curve is `--ease-out` (the pulse `--ease-pulse`), and only `transform` and
+  `opacity` animate, besides the hover colours. Pages, table rows, the chart, tabs and focus never move.
+  All `--duration-*` drop to 0 with `prefers-reduced-motion`, and the pulse stops.
 - **Icons** ([ADR 0018](../decisions/0018-icons-and-motion.md)): Lucide through `ui/Icon.tsx`
   (`<Icon name="edit" />`, or `icon="edit"` on `Button` and menu actions), always beside a visible
   label, `aria-hidden`, in the colour of the text. Table row actions stay text only.
@@ -107,9 +112,10 @@ boundary uses `--color-border-strong`. Panels have no outline (ADR 0019); the sh
 - **Touch** (mobile-native skill): links and buttons have `touch-action: manipulation` and no tap highlight;
   buttons, tabs and menu items don't select their label on a long press. Inputs stay at 16 px or more (iOS zooms
   into smaller ones). The browser bar (`theme-color`) has the frame's colour per scheme. Quiet buttons are 32 px tall.
-- **Layout:** content up to `--width-content` (72 rem), left-aligned. Every page starts with `PageHeader`
-  (h1, meta, lead, the page's actions), then its panels. Single forms (sign-in, setup) are a narrow centered
-  panel (`--width-form`, 28 rem) whose title is the h1.
+- **Layout:** content up to `--width-content` (72 rem) on the sheet, centered. Every page starts with `PageHeader`
+  (h1, meta, lead, the page's actions), then its sections (`Panel`), set off by hairlines. Single forms (sign-in,
+  setup) are a narrow centered section (`--width-form`, 28 rem) whose title is the h1. The shell is a sidebar from
+  64 rem; below, a top bar and a bottom bar.
 
 ## Components
 
@@ -124,13 +130,16 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `Switch` | A setting that takes effect at once (role `switch`, `apps/web/src/ui/Choice.tsx`). `Checkbox` is for a choice submitted with a form. |
 | `Form` | React Aria's form with native validation on submit, and the line "* required" at its top while a field carries the mark (hidden in one-line `form-inline` forms). |
 | `PageHeader` | The page's h1 with optional meta (a dive's date and Diver), a lead sentence and the page's actions. |
-| `Panel` | A titled area of a page; `narrow` for single forms; `attention` for something waiting for the User. |
+| `Shell` (`ui/Shell.tsx`) | The tinted frame around the sheet: a sidebar (Logbook, Divers, Dive sites, Dive centres, Tools; Settings and the user menu at its foot) from 64 rem; below it a top bar (brand, user menu) and a bottom bar with the five places. `PlainShell` is the frame without navigation (sign-in, invitation). |
+| `Panel` | A titled section of the sheet; `narrow` for single forms; `attention` for something waiting for the User (a tinted box). |
+| `Skeleton`, `RowsSkeleton`, `LogbookSkeleton`, `DiveSkeleton` (`ui/Skeleton.tsx`) | Loading: flat bars in the final layout instead of "Loading…", shown after 150 ms so a fast load shows nothing. One hidden "Loading…" for screen readers and `aria-busy`; the bars are decoration. Labels and headings that don't depend on the data render at once. The data fades in over them (`.reveal`). |
+| Settings (`SettingsPage`) | One area at `#/settings/<section>` (Display, Sign-in and security, Connections, AI access, Devices, Administration). From 90 rem the sections are a list beside the view; from 64 rem a row of tabs above it; on a phone `#/settings` is the list and each section its own view. A kept Diver has a page at `#/divers/<id>`. |
 | `Notice` | What just happened: `info`, `success`, `danger` (announced at once). |
 | `Table` | Data tables; numeric columns are right-aligned, header included. The first and last columns line up with the panel's text. A table switches layout by its own width (container query), not the window's: `cards` (tables with an actions column) below 48rem become blocks of label–value lines separated by dividers, and below 22rem the label sits above its value; `stacked` (the Dive sites list) below 40rem becomes two lines per row (`cell-lead` and `cell-main`, then the `cell-sub` cells). Date cells (`date`) don't wrap; e-mail cells (`email`) may break anywhere. |
 | `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). Its title row has a close button ("Close dialog"), so no dialog is closed only by Esc or a tap on the rim. |
 | `Disclosure` | One line that opens what is behind it (a finding's details, the Dive at a Provider, a Dive's history): the title is the button, with an arrow as the cue; a `summary` stays in sight beside it; the whole line can be pressed. Only the arrow moves. For what most Users need now and then; what waits for the User opens by itself. |
 | `ConfirmButton`, `ConfirmDialog` | An action that is hard to undo asks first, in a dialog that says what will happen. The dialog alone serves menu items. |
-| `ActionMenu` | Secondary actions behind one button ("Recording actions", "More", the account menu). The panel shows only its main action. |
+| `ActionMenu` | Secondary actions behind one button ("Recording actions", "More", the account menu). The panel shows only its main action. Above 40 rem a popover; below, a bottom sheet in a `Dialog` labelled by its trigger (rows 48 px tall, a hairline at its top edge). A list row with more than two actions gets one as its row menu, labelled with `common.forItem` ("Actions: Kai Lund"). |
 | `CopyField` | A value shown once with a copy button (invitation and reset links). |
 | `NumberField` | Numbers in the UI language's format ("18,5" in German), with a unit after the input. The value commits on blur; `onInput` reacts while typing (the dive form marks a field "edited" then, so nothing moves under a pointer about to press Save). |
 | `Select` | One choice from a short list (e.g. a site's water type). `size="small"` inside a table row. |
