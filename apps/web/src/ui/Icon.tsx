@@ -3,7 +3,7 @@
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
   ArrowDown, ArrowLeftToLine, ArrowRightLeft, ArrowUp, Award, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, TriangleAlert,
-  CircleCheck, CircleUser, Clock, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Settings, Shield, ShieldOff,
+  CircleCheck, CircleUser, Clock, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Eye, EyeOff, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Settings, Shield, ShieldOff,
   Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, Wrench, X, type LucideIcon,
 } from 'lucide-react';
 
@@ -70,6 +70,9 @@ const ICONS = {
   send: CloudUpload,
   signIn: LogIn,
   disconnect: Unlink,
+  /** A password field: showing the password, and hiding it again (backlog 0016). */
+  show: Eye,
+  hide: EyeOff,
   // A pressed chip: a filter that is applied.
   pressed: Check,
 } satisfies Record<string, LucideIcon>;

@@ -37,6 +37,7 @@
   },
   "form": {
     "requiredLegend": "* erforderlich",
+    "show": "Anzeigen",
     "required": "Bitte fülle dieses Feld aus.",
     "invalidEmail": "Gib eine E-Mail-Adresse wie name@example.com ein.",
     "tooShort_one": "Verwende mindestens {{count}} Zeichen.",

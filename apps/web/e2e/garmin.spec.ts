@@ -21,7 +21,7 @@ test('connects Garmin with a key that expires soon, fetches its dives and choose
   await expect(create).toHaveAttribute('href', 'https://connect.garmin.com/app/settings/personalApiToken');
   await expect(create).toHaveAttribute('target', '_blank');
 
-  await garmin.getByLabel('Garmin key').fill(GARMIN_KEY);
+  await garmin.getByRole('textbox', { name: 'Garmin key' }).fill(GARMIN_KEY);
   await garmin.getByLabel('Key expires on').fill(inDays(5));
   await garmin.getByRole('button', { name: 'Connect to Garmin' }).click();
 

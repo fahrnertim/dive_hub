@@ -1194,6 +1194,8 @@ for (const v of variants) {
         await page.goto('/');
         await page.getByRole('button', { name: v.english ? 'Sign in' : 'Anmelden' }).click();
         await expect(page.getByRole('textbox').first()).toHaveAttribute('aria-invalid', 'true');
+        // The password shown: axe checks the pressed button in both colour schemes.
+        await page.getByRole('button', { name: v.english ? 'Show: Password' : 'Anzeigen: Passwort' }).click();
         await goodPage(page, title('Sign in'), v);
       });
 
@@ -1219,6 +1221,57 @@ for (const v of variants) {
 
 test.describe('behaviour', () => {
   test.use({ locale: 'en-GB' });
+
+  test.describe('a password field', () => {
+    test.use({ storageState: { cookies: [], origins: [] } });
+
+    test('shows and hides its password by pointer and by keyboard, keeps what password managers read, and hides it again when sent', { tag: ['@account'] }, async ({ page }) => {
+      await page.goto('/');
+      const field = page.getByRole('textbox', { name: 'Password', exact: true });
+      const toggle = page.getByRole('button', { name: 'Show: Password', exact: true });
+      await field.fill('correct horse battery staple');
+      await expect(field).toHaveAttribute('type', 'password');
+      await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+      await expect(field).toHaveAttribute('type', 'text');
+      await expect(field).toHaveValue('correct horse battery staple');
+      await expect(field).toHaveAttribute('name', 'password');
+      await expect(field).toHaveAttribute('autocomplete', 'current-password');
+      // Shown as text, nothing reads or changes it: no spellcheck, capitals or corrections.
+      await expect(field).toHaveAttribute('spellcheck', 'false');
+      await expect(field).toHaveAttribute('autocapitalize', 'none');
+      await toggle.click();
+      await expect(field).toHaveAttribute('type', 'password');
+
+      // By keyboard: the button follows the field in the tab order; Space and Enter switch it and never send the form.
+      await field.focus();
+      await page.keyboard.press('Tab');
+      await expect(toggle).toBeFocused();
+      await page.keyboard.press('Space');
+      await expect(field).toHaveAttribute('type', 'text');
+      await page.keyboard.press('Enter');
+      await expect(field).toHaveAttribute('type', 'password');
+      await expect(page.getByRole('alert')).toHaveCount(0);
+
+      // Sent: the password is hidden again.
+      await toggle.click();
+      await page.getByRole('textbox', { name: 'E-mail', exact: true }).fill('nobody@example.com');
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+      await expect(field).toHaveAttribute('type', 'password');
+      await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    });
+  });
+
+  test('changing the password: each password field has its own button to show it', { tag: ['@account'] }, async ({ page }) => {
+    await page.goto('/#/settings/security');
+    for (const label of ['Current password', 'New password']) {
+      await expect(page.getByRole('textbox', { name: label, exact: true })).toHaveAttribute('type', 'password');
+      await page.getByRole('button', { name: `Show: ${label}`, exact: true }).click();
+      await expect(page.getByRole('textbox', { name: label, exact: true })).toHaveAttribute('type', 'text');
+    }
+  });
 
   // The variants above check four widths in depth; this sweeps the widths in between (tablets, split
   // screens), where tables switch layouts by the room they have (container queries). One test per page,

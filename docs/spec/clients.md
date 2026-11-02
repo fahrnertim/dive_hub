@@ -1205,7 +1205,11 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
 - **Focus never falls to nothing:** when a row or button disappears, focus goes to the next row or the panel's
   heading; when a form closes, back to the button that opened it. *Web:* `lib/focus.ts`.
 - **Buttons repeated per row name their row** in their accessible name ("Revoke: anna@example.com").
-- **Icons always beside text,** never icon-only controls ([ADR 0018](../decisions/0018-icons-and-motion.md)).
+- **Icons always beside text,** never icon-only controls ([ADR 0018](../decisions/0018-icons-and-motion.md)), but a
+  dialog's close button and a password field's eye, each with its full accessible name (amendment 2026-11-02).
+- **A password or secret field has a button that shows it:** one name ("Show: <field label>") and its state as pressed
+  or not; the field keeps its name and autofill hints so password managers fill it; sending the form hides it again.
+  Never shown by default. *Web:* `ui/TextField.tsx` (`PasswordField`).
 - **Motion only where it explains,** and none with reduced motion (ADR 0018).
 - **Errors never time out,** and notices can be dismissed (WCAG 2.2.1, 4.1.3; AGENTS.md). Standing text that waits
   for a confirmation is not a notice, because notices are announced (the ODbL terms).

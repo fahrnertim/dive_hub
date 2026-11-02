@@ -64,3 +64,14 @@ keyframes (they don't stack quickly); menus opened with the keyboard animate too
 - A browser test checks that animations run with motion allowed and that nothing moves with reduced
   motion. `source-rules.test.ts` keeps text glyphs (▾ ▲ ▼) and icon imports outside `ui/Icon.tsx`
   out of the pages.
+
+## Amendment (2026-11-02): two icon-only controls inside another control
+"No icon-only buttons" keeps holding, with two exceptions, both a platform convention sitting inside the thing they act
+on, both with a full accessible name:
+- **A dialog's close button** (✕ in its title bar, "Close dialog"), as built since the dialogs; Escape and Cancel do the same.
+- **A password field's eye** (`PasswordField`, [backlog 0016](../backlog/0016-password-visibility-toggle.md), asked for by
+  the owner): inside the field, named "Show: <field label>", its state in `aria-pressed` (the name stays, as the
+  WAI-ARIA toggle button pattern asks), the icon switching between eye and eye-off.
+
+Anything else that wants an icon alone needs its own amendment. `source-rules.test.ts` keeps password fields on
+`PasswordField`.

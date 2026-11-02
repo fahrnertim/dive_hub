@@ -1,7 +1,7 @@
 ---
 title: Password fields get a button that shows or hides the password
 summary: Every password field (sign-in, sign-up from an Invitation, password reset, change password, SSI password and token) gets an eye button that switches between hidden and shown text, labelled for screen readers; password managers keep working.
-status: draft
+status: done
 risk: low
 date: 2026-11-02
 ---
@@ -30,8 +30,15 @@ Base `main` after PR #17 (UI overhaul) is merged; that PR renamed AccountPage.ts
 
 - The SSI token field gets the button too (owner, 2026-11-02).
 
-## Open
-Whether it is a new `PasswordField` or a mode of TextField.
+- Done on branch `password-visibility` (2026-11-02). Rulings:
+  - A new `PasswordField` beside `TextField` in `ui/TextField.tsx` (sharing its label and messages), not a mode of
+    TextField: it has state of its own and only takes `label` as text.
+  - The button keeps one name, "Show: <field label>", and says its state with `aria-pressed`; it does not switch to
+    "Hide password": the WAI-ARIA toggle button pattern (https://www.w3.org/WAI/ARIA/apg/patterns/button/) says a
+    toggle's label must not change with its state. The field label is in the name because no two buttons on a page
+    share one; the sign-in dialog adds the account, as the Connection's form with the same field can show behind it.
+  - The eye is icon-only: [ADR 0018](../decisions/0018-icons-and-motion.md) amendment of 2026-11-02.
+  - Shown, the input turns off spellcheck, autocapitalize and autocorrect, so the browser doesn't read the password.
 
 ## Skills to load
 accessibility, ux-inputs-and-forms, mobile-native (read each override in [docs/skills.md](../skills.md#overrides) first).

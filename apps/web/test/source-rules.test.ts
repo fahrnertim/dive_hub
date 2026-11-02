@@ -102,6 +102,12 @@ describe('form conventions (slice 25g)', () => {
     }
   });
 
+  it('give every password field the button that shows its password: PasswordField, never a password-typed input (backlog 0016)', () => {
+    for (const { path, text } of tsx) {
+      if (!/[\\/]ui[\\/]/.test(path)) expect(text, path).not.toMatch(/type="password"/);
+    }
+  });
+
   it('do not write "(optional)" in a label: the required ones carry the mark (C16)', () => {
     for (const { path, text } of locales) expect(text, path).not.toMatch(/\(optional\)/i);
   });
