@@ -7,7 +7,7 @@ date: 2026-10-31
 
 # Continuation
 
-**Built** on branch `dive-continuation` (PR to follow); the client duties below are in the [client contract](../../spec/clients.md)
+**Built** on branch `dive-continuation` ([PR #16](https://github.com/fahrnertim/dive_hub/pull/16)); the client duties below are in the [client contract](../../spec/clients.md)
 and the data in the [data model](../../spec/data-model.md). **ADR 0063 status: to be set to Built by the owner** (the ready
 text is in [Pending ADR 0063 change](#pending-adr-0063-change) at the end of this document; remove that section once applied). Rulings made during the build: a later Dive that
 starts exactly when the earlier ends can't be appended (the gap must be more than 0); break lengths show in the app's duration
@@ -275,7 +275,7 @@ For the owner: paste into `docs/decisions/0063-dive-continuation.md`, then delet
 Frontmatter `summary`: replace "Planned - " with "Built - ".
 
 ### Status (replace the section)
-Accepted – 2026-11-01 (owner, after the design; proposed 2026-10-31). **Built** – 2026-11-02, PR <number>. Designed in
+Accepted – 2026-11-01 (owner, after the design; proposed 2026-10-31). **Built** – 2026-11-02, [PR #16](https://github.com/fahrnertim/dive_hub/pull/16). Designed in
 Continuation (this document). Amends
 [ADR 0016](../../decisions/0016-recording-decisions-and-divers.md) (a Recording may be derived from others; a Device can have two
 Recordings on one Dive, as parts), [ADR 0026](../../decisions/0026-deleting-dives.md) (restoring an appended Dive gives its Recording
