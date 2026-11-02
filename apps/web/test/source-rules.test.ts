@@ -132,7 +132,9 @@ describe('icons and motion (ADR 0018)', () => {
     for (const { path, text } of css) {
       for (const m of text.matchAll(/@keyframes [\w-]+ \{([^}]*\{[^}]*\})+\s*\}/g)) {
         const properties = [...m[0].matchAll(/([a-z-]+)\s*:/g)].map((p) => p[1]);
-        expect(properties.filter((p) => p !== 'transform' && p !== 'opacity'), `${path}: ${m[0].slice(0, 40)}`).toEqual([]);
+        // The disclosure's height (a grid row growing from 0fr) is the one accepted exception (UI overhaul, Task 5).
+        const allowed = m[0].startsWith('@keyframes open-panel') ? ['transform', 'opacity', 'grid-template-rows'] : ['transform', 'opacity'];
+        expect(properties.filter((p) => !allowed.includes(p ?? '')), `${path}: ${m[0].slice(0, 40)}`).toEqual([]);
       }
     }
   });
@@ -147,11 +149,18 @@ describe('icons and motion (ADR 0018)', () => {
 });
 
 describe('loading (UI overhaul)', () => {
+  const LOADING_LINE = />\s*\{t\('common\.loading'\)\}\s*</;
   // A search field's status line ("Loading…" under the field) and a button's busy text are not a page loading.
   it('show a skeleton, not a "Loading…" line, where a page waits for its data; the text lives in ui/Skeleton.tsx', () => {
     for (const { path, text } of tsx) {
-      if (!/[\\/]ui[\\/]Skeleton\.tsx$/.test(path)) expect(text, path).not.toMatch(/<Muted>\{t\('common\.loading'\)\}/);
+      if (!/[\\/]ui[\\/]Skeleton\.tsx$/.test(path)) expect(text, path).not.toMatch(LOADING_LINE);
     }
+  });
+  it('the rule catches the loading text as an element\'s text, not as a status prop', () => {
+    expect('<Muted>{t(\'common.loading\')}</Muted>').toMatch(LOADING_LINE);
+    expect('<p className="x">\n  {t(\'common.loading\')}\n</p>').toMatch(LOADING_LINE);
+    expect('<SearchList status={busy ? t(\'common.loading\') : null} />').not.toMatch(LOADING_LINE);
+    expect('const status = t(\'common.loading\');').not.toMatch(LOADING_LINE);
   });
 });
 

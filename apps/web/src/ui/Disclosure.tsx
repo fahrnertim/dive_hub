@@ -22,7 +22,7 @@ export function Disclosure({ title, summary, level, isExpanded, defaultExpanded,
         {level ? <Heading level={level} className="disclosure-title">{trigger}</Heading> : trigger}
         {summary}
       </div>
-      <DisclosurePanel className="disclosure-panel">{children}</DisclosurePanel>
+      <DisclosurePanel className="disclosure-panel"><div className="disclosure-body">{children}</div></DisclosurePanel>
     </AriaDisclosure>
   );
 }

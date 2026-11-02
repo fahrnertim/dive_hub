@@ -1732,6 +1732,56 @@ test.describe('behaviour', () => {
     await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
   });
 
+  test('on a phone the user menu is a bottom sheet that rises; with reduced motion, nothing runs', { tag: ['@layout'] }, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await expect(diveRows(page).first()).toBeVisible();
+    const menu = page.getByRole('button', { name: /^Erika\s*, account$/ });
+    const sheet = page.locator('.menu-sheet');
+    // Opens the menu and counts the sheet's running animations a frame later.
+    const open = () => menu.evaluate(async (button) => {
+      (button as HTMLElement).click();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      return document.querySelector('.menu-sheet')?.getAnimations().length ?? -1;
+    });
+    expect(await open()).toBeGreaterThan(0);
+    await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
+    const box = await sheet.evaluate((el) => new Promise<{ bottom: number; width: number; height: number }>((resolve) => {
+      // After the rise has settled.
+      setTimeout(() => { const r = el.getBoundingClientRect(); resolve({ bottom: r.bottom, width: r.width, height: innerHeight }); }, 400);
+    }));
+    expect(box.bottom).toBeCloseTo(box.height, 0);
+    expect(box.width).toBeCloseTo(390, 0);
+    await page.getByRole('menu').press('Escape');
+    await expect(sheet).toHaveCount(0);
+
+    // A disclosure opens by height, with motion on.
+    await page.goto('/');
+    await expect(diveRows(page).first()).toBeVisible();
+    const grown = await page.locator('.disclosure-trigger').first().evaluate(async (button) => {
+      (button as HTMLElement).click();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      return document.getAnimations().map((x) => (x as CSSAnimation).animationName);
+    });
+    expect(grown).toContain('open-panel');
+
+    // Reduced motion: the sheet, an opened disclosure and a skeleton bar run nothing.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await open()).toBe(0);
+    await page.getByRole('menu').press('Escape');
+    await expect(sheet).toHaveCount(0);
+    await page.goto('/');
+    await expect(diveRows(page).first()).toBeVisible();
+    await page.locator('.disclosure-trigger').first().click();
+    const panel = page.locator('.disclosure[data-expanded] .disclosure-panel').first();
+    await expect(panel).toBeVisible();
+    expect(await panel.evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
+    await page.route(/\/api\/sites(\?|$)/, () => new Promise(() => {})); // never answers: the skeleton stays
+    await page.goto('/#/sites');
+    await expect(page.locator('.skeleton-bar').first()).toBeVisible();
+    expect(await page.locator('.skeleton-bar').first().evaluate((el) => el.getAnimations().length)).toBe(0);
+  });
+
   test('the only admin is not offered to remove their own admin role', { tag: ['@admin'] }, async ({ page }) => {
     await page.goto('/#/admin');
     const me = page.getByRole('row').filter({ hasText: 'erika@example.com' });

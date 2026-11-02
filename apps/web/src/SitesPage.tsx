@@ -143,7 +143,7 @@ export function SitesPage({ params }: { params: SitesParams }) {
         {sites.data && sites.data.total > 0 && (
           <>
             <Table
-              stacked
+              stacked className="reveal"
               label={t('sites.title')}
               head={[sortable('name', t('sites.name'), false), sortable('country', t('sites.where'), false), sortable('diveCount', t('sites.yourDives'), true)]}
             >

@@ -101,6 +101,15 @@ test('review material', async ({ page, request, browser }) => {
     await capture(page, '01c-logbook-import-choice');
     await page.setViewportSize({ width: 390, height: 844 });
     await capture(page, '01c-logbook-import-choice-phone');
+    // The user menu on a phone is a bottom sheet (UI overhaul), light and dark.
+    await page.getByRole('button', { name: /, account$/ }).click(); await page.locator('.menu-sheet').waitFor();
+    await capture(page, '01d-user-menu-sheet-phone', { aria: false });
+    await page.keyboard.press('Escape');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.getByRole('button', { name: /, account$/ }).click(); await page.locator('.menu-sheet').waitFor();
+    await capture(page, '01e-user-menu-sheet-phone-dark', { aria: false });
+    await page.keyboard.press('Escape');
+    await page.emulateMedia({ colorScheme: 'light' });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.getByRole('link', { name: 'Imports', exact: true }).click(); await page.getByRole('heading', { name: 'Imports', level: 2 }).waitFor();
     await capture(page, '01b-review-imports');

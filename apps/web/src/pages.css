@@ -204,7 +204,8 @@
 .dive-group:first-child .month-head { padding-top: var(--space-2); }
 .month-head h2 { margin: 0; font-size: var(--text-md); letter-spacing: 0; }
 .month-head p { margin: 0; }
-.dive-row { align-items: center; padding: var(--space-3); border-bottom: 1px solid var(--color-border); cursor: pointer; }
+.dive-row { align-items: center; padding: var(--space-3); border-bottom: 1px solid var(--color-border); cursor: pointer;
+  transition: background-color var(--duration-hover) var(--ease-out); }
 .dive-group:last-child .dive-row:last-child { border-bottom: none; }
 .dive-no { min-width: 2ch; text-align: right; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
 .dive-main { display: grid; gap: 2px; min-width: 0; }
@@ -417,7 +418,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .finding-sources a { display: inline-block; min-height: 1.5rem; }
 /* Findings for information only, behind their line. */
 .findings-more > .disclosure-head .disclosure-trigger { font-weight: var(--weight-regular); color: var(--color-text-muted); }
-.findings-more > .disclosure-panel > .findings { margin-top: var(--space-2); }
+.findings-more > .disclosure-panel > .disclosure-body > .findings { margin-top: var(--space-2); }
 /* Put aside: what it said, and the way back. */
 .findings-aside { margin-top: var(--space-3); }
 .finding-aside { display: grid; gap: var(--space-2); padding-block: var(--space-3); }

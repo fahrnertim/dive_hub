@@ -126,6 +126,8 @@
 .disclosure-trigger > .icon { align-self: center; flex: none; color: var(--color-text-muted); transition: transform var(--duration-fast) var(--ease-out); }
 .disclosure[data-expanded] > .disclosure-head .disclosure-trigger > .icon { transform: rotate(90deg); }
 .disclosure-panel { min-width: 0; }
+.disclosure-panel:not([hidden]) { display: grid; grid-template-rows: 1fr; }
+.disclosure-body { min-width: 0; min-height: 0; }
 
 /* Text roles: colour and size are separate (visual refresh 1). A lead or a sentence stays at body size. */
 .muted { color: var(--color-text-muted); }
@@ -150,7 +152,7 @@
 .btn { font: inherit; font-weight: var(--weight-medium); line-height: var(--leading-tight); cursor: pointer; text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
   min-height: 2.5rem; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); border: 1px solid transparent;
-  transition: background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast) var(--ease-out); }
+  transition: background-color var(--duration-hover) var(--ease-out), border-color var(--duration-hover) var(--ease-out), transform var(--duration-fast) var(--ease-out); }
 .btn[data-focus-visible] { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .btn[data-disabled] { opacity: 0.55; cursor: not-allowed; }
 .btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
@@ -348,9 +350,25 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
 @keyframes enter-dialog { from { opacity: 0; transform: scale(0.97); } }
 @keyframes enter-fade { from { opacity: 0; } }
 @keyframes enter-rise { from { opacity: 0; transform: translateY(4px); } }
+@keyframes enter-sheet { from { opacity: 0; transform: translateY(16px); } }
+@keyframes open-panel { from { grid-template-rows: 0fr; opacity: 0; } }
 /* Menus and selects grow out of the control that opened them. */
 .popover { transform-origin: var(--trigger-anchor-point, top); }
 .popover[data-entering] { animation: enter-pop var(--duration-popover) var(--ease-out); }
+/* On a phone a menu is a sheet at the bottom edge: it rises 16px with a fade. */
+.menu-sheet-overlay { position: fixed; inset: 0; z-index: 20; background: rgb(7 24 39 / 0.45); display: flex; align-items: flex-end; }
+.menu-sheet-overlay[data-entering] { animation: enter-fade var(--duration-popover) var(--ease-out); }
+.menu-sheet { width: 100%; max-height: 80dvh; overflow-y: auto; overscroll-behavior: contain; background: var(--color-surface);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; box-shadow: var(--shadow-overlay);
+  padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px)); }
+.menu-sheet[data-entering] { animation: enter-sheet var(--duration-normal) var(--ease-out); }
+.menu-sheet .menu-item { min-height: 3rem; border-radius: var(--radius-control); }
+/* A disclosure opens by height (the grid row grows from 0fr, the one allowed exception to transform and opacity),
+   fading in. The body clips with a margin, so focus rings at its edge stay whole. */
+.disclosure-body { overflow: clip; overflow-clip-margin: 6px; }
+@media (prefers-reduced-motion: no-preference) {
+  .disclosure-panel:not([hidden]) { animation: open-panel var(--duration-disclosure) var(--ease-out); }
+}
 /* Dialogs stay centred; the backdrop fades. */
 .modal-overlay[data-entering] { animation: enter-fade var(--duration-popover) var(--ease-out); }
 .modal[data-entering] { animation: enter-dialog var(--duration-normal) var(--ease-out); }
@@ -360,6 +378,7 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
 /* ---------- Menus ---------- */
 .menu { outline: none; padding: var(--space-1) 0; min-width: 12rem; }
 .menu-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); cursor: pointer; outline: none; color: var(--color-text); text-decoration: none; }
+.menu-item { transition: background-color var(--duration-hover) var(--ease-out); }
 .menu-item[data-focused] { background: var(--color-accent-soft); }
 .menu-chevron { display: inline-flex; color: var(--color-text-muted); }
 .menu-item .icon { color: var(--color-text-muted); }
@@ -424,9 +443,9 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
 .skeleton .dive-row { cursor: default; }
 .skeleton .dive-no { min-width: 2ch; }
 @keyframes skeleton-pulse { 50% { opacity: 0.55; } }
-@keyframes reveal { from { opacity: 0; } }
+@keyframes skeleton-reveal { from { opacity: 0; } }
 @media (prefers-reduced-motion: no-preference) {
-  .skeleton-bar { animation: skeleton-pulse var(--duration-pulse) ease-in-out infinite; }
+  .skeleton-bar { animation: skeleton-pulse var(--duration-pulse) var(--ease-pulse) infinite; }
   /* Where the data replaces a skeleton. */
-  .reveal { animation: reveal var(--duration-reveal) var(--ease-out); }
+  .reveal { animation: skeleton-reveal var(--duration-reveal) var(--ease-out); }
 }

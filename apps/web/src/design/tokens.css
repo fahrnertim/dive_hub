@@ -97,6 +97,7 @@
   --duration-pulse: 1600ms;
   /* Strong ease-out: starts fast, settles softly (ADR 0018, emil-design-eng). */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-pulse: ease-in-out;
 
   color-scheme: light;
 }

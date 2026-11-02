@@ -15,7 +15,7 @@ import { useJoinNames, useProviders } from './lib/providers.ts';
 import { reviewHref } from './lib/review.ts';
 import { settingsHref } from './lib/settings.ts';
 import { HeldAtProvider, NumberPlanList } from './NumberChain.tsx';
-import { ActionMenu, Button, Checkbox, ConfirmButton, Dialog, Disclosure, Icon, LinkButton, Muted, Notice, RadioGroup } from './ui/index.ts';
+import { ActionMenu, Button, Checkbox, ConfirmButton, Dialog, Disclosure, Icon, LinkButton, Muted, Notice, RadioGroup, RowsSkeleton } from './ui/index.ts';
 
 /** What a run is for, as a Provider-shaped name for texts. */
 const named = (p: ProviderView | undefined, id: string) => ({ id, name: p?.name ?? id });
@@ -553,7 +553,7 @@ function RunItems({ id, name, provider }: { id: string; name: string; provider: 
       ? `${t('pushRun.failed')}: ${problemText(i.reason as Parameters<typeof problemText>[0], provider)}`
       : t(`pushRun.reason.${i.reason}` as `pushRun.reason.${keyof (typeof en)['pushRun']['reason']}`, { name });
   };
-  if (!run.data) return <Muted>{t('pushRun.loading')}</Muted>;
+  if (!run.data) return <RowsSkeleton rows={2} />;
   return (
     <ul className="push-run-items">
       {unsent.map((i) => (

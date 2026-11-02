@@ -70,12 +70,12 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
 
   return (
     <>
-      <div className="dive-trail">
+      <div className="dive-trail reveal">
         <BackLink href={logbook} label={t('dive.back')} />
         <Neighbours n={neighbours.data} list={list} />
       </div>
       {dive.isRefetchError && <Notice tone="danger">{errorText(dive.error)}</Notice>}
-      <div className="dive-head">
+      <div className="dive-head reveal">
         <PageHeader
           title={title}
           meta={(
@@ -108,7 +108,7 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
       {/* The assessment belongs to the Primary recording's profile and to the panel under it (ADR 0036). */}
       <AssessmentProvider diveId={d.id}>
         {/* The dive's facts and its profile are one panel: the profile is on the first screen (UI redesign, slice A). */}
-        <Panel>
+        <Panel className="reveal">
           {editing
             ? <DiveEditForm key={d.version} dive={d} focus={editing === 'values' ? undefined : editing} onDone={() => setEditing(false)} />
             : <DiveFacts dive={d} onAddNotes={() => setEditing('notes')} onAddCylinders={() => setEditing('cylinders')} onAddWeighting={() => setEditing('weighting')} />}
@@ -117,7 +117,7 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
         <AssessmentPanel dive={d} diverName={diverName} />
       </AssessmentProvider>
       {/* What is looked at now and then is one line each, until it is opened. */}
-      <div className="panel dive-lines">
+      <div className="panel dive-lines reveal">
         <ProviderPanels dive={d} diverName={diverName} />
         <DiveCodes dive={d} />
         <DiveHistory dive={d} />
