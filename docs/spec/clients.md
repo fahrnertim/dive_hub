@@ -365,13 +365,14 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   through the time at the surface as 0 m. This is not a merge: say "append", never "merge".
   - **Must offer to append a Dive to the one before it by hand** (`GET /api/dives/{id}/continuation-candidate`: the
     Diver's Dive just before this one, or null; no time limit, but a Dive that starts exactly when the earlier ends can't be
-    appended, the gap must be more than 0). Show that Dive and the Surface break's length (`surfaceBreakSeconds`), then
+    appended, the gap must be more than 0). Show that Dive and the Surface break's length (`breakSeconds`), then
     the dialog; never append unasked. *Web:* `AppendDive.tsx`, the menu "An den vorherigen Tauchgang anhängen…".
   - **The dialog says which Dive stays** (the earlier one, `POST /api/dives/{id}/continuation` is sent to it) and which
     goes to "Deleted dives" and can be restored; that the kept Dive takes over what it lacks (site, buddies, values; notes
     appended), and a link to a Provider goes to it where it has none. **Ask about each Provider both are at** (`bothAt`) as
     in a merge: the later Dive's dive there stays unless the User chooses to delete it there too (`alsoAt`); a provider_*
-    error appends nothing. Several later Dives go in one request (`dives`, each with its `version`).
+    error appends nothing. **Not for a Provider in `deletesItself`:** the later Dive's Connection deletes there by itself
+    5 minutes after the append; don't ask, leave it out of `alsoAt`, and say so. Several later Dives go in one request (`dives`, each with its `version`).
   - `POST /api/dives/{id}/continuation` with `version`, `dives` (`id`, `version` of each), `alsoAt` (`dive_changed` 409,
     `continuation_not_possible` 400). **The answer is the kept Dive: it is the Dive asked.**
   - **Show the Surface breaks in the profile:** the Primary recording's `summary.surfaceBreaks` (`startS`, `endS`, seconds

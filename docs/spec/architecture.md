@@ -969,9 +969,10 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 **Continuation (2026-11-01): appending a Dive cut in two by a surface break** ([ADR 0063](../decisions/0063-dive-continuation.md),
 [design](../superpowers/specs/2026-10-31-dive-continuation-design.md)).
 - `apps/server/src/dives/continuation/`: `joined-recording.ts` (builds and rebuilds the derived Recording, `parser` `continuation`),
-  `join-parts.ts` (the parts' series on one axis, the break as 0 m), `append-service.ts` (`POST /api/dives/{id}/continuation`: both
-  Dives locked in id order, merge's rules for values, notes and links, the later Dives deleted, `renumber`),
-  `continuation-service.ts` (`previousCandidate`, `restorePreview`, and the undo that restoring runs). No Provider is named; links
+  `join-parts.ts` (the parts' series on one axis, the break as 0 m), `append-service.ts` (`POST /api/dives/{id}/continuation`: deletes the later Dives' copies at the Providers asked
+  (`alsoAt`), then calls the continuation service's `append`),
+  `continuation-service.ts` (`append`: the Dives locked in id order, `takeIn` with merge's rules for values, notes and links and
+  the later Dives deleted, `renumber`; `previousCandidate`, `restorePreview`, and the `undo` that restoring runs). No Provider is named; links
   are read as merging does.
 - Routes: `GET /api/dives/{id}/continuation-candidate`, `POST /api/dives/{id}/continuation`, `GET /api/dives/{id}/restore-preview`;
   `GET /api/dives/deleted` gains `continuedInto` and `appendedWith`; Recordings gain `partOf`; problems `continuation_not_possible`
