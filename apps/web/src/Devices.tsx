@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api, devicesQuery, diversQuery, keys, unwrap, type DeviceView, type DiverView } from './api.ts';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
-import { Muted, Notice, Panel, Select, Table } from './ui/index.ts';
+import { Muted, Notice, Panel, RowsSkeleton, Select, Table } from './ui/index.ts';
 
 /** The dive computers the User's recordings came from, and whose Diver each one belongs to (ADR 0016); a section of Settings. */
 export function Devices() {
@@ -16,7 +16,7 @@ export function Devices() {
       <Muted>{t('divers.devicesIntro')}</Muted>
       {/* Said once here, not under every device's select (UI review A2). */}
       {(divers.data?.length ?? 0) > 1 && (devices.data?.length ?? 0) > 0 && <Muted>{t('divers.assignHint')}</Muted>}
-      {devices.isPending && <Muted>{t('common.loading')}</Muted>}
+      {devices.isPending && <RowsSkeleton rows={3} />}
       {devices.error && <Notice tone="danger">{errorText(devices.error)}</Notice>}
       {devices.data?.length === 0 && <Muted>{t('divers.noDevices')}</Muted>}
       {devices.data && devices.data.length > 0 && divers.data && (

@@ -16,7 +16,7 @@ import { SiteForm, typedSources } from './SiteForm.tsx';
 import { useProviders, useProviderText } from './lib/providers.ts';
 import { SiteHistory } from './SiteHistory.tsx';
 import { SiteCentres } from './SiteCentres.tsx';
-import { ActionMenu, BackLink, Button, Checkbox, ConfirmDialog, Icon, Muted, NotFoundPage, Notice, PageHeader, Panel, Select, Table, TextField } from './ui/index.ts';
+import { ActionMenu, BackLink, Button, Checkbox, ConfirmDialog, Icon, Muted, NotFoundPage, Notice, PageHeader, Panel, RowsSkeleton, Select, Table, TextField } from './ui/index.ts';
 
 /** "Egypt · Red Sea": where a site is, in words. */
 function useSitePlace() {
@@ -135,7 +135,7 @@ export function SitesPage({ params }: { params: SitesParams }) {
             <Checkbox isSelected={!!params.mine} onChange={(v) => go({ mine: v || undefined })}>{t('sites.onlyMine')}</Checkbox>
           </div>
         )}
-        {sites.isPending && <Muted>{t('common.loading')}</Muted>}
+        {sites.isPending && <RowsSkeleton rows={6} />}
         {sites.error && <Notice tone="danger">{errorText(sites.error)}</Notice>}
         {sites.data?.total === 0 && (
           <Muted>{params.q && !params.country && !params.mine ? t('sites.noMatch', { q: params.q }) : filtered ? t('sites.noMatchFilters') : t('sites.empty')}</Muted>
@@ -220,7 +220,7 @@ export function SitePage({ id }: { id: string }) {
   });
 
   const back = { href: '#/sites', label: t('sites.back') };
-  if (site.isPending || mergedInto) return <Muted>{t('common.loading')}</Muted>;
+  if (site.isPending || mergedInto) return <RowsSkeleton rows={4} />;
   if (notFound) return <NotFoundPage title={t('sites.notFound')} message={errorText(site.error)} back={{ href: '#/sites', label: t('sites.backToSites') }} />;
   if (site.error) return <><BackLink {...back} /><Notice tone="danger">{errorText(site.error)}</Notice></>;
   const s = site.data;

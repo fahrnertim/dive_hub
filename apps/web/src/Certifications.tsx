@@ -7,7 +7,7 @@ import {
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { useProviders } from './lib/providers.ts';
-import { Badge, Button, Checkbox, ConfirmButton, Dialog, Disclosure, Form, Muted, Notice, NumberField, TextArea, TextField } from './ui/index.ts';
+import { Badge, Button, Checkbox, ConfirmButton, Dialog, Disclosure, Form, Muted, Notice, NumberField, RowsSkeleton, TextArea, TextField } from './ui/index.ts';
 
 type ImportResult = { name: string; created: number; updated: number; unchanged: number; items: { result: string; level: string }[] };
 
@@ -98,7 +98,7 @@ function CertificationsPanel({ diverId, name }: { diverId: string; name: string 
   return (
     <div className="certifications">
       <Muted>{t('certifications.privacy')}</Muted>
-      {cards.isPending && <Muted>{t('common.loading')}</Muted>}
+      {cards.isPending && <RowsSkeleton rows={2} />}
       {cards.error && <Notice tone="danger">{errorText(cards.error)}</Notice>}
       {cards.data?.length === 0 && <Muted>{t('certifications.none')}</Muted>}
       {cards.data && cards.data.length > 0 && (

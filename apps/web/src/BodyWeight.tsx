@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api, bodyWeightsQuery, keys, unwrap } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { massFromDisplay, massIn } from './lib/units.ts';
-import { Button, Dialog, Form, Muted, Notice, NumberField, TextField } from './ui/index.ts';
+import { Button, Dialog, Form, Muted, Notice, NumberField, RowsSkeleton, TextField } from './ui/index.ts';
 
 const today = () => new Date().toLocaleDateString('sv-SE');
 
@@ -41,7 +41,7 @@ export function BodyWeightDialog({ diverId, name, onClose }: { diverId: string; 
     <Dialog title={t('bodyWeight.title', { name })} isOpen onOpenChange={(open) => !open && onClose()}>
       <div className="body-weight">
         <Muted>{t('bodyWeight.privacy')} {t('bodyWeight.intro')}</Muted>
-        {weights.isPending && <Muted>{t('common.loading')}</Muted>}
+        {weights.isPending && <RowsSkeleton rows={2} />}
         {weights.error && <Notice tone="danger">{errorText(weights.error)}</Notice>}
         {weights.data?.length === 0 && <Muted>{t('bodyWeight.none')}</Muted>}
         {weights.data && weights.data.length > 0 && (

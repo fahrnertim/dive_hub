@@ -8,7 +8,7 @@ import { Devices } from './Devices.tsx';
 import { useRoomy, useWide } from './lib/narrow.ts';
 import { usePageTitle } from './lib/page.ts';
 import { isSettingsSection, SETTINGS_SECTIONS, settingsHref, type SettingsSection } from './lib/settings.ts';
-import { Icon, Muted, Notice, PageHeader } from './ui/index.ts';
+import { Icon, Notice, PageHeader, RowsSkeleton } from './ui/index.ts';
 
 // Administration loads on demand: most people never open it (it was a chunk of its own as a page).
 const AdminSettings = lazy(() => import('./AdminPage.tsx').then((m) => ({ default: m.AdminSettings })));
@@ -71,7 +71,7 @@ function SectionView({ section, admin, params }: { section: SettingsSection; adm
     case 'ai-access': return <AiAccess />;
     case 'devices': return <Devices />;
     case 'admin': return admin
-      ? <Suspense fallback={<Muted>{t('common.loading')}</Muted>}><AdminSettings /></Suspense>
+      ? <Suspense fallback={<RowsSkeleton rows={3} />}><AdminSettings /></Suspense>
       : <Notice tone="danger">{t('errors.admins_only')}</Notice>;
   }
 }

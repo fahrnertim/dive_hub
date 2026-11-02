@@ -15,7 +15,7 @@ import { SendToProvider } from './PushRun.tsx';
 import { ProfileSketch } from './ProfileSketch.tsx';
 import { WaitingPushState } from './WaitingPush.tsx';
 import { sketchScale } from './lib/sketch.ts';
-import { Avatar, Button, DiverAvatar, Disclosure, Icon, Muted, Notice, PageHeader, Panel, Select, TextField, ToggleChip } from './ui/index.ts';
+import { Avatar, Button, Disclosure, DiverAvatar, Icon, LogbookSkeleton, Muted, Notice, PageHeader, Panel, Select, TextField, ToggleChip } from './ui/index.ts';
 
 const ALL = 'all';
 /** A stack shows this many circles, then "+2". */
@@ -149,7 +149,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
           )}
         </>
       )}
-      {dives.isPending && <Muted>{t('common.loading')}</Muted>}
+      {dives.isPending && <LogbookSkeleton />}
       {dives.error && <Notice tone="danger">{errorText(dives.error)}</Notice>}
       {dives.data?.total === 0 && (
         <div className="logbook-nothing">
@@ -171,7 +171,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
       {dives.data && dives.data.total > 0 && (
         <>
           <p className="logbook-range meta">{range}</p>
-          <section className="dive-list" aria-label={t('logbook.dives')}>
+          <section className="dive-list reveal" aria-label={t('logbook.dives')}>
             <div className="dive-grid">
             {monthGroups(dives.data.dives, dives.data.months).map((group) => (
               <div className="dive-group" key={group.month ?? 'all'}>

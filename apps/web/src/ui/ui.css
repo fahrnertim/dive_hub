@@ -412,3 +412,21 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
   .neighbours { width: 100%; justify-content: space-between; }
 }
 .neighbour-position { white-space: nowrap; }
+
+/* Loading (UI overhaul): flat bars in the shape of the content, pulsing gently; still with reduced motion. */
+.skeleton-bar { display: block; background: var(--color-surface-sunken); border-radius: var(--radius-control); }
+.skeleton-line { height: 1em; margin-block: 0.25em; max-width: 100%; }
+.skeleton-block { max-width: 100%; }
+.skeleton-rows { display: grid; }
+.skeleton-row { display: grid; padding: var(--space-3) 0; border-top: 1px solid var(--color-border); }
+.skeleton-row:first-child { border-top: none; }
+.skeleton-dive { display: grid; gap: var(--space-5); }
+.skeleton .dive-row { cursor: default; }
+.skeleton .dive-no { min-width: 2ch; }
+@keyframes skeleton-pulse { 50% { opacity: 0.55; } }
+@keyframes reveal { from { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-bar { animation: skeleton-pulse var(--duration-pulse) ease-in-out infinite; }
+  /* Where the data replaces a skeleton. */
+  .reveal { animation: reveal var(--duration-reveal) var(--ease-out); }
+}

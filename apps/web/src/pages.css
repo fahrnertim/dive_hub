@@ -286,12 +286,6 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .find-list { margin: 0; padding-left: var(--space-5); font-size: var(--text-sm); }
 .find-list li + li { margin-top: var(--space-1); }
 
-/* Loading: the shapes of what comes, without motion (UI review C10). */
-.loading { display: grid; gap: var(--space-5); }
-.skeleton { background: var(--color-surface); }
-.skeleton-facts { min-height: 14rem; }
-.skeleton-chart { min-height: 28rem; }
-
 /* Empty and error states that lead somewhere (visual refresh 8). */
 .empty-state { display: grid; justify-items: start; gap: var(--space-4); }
 .empty-state > p { margin: 0; }

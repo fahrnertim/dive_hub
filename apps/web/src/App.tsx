@@ -17,7 +17,7 @@ import { mayLeave } from './lib/leave-guard.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
 import { reviewTab } from './lib/review.ts';
 import { legacyRedirect } from './lib/settings.ts';
-import { ErrorBoundary, Muted, Notice, PageHeader } from './ui/index.ts';
+import { ErrorBoundary, Notice, PageHeader, RowsSkeleton } from './ui/index.ts';
 import { PlainShell, Shell } from './ui/Shell.tsx';
 
 // Pages most visits don't need load on demand: the chart library, Settings.
@@ -98,7 +98,7 @@ export function App() {
   // Keyed by the page, not its query: a search or filter in the address must not rebuild the page (focus, table).
   const page = (
     <ErrorBoundary key={route.split('?')[0]} fallback={<Notice tone="danger">{t('errors.unknown')}</Notice>}>
-      <Suspense fallback={<Muted>{t('common.loading')}</Muted>}>
+      <Suspense fallback={<RowsSkeleton rows={3} />}>
         <Main route={route} me={me} />
       </Suspense>
     </ErrorBoundary>
@@ -114,9 +114,8 @@ export function App() {
 }
 
 function Main({ route, me }: { route: string; me: UseQueryResult<Me | null> }) {
-  const { t } = useTranslation();
   const errorText = useErrorText();
-  if (me.isPending) return <Muted>{t('common.loading')}</Muted>;
+  if (me.isPending) return <RowsSkeleton rows={3} />;
   if (me.error) return <Notice tone="danger">{errorText(me.error)}</Notice>;
   return me.data ? <SignedIn route={route} me={me.data} /> : <SignedOut route={route} />;
 }

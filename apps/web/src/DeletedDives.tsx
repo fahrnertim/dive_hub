@@ -9,7 +9,7 @@ import { focusHeading, refocusAfterRemoval } from './lib/focus.ts';
 import { reviewHref } from './lib/review.ts';
 import { diveTargets, useJoinNames, useProviderOf, useProviders, useProviderText, type ProviderRef } from './lib/providers.ts';
 import { WaitingPushState } from './WaitingPush.tsx';
-import { Button, ConfirmButton, Dialog, LinkButton, Muted, Notice, Panel } from './ui/index.ts';
+import { Button, ConfirmButton, Dialog, LinkButton, Muted, Notice, Panel, RowsSkeleton } from './ui/index.ts';
 
 /** "Dive 9", or the Dive's time when it has no number. */
 function useDiveName() {
@@ -225,7 +225,7 @@ function RestoreDialog({ dive: d, name, keptName, onClose, onRestored }: {
   const later = comesBack.filter((id) => !ownAppend.has(id));
   return (
     <Dialog title={t('deleted.restoreTitle', { name })} isOpen onOpenChange={(open) => !open && !restore.isPending && onClose()}>
-      {preview.isPending && <Muted>{t('common.loading')}</Muted>}
+      {preview.isPending && <RowsSkeleton rows={2} />}
       {preview.error && <Notice tone="danger">{errorText(preview.error)}</Notice>}
       {preview.data && (
         <>

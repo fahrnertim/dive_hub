@@ -6,7 +6,7 @@ import { CodeFigure } from './DiveCodes.tsx';
 import { CodeScanner } from './CodeScanner.tsx';
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
-import { Button, Dialog, Form, Muted, Notice, RadioGroup, TextField } from './ui/index.ts';
+import { Button, Dialog, Form, Muted, Notice, RadioGroup, RowsSkeleton, TextField } from './ui/index.ts';
 
 const FIELDS = ['firstName', 'lastName', 'email', 'leaderNumber'] as const;
 type Field = (typeof FIELDS)[number];
@@ -35,7 +35,7 @@ export function DiverCodesDialog({ diverId, name, onClose }: { diverId: string; 
   return (
     <Dialog title={t('diverCodes.title', { name })} isOpen onOpenChange={(open) => !open && onClose()}>
       <div className="diver-codes">
-        {details.isPending && <Muted>{t('common.loading')}</Muted>}
+        {details.isPending && <RowsSkeleton rows={2} />}
         {details.error && <Notice tone="danger">{errorText(details.error)}</Notice>}
         {d && !editing && (
           <>

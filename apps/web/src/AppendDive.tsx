@@ -7,7 +7,7 @@ import { deleteChoice, type CopyAt } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { diveTargets, useJoinNames, useProviderOf, useProviders, useProviderText, type ProviderRef } from './lib/providers.ts';
 import { CopySentence } from './MergeDive.tsx';
-import { Button, Dialog, Muted, Notice } from './ui/index.ts';
+import { Button, Dialog, Notice, RowsSkeleton } from './ui/index.ts';
 
 /** One of the Dives of an append, as the dialog names it. */
 export type AppendSide = Pick<ContinuationCandidateView, 'id' | 'version' | 'number' | 'startsAt' | 'utcOffsetSeconds' | 'utcOffsetSource' | 'durationSeconds' | 'maxDepthM' | 'site'>;
@@ -128,7 +128,7 @@ export function AppendDialog({ kept, later, bothAt, deletesItself, onClose, stay
       {sentences('cannot')}
       {sentences('itself')}
       {outdated.map((provider) => <OutdatedSentence key={provider} provider={providerOf(provider)} />)}
-      {!choice && <Muted>{t('common.loading')}</Muted>}
+      {!choice && <RowsSkeleton rows={2} />}
       {append.error && (
         <Notice tone="danger">
           {errorText(append.error)}{append.error instanceof ApiError && ` ${t('append.nothingAppended')}`}

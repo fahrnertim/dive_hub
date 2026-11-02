@@ -146,6 +146,15 @@ describe('icons and motion (ADR 0018)', () => {
   });
 });
 
+describe('loading (UI overhaul)', () => {
+  // A search field's status line ("Loading…" under the field) and a button's busy text are not a page loading.
+  it('show a skeleton, not a "Loading…" line, where a page waits for its data; the text lives in ui/Skeleton.tsx', () => {
+    for (const { path, text } of tsx) {
+      if (!/[\\/]ui[\\/]Skeleton\.tsx$/.test(path)) expect(text, path).not.toMatch(/<Muted>\{t\('common\.loading'\)\}/);
+    }
+  });
+});
+
 describe('texts', () => {
   const locales = files(join(src, 'i18n/locales'), '.json').map((path) => ({ path, text: read(path) }));
 

@@ -10,7 +10,7 @@ import { useErrorText } from './lib/display.ts';
 import { usePageTitle } from './lib/page.ts';
 import { NewCentre, TakenNotice } from './NewCentre.tsx';
 import {
-  ActionMenu, BackLink, Button, ConfirmDialog, Dialog, Form, Muted, NotFoundPage, Notice, PageHeader, Panel, SEARCH_SHOWN, SearchList, TextField,
+  ActionMenu, BackLink, Button, ConfirmDialog, Dialog, Form, Muted, NotFoundPage, Notice, PageHeader, Panel, RowsSkeleton, SEARCH_SHOWN, SearchList, TextField,
   type SearchListItem,
 } from './ui/index.ts';
 
@@ -38,13 +38,13 @@ export function CentresPage() {
       )}
       <Panel>
         <TextField label={t('centres.search')} name="q" type="search" autoComplete="off" value={text} onChange={setText} />
-        {centres.isPending && <Muted>{t('common.loading')}</Muted>}
+        {centres.isPending && <RowsSkeleton rows={6} />}
         {centres.error && <Notice tone="danger">{errorText(centres.error)}</Notice>}
         {centres.data && rows.length === 0 && <Muted>{q ? t('centres.noMatch', { q }) : t('centres.empty')}</Muted>}
         {rows.length > 0 && (
           <ul className="diver-list centre-list">
             {rows.map((c) => (
-              <li key={c.id} className="diver-row">
+              <li key={c.id} className="diver-row reveal">
                 <a href={`#/centres/${c.id}`} className="diver-name" translate="no">{c.displayName}</a>
                 <span className="meta">
                   {[ssiNumber(c) ? t('centres.hasCode') : t('centres.noCodeShort'), t('centres.siteCount', { count: c.sites.length })].join(', ')}
@@ -109,7 +109,7 @@ export function CentrePage({ id }: { id: string }) {
   });
 
   const back = { href: '#/centres', label: t('centres.back') };
-  if (centre.isPending) return <Muted>{t('common.loading')}</Muted>;
+  if (centre.isPending) return <RowsSkeleton rows={4} />;
   if (notFound) return <NotFoundPage title={t('centres.notFound')} message={errorText(centre.error)} back={{ href: '#/centres', label: t('centres.backToCentres') }} />;
   if (centre.error) return <><BackLink {...back} /><Notice tone="danger">{errorText(centre.error)}</Notice></>;
   const c = centre.data;

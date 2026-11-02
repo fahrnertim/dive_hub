@@ -11,7 +11,7 @@ import { useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Checkbox, ConfirmButton, Dialog, Disclosure, Form, DiverAvatar, NumberField, Muted, Notice, PageHeader, Panel, SearchList, TextField, type SearchListItem } from './ui/index.ts';
+import { Button, Checkbox, ConfirmButton, Dialog, Disclosure, DiverAvatar, Form, Muted, Notice, NumberField, PageHeader, Panel, RowsSkeleton, SearchList, TextField, type SearchListItem } from './ui/index.ts';
 
 /** The Divers whose logbooks the User keeps, and the other divers Users dived with (ADR 0028). Their Devices are in Settings. */
 export function DiversPage({ open }: { open?: string | undefined }) {
@@ -49,7 +49,7 @@ function Divers({ open }: { open: string | undefined }) {
   return (
     <Panel title={t('divers.logbooks')}>
       <Muted>{t('divers.intro')}</Muted>
-      {divers.isPending && <Muted>{t('common.loading')}</Muted>}
+      {divers.isPending && <RowsSkeleton rows={3} />}
       {divers.error && <Notice tone="danger">{errorText(divers.error)}</Notice>}
       <ul className="diver-list" ref={list}>
         {divers.data?.map((d, index) => <DiverRow key={d.id} diver={d} list={list} index={index} count={divers.data.length} certificationsOpen={open === d.id || (open === 'own' && d.isOwn)} />)}
@@ -110,7 +110,7 @@ function DiverRow({ diver: d, list, index, count, certificationsOpen }: {
   const empty = d.diveCount === 0 && d.deviceCount === 0;
 
   return (
-    <li className="diver-row">
+    <li className="diver-row reveal">
       {renaming ? (
         <Form
           className="form-inline"
@@ -313,7 +313,7 @@ function OtherDivers() {
     <Panel title={t('divers.others')} actions={<Button icon="code" onPress={() => setScanning(true)}>{t('diverCodes.scan')}</Button>}>
       <Muted>{t('divers.othersIntro')}</Muted>
       <TextField label={t('divers.findOther')} name="q" type="search" autoComplete="off" value={q} onChange={setQ} />
-      {others.isPending && <Muted>{t('common.loading')}</Muted>}
+      {others.isPending && <RowsSkeleton rows={3} />}
       {others.error && <Notice tone="danger">{errorText(others.error)}</Notice>}
       {others.data && rows.length === 0 && <Muted>{q.trim() ? t('divers.noOtherMatch', { q: q.trim() }) : t('divers.noOthers')}</Muted>}
       {rows.length > 0 && (

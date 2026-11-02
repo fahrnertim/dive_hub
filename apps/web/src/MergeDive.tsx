@@ -6,7 +6,7 @@ import { announce } from './lib/announce.ts';
 import { deleteChoice, type CopyAt } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { useJoinNames, useProviderOf, useProviderText, type ProviderRef } from './lib/providers.ts';
-import { Button, Dialog, Muted, Notice } from './ui/index.ts';
+import { Button, Dialog, Notice, RowsSkeleton } from './ui/index.ts';
 
 /** One of the two Dives of a merge, with what tells it from the other. */
 export type MergeSide = Pick<LogbookCheckView['dive'], 'id' | 'version' | 'number' | 'startsAt' | 'utcOffsetSeconds' | 'utcOffsetSource' | 'durationSeconds' | 'maxDepthM' | 'site' | 'recordings'>;
@@ -76,7 +76,7 @@ export function MergePicker({ dive: d, onClose }: { dive: DiveView; onClose: () 
   if (chosen) return <MergeDialog dive={sideOf(d)} other={chosen} onClose={onClose} />;
   return (
     <Dialog title={t('merge.pickTitle')} isOpen onOpenChange={(open) => !open && onClose()}>
-      {nearby.isPending && <Muted>{t('common.loading')}</Muted>}
+      {nearby.isPending && <RowsSkeleton rows={2} />}
       {nearby.error && <Notice tone="danger">{errorText(nearby.error)}</Notice>}
       {nearby.data && (nearby.data.length === 0 ? <p>{t('merge.pickNone')}</p> : (
         <>
@@ -161,7 +161,7 @@ export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
       {choice?.ask.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} how="ask" />)}
       {choice?.cannot.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} how="cannot" />)}
       {choice?.itself.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} how="itself" />)}
-      {!choice && <Muted>{t('common.loading')}</Muted>}
+      {!choice && <RowsSkeleton rows={2} />}
       {merge.error && (
         <Notice tone="danger">
           {errorText(merge.error)}{merge.error instanceof ApiError && ` ${t('merge.nothingMerged')}`}

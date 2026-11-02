@@ -26,7 +26,7 @@ import { SitePicker } from './SitePicker.tsx';
 import { Participants } from './Participants.tsx';
 import { ProviderPanels } from './ProviderPanel.tsx';
 import { DiveCodes } from './DiveCodes.tsx';
-import { ActionMenu, BackLink, Button, ConfirmDialog, Dialog, ErrorBoundary, Icon, Muted, NotFoundPage, Notice, PageHeader, Panel, Select } from './ui/index.ts';
+import { ActionMenu, BackLink, Button, ConfirmDialog, Dialog, DiveSkeleton, ErrorBoundary, Icon, Muted, NotFoundPage, Notice, PageHeader, Panel, Select } from './ui/index.ts';
 
 /** One Dive (ADR 0015): its values with Overrides marked, notes, Recordings, and its history. */
 export function DivePage({ id, recordingId, list = '' }: { id: string; recordingId?: string | undefined; list?: string }) {
@@ -53,7 +53,7 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
     : v.number !== null ? t('dive.title', { number: v.number }) : t('dive.titleNoNumber');
   usePageTitle(title);
 
-  if (dive.isPending) return <DiveLoading />;
+  if (dive.isPending) return <DiveSkeleton />;
   if (notFound) return <NotFoundPage title={title} message={errorText(dive.error)} back={{ href: logbook, label: t('dive.backToLogbook') }} />;
   // Only a first load that failed replaces the page; a failed refetch keeps the Dive already shown (below).
   if (dive.isLoadingError) {
@@ -138,18 +138,6 @@ function TimeZoneNote({ dive: d }: { dive: DiveView }) {
   const { t } = useTranslation();
   if (d.utcOffsetSource === 'device' || d.overrides.includes('startsAt')) return null;
   return <p className="title-meta">{t(`dive.timeZone.${d.utcOffsetSource}`)}</p>;
-}
-
-/** Space for the dive while it loads, so the page doesn't jump when it arrives (UI review C10). */
-function DiveLoading() {
-  const { t } = useTranslation();
-  return (
-    <div className="loading" aria-busy="true">
-      <Muted>{t('common.loading')}</Muted>
-      <div className="panel skeleton skeleton-facts" />
-      <div className="panel skeleton skeleton-chart" />
-    </div>
-  );
 }
 
 /**

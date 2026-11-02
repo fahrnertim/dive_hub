@@ -4,7 +4,7 @@ import { allButDive, api, ApiError, diveProvidersQuery, keys, unwrap, type DiveV
 import { deleteChoice, updateDeletion, type CopyAt } from './lib/deletion.ts';
 import { useErrorText } from './lib/display.ts';
 import { useJoinNames, useProviderOf, useProviderText, type ProviderRef } from './lib/providers.ts';
-import { Button, Dialog, Muted, Notice } from './ui/index.ts';
+import { Button, Dialog, Notice, RowsSkeleton } from './ui/index.ts';
 
 /** What the dialog says about one copy: delete it there too, or it stays there (in the Provider's words where it has them). */
 function CopySentence({ provider: p, copy, how }: { provider: ProviderRef; copy: CopyAt; how: 'ask' | 'cannot' | 'itself' }) {
@@ -54,7 +54,7 @@ export function DeleteDiveDialog({ dive: d, name, onClose }: { dive: Pick<DiveVi
       {choice?.ask.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} copy={c} how="ask" />)}
       {choice?.cannot.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} copy={c} how="cannot" />)}
       {choice?.itself.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} copy={c} how="itself" />)}
-      {!choice && <Muted>{t('common.loading')}</Muted>}
+      {!choice && <RowsSkeleton rows={2} />}
       {remove.error && (
         <Notice tone="danger">
           {errorText(remove.error)}{remove.error instanceof ApiError && ` ${t('dive.deleteNothingDeleted')}`}
