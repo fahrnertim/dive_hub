@@ -11,7 +11,7 @@ import { pickLanguage } from './i18n/languages.ts';
 import { DeletedNotices } from './DeletedDives.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
 import { PushRunStrip, RunMark } from './PushRun.tsx';
-import { ReviewLinks, ReviewStrip } from './ReviewStrip.tsx';
+import { ReviewMore, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
@@ -154,8 +154,7 @@ function Logbook({ params }: { params: LogbookParams }) {
   const returning = (all.data?.total ?? 0) > 0;
   return (
     <ImportProvider>
-      <LogbookHeader importAction={returning && <ImportFilesButton />} />
-      <ReviewLinks />
+      <LogbookHeader params={params} importAction={returning && <ImportFilesButton />} more={<ReviewMore />} />
       <DeletedNotices />
       <ReviewStrip />
       <PushRunStrip />

@@ -2,7 +2,7 @@
 // deleted dives; and a Dive in SSI, kept there with a reminder and deleted there later, or deleted in both at once.
 // Fixture: e2e/fixtures/deletable-computer.fit, dive 9 (apps/server/test/fixtures/write-deletion-fixture.ts).
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_BASE_URL, deletableDive, diveNumber, diveRows, sendToSsi, setPreferences } from './support.ts';
+import { E2E_BASE_URL, deletableDive, diveNumber, diveRows, goToMore, sendToSsi, setPreferences } from './support.ts';
 
 test.beforeAll(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
@@ -44,7 +44,7 @@ test('deletes a dive after asking, offers Undo, and restores it from the deleted
   const { version } = await (await request.get(`/api/dives/${id}`)).json() as { version: number };
   await request.delete(`/api/dives/${id}`, { data: { version }, headers: { origin: E2E_BASE_URL } });
   await page.reload();
-  await page.getByRole('link', { name: 'Deleted dives (1)' }).click();
+  await goToMore(page, 'Deleted dives (1)');
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'Deleted dives' }) });
   await expect(page.getByRole('heading', { name: 'Review', level: 1 })).toBeFocused();
   await expect(panel).toContainText(/Deleted .*2026/);

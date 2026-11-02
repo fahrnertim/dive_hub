@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectAccessible, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, leaveLena, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, surfaceBreakPair, tankPodDive
+  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, goToMore, leaveLena, openFilters, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, surfaceBreakPair, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -102,7 +102,7 @@ for (const v of variants) {
       try {
         await page.goto('/');
         await expect(diveRows(page).first()).toBeVisible();
-        await openChoices(page);
+        await openFilters(page);
         await expect(page.getByRole('group', { name: v.english ? 'Show only' : 'Nur anzeigen' })).toBeVisible();
         await goodPage(page, title('Logbook'), v);
         // A filter pressed, and sorted by depth: no month headings, the day with its year.
@@ -1441,8 +1441,8 @@ test.describe('behaviour', () => {
     ]);
     await expect(page.getByText('Skipped notes.txt')).toBeVisible();
     await expect(page.locator('[data-announcer]')).toHaveText('main-computer.fit: already imported');
-    // The Imports are on the Review page, one link away from the logbook.
-    await page.getByRole('link', { name: 'Imports', exact: true }).click();
+    // The Imports are on the Review page, one step away from the logbook (behind More).
+    await goToMore(page, 'Imports');
     const imports = page.locator('section.panel').filter({ has: page.getByRole('heading', { name: 'Imports' }) });
     await expect(imports.getByText('main-computer.fit').first()).toBeVisible();
     await expect(imports.getByText('already imported').first()).toBeVisible();
@@ -1466,7 +1466,7 @@ test.describe('behaviour', () => {
       await choice.getByRole('button', { name: 'Import', exact: true }).click();
       await expect(choice).toHaveCount(0);
       // The scuba dive is the seeded one, so it is recognised; the rest is named as left out.
-      await page.getByRole('link', { name: 'Imports', exact: true }).click();
+      await goToMore(page, 'Imports');
       const row = page.getByRole('listitem').filter({ hasText: 'account-export.zip' }).first();
       await expect(row.getByText('already imported')).toBeVisible();
       await expect(row.getByText('1 apnea session was left out by you. 2 other files are no dives and are not kept.')).toBeVisible();
@@ -1567,17 +1567,18 @@ test.describe('behaviour', () => {
     await expect(page.getByRole('heading', { name: 'Connections', level: 1 })).toBeVisible();
   });
 
-  test('Imports and Deleted dives are linked from the logbook, even with nothing waiting (slice 25e, C9)', { tag: ['@dives'] }, async ({ page }) => {
+  test('Imports and Deleted dives are in More on the logbook, even with nothing waiting (slice 25e, C9)', { tag: ['@dives'] }, async ({ page }) => {
     await page.goto('/');
     await expect(diveRows(page).first()).toBeVisible();
-    const more = page.getByRole('main').getByRole('navigation', { name: 'Review' });
-    await expect(more.getByRole('link', { name: 'Imports' })).toHaveAttribute('href', '#/review?tab=imports');
-    await expect(more.getByRole('link', { name: 'Deleted dives' })).toHaveAttribute('href', '#/review?tab=deleted');
-    // Above the list, not below it: they are found without scrolling past the Dives.
-    const link = await more.boundingBox();
+    const button = page.getByRole('main').getByRole('button', { name: 'More' });
+    await button.click();
+    await expect(page.getByRole('menuitem', { name: 'Imports' })).toHaveAttribute('href', '#/review?tab=imports');
+    await expect(page.getByRole('menuitem', { name: 'Deleted dives' })).toHaveAttribute('href', '#/review?tab=deleted');
+    // In the title row, not below the list: found without scrolling past the Dives.
+    const more = await button.boundingBox();
     const list = await diveRows(page).first().boundingBox();
-    expect(link!.y).toBeLessThan(list!.y);
-    await more.getByRole('link', { name: 'Deleted dives' }).click();
+    expect(more!.y).toBeLessThan(list!.y);
+    await page.getByRole('menuitem', { name: 'Deleted dives' }).click();
     // The Review page's Deleted dives part. (Its list, with a heading of its own, shows only once a spec deleted a dive.)
     await expect(page.getByRole('navigation', { name: 'Parts of the review' }).getByRole('link', { name: 'Deleted dives' }))
       .toHaveAttribute('aria-current', 'page');

@@ -54,6 +54,22 @@ export async function resetDive(api: APIRequestContext): Promise<Dive> {
   return dive;
 }
 
+/**
+ * Opens the logbook's "Show only" chips where they are folded away: behind Filters, or on a phone behind
+ * "Filter and sort" (English or German). Does nothing where they are open already.
+ */
+export async function openFilters(page: Page) {
+  const trigger = page.getByRole('button', { name: /^Filter/ });
+  await expect(trigger).toBeVisible();
+  if (await trigger.getAttribute('aria-expanded') === 'false') await trigger.click();
+}
+
+/** Follows one of the logbook's More items (Imports, Decided, Deleted dives) to the Review page. */
+export async function goToMore(page: Page, item: string | RegExp) {
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: item }).click();
+}
+
 /** The logbook's rows, one per Dive (ADR 0040); English or German. */
 export const diveRows = (page: Page) => page.getByRole('region', { name: /^(Dives|Tauchgänge)$/ }).getByRole('listitem');
 

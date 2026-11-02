@@ -10,7 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, diveNumber, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, surfaceBreakPair, tankPodDive,
-  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, queueEntry, ssiConnectionOf, expireSsiTokens, leaveConflict, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
+  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, queueEntry, ssiConnectionOf, expireSsiTokens, leaveConflict, goneAtSsi, goToMore, leaveLena, leaveSsi, lenaReady, openFilters, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
 const out = process.env.REVIEW_OUT ?? 'review-output/';
@@ -111,7 +111,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.keyboard.press('Escape');
     await page.emulateMedia({ colorScheme: 'light' });
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.getByRole('link', { name: 'Imports', exact: true }).click(); await page.getByRole('heading', { name: 'Imports', level: 2 }).waitFor();
+    await goToMore(page, 'Imports'); await page.getByRole('heading', { name: 'Imports', level: 2 }).waitFor();
     await capture(page, '01b-review-imports');
     await cancelWaitingImports(request);
     await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Dive \d+/ }).waitFor();
@@ -138,6 +138,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.setViewportSize({ width: 320, height: 640 });
     await capture(page, '03e-logbook-rows-buddies-320', { aria: false, axe: false });
     await page.setViewportSize({ width: 1280, height: 900 });
+    await openFilters(page);
     await page.getByRole('group', { name: 'Show only' }).getByRole('button').first().click();
     await page.getByRole('group', { name: 'Show only' }).getByRole('button', { pressed: true }).waitFor();
     await capture(page, '03f-logbook-show-only');

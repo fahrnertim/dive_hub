@@ -116,7 +116,7 @@ export function ImportProvider({ children }: { children: ReactNode }) {
   return (
     <ImportContext value={state}>
       {children}
-      {dragging && <div className="page-drop" aria-hidden="true"><p>{t('import.dropNow')}</p></div>}
+      {dragging && <div className="page-drop" aria-hidden="true"><div><p>{t('import.dropNow')}</p><p className="muted">{t('import.drop')}</p></div></div>}
     </ImportContext>
   );
 }

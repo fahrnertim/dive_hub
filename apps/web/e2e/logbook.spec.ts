@@ -1,7 +1,7 @@
 // The logbook's rows in a real browser (ADR 0040, UI redesign slice C): what a row says, the months and totals around
 // the list, buddies as circles with their names as text, and "Show only" with its counts, in the address.
 import { expect, test } from '@playwright/test';
-import { clearParticipants, diveNumber, diveRows, diveWithoutRecording, externalDiver, leaveLena, seededDiveId, setBuddies, setPreferences } from './support.ts';
+import { clearParticipants, diveNumber, diveRows, diveWithoutRecording, externalDiver, leaveLena, openFilters, seededDiveId, setBuddies, setPreferences } from './support.ts';
 
 test.beforeEach(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
@@ -30,11 +30,10 @@ test('a row says its number, when and with whom; a month heading and the logbook
     await expect(list.getByRole('heading', { level: 2 })).toHaveCount(1);
     await expect(list.getByText(/^1 dive · \d+ min$/)).toBeVisible();
 
-    // The whole logbook's numbers, whatever is searched for.
+    // The whole logbook's numbers, whatever is searched for: one line under the title, not a block of figures.
     const { totals } = await (await request.get('/api/dives?limit=1')).json() as { totals: { dives: number } };
-    const numbers = page.getByRole('group', { name: 'In total' });
-    await expect(numbers.getByText('Under water')).toBeVisible();
-    await expect(numbers.getByRole('definition').first()).toHaveText(String(totals.dives));
+    await expect(page.getByRole('group', { name: 'In total' })).toHaveCount(0);
+    await expect(page.locator('.page-head').getByText(new RegExp(`^${totals.dives} dives? · .+ under water · deepest .+$`))).toBeVisible();
 
     // The row is one large target; its link is the way in for keyboard and screen readers.
     await row.getByText('KL', { exact: true }).click();
@@ -76,6 +75,7 @@ test('"Show only" narrows the logbook: the chips keep their counts, live in the 
   const shown = (n: number) => Math.min(25, n);
 
   await page.goto('/');
+  await openFilters(page);
   const chips = page.getByRole('group', { name: 'Show only' });
   const noRecording = chips.getByRole('button', { name: /^No recording \d+$/ });
   await expect(noRecording).toHaveText(`No recording${counts.noRecording}`);
@@ -117,4 +117,53 @@ test('"Show only" narrows the logbook: the chips keep their counts, live in the 
   await expect(page).toHaveURL(/#\/\?only=no-recording$/);
   await noRecording.click();
   await expect(page).toHaveURL(/#\/$/);
+});
+
+test('the title row carries More: Imports and Deleted dives are reached through it', { tag: ['@dives'] }, async ({ page }) => {
+  await page.goto('/');
+  await expect(diveRows(page).first()).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Review' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'More' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Imports' })).toHaveAttribute('href', '#/review?tab=imports');
+  await expect(page.getByRole('menuitem', { name: /^Deleted dives/ })).toHaveAttribute('href', '#/review?tab=deleted');
+  await page.getByRole('menuitem', { name: /^Deleted dives/ }).click();
+  await expect(page).toHaveURL(/#\/review\?tab=deleted$/);
+});
+
+test('Filters shows how many chips are on and keeps them in the address; a reload opens the panel by itself', { tag: ['@dives'] }, async ({ page, request }) => {
+  await diveWithoutRecording(request);
+  await page.goto('/');
+  const filters = page.getByRole('button', { name: /^Filters/ });
+  await expect(filters).toHaveAccessibleName('Filters');
+  await expect(filters).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('group', { name: 'Show only' })).toHaveCount(0);
+
+  await filters.click();
+  const chips = page.getByRole('group', { name: 'Show only' });
+  const noRecording = chips.getByRole('button', { name: /^No recording \d+$/ });
+  await noRecording.click();
+  await expect(page).toHaveURL(/#\/\?only=no-recording$/);
+  await expect(filters).toHaveAccessibleName('Filters, 1 on');
+
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Filters, 1 on' })).toHaveAttribute('aria-expanded', 'true');
+  await expect(chips.getByRole('button', { name: /^No recording \d+$/ })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('the Diver select is there only when there is more than one Diver', { tag: ['@dives'] }, async ({ page }) => {
+  await page.route('**/api/divers', async (route) => {
+    const response = await route.fetch();
+    const divers = await response.json() as unknown[];
+    await route.fulfill({ response, json: divers.slice(0, 1) });
+  });
+  await page.goto('/');
+  await expect(diveRows(page).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Sort by$/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Diver/ })).toHaveCount(0);
+});
+
+test('the drop hint is not in the title row of a logbook with dives', { tag: ['@dives'] }, async ({ page }) => {
+  await page.goto('/');
+  await expect(diveRows(page).first()).toBeVisible();
+  await expect(page.getByText(/drop dive files/i)).toHaveCount(0);
 });
