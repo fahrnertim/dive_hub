@@ -15,7 +15,9 @@ export interface UddfAdapter {
 }
 
 /** A logbook of a few hundred dives is a few tens of megabytes; anything far larger is not parsed. */
-const MAX_BYTES = 64 * 1024 * 1024;
+const MAX_BYTES = 32 * 1024 * 1024;
+/** Tank pressures read for a dive without tank data: a crafted file could name a new tank in every waypoint. */
+const MAX_TANKS = 8;
 const PROLOG_BYTES = 4096;
 
 /** A document whose root element is `uddf`, with any prefix; only the prolog's first bytes are read. */
@@ -132,6 +134,7 @@ const WAYPOINT_CHANNELS: [string, string, (v: number) => number][] = [
 ];
 
 function samplesOf(dive: XmlElement) {
+  const declared = childrenOf(dive, 'tankdata').map((t) => t.attributes.id).filter((id): id is string => !!id);
   const waypoints = childrenOf(child(dive, 'samples'), 'waypoint')
     .map((w) => ({ w, ms: num(child(w, 'divetime')) }))
     .filter((x): x is { w: XmlElement; ms: number } => x.ms !== undefined)
@@ -152,9 +155,10 @@ function samplesOf(dive: XmlElement) {
   for (const [element, channel, convert] of WAYPOINT_CHANNELS) {
     push(channel, (w) => { const v = num(child(w, element)); return v === undefined ? undefined : convert(v); });
   }
-  const tanks = [...new Set(waypoints.flatMap(({ w }) => childrenOf(w, 'tankpressure').map((p) => p.attributes.ref ?? '')))];
-  tanks.forEach((ref, index) => push(index === 0 ? 'tankPressure' : `tankPressure:${index + 1}`,
-    (w) => bar(num(childrenOf(w, 'tankpressure').find((p) => (p.attributes.ref ?? '') === ref)))));
+  // The dive's own tanks; without tank data, the first few named in the waypoints.
+  const pressures = new Map(waypoints.map(({ w }) => [w, new Map(childrenOf(w, 'tankpressure').map((p) => [p.attributes.ref ?? '', bar(num(p))]))]));
+  const tanks = declared.length > 0 ? declared : firstOf(MAX_TANKS, waypoints.flatMap(({ w }) => [...pressures.get(w)!.keys()]));
+  tanks.forEach((ref, index) => push(index === 0 ? 'tankPressure' : `tankPressure:${index + 1}`, (w) => pressures.get(w)!.get(ref)));
 
   // The mix a dive starts on is no switch; every later one is.
   const events: ParsedEvent[] = waypoints.flatMap(({ w, ms }) => {
@@ -163,7 +167,7 @@ function samplesOf(dive: XmlElement) {
   });
   const mode = waypoints.map(({ w }) => child(w, 'divemode')?.attributes.type).find(Boolean);
   const mixes = waypoints.map(({ w }) => child(w, 'switchmix')?.attributes.ref).filter((r): r is string => !!r);
-  const lastMs = waypoints.length ? Math.max(...waypoints.map((x) => x.ms)) : 0;
+  const lastMs = waypoints.reduce((most, x) => Math.max(most, x.ms), 0);
   return { series, events, mode, mixes, lastMs };
 }
 
@@ -193,7 +197,7 @@ function toRecording(dive: XmlElement, context: Context): ParsedRecording {
   const depths = series.find((s) => s.channel === 'depth')?.values ?? [];
   const temps = series.find((s) => s.channel === 'temperature')?.values ?? [];
   const durationSeconds = num(child(after, 'diveduration')) ?? lastMs / 1000;
-  const maxDepthM = num(child(after, 'greatestdepth')) ?? (depths.length ? Math.max(...depths) : undefined);
+  const maxDepthM = num(child(after, 'greatestdepth')) ?? largest(depths);
   const site = childrenOf(before, 'link').map((l) => context.sites.get(l.attributes.ref ?? '')).find(Boolean);
 
   // Values without a place in a Recording are kept as extras, not dropped.
@@ -207,8 +211,8 @@ function toRecording(dive: XmlElement, context: Context): ParsedRecording {
     diveNumber: num(child(before, 'divenumber')),
     diveMode: mode ? DIVE_MODES[mode] : undefined,
     gases: gasesOf(dive, context.mixes, mixes),
-    minTemperatureC: lowest ?? (temps.length ? Math.min(...temps) : undefined),
-    maxTemperatureC: temps.length ? Math.max(...temps) : undefined,
+    minTemperatureC: lowest ?? smallest(temps),
+    maxTemperatureC: largest(temps),
     surfaceIntervalSeconds: num(at(before, 'surfaceintervalbeforedive', 'passedtime')),
   });
   if (Object.keys(extras).length > 0) summary.extras = extras;
@@ -239,3 +243,12 @@ function toRecording(dive: XmlElement, context: Context): ParsedRecording {
 }
 
 const positive = (v: number | undefined) => (v !== undefined && v > 0 ? v : undefined);
+// Not Math.max(...values): a long profile would overflow the call stack.
+const largest = (values: number[]) => (values.length ? values.reduce((a, b) => Math.max(a, b)) : undefined);
+const smallest = (values: number[]) => (values.length ? values.reduce((a, b) => Math.min(a, b)) : undefined);
+/** The first `count` distinct values, in order. */
+function firstOf(count: number, values: string[]): string[] {
+  const seen = new Set<string>();
+  for (const v of values) { if (seen.size >= count) break; seen.add(v); }
+  return [...seen];
+}

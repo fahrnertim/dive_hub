@@ -17,6 +17,8 @@ export interface XmlElement {
 
 const ENTITIES: Record<string, string> = { lt: '<', gt: '>', amp: '&', quot: '"', apos: "'" };
 const MAX_DEPTH = 64;
+/** A real logbook of 32 MB has well under a million elements; more would only fill the memory. */
+const MAX_ELEMENTS = 1_000_000;
 
 const localName = (qualified: string) => qualified.slice(qualified.indexOf(':') + 1);
 
@@ -42,8 +44,9 @@ type Open = { element: XmlElement; text: string[]; qualified: string };
 class Reader {
   i: number;
   readonly stack: Open[] = [];
+  private elements = 0;
   root: XmlElement | undefined;
-  constructor(readonly source: string) { this.i = source.charCodeAt(0) === 0xfeff ? 1 : 0; }
+  constructor(readonly source: string, private readonly maxElements: number) { this.i = source.charCodeAt(0) === 0xfeff ? 1 : 0; }
 
   read(): XmlElement {
     while (this.i < this.source.length) this.step();
@@ -101,6 +104,7 @@ class Reader {
   }
 
   private open() {
+    if (++this.elements > this.maxElements) throw new XmlError('A document with too many elements');
     this.i += 1;
     const qualified = this.name();
     if (!qualified) throw new XmlError('Invalid tag');
@@ -131,7 +135,8 @@ class Reader {
   }
 }
 
-export const parseXml = (source: string): XmlElement => new Reader(source).read();
+export const parseXml = (source: string, { maxElements = MAX_ELEMENTS }: { maxElements?: number } = {}): XmlElement =>
+  new Reader(source, maxElements).read();
 
 /** The first child with this local name. */
 export const child = (e: XmlElement | undefined, name: string) => e?.children.find((c) => c.name === name);

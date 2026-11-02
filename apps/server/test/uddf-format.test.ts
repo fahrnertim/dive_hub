@@ -23,6 +23,12 @@ describe('reading XML', () => {
     expect(root.text).toBe('<raw>');
   });
 
+  it('refuses a document nested too deeply or with too many elements', () => {
+    expect(() => parseXml(`${'<a>'.repeat(65)}${'</a>'.repeat(65)}`)).toThrow(/nested too deeply/);
+    expect(() => parseXml(`<a>${'<b/>'.repeat(11)}</a>`, { maxElements: 10 })).toThrow(/too many elements/);
+    expect(parseXml(`<a>${'<b/>'.repeat(9)}</a>`, { maxElements: 10 }).children).toHaveLength(9);
+  });
+
   it('refuses a document type (no entity expansion) and broken markup', () => {
     expect(() => parseXml('<!DOCTYPE a [<!ENTITY x "y">]><a>&x;</a>')).toThrow(XmlError);
     expect(() => parseXml('<a><b></a>')).toThrow(XmlError);
@@ -104,6 +110,14 @@ describe('a UDDF file from another program', () => {
     expect(series(rec!, 'ndl')?.values).toEqual([1200]);
     expect(series(rec!, 'po2')?.values).toEqual([0.91]);
     expect(series(rec!, 'heartRate')?.values).toEqual([88]);
+  });
+
+  it('reads the pressures of the dive\'s own tanks only, and of at most a few without tank data', async () => {
+    const declared = await uddf.parse(text(new TextDecoder().decode(file).replace('<tankpressure ref="t1">18000000</tankpressure>', '<tankpressure ref="t1">18000000</tankpressure><tankpressure ref="other">1000000</tankpressure>')));
+    expect(declared[0]!.series.filter((s) => s.channel.startsWith('tankPressure')).map((s) => s.channel)).toEqual(['tankPressure']);
+    const waypoints = Array.from({ length: 50 }, (_, n) => `<waypoint><divetime>${n}</divetime><depth>1</depth><tankpressure ref="r${n}">10000000</tankpressure></waypoint>`).join('');
+    const [many] = await uddf.parse(text(`<uddf><profiledata><repetitiongroup><dive><informationbeforedive><datetime>2026-05-02T09:30:00Z</datetime></informationbeforedive><samples>${waypoints}</samples></dive></repetitiongroup></profiledata></uddf>`));
+    expect(many!.series.filter((s) => s.channel.startsWith('tankPressure'))).toHaveLength(8);
   });
 
   it('reads a time without an offset as wall-clock time', async () => {

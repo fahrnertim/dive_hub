@@ -48,6 +48,11 @@ dialect is recognised by the generator's homepage or name containing "oceanic".
 - **No Device:** the file doesn't name the computer (Apple Watch or Oceanic+ computer), so the Recording has none.
 - **Position:** the linked site's coordinates are the entry position, so site matching works as for a FIT file.
 - **Kept as extras:** the rating and the generator (`Oceanic+ 0.0.1`).
+- **XML reader of our own** (`xml.ts`), not a library: UDDF needs only elements, attributes and text, and the
+  libraries bring several dependencies. It refuses a document type, so nothing expands entities or loads outside
+  files; it decodes only the five predefined entities and character references. Limits: 32 MB per file, 1,000,000
+  elements, nesting 64 deep, an attribute value under about 4,000 characters; tank pressures only of the dive's own
+  tanks (without tank data, the first 8 named).
 
 ## Open until the owner's files arrive
 - Is the offset quirk in an unsanitised file too? Do real files carry the hours there?
