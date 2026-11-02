@@ -14,11 +14,11 @@ import { PushRunStrip, RunMark } from './PushRun.tsx';
 import { ReviewLinks, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
-import { navSection, type NavSection } from './lib/nav.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
-import { accountHref, accountTab } from './lib/account-tabs.ts';
-import { reviewTab, useToDecideCounts } from './lib/review.ts';
-import { ActionMenu, BrandMark, ErrorBoundary, Icon, Muted, Notice, PageHeader } from './ui/index.ts';
+import { accountTab } from './lib/account-tabs.ts';
+import { reviewTab } from './lib/review.ts';
+import { ErrorBoundary, Muted, Notice, PageHeader } from './ui/index.ts';
+import { PlainShell, Shell } from './ui/Shell.tsx';
 
 // Pages most visits don't need load on demand: the chart library, account settings, admin.
 const DivePage = lazy(() => import('./DivePage.tsx').then((m) => ({ default: m.DivePage })));
@@ -85,68 +85,22 @@ export function App() {
   useFetchOnOpening(!!me.data);
   useFocusOnNavigate(route);
   useTypingMark();
+  const signOut = useSignOut();
 
+  // Keyed by the page, not its query: a search or filter in the address must not rebuild the page (focus, table).
+  const page = (
+    <ErrorBoundary key={route.split('?')[0]} fallback={<Notice tone="danger">{t('errors.unknown')}</Notice>}>
+      <Suspense fallback={<Muted>{t('common.loading')}</Muted>}>
+        <Main route={route} me={me} />
+      </Suspense>
+    </ErrorBoundary>
+  );
   return (
     <>
       <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }}>
         {t('nav.skipToContent')}
       </a>
-      <header className="app-header">
-        <div className="app-header-inner">
-          <a href="#/" className="brand" translate="no"><BrandMark />{t('common.appName')}</a>
-          {me.data && <Navigation route={route} me={me.data} />}
-        </div>
-      </header>
-      <main id="main" className="app-main" tabIndex={-1}>
-        {/* Keyed by the page, not its query: a search or filter in the address must not rebuild the page (focus, table). */}
-        <ErrorBoundary key={route.split('?')[0]} fallback={<Notice tone="danger">{t('errors.unknown')}</Notice>}>
-          <Suspense fallback={<Muted>{t('common.loading')}</Muted>}>
-            <Main route={route} me={me} />
-          </Suspense>
-        </ErrorBoundary>
-      </main>
-    </>
-  );
-}
-
-function Navigation({ route, me }: { route: string; me: Me }) {
-  const { t } = useTranslation();
-  const signOut = useSignOut();
-  const section = navSection(route);
-  const current = (tab: NavSection) => (tab === section ? { 'aria-current': 'page' as const } : {});
-  // What waits for a decision is counted beside the logbook, visible from every page (UI redesign 4.3).
-  const { total: toDecide } = useToDecideCounts();
-  return (
-    <>
-      <nav className="app-nav" aria-label={t('nav.main')}>
-        <a href="#/" {...current('logbook')}>
-          <Icon name="logbook" />{t('nav.logbook')}
-          <RunMark />
-          {toDecide > 0 && <span className="count"><span aria-hidden="true">{toDecide}</span><span className="visually-hidden">{t('nav.toDecide', { count: toDecide })}</span></span>}
-        </a>
-        <a href="#/divers" {...current('divers')}><Icon name="divers" />{t('nav.divers')}</a>
-        <a href="#/sites" {...current('sites')}><Icon name="site" />{t('nav.sites')}</a>
-        <a href="#/centres" {...current('centres')}><Icon name="centre" />{t('nav.centres')}</a>
-        <a href="#/tools" {...current('tools')}><Icon name="tools" />{t('nav.tools')}</a>
-      </nav>
-      {/* The account is a labelled menu, not a bare name link (UI review C6). */}
-      <div className="user-menu">
-        <ActionMenu
-          className="user-menu-button"
-          icon="account"
-          label={<>{me.user.name}<span className="visually-hidden">{t('nav.accountMenu')}</span></>}
-          actions={[
-            { id: 'account', label: t('nav.account'), href: accountHref('account'), icon: 'user' },
-            // Where a Provider is connected is found here, not by knowing it is a part of the account page (UI review C10).
-            { id: 'connections', label: t('nav.connections'), href: accountHref('connections'), icon: 'link' },
-            // The own Diver's cards are a section of the Divers page; this is only a link to it (ADR 0050).
-            { id: 'certifications', label: t('nav.myCertifications'), href: '#/divers?certifications=own', icon: 'certification' },
-            // Rare and for one role: not in the bar (UI redesign 5.1).
-            ...(me.user.role === 'admin' ? [{ id: 'admin', label: t('nav.administration'), href: '#/admin', icon: 'admin' as const }] : []),
-            { id: 'sign-out', label: t('common.signOut'), onAction: () => void signOut(), icon: 'signOut' },
-          ]}
-        />
-      </div>
+      {me.data ? <Shell me={me.data} route={route} logbookMark={<RunMark />} onSignOut={() => void signOut()}>{page}</Shell> : <PlainShell>{page}</PlainShell>}
     </>
   );
 }

@@ -35,7 +35,9 @@
     "toDecide_other": "{{count}} zu entscheiden",
     "sites": "Tauchplätze",
     "centres": "Tauchbasen",
-    "tools": "Werkzeuge"
+    "tools": "Werkzeuge",
+    "settings": "Einstellungen",
+    "short": { "sites": "Plätze", "centres": "Basen", "tools": "Werkzeug" }
   },
   "form": {
     "requiredLegend": "* erforderlich",

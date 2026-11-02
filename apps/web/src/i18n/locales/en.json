@@ -35,7 +35,9 @@
     "toDecide_other": "{{count}} to decide",
     "sites": "Dive sites",
     "centres": "Dive centres",
-    "tools": "Tools"
+    "tools": "Tools",
+    "settings": "Settings",
+    "short": { "sites": "Sites", "centres": "Centres", "tools": "Tools" }
   },
   "form": {
     "required": "Fill in this field.",

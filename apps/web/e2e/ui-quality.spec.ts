@@ -1504,14 +1504,16 @@ test.describe('behaviour', () => {
     await resetDive(request);
   });
 
-  test('the account is a labelled menu with "My account" and "Sign out"', { tag: ['@account'] }, async ({ page }) => {
+  test('the account is a labelled menu with "Settings", "My certifications" and "Sign out"', { tag: ['@account'] }, async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /^Erika\s*, account$/ }).click();
     await expect(page.getByRole('menuitem', { name: 'Sign out' })).toBeVisible();
-    // Administration is for admins only and lives here, not in the bar (the test User is the admin).
-    await expect(page.getByRole('menuitem', { name: 'Administration' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'My certifications' })).toBeVisible();
+    // The account, its Connections and Administration are sections of Settings (UI overhaul), not in the bar.
+    await expect(page.getByRole('menuitem', { name: 'Settings' })).toHaveAttribute('href', '#/settings');
     await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Admin' })).toHaveCount(0);
-    await page.getByRole('menuitem', { name: 'My account' }).click();
+    // Until Settings has its sections, the account page stays at its address.
+    await page.goto('/#/account');
     await expect(page.getByRole('heading', { name: 'My account', level: 1 })).toBeVisible();
   });
 
@@ -1532,7 +1534,7 @@ test.describe('behaviour', () => {
     await expect(page.locator('section', { has: page.getByRole('heading', { name: 'Other divers' }) }).getByRole('button', { name: 'Add buddy' })).toBeVisible();
   });
 
-  test('the account page has its parts as tabs in the address, and the profile menu links the connections (slice 25e, C10)', { tag: ['@account'] }, async ({ page }) => {
+  test('the account page has its parts as tabs in the address, and the connections have their own (slice 25e, C10)', { tag: ['@account'] }, async ({ page }) => {
     await page.goto('/#/account');
     const parts = page.getByRole('navigation', { name: 'Parts of the account' });
     await expect(parts.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');
@@ -1551,11 +1553,9 @@ test.describe('behaviour', () => {
     await expect(page).toHaveURL(/#\/account\?tab=ai$/);
     await expect(page.getByRole('heading', { name: 'AI access' }).first()).toBeVisible();
 
-    // The profile menu goes straight to the connections.
-    await page.goto('/');
-    await page.getByRole('button', { name: /, account$/ }).click();
-    await page.getByRole('menuitem', { name: 'Connections' }).click();
-    await expect(page).toHaveURL(/#\/account\?tab=connections$/);
+    // The connections have their own address (Settings links them from Task 3 of the UI overhaul).
+    await page.goto('/#/account?tab=connections');
+    await expect(parts.getByRole('link', { name: 'Connections' })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { name: 'My account', level: 1 })).toBeVisible();
   });
 
@@ -1721,7 +1721,7 @@ test.describe('behaviour', () => {
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
     expect((await open()).filter((a) => a.duration > 0)).toEqual([]);
-    await expect(page.getByRole('menuitem', { name: 'My account' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
   });
 
   test('the only admin is not offered to remove their own admin role', { tag: ['@admin'] }, async ({ page }) => {
