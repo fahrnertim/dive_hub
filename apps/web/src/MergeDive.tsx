@@ -101,7 +101,7 @@ export function MergePicker({ dive: d, onClose }: { dive: DiveView; onClose: () 
 }
 
 /** What the dialog says about the copy at a Provider of the Dive that isn't kept, in the Provider's words. */
-function CopySentence({ provider: p, number, how }: { provider: ProviderRef; number: number | null; how: 'ask' | 'cannot' | 'itself' }) {
+export function CopySentence({ provider: p, number, how }: { provider: ProviderRef; number: number | null; how: 'ask' | 'cannot' | 'itself' }) {
   const pt = useProviderText(p);
   const key = { ask: 'deleteAsk', cannot: 'deleteCannot', itself: 'deletesItself' } as const;
   return <p>{pt(key[how], { number: number ?? '' })}</p>;

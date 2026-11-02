@@ -56,6 +56,22 @@ describe.skipIf(!(await databaseReachable()))('applied migrations', () => {
     await expect(q('update connection set fetch_every_minutes = 30 where id = $1', [conn.id])).rejects.toThrow(/connection_fetch_every_ck/);
   });
 
+  it('lets only a continuation Recording go without an Original', async () => {
+    const q = (sql: string, params: unknown[] = []) => t.pool.query(sql, params);
+    const user = (await q(`insert into "user" (name, email) values ('Erika', 'continuation@example.com') returning id`)).rows[0].id as string;
+    const diver = (await q(`insert into diver (name) values ('Erika') returning id`)).rows[0].id as string;
+    const dive = (await q(`insert into dive (diver_id, starts_at, duration_seconds) values ($1, now(), 1800) returning id`, [diver])).rows[0].id as string;
+    const insert = (key: string, parser: string, extra = '', values = '') =>
+      q(`insert into recording (recording_key, parser, parser_version, starts_at, duration_seconds${extra}) values ($1, $2, '1', now(), 1800${values}) returning id`, [key, parser]);
+
+    const joined = (await insert('continuation:1', 'continuation')).rows[0].id as string;
+    await expect(insert('fit:1', 'fit')).rejects.toThrow(/recording_derived_ck/);
+
+    const append = (await q(`insert into continuation_append (joined_recording_id, kept_dive_id, user_id) values ($1, $2, $3) returning id`, [joined, dive, user])).rows[0].id as string;
+    await expect(insert('continuation:2', 'continuation', ', append_id', `, '${append}'`)).rejects.toThrow(/recording_part_ck/);
+    await expect(insert('continuation:3', 'continuation', ', joined_recording_id, append_id', `, '${joined}', '${append}'`)).rejects.toThrow(/recording_part_ck/);
+  });
+
   it('are reported by name when a file changed after it was applied', async () => {
     await appendFile(join(copy, '0002_password_reset.sql'), '\n-- an edit made after the fact\n');
     expect(await findChangedMigrations(t.pool, copy)).toEqual(['0002_password_reset']);

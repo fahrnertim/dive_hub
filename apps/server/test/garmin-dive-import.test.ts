@@ -129,7 +129,7 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
     const recordings = await u.recordings();
     expect(recordings).toHaveLength(1);
     expect(await u.dives()).toHaveLength(1);
-    const [stored] = await t.db.select().from(original).where(eq(original.id, recordings[0]!.originalId));
+    const [stored] = await t.db.select().from(original).where(eq(original.id, recordings[0]!.originalId!));
     expect(stored).toMatchObject({ mediaType: 'application/vnd.ant.fit', fileName: '2001.fit', userId: u.userId });
     expect(await u.links(recordings[0]!.diveId!)).toEqual([{ remoteId: '2001', action: 'link' }]);
   });
@@ -158,7 +158,7 @@ describe.skipIf(!(await databaseReachable()))('fetching dives from Garmin', () =
     expect(outcome).toEqual([expect.objectContaining({ result: 'skipped', reason: 'already_here', remoteId: '2201', diveId: uploaded!.diveId })]);
     const after = await u.recordings();
     expect(after).toEqual(before);
-    const [kept] = await t.db.select().from(original).where(eq(original.id, after[0]!.originalId));
+    const [kept] = await t.db.select().from(original).where(eq(original.id, after[0]!.originalId!));
     expect(kept!.fileName).toBe('synthetic-dive.fit');
     expect(await u.dives()).toHaveLength(1);
     expect(await u.links(uploaded!.diveId!)).toEqual([{ remoteId: '2201', action: 'link' }]);

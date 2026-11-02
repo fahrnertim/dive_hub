@@ -393,6 +393,9 @@
     "tankLine": "{{tank}}: {{start}} am Anfang, {{end}} am Ende, {{used}} verbraucht.",
     "podSac": "Verbrauch an der Oberfläche (AMV) laut Flaschensender: {{sac}}.",
     "recordingActions": "Aktionen zur Aufzeichnung",
+    "atSurface": "{{duration}} an der Oberfläche",
+    "surfaceBreak": "Oberflächenaufenthalt {{duration}}",
+    "parts": "Teile dieser Aufzeichnung",
     "splitOffMenu": "Als eigenen Tauchgang abtrennen …",
     "primaryChanged": "Das ist jetzt die primäre Aufzeichnung.",
     "moreActions": "Mehr",
@@ -462,6 +465,8 @@
     "diver_external_id_connected": "Eine Verbindung nutzt dieses Konto. Trenne sie zuerst.",
     "participant_invalid": "Jemand steht doppelt auf der Liste oder ist der Taucher dieses Tauchgangs selbst.",
     "merge_not_possible": "Nur zwei verschiedene Tauchgänge desselben Tauchers lassen sich zusammenführen.",
+    "continuation_not_possible": "Anhängen lässt sich nur ein späterer Tauchgang desselben Tauchers mit genau einer Aufzeichnung desselben Computers, ohne Tauchgang dazwischen.",
+    "recording_is_part": "Diese Aufzeichnung ist Teil eines angehängten Tauchgangs: Sie lässt sich nicht allein zur primären machen oder abtrennen.",
     "check_not_found": "Diese beiden Tauchgänge liegen nicht mehr zur selben Zeit.",
     "device_not_found": "Dieses Gerät gibt es nicht oder es gehört nicht zu dir.",
     "candidate_not_found": "Hier gibt es (nichts mehr) zu entscheiden.",
@@ -624,7 +629,9 @@
       "merge": "Mit einem anderen Tauchgang zusammengeführt",
       "adopt": "Daten aus der Quelle übernommen",
       "restore": "Wiederhergestellt",
-      "fill": "Aus einem Tauchgang bei einem Dienst ergänzt"
+      "fill": "Aus einem Tauchgang bei einem Dienst ergänzt",
+      "continuation": "Späteren Tauchgang angehängt",
+      "continuation-undo": "Anhängen rückgängig gemacht"
     },
     "field": {
       "number": "Tauchgangsnummer",
@@ -662,6 +669,9 @@
     "fromProvider": "Aus einem Tauchgang in deinem {{name}}-Logbuch angelegt",
     "mergedFrom": "Ein anderer Tauchgang zur selben Zeit wurde in diesen übernommen",
     "mergedInto": "In einen anderen Tauchgang übernommen",
+    "appendedFrom_one": "Ein späterer Tauchgang wurde als Fortsetzung an diesen angehängt",
+    "appendedFrom_other": "{{count}} spätere Tauchgänge wurden als Fortsetzung an diesen angehängt",
+    "continuedInto": "Als Fortsetzung an den Tauchgang davor angehängt",
     "movedFrom": "Aus dem Logbuch des anderen Tauchers kopiert, wo er mit einem Dienst verknüpft war",
     "movedTo": "Als Kopie ins Logbuch eines anderen Tauchers verschoben",
     "linkMoved": "Verknüpfung mit {{name}} übernommen",
@@ -702,7 +712,8 @@
       "recording_beside_entry": "Ein Tauchgang ohne Aufzeichnung und einer mit Aufzeichnung liegen zur selben Zeit",
       "overlapping_dives": "Zwei Tauchgänge überschneiden sich zeitlich",
       "entry_apart_from_recording": "Wahrscheinlich derselbe Tauchgang mit anderer Startzeit: die Starts liegen {{difference}} auseinander, Tiefe und Dauer stimmen überein",
-      "short_shallow_dive": "Eine Aufzeichnung, so kurz und flach, dass sie wahrscheinlich kein Tauchgang ist"
+      "short_shallow_dive": "Eine Aufzeichnung, so kurz und flach, dass sie wahrscheinlich kein Tauchgang ist",
+      "surface_break": "Wahrscheinlich ein Tauchgang mit Oberflächenaufenthalt: derselbe Computer, höchstens 10 Minuten dazwischen"
     },
     "how": "Wenn es derselbe Tauchgang ist, führe sie zusammen. Wenn eine Zeit falsch ist oder einer zu einem anderen Taucher gehört, öffne diesen Tauchgang und korrigiere es dort.",
     "pair": "{{first}} und {{second}}",
@@ -718,6 +729,12 @@
     "answered": "Paare, die zwei Tauchgänge bleiben",
     "answeredIntro": "Tauchgänge zur selben Zeit, von denen du gesagt hast, dass es zwei sind.",
     "askAgain": "Wieder fragen",
+    "surface": {
+      "title": "Tauchgänge mit Oberflächenaufenthalt dazwischen",
+      "how_one": "Angehängt sind sie ein Tauchgang mit einem Profil. Der spätere kommt zu den „Gelöschten Tauchgängen“, wo du ihn wiederherstellen kannst.",
+      "how_other": "Mach diese {{dives}} Tauchgänge zu einem: Angehängt sind sie ein Tauchgang mit einem Profil. Die späteren kommen zu den „Gelöschten Tauchgängen“, wo du sie wiederherstellen kannst.",
+      "append": "Anhängen …"
+    },
     "short": {
       "title": "Wahrscheinlich keine Tauchgänge",
       "how": "Eine Aufzeichnung kürzer als {{duration}}, die über {{depth}} geblieben ist, ist meist ein nass gewordener Tauchcomputer oder ein Fehlstart. War es kein Tauchgang, lösche ihn: er kommt zu den „Gelöschten Tauchgängen“ und lässt sich wiederherstellen.",
@@ -753,6 +770,26 @@
     "pickNone": "In diesem Logbuch gibt es keinen anderen Tauchgang vom Tag davor bis zum Tag danach. Steht derselbe Tauchgang an einem anderen Tag, korrigiere zuerst sein Datum.",
     "pick": "Mit diesem zusammenführen …",
     "done": "Die beiden Tauchgänge sind jetzt einer."
+  },
+  "append": {
+    "menu": "An den vorherigen Tauchgang anhängen…",
+    "title": "Diesen Tauchgang an den vorherigen anhängen?",
+    "titleCheck_one": "Den späteren Tauchgang an den früheren anhängen?",
+    "titleCheck_other": "Diese {{dives}} Tauchgänge zu einem machen?",
+    "stays": "Bleibt:",
+    "goes": "Kommt zu den „Gelöschten Tauchgängen“:",
+    "break_one": "Dazwischen war der Taucher {{duration}} an der Oberfläche. Angehängt sind beide ein Tauchgang mit einem Profil, in dem der Oberflächenaufenthalt bei 0 m zu sehen ist.",
+    "break_other": "Dazwischen war der Taucher {{duration}} an der Oberfläche. Angehängt sind sie ein Tauchgang mit einem Profil, in dem die Oberflächenaufenthalte bei 0 m zu sehen sind.",
+    "takes_one": "Der Tauchgang, der bleibt, übernimmt vom späteren, was ihm fehlt: Tauchplatz, Buddys und Werte. Die Notizen des späteren werden an seine angehängt.",
+    "takes_other": "Der Tauchgang, der bleibt, übernimmt von den späteren, was ihm fehlt: Tauchplatz, Buddys und Werte. Die Notizen der späteren werden an seine angehängt.",
+    "other_one": "Stellst du den späteren unter „Gelöschte Tauchgänge“ im Logbuch wieder her, sind es wieder zwei Tauchgänge.",
+    "other_other": "Stellst du einen der späteren unter „Gelöschte Tauchgänge“ im Logbuch wieder her, sind es wieder einzelne Tauchgänge.",
+    "confirm": "Anhängen",
+    "confirmBoth": "Anhängen und in {{name}} löschen",
+    "confirmHere": "Nur hier anhängen",
+    "nothingAppended": "Es wurde nichts angehängt.",
+    "done_one": "Die beiden Tauchgänge sind jetzt einer.",
+    "done_other": "Die Tauchgänge sind jetzt einer."
   },
   "gone": {
     "title": "Tauchgänge nicht mehr in {{name}}",
@@ -806,6 +843,8 @@
       "recordings_other": "{{count}} Aufzeichnungen",
       "pairs_one": "{{count}} Paar Tauchgänge zur selben Zeit",
       "pairs_other": "{{count}} Paare Tauchgänge zur selben Zeit",
+      "surfaceBreaks_one": "{{count}} durch einen Oberflächenaufenthalt geteilter Tauchgang",
+      "surfaceBreaks_other": "{{count}} durch einen Oberflächenaufenthalt geteilte Tauchgänge",
       "shortDives_one": "{{count}} Tauchgang, der wahrscheinlich keiner ist",
       "shortDives_other": "{{count}} Tauchgänge, die wahrscheinlich keine sind",
       "gone_one": "{{count}} Tauchgang nicht mehr in {{name}}",
@@ -833,8 +872,18 @@
     "openKept": "Diesen Tauchgang öffnen",
     "movedTo": "Ins Logbuch eines anderen Tauchers verschoben.",
     "openMoved": "Dort öffnen",
+    "continuedInto": "An {{name}} angehängt.",
+    "appendedGroup": "{{dives}} Tauchgänge an {{name}} angehängt",
+    "anotherDive": "einen anderen Tauchgang",
     "restore": "Wiederherstellen",
-    "restored": "{{name}} wiederhergestellt."
+    "restored": "{{name}} wiederhergestellt.",
+    "restoreTitle": "{{name}} wiederherstellen?",
+    "comesBack_one": "{{names}} kommt als eigener Tauchgang zurück, mit seiner Aufzeichnung.",
+    "comesBack_other": "{{names}} kommen als eigene Tauchgänge zurück, jeder mit seiner Aufzeichnung.",
+    "alsoOut_one": "Das holt auch {{names}} wieder heraus: er wurde später angehängt.",
+    "alsoOut_other": "Das holt auch {{names}} wieder heraus: sie wurden später angehängt.",
+    "keptKeeps_one": "{{name}} behält, was er von ihm übernommen hat: Tauchplatz, Buddys, Werte und Notizen.",
+    "keptKeeps_other": "{{name}} behält, was er von ihnen übernommen hat: Tauchplatz, Buddys, Werte und Notizen."
   },
   "divers": {
     "numbers": "Tauchgangsnummern von {{name}}",
@@ -1613,6 +1662,7 @@
       "fix": "Ansehen, was fehlt"
     },
     "deletesItself": "Er ist auch in {{name}}, als Tauchgang {{number}}, und wird dort in 5 Minuten gelöscht. „Rückgängig“ bricht das ab.",
+    "appendOutdated": "Der Tauchgang, der bleibt, weicht dann von seinem Eintrag in {{name}} ab: Sendest du die Aktualisierung, bekommt {{name}} die längere Dauer und das ganze Profil.",
     "automation": {
       "title": "Automatisch",
       "titleDiver": "Automatisch: {{diver}}",
@@ -1657,6 +1707,7 @@
       "deleteBody": "SSI-Tauchgang {{number}} verschwindet aus deinem SSI-Logbuch, und die SSI-App kann ihn nicht zurückholen. Der Tauchgang bleibt hier, und du kannst ihn erneut senden.",
       "deleteBodyDeleted": "SSI-Tauchgang {{number}} verschwindet aus deinem SSI-Logbuch, und die SSI-App kann ihn nicht zurückholen.",
       "deleteAsk": "Er ist auch in SSI, als Tauchgang {{number}}. Dort auch löschen? Die SSI-App kann ihn nicht zurückholen. Behältst du ihn dort, erinnert dich das Logbuch daran.",
+      "appendOutdated": "Der Tauchgang, der bleibt, weicht dann von seinem Eintrag in SSI ab. Sendest du die Aktualisierung, bekommt SSI die längere Dauer und das ganze Profil; SSI nummeriert dann deine späteren Tauchgänge neu, und die Aktualisierung kann die Verifizierung der Tauchbasis für diesen Tauchgang entfernen.",
       "pickIntro": "Wähle den Platz aus den Tauchplätzen in deinem SSI-Logbuch, nächste zuerst, oder gib seine ID ein.",
       "errors": {
         "provider_other_account": "Diese E-Mail und dieses Passwort gehören zu einem anderen SSI-Konto. Trenne zuerst und verbinde dann dieses Konto.",

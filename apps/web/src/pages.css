@@ -77,6 +77,10 @@
 .recording-line { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
 /* The dot only separates: the second declaration keeps it from being read out where that is supported. */
 .recording-line > li:not(:last-child)::after { content: "·"; content: "·" / ""; margin-inline-start: var(--space-2); }
+/* A joined Recording's parts (ADR 0063): what recorded each, in small type under the recording's line. */
+.recording-parts { margin-top: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); }
+.recording-parts > p { margin: 0; font-weight: var(--weight-semibold); }
+.recording-parts > ol { margin: var(--space-1) 0 0; padding-inline-start: 1.5rem; }
 /* What is looked at now and then (the Dive at a Provider, its history): one line each in one panel, until opened. */
 .dive-lines { display: grid; gap: var(--space-4); }
 .dive-lines:empty { display: none; }
@@ -377,6 +381,12 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .finding-chip-label { position: absolute; top: 0; line-height: 1.75rem; padding-inline: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; pointer-events: none; }
 @media (hover: hover) { .finding-chip:hover { background: var(--color-accent); } }
+/* A joined Recording's Surface breaks (ADR 0063): a lane on the profile's time axis, each mark as wide as its shaded band
+   and its name under it. */
+.surface-break-lane { display: grid; gap: var(--space-1); margin: var(--space-2) 0 0; padding: 0; list-style: none; max-width: 100%; }
+.surface-break-lane > li { position: relative; height: 1.75rem; }
+.surface-break-mark { position: absolute; top: 0; height: 0.25rem; min-width: 3px; border-radius: var(--radius-sm); background: var(--color-border-strong); }
+.surface-break-label { position: absolute; top: 0.25rem; line-height: 1.5rem; font-size: var(--text-sm); color: var(--color-text-muted); white-space: nowrap; }
 .ascent-legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: var(--space-3) 0 0; padding: 0; list-style: none; font-size: var(--text-sm); color: var(--color-text-muted); }
 .ascent-legend-title { font-weight: var(--weight-semibold); }
 .ascent-swatch { display: inline-block; width: 1.25rem; margin-right: var(--space-2); vertical-align: middle; border-radius: 2px; }

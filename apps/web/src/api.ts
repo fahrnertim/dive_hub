@@ -82,6 +82,8 @@ export type DiveCheckView = AnyLogbookCheck & { rule: 'short_shallow_dive'; othe
 export const isPairCheck = (c: AnyLogbookCheck): c is LogbookCheckView => c.other !== null;
 export const isDiveCheck = (c: AnyLogbookCheck): c is DiveCheckView => c.other === null;
 export type MergeCandidateView = Ok<'/api/dives/{id}/merge-candidates'>[number];
+/** The Dive before this one it may be appended to as its continuation (ADR 0063). */
+export type ContinuationCandidateView = NonNullable<Ok<'/api/dives/{id}/continuation-candidate'>>;
 export type DeletedDiveView = Ok<'/api/dives/deleted'>[number];
 export type SiteView = Ok<'/api/dive-sites/{id}'>;
 export type Position = NonNullable<SiteView['position']>;
@@ -133,6 +135,10 @@ export const keys = {
   logbookChecks: (status: 'open' | 'answered') => ['dives', 'checks', status] as const,
   /** Dives this one may be merged with (ADR 0038); under the Dive, so whatever changes it asks again. */
   mergeCandidates: (id: string) => ['dives', id, 'merge-candidates'] as const,
+  /** The Dive before this one it may be appended to (ADR 0063); under the Dive, so whatever changes it asks again. */
+  continuationCandidate: (id: string) => ['dives', id, 'continuation-candidate'] as const,
+  /** The Dives restoring this deleted one brings back (ADR 0063); under ['dives'], so a change to the logbook asks again. */
+  restorePreview: (id: string) => ['dives', id, 'restore-preview'] as const,
   /** The Dive's assessment (ADR 0036); under the Dive, so whatever changes it reads the findings again. */
   assessment: (id: string) => ['dives', id, 'assessment'] as const,
   divers: ['divers'] as const,
@@ -260,10 +266,10 @@ export const candidatesQuery = (status: 'open' | 'discarded') =>
 export const diveListPages = { queryKey: keys.dives, predicate: (q: { queryKey: readonly unknown[] }) => typeof q.queryKey[1] === 'object' && q.queryKey[1] !== null };
 
 /**
- * Every query but a Dive's own (`['dives', id, …]`): for a Dive that is gone (deleted, merged away, moved as a copy),
+ * Every query but the given Dives' own (`['dives', id, …]`): for Dives that are gone (deleted, merged away, moved as a copy),
  * whose queries are removed and would only answer "not found", while every list and count changes.
  */
-export const allButDive = (id: string) => ({ predicate: (q: { queryKey: readonly unknown[] }) => !(q.queryKey[0] === keys.dives[0] && q.queryKey[1] === id) });
+export const allButDive = (...ids: string[]) => ({ predicate: (q: { queryKey: readonly unknown[] }) => !(q.queryKey[0] === keys.dives[0] && ids.includes(q.queryKey[1] as string)) });
 
 /**
  * The User's deleted Dives, to restore them, and which Providers they are still at (ADR 0026, 0027); a delete at a
@@ -281,6 +287,16 @@ export const logbookChecksQuery = (status: 'open' | 'answered') =>
 export const mergeCandidatesQuery = (id: string) => queryOptions({
   queryKey: keys.mergeCandidates(id),
   queryFn: async () => unwrap(await api.GET('/api/dives/{id}/merge-candidates', { params: { path: { id } } })),
+});
+/** The Dive before this one it may be appended to as its continuation, or null (ADR 0063). */
+export const continuationCandidateQuery = (id: string) => queryOptions({
+  queryKey: keys.continuationCandidate(id),
+  queryFn: async () => unwrap(await api.GET('/api/dives/{id}/continuation-candidate', { params: { path: { id } } })),
+});
+/** The deleted Dives restoring this one brings back, in start order: itself, or all of its append and later ones (ADR 0063). */
+export const restorePreviewQuery = (id: string) => queryOptions({
+  queryKey: keys.restorePreview(id),
+  queryFn: async () => unwrap(await api.GET('/api/dives/{id}/restore-preview', { params: { path: { id } } })),
 });
 /** Every Dive of the same Diver from the day before to the day after: what a merge by hand chooses from (ADR 0038, amended). */
 export const nearbyDivesQuery = (id: string) => queryOptions({

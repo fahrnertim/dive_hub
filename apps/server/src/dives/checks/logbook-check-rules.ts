@@ -2,9 +2,10 @@
 // Dive is probably no dive. The pair rules use the import's own matching, so a check never disagrees with what a fresh
 // import would have done.
 import { MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, alignedForMatching, depthsDisagree, localDay, localStartMs, overlaps } from '../../imports/matching.js';
+import type { RecordingUnit } from '../recording-units.js';
 
 /** Changes when a rule changes what it finds. */
-export const LOGBOOK_CHECKS_VERSION = 4;
+export const LOGBOOK_CHECKS_VERSION = 5;
 
 /**
  * `recording_beside_entry`: a Dive without a Recording and a Dive with one at the same time, as an import would have
@@ -12,9 +13,10 @@ export const LOGBOOK_CHECKS_VERSION = 4;
  * `entry_apart_from_recording` (version 2): an entry and a Recording's Dive on the same local day that don't overlap but
  * agree in depth and duration: the same dive typed with another start. `short_shallow_dive` (version 3), about one Dive:
  * a Recording so short and shallow that it is probably no dive (a computer that got wet, a false start). Version 4: a
- * `recording_beside_entry` pair with such a Dive in it is never obvious.
+ * `recording_beside_entry` pair with such a Dive in it is never obvious. `surface_break` (version 5, ADR 0063): two Dives
+ * of one Device, the later starting at most 10 minutes after the earlier ends: one dive cut in two, for Appending.
  */
-export const LOGBOOK_CHECK_RULES = ['recording_beside_entry', 'overlapping_dives', 'entry_apart_from_recording', 'short_shallow_dive'] as const;
+export const LOGBOOK_CHECK_RULES = ['recording_beside_entry', 'overlapping_dives', 'entry_apart_from_recording', 'short_shallow_dive', 'surface_break'] as const;
 export type LogbookCheckRule = (typeof LOGBOOK_CHECK_RULES)[number];
 /** The rules about two Dives. */
 export type PairRule = Exclude<LogbookCheckRule, 'short_shallow_dive'>;
@@ -29,6 +31,8 @@ export interface CheckedDive {
   durationSeconds: number;
   maxDepthM: number | null;
   recordings: number;
+  /** Its one unit, when it has exactly one with a Device (`surface_break` needs it). */
+  unit?: RecordingUnit | null;
 }
 
 /** Fixed, no setting (ADR 0038, amendment): to be revisited with more than one Provider's data. */
@@ -38,6 +42,8 @@ const APART_DURATION_SECONDS = 3 * 60;
 /** Fixed and conservative (ADR 0038, amendment): ninety seconds to 12 m is an aborted descent, a real dive. */
 const NO_DIVE_BELOW_SECONDS = 2 * 60;
 const NO_DIVE_ABOVE_M = 3;
+/** Fixed (ADR 0063): real repetitive dives usually lie 30 minutes or more apart. */
+const SURFACE_BREAK_MAX_SECONDS = 10 * 60;
 
 const sameLocalDay = (a: CheckedDive, b: CheckedDive) => localDay(a) === localDay(b);
 
@@ -48,9 +54,24 @@ function agreeInDepthAndDuration(a: CheckedDive, b: CheckedDive): boolean {
     && Math.abs(a.durationSeconds - b.durationSeconds) <= APART_DURATION_SECONDS;
 }
 
+/** The Surface break between two Dives' units, in seconds: from the end of the earlier one's to the start of the later one's. */
+export const surfaceBreakSeconds = (earlier: CheckedDive, later: CheckedDive) =>
+  Math.round((later.unit!.startsAt.getTime() - earlier.unit!.endsAt.getTime()) / 1000);
+
 /**
- * The rule two Dives of one Diver break together, if any. Pure. `entry_apart_from_recording` is only whether the pair
- * qualifies; that each Dive is in one pair at most is decided over the whole logbook (`findChecks`).
+ * Whether `later` may be appended to `earlier` by the rule: units of one Device, at most 10 minutes between them, neither
+ * probably no dive (a false start is offered for deleting), and the later no joined Recording (the earlier may be one).
+ */
+function followsSoon(earlier: CheckedDive, later: CheckedDive): boolean {
+  const [e, l] = [earlier.unit, later.unit];
+  if (!e || !l || l.joined || e.deviceId !== l.deviceId || probablyNoDive(earlier) || probablyNoDive(later)) return false;
+  const gap = surfaceBreakSeconds(earlier, later);
+  return gap > 0 && gap <= SURFACE_BREAK_MAX_SECONDS;
+}
+
+/**
+ * The rule two Dives of one Diver break together, if any. Pure. `entry_apart_from_recording` and `surface_break` are only
+ * whether the pair qualifies; which pairs stay is decided over the whole logbook (`findChecks`).
  */
 export function ruleFor(a: CheckedDive, b: CheckedDive): PairRule | null {
   if (a.id === b.id || a.diverId !== b.diverId) return null;
@@ -59,7 +80,8 @@ export function ruleFor(a: CheckedDive, b: CheckedDive): PairRule | null {
   const [other] = alignedForMatching(a, [b]) as [CheckedDive];
   const span = (d: CheckedDive) => ({ startsAt: d.startsAt, durationSeconds: d.durationSeconds, maxDepthM: undefined });
   if (!overlaps(span(a), span(other), mixed ? OVERLAP_TOLERANCE_SECONDS : 0)) {
-    return mixed && sameLocalDay(a, b) && agreeInDepthAndDuration(a, b) ? 'entry_apart_from_recording' : null;
+    if (mixed) return sameLocalDay(a, b) && agreeInDepthAndDuration(a, b) ? 'entry_apart_from_recording' : null;
+    return followsSoon(a, b) || followsSoon(b, a) ? 'surface_break' : null;
   }
   return mixed ? 'recording_beside_entry' : 'overlapping_dives';
 }
@@ -67,33 +89,36 @@ export function ruleFor(a: CheckedDive, b: CheckedDive): PairRule | null {
 /** How far apart two Dives start on the wall clock, in ms. */
 export const startsApartMs = (a: CheckedDive, b: CheckedDive) => Math.abs(localStartMs(a) - localStartMs(b));
 
+type Pair = { a: CheckedDive; b: CheckedDive };
+
 /**
- * Of the pairs that qualify for `entry_apart_from_recording`, those that stay: nearest start first, a Dive in at most one
- * pair, and where a Dive has two equally near partners, none.
+ * Of the pairs that qualify, those that stay: nearest first, each of a pair's two slots taken at most once
+ * (`entry_apart_from_recording`: the Dive; `surface_break`: the earlier Dive's partner after it, the later one's before
+ * it), and where a slot has two equally near partners, none.
  */
-function oneToOne(pairs: { a: CheckedDive; b: CheckedDive }[]): { a: CheckedDive; b: CheckedDive }[] {
-  const byDistance = new Map<number, { a: CheckedDive; b: CheckedDive }[]>();
+function oneToOne(pairs: Pair[], distance: (p: Pair) => number, slots: (p: Pair) => [string, string]): Pair[] {
+  const byDistance = new Map<number, Pair[]>();
   for (const p of pairs) {
-    const apart = startsApartMs(p.a, p.b);
+    const apart = distance(p);
     byDistance.set(apart, [...(byDistance.get(apart) ?? []), p]);
   }
   const used = new Set<string>();
-  const kept: { a: CheckedDive; b: CheckedDive }[] = [];
+  const kept: Pair[] = [];
   for (const apart of [...byDistance.keys()].sort((x, y) => x - y)) {
-    const free = byDistance.get(apart)!.filter(({ a, b }) => !used.has(a.id) && !used.has(b.id));
+    const free = byDistance.get(apart)!.filter((p) => slots(p).every((slot) => !used.has(slot)));
     const count = new Map<string, number>();
-    for (const { a, b } of free) for (const id of [a.id, b.id]) count.set(id, (count.get(id) ?? 0) + 1);
-    for (const p of free) if (count.get(p.a.id) === 1 && count.get(p.b.id) === 1) kept.push(p);
-    // A tied Dive gets no suggestion, and is not offered a farther partner either.
-    for (const [id] of count) used.add(id);
+    for (const p of free) for (const slot of slots(p)) count.set(slot, (count.get(slot) ?? 0) + 1);
+    for (const p of free) if (slots(p).every((slot) => count.get(slot) === 1)) kept.push(p);
+    // A tied slot gets no suggestion, and is not offered a farther partner either.
+    for (const [slot] of count) used.add(slot);
   }
   return kept;
 }
 
 export interface LogbookCheck {
   rule: PairRule;
-  /** The two Dives, the earlier first. */
-  dives: [CheckedDive, CheckedDive];
+  /** The two Dives, the earlier first; a `surface_break` chain has more (`inChains`). */
+  dives: [CheckedDive, CheckedDive, ...CheckedDive[]];
   /**
    * An import would have put the two together by itself: one Recording's Dive, one entry's, no other in reach, depths
    * agreeing, neither probably no dive.
@@ -107,10 +132,13 @@ export function findChecks(dives: CheckedDive[]): LogbookCheck[] {
   // A Dive whose offset is unknown keeps a wall-clock time up to 14 hours from its instant: looked that much further.
   const reach = (d: CheckedDive) => d.startsAt.getTime() + (d.durationSeconds + OVERLAP_TOLERANCE_SECONDS) * 1000 + 2 * MAX_OFFSET_MS;
   const found: { rule: PairRule; a: CheckedDive; b: CheckedDive }[] = [];
+  const breaks: Pair[] = [];
   sorted.forEach((a, i) => {
     for (let k = i + 1; k < sorted.length && sorted[k]!.startsAt.getTime() <= reach(a); k++) {
-      const rule = ruleFor(a, sorted[k]!);
-      if (rule && rule !== 'entry_apart_from_recording') found.push({ rule, a, b: sorted[k]! });
+      const b = sorted[k]!;
+      const rule = ruleFor(a, b);
+      if (rule === 'surface_break') breaks.push(a.unit!.startsAt <= b.unit!.startsAt ? { a, b } : { a: b, b: a });
+      else if (rule && rule !== 'entry_apart_from_recording') found.push({ rule, a, b });
     }
   });
   // Pairs far apart on the clock: the same local day, found apart from the overlap scan above, which only reaches a few hours.
@@ -137,8 +165,30 @@ export function findChecks(dives: CheckedDive[]): LogbookCheck[] {
       && !depthsDisagree(a.maxDepthM ?? undefined, b.maxDepthM ?? undefined),
   }));
   // Never obvious: each needs the User's own click.
-  for (const { a, b } of oneToOne(apart)) checks.push({ rule: 'entry_apart_from_recording', dives: [a, b], obvious: false });
+  for (const { a, b } of oneToOne(apart, (p) => startsApartMs(p.a, p.b), (p) => [p.a.id, p.b.id])) {
+    checks.push({ rule: 'entry_apart_from_recording', dives: [a, b], obvious: false });
+  }
+  // One partner before a Dive and one after it, the nearer winning.
+  for (const { a, b } of oneToOne(breaks, (p) => surfaceBreakSeconds(p.a, p.b), (p) => [`${p.a.id}:after`, `${p.b.id}:before`])) {
+    checks.push({ rule: 'surface_break', dives: [a, b], obvious: false });
+  }
   return checks;
+}
+
+/**
+ * The checks with the `surface_break` pairs that follow one another (A–B, B–C) as one check of all their Dives, in order;
+ * the others as they are. Pure; given the pairs of one status, a pair answered "two dives" ends a chain there.
+ */
+export function inChains(checks: LogbookCheck[]): LogbookCheck[] {
+  const breaks = checks.filter((c) => c.rule === 'surface_break');
+  const after = new Map(breaks.map((c) => [c.dives[0].id, c.dives[1]]));
+  const later = new Set(breaks.map((c) => c.dives[1].id));
+  const chains = breaks.filter((c) => !later.has(c.dives[0].id)).map((c) => {
+    const dives: LogbookCheck['dives'] = [...c.dives];
+    for (let next = after.get(c.dives[1].id); next; next = after.get(next.id)) dives.push(next);
+    return { ...c, dives };
+  });
+  return [...checks.filter((c) => c.rule !== 'surface_break'), ...chains];
 }
 
 /** The pair as an answer is kept: the two ids in order. */

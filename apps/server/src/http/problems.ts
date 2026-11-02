@@ -53,6 +53,8 @@ export const PROBLEMS = {
   participant_invalid: 'A diver is on the list twice, or is the dive\'s own diver',
   merge_not_possible: 'Only two different dives of one diver can be merged',
   check_not_found: 'These two dives are not at the same time (anymore)',
+  continuation_not_possible: 'Only later dives of the same diver, each with one recording of the same computer and none between, can be appended',
+  recording_is_part: 'This recording is a part of a continuation: it can\'t be made primary or split off on its own',
   device_not_found: 'Device not found',
   candidate_not_found: 'Nothing to decide here (anymore)',
   candidate_resolved: 'This was already decided',

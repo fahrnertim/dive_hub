@@ -633,6 +633,8 @@ export type RecordingSummary = {
   avgAscentRateMps?: number;
   /** Source values we have no word for yet, by source field name (data model: extension area). */
   extras?: Record<string, string>;
+  /** Where a Continuation's parts meet: the time on the Recording clock a Surface break covers, in seconds (ADR 0063). */
+  surfaceBreaks?: { startS: number; endS: number }[];
 };
 
 /** The data one Device captured for one Dive. */
@@ -642,8 +644,13 @@ export const recording = pgTable(
     id: id(),
     diveId: uuid('dive_id').references(() => dive.id),
     deviceId: uuid('device_id').references(() => device.id),
-    originalId: uuid('original_id').notNull().references(() => original.id),
-    importId: uuid('import_id').notNull().references(() => importJob.id),
+    /** Null only for a Continuation's joined Recording, which is derived (ADR 0063). */
+    originalId: uuid('original_id').references(() => original.id),
+    importId: uuid('import_id').references(() => importJob.id),
+    /** A part of a Continuation: the joined Recording it went into, the append that did it, and the Dive it came from. */
+    joinedRecordingId: uuid('joined_recording_id').references((): AnyPgColumn => recording.id),
+    appendId: uuid('append_id').references((): AnyPgColumn => continuationAppend.id),
+    fromDiveId: uuid('from_dive_id').references(() => dive.id),
     /** Identity for re-imports: device serial + device start time (or source + external id). */
     recordingKey: text('recording_key').notNull(),
     parser: text('parser').notNull(),
@@ -669,8 +676,20 @@ export const recording = pgTable(
     uniqueIndex('recording_key_uq').on(t.recordingKey).where(sql`${t.deletedAt} is null`),
     index('recording_dive_idx').on(t.diveId),
     index('recording_original_idx').on(t.originalId),
+    index('recording_joined_idx').on(t.joinedRecordingId),
+    check('recording_derived_ck', sql`(${t.parser} = 'continuation') = (${t.originalId} is null and ${t.importId} is null)`),
+    check('recording_part_ck', sql`(${t.joinedRecordingId} is null) = (${t.appendId} is null) and (${t.appendId} is null) = (${t.fromDiveId} is null)`),
   ],
 );
+
+/** One Appending: the Dives it took parts from went into a joined Recording; an undo reverses it (ADR 0063). */
+export const continuationAppend = pgTable('continuation_append', {
+  id: id(),
+  joinedRecordingId: uuid('joined_recording_id').notNull().references((): AnyPgColumn => recording.id),
+  keptDiveId: uuid('kept_dive_id').notNull().references(() => dive.id),
+  userId: uuid('user_id').references(() => user.id, { onDelete: 'set null' }),
+  createdAt: createdAt(),
+});
 
 /**
  * One channel of a Recording's samples (depth, temperature, …) as parallel arrays:

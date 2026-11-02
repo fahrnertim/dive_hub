@@ -9,7 +9,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import {
   cancelWaitingImports, waitingImport,
-  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, diveNumber, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, tankPodDive,
+  E2E_BASE_URL, aiAccessReady, askMcp, assessedDive, diveNumber, clearParticipants, createAiAccess, connectSsi, deletableDive, disconnectSsi, diveWithoutRecording, editElsewhere, externalDiver, falseStart, forgetDivers, keepFalseStart, mergePair, mergeablePair, surfaceBreakPair, tankPodDive,
   clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, queueEntry, ssiConnectionOf, expireSsiTokens, leaveConflict, goneAtSsi, leaveLena, leaveSsi, lenaReady, openLine, pushRunSetup, readyForSsi, sendToSsi, setBuddies, setPreferences,
 } from './support.ts';
 
@@ -915,6 +915,56 @@ test('review material', async ({ page, request, browser }) => {
     await page.emulateMedia({ colorScheme: 'light' });
   }
 
+  // Appending a Continuation (ADR 0063), the owner's dive 85/86: the dialog from the later Dive's menu, then the kept Dive
+  // with its surface break and parts; the same in German on a dark phone.
+  if (want('dives')) {
+    for (const [dialogName, appendedName, language, scheme, width, height] of [['76a', '76b', 'en', 'light', 1280, 900], ['76c', '76d', 'de', 'dark', 390, 844]] as const) {
+      await setPreferences(request, { language });
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.setViewportSize({ width, height });
+      const { first, second } = await surfaceBreakPair(request);
+      await page.goto(`/#/dives/${second}`); await page.reload();
+      await page.getByRole('button', { name: /^(More|Mehr)/ }).click();
+      await page.getByRole('menuitem', { name: /^(Append to the previous dive|An den vorherigen Tauchgang anhängen)/ }).click();
+      const append = page.getByRole('dialog').getByRole('button', { name: /^(Append|Anhängen)$/ });
+      await append.waitFor();
+      await capture(page, `${dialogName}-dive-append-dialog${language === 'de' ? '-de-dark-390' : ''}`, { full: false, aria: false });
+      await append.click();
+      await page.waitForURL(new RegExp(`#/dives/${first}`));
+      await page.getByText(/^(Surface break|Oberflächenaufenthalt) 4/).waitFor();
+      await capture(page, `${appendedName}-dive-appended${language === 'de' ? '-de-dark-390' : ''}`, { aria: false });
+    }
+    // The same pair as a logbook check on the Review page, its dialog, then the appended dive in Deleted dives and the
+    // restore dialog; in English on a desktop, in German on a dark phone.
+    for (const [suffix, language, scheme, width, height] of [['', 'en', 'light', 1280, 900], ['-de-dark-390', 'de', 'dark', 390, 844]] as const) {
+      await setPreferences(request, { language });
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.setViewportSize({ width, height });
+      const { first, second } = await surfaceBreakPair(request);
+      await request.put('/api/logbook-checks/answer', { data: { diveIds: [first, second], answer: null }, headers });
+      await page.goto('/#/review'); await page.reload();
+      const open = page.getByRole('button', { name: /^(Append|Anhängen\s)…: / });
+      await open.waitFor();
+      await capture(page, `76e-review-surface-break${suffix}`, { aria: !suffix });
+      await open.click();
+      const append = page.getByRole('dialog').getByRole('button', { name: /^(Append|Anhängen)$/ });
+      await append.waitFor();
+      await capture(page, `76f-review-surface-break-dialog${suffix}`, { full: false, aria: false });
+      await append.click();
+      await page.goto('/#/review?tab=deleted');
+      await page.getByText(/^(Appended to|An) (Dive|Tauchgang) \d+/).waitFor();
+      await capture(page, `76g-review-deleted-appended${suffix}`, { aria: !suffix });
+      await page.getByRole('button', { name: /^(Restore|Wiederherstellen): / }).first().click();
+      await page.getByRole('dialog').getByText(/(comes back|kommt als)/).waitFor();
+      await capture(page, `76h-review-restore-appended-dialog${suffix}`, { full: false, aria: false });
+      await page.keyboard.press('Escape');
+    }
+    await surfaceBreakPair(request); // two dives again, as for the browser tests
+    await setPreferences(request, { language: null });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 1280, height: 900 });
+  }
+
   // A Dive that is probably no dive (ADR 0038, `short_shallow_dive`): the logbook's line, the check on the Review page, the
   // delete dialog it opens, the kept ones under "Decided"; the check in German on a dark phone.
   if (want('dives')) {
@@ -935,7 +985,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.getByRole('button', { name: 'Undo' }).waitFor();
     await capture(page, '77d-review-short-dive-kept');
     await page.goto('/#/review?tab=decided');
-    await page.getByRole('button', { name: /^Ask again: / }).waitFor();
+    await page.getByRole('button', { name: /^Ask again: / }).first().waitFor(); // the surface break pair waits there too
     await capture(page, '77e-review-short-dive-decided');
     await falseStart(request);
     await setPreferences(request, { language: 'de' });

@@ -7,6 +7,7 @@ import type { Queryable, Tx } from '../db/client.js';
 import {
   device, dive, diverManagement, duplicateCandidate, original, recording, recordingEvent, sampleSeries, type ImportOutcome,
 } from '../db/schema.js';
+import { rebuildJoined } from '../dives/continuation/joined-recording.js';
 import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '../dives/dive-service.js';
 import { managedDiverIds } from '../divers/management.js';
 import { reviseDive, untieLostSeries } from '../dives/cylinders.js';
@@ -103,6 +104,8 @@ async function reimport(tx: Tx, c: Placement, rec: ParsedRecording, known: Recor
   const { actor } = c;
   await tx.update(recording).set(values).where(eq(recording.id, known.id));
   await writeSamples(tx, known.id, rec, true);
+  // A part of a Continuation: its joined Recording is rebuilt, and the Dive whose Primary that is follows it.
+  if (known.joinedRecordingId) await rebuildJoined(tx, known.joinedRecordingId, actor, 'reimport');
   await writeRevision(tx, 'recording', known.id, actor, 'reimport', { originalId: { from: known.originalId, to: c.originalId } });
   // If it is a Dive's Primary recording, the Dive's values without Override follow the new data.
   const [owner] = await tx.select({ id: dive.id }).from(dive).where(eq(dive.primaryRecordingId, known.id));
@@ -234,6 +237,8 @@ async function resolveDevice(tx: Tx, diverId: string, rec: ParsedRecording): Pro
   return created!.id;
 }
 
+// Whoever rewrites a Continuation's part (its samples or summary, e.g. a parser version reading Originals again) must go
+// through `reimport` or call `rebuildJoined`, or the joined Recording and its Dive keep the old data (ADR 0063).
 async function writeSamples(tx: Tx, recordingId: string, rec: ParsedRecording, replace: boolean) {
   if (replace) {
     await tx.delete(sampleSeries).where(eq(sampleSeries.recordingId, recordingId));
@@ -261,6 +266,7 @@ async function recordingIsManaged(tx: Tx, rec: RecordingRow, userId: string, man
     const [d] = await tx.select({ diverId: device.diverId }).from(device).where(eq(device.id, rec.deviceId));
     return !!d && managed.has(d.diverId);
   }
+  if (!rec.originalId) return false;
   const [o] = await tx.select({ userId: original.userId }).from(original).where(eq(original.id, rec.originalId));
   return o?.userId === userId;
 }

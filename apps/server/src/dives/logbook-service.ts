@@ -5,8 +5,11 @@
 // lockManagedDive in dive-service.ts does).
 import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { device, dive, diveAssessment, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user } from '../db/schema.js';
+import {
+  continuationAppend, device, dive, diveAssessment, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
+} from '../db/schema.js';
 import { cylindersOf } from './cylinders.js';
+import { isUnit } from './recording-units.js';
 import { participantsOf, participantsOfDives, type Participant } from './dive-service.js';
 import { managedDiverIds, managesDiveDiver } from '../divers/management.js';
 import { diveListFilter, FINDINGS_SHOWN } from './list-filter.js';
@@ -84,7 +87,7 @@ export function createLogbookService(db: Db) {
     const primaryIds = rows.flatMap((r) => (r.d.primaryRecordingId ? [r.d.primaryRecordingId] : []));
     const [recordingCounts, primaries, peopleOf, assessments] = pageIds.length === 0 ? [[], [], new Map<string, Participant[]>(), []] : await Promise.all([
       db.select({ diveId: recording.diveId, n: count() }).from(recording)
-        .where(and(inArray(recording.diveId, pageIds), isNull(recording.deletedAt))).groupBy(recording.diveId),
+        .where(and(inArray(recording.diveId, pageIds), isNull(recording.deletedAt), isUnit())).groupBy(recording.diveId),
       primaryIds.length === 0 ? [] : db.select({ id: recording.id, summary: recording.summary }).from(recording).where(inArray(recording.id, primaryIds)),
       participantsOfDives(db, pageIds, { live: true }),
       db.select({ diveId: diveAssessment.diveId, recordingId: diveAssessment.recordingId, profile: diveAssessment.profile, ascentBands: diveAssessment.ascentBands })
@@ -209,7 +212,7 @@ export function createLogbookService(db: Db) {
     return row?.version ?? null;
   }
 
-  /** The deleted Dives of the Divers the User manages, most recently deleted first; where a merge or move sent each. */
+  /** The deleted Dives of the Divers the User manages, most recently deleted first; where a merge, move or append sent each. */
   async function deletedDives(userId: string, limit: number) {
     const rows = await db.select({ d: dive, siteName: diveSite.name }).from(dive)
       .innerJoin(diverManagement, managesDiveDiver(userId))
@@ -220,11 +223,24 @@ export function createLogbookService(db: Db) {
     const last = rows.length === 0 ? [] : await db.selectDistinctOn([revision.entityId], { id: revision.entityId, changes: revision.changes })
       .from(revision).where(and(eq(revision.entityType, 'dive'), inArray(revision.entityId, rows.map((r) => r.d.id))))
       .orderBy(revision.entityId, desc(revision.at), desc(revision.id));
-    const went = (id: string, key: 'mergedInto' | 'movedTo') => {
+    const went = (id: string, key: 'mergedInto' | 'movedTo' | 'continuedInto') => {
       const to = last.find((r) => r.id === id)?.changes[key]?.to;
       return typeof to === 'string' ? to : null;
     };
-    return rows.map(({ d, siteName }) => ({ d, siteName, mergedInto: went(d.id, 'mergedInto'), movedTo: went(d.id, 'movedTo') }));
+    // The other Dives an append took with it, to list as one entry (ADR 0063): parts of the same append, not the kept Dive's.
+    const appendIds = rows.length === 0 ? [] : (await db.select({ appendId: recording.appendId }).from(recording)
+      .where(and(inArray(recording.fromDiveId, rows.map((r) => r.d.id)), isNotNull(recording.appendId)))).map((r) => r.appendId!);
+    const taken = appendIds.length === 0 ? [] : (await db.select({ diveId: recording.fromDiveId, appendId: recording.appendId, keptDiveId: continuationAppend.keptDiveId })
+      .from(recording).innerJoin(continuationAppend, eq(continuationAppend.id, recording.appendId))
+      .where(inArray(recording.appendId, appendIds)).orderBy(recording.startsAt)).filter((p) => p.diveId !== p.keptDiveId);
+    const appendedWith = (id: string) => {
+      const own = taken.find((p) => p.diveId === id);
+      return own ? taken.filter((p) => p.appendId === own.appendId && p.diveId !== id).map((p) => p.diveId!) : [];
+    };
+    return rows.map(({ d, siteName }) => ({
+      d, siteName, mergedInto: went(d.id, 'mergedInto'), movedTo: went(d.id, 'movedTo'), continuedInto: went(d.id, 'continuedInto'),
+      appendedWith: appendedWith(d.id),
+    }));
   }
 
   /** The Revisions of a Dive and of its Recordings, newest first (at most 200), with the name of who made each. */

@@ -20,6 +20,8 @@ export interface SyntheticDiveOptions {
   avgVolumeSac?: number;
   avgRmv?: number;
   o2Toxicity?: number;
+  /** The depth in metres at a second into the dive, in place of the square profile. */
+  depthAt?: (t: number) => number;
 }
 
 const FIT_EPOCH_MS = Date.UTC(1989, 11, 31);
@@ -35,7 +37,7 @@ export function makeSyntheticDive(options: SyntheticDiveOptions = {}): Uint8Arra
   const at = (seconds: number) => new Date(start.getTime() + seconds * 1000);
 
   /** Square-ish profile: descent, bottom with slight waves, ascent, safety stop at 5 m. */
-  const depthAt = (t: number): number => {
+  const squareDepthAt = (t: number): number => {
     const f = t / duration;
     if (f < 0.067) return (bottom * f) / 0.067;
     if (f < 0.667) return bottom - 0.5 * Math.sin(t / 60);
@@ -44,6 +46,7 @@ export function makeSyntheticDive(options: SyntheticDiveOptions = {}): Uint8Arra
     return Math.max(0, 5 - (5 * (f - 0.9)) / 0.1);
   };
 
+  const depthAt = options.depthAt ?? squareDepthAt;
   const subSport = options.subSport ?? 'singleGasDiving';
   const encoder = new Encoder();
   const write = (mesgNum: number | undefined, fields: Record<string, unknown>) => encoder.onMesg(mesgNum!, fields as Mesg);

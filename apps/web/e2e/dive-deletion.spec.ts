@@ -17,6 +17,7 @@ async function openDeleteDialog(page: Page, diveId: string, n: number) {
 const logbookHeading = (page: Page) => page.getByRole('heading', { name: 'Logbook', level: 1 });
 // A Dive's number is its place in the logbook (ADR 0048), so it is asked for; a deleted Dive has none and is named by its time.
 const diveRow = (page: Page, n: number) => diveRows(page).filter({ hasText: new RegExp(`Number ${n}(?!\\d)`) });
+const rowOf = (page: Page, id: string) => diveRows(page).filter({ has: page.locator(`a[href="#/dives/${id}"]`) });
 
 test('deletes a dive after asking, offers Undo, and restores it from the deleted dives', { tag: ['@dives'] }, async ({ page, request }) => {
   const id = await deletableDive(request);
@@ -32,10 +33,11 @@ test('deletes a dive after asking, offers Undo, and restores it from the deleted
   await dialog.getByRole('button', { name: 'Delete dive' }).click();
   await expect(logbookHeading(page)).toBeFocused();
   await expect(page.locator('#main').getByText(`Dive ${n} deleted.`)).toBeVisible();
-  await expect(diveRow(page, n)).toHaveCount(0);
+  // Its number goes to the next dive when a later one is in the logbook (the surface break pair): its link says it's gone.
+  await expect(rowOf(page, id)).toHaveCount(0);
   await page.getByRole('button', { name: 'Undo' }).click();
   await expect(page.locator('#main').getByText(`Dive ${n} deleted.`)).toHaveCount(0);
-  await expect(diveRow(page, n)).toBeVisible();
+  await expect(rowOf(page, id)).toBeVisible();
   await expect(logbookHeading(page)).toBeFocused();
 
   // Deleted elsewhere, then restored from the list; its history shows both.

@@ -2076,7 +2076,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Make one of the Dive's Recordings the Primary one; values without Override follow it */
+        /**
+         * Make one of the Dive's Recordings the Primary one; values without Override follow it
+         * @description Not a part of a joined Recording: 400 recording_is_part (ADR 0063).
+         */
         put: {
             parameters: {
                 query?: never;
@@ -2261,7 +2264,7 @@ export interface paths {
                                 provider: string;
                                 remoteNumber: null | number;
                             }[];
-                            rule: null | ("recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive");
+                            rule: null | ("recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive" | "surface_break");
                             /** @description The User said these are two dives: don't hint at the pair again (it can still be merged) */
                             answered: boolean;
                             /** @description Which of the two Dives a merge keeps: the one with a Recording when only one has, else the Dive asked about */
@@ -2301,7 +2304,7 @@ export interface paths {
         };
         /**
          * Logbook checks: pairs of Dives in the User's logbooks that can't both be right as they stand, and Dives that are probably no dive
-         * @description Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one (at the same time, or on the same day with the same depth and duration), or two Dives of one Diver that overlap; and, about one Dive (`other: null`), a Recording under 2 minutes that stayed above 3 m, at no Provider: offer deleting it (DELETE /dives/{id}) or keeping it. `status=answered` lists the pairs the User said are two dives and the Dives they said to keep, to ask again. Resolve one by merging (POST /dives/{id}/merge), answering (PUT /logbook-checks/answer), correcting a time, moving or deleting one of the Dives. Never merge unasked (docs/spec/clients.md).
+         * @description Computed from the logbook each time by fixed rules (ADR 0038): a Dive without a Recording beside a Dive with one (at the same time, or on the same day with the same depth and duration), or two Dives of one Diver that overlap; and, about one Dive (`other: null`), a Recording under 2 minutes that stayed above 3 m, at no Provider: offer deleting it (DELETE /dives/{id}) or keeping it; and Dives of one Device a Surface break of at most 10 minutes apart (`surface_break`), those that follow one another as one check (`chain`). `status=answered` lists the pairs the User said are two dives and the Dives they said to keep, to ask again. Resolve one by merging (POST /dives/{id}/merge; a `surface_break` by Appending, POST /dives/{id}/continuation), answering (PUT /logbook-checks/answer), correcting a time, moving or deleting one of the Dives. Never merge unasked (docs/spec/clients.md).
          */
         get: {
             parameters: {
@@ -2322,10 +2325,10 @@ export interface paths {
                     content: {
                         "application/json": {
                             /**
-                             * @description recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time; entry_apart_from_recording: a Dive without a Recording and one with one on the same local day, not overlapping, with depth (0.2 m or 3 %) and duration (3 minutes) agreeing: probably one dive typed with another start (never `obvious`; show both local start times and their difference)
+                             * @description recording_beside_entry: a Dive without a Recording and one with a Recording at the same time, as an import would have attached them; overlapping_dives: two Dives of one Diver that overlap in time; entry_apart_from_recording: a Dive without a Recording and one with one on the same local day, not overlapping, with depth (0.2 m or 3 %) and duration (3 minutes) agreeing: probably one dive typed with another start (never `obvious`; show both local start times and their difference); surface_break: Dives of one Diver, each with one Recording of the same Device, each starting at most 10 minutes after the one before ended (the first may be a Continuation already): probably one dive with a Surface break, resolved by Appending (POST /dives/{id}/continuation; never `obvious`, never a merge candidate; `chain` lists its Dives)
                              * @enum {unknown}
                              */
-                            rule: "recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive";
+                            rule: "recording_beside_entry" | "overlapping_dives" | "entry_apart_from_recording" | "short_shallow_dive" | "surface_break";
                             /** @description An import would have put the two together by itself, and no dive is left over at a Provider: may be merged with others in one go */
                             obvious: boolean;
                             diverId: string;
@@ -2384,6 +2387,31 @@ export interface paths {
                                 /** @description Of `bothAt`, the Providers where the Connection of the Dive not kept deletes at the Provider by itself (see GET /dives/{id}/merge-candidates): merging doesn't ask about them; leave them out of `alsoAt` */
                                 deletesItself: string[];
                             };
+                            chain: null | {
+                                id: string;
+                                /** @description Send it when merging */
+                                version: number;
+                                number: null | number;
+                                /** Format: date-time */
+                                startsAt: string;
+                                utcOffsetSeconds: null | number;
+                                /** @enum {unknown} */
+                                utcOffsetSource: "device" | "position" | "nearby" | "unknown";
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                site: null | {
+                                    id: string;
+                                    name: string;
+                                };
+                                fromProvider: null | string;
+                                /** @description How many Recordings it has */
+                                recordings: number;
+                                at: {
+                                    provider: string;
+                                    remoteNumber: null | number;
+                                }[];
+                                surfaceBreakSeconds: null | number;
+                            }[];
                         }[];
                     };
                 };
@@ -2407,7 +2435,7 @@ export interface paths {
         get?: never;
         /**
          * Answer a logbook check: these two Dives are two dives, or keep this Dive (or take the answer back)
-         * @description Two ids with `two_dives`: the answer holds until one of the two Dives changes its start; then the pair is asked about again. One id with `keep` (a check about one Dive): it holds until the Dive's duration or depth changes. `answer: null` takes either back. 404 dive_not_found for a Dive not in the User's logbooks, check_not_found when the Dives break no rule. 400 for an answer that doesn't fit the number of Dives.
+         * @description Two ids with `two_dives`: the answer holds until one of the two Dives changes its start; then the pair is asked about again; about a `surface_break` check (send its `dive` and `other`), it covers each pair of its `chain`. One id with `keep` (a check about one Dive): it holds until the Dive's duration or depth changes. `answer: null` takes either back. 404 dive_not_found for a Dive not in the User's logbooks, check_not_found when the Dives break no rule. 400 for an answer that doesn't fit the number of Dives.
          */
         put: {
             parameters: {
@@ -2555,6 +2583,169 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dives/{id}/continuation-candidate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Dive before this one it may be appended to as its continuation, or null
+         * @description The Diver's Dive just before this one by start, when each has one Recording of the same Device (the one before may be a joined Dive of that Device) and this one starts after it ends; no time limit. With the Surface break's length and the Providers both are at. The dive page offers appending to it (POST /dives/{id}/continuation on that Dive). ADR 0063.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": null | {
+                            id: string;
+                            /** @description Send it when appending */
+                            version: number;
+                            number: null | number;
+                            /** Format: date-time */
+                            startsAt: string;
+                            utcOffsetSeconds: null | number;
+                            /** @enum {unknown} */
+                            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
+                            durationSeconds: number;
+                            maxDepthM: null | number;
+                            site: null | {
+                                id: string;
+                                name: string;
+                            };
+                            /** @description How long the Diver was at the surface between the two */
+                            breakSeconds: number;
+                            /** @description Providers both Dives are at: this one's dive there stays unless `alsoAt` names the Provider (docs/spec/clients.md) */
+                            bothAt: string[];
+                            /** @description Of `bothAt`, the Providers where this Dive's Connection deletes at the Provider by itself: its dive there is deleted 5 minutes after the append, so don't ask about them and leave them out of `alsoAt` */
+                            deletesItself: string[];
+                        };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dives/{id}/continuation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Append later Dives of the same Diver to this one, as its continuation after a time at the surface
+         * @description Send this Dive's version and each later Dive's (409 dive_changed). This Dive is kept: the answer is it. Its Primary recording becomes a joined Recording of its own and the later Dives' Recordings, with a Surface break between each two (`surfaceBreaks`); those Recordings stay as its parts (`partOf`). Each later Dive fills what this one lacks (site, Participants, values; its notes are appended), gives its link at each Provider where this one has none, and is deleted like any Dive (GET /dives/deleted, `continuedInto`). Where both are at a Provider, the later one's dive there stays unless `alsoAt` names the Provider: it is deleted there first, and a refusal (provider_* codes) appends nothing. 400 continuation_not_possible unless the Dives are one Diver's, this one has one Recording or a joined one, each later one has one Recording of the same Device and starts after the one before ends, and no other Dive starts between them. ADR 0063.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        version: number;
+                        /** @description The later Dives to append, with their versions */
+                        dives: {
+                            /** Format: uuid */
+                            id: string;
+                            version: number;
+                        }[];
+                        /** @description Providers to delete the later Dives' copies at, where both have one; ask the User first */
+                        alsoAt?: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DiveView"];
+                    };
+                };
+                /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeleteProblem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeleteProblem"];
+                    };
+                };
+                /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeleteProblem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recordings/{id}/detach": {
         parameters: {
             query?: never;
@@ -2566,7 +2757,7 @@ export interface paths {
         put?: never;
         /**
          * Split a Recording off its Dive into a new Dive of the same Diver
-         * @description Send the version of the Dive it is on. The Dive's last Recording can't be split off.
+         * @description Send the version of the Dive it is on. The Dive's last Recording can't be split off, and a part of a joined Recording can't be split off at all (400 recording_is_part): the joined Recording goes with its parts (ADR 0063).
          */
         post: {
             parameters: {
@@ -2595,6 +2786,15 @@ export interface paths {
                             /** @description The new Dive */
                             diveId: string;
                         };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -2667,6 +2867,9 @@ export interface paths {
                             deletedAt: string;
                             mergedInto: null | string;
                             movedTo: null | string;
+                            continuedInto: null | string;
+                            /** @description The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back */
+                            appendedWith: string[];
                             /** @description Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md) */
                             stillAt: {
                                 provider: string;
@@ -2675,6 +2878,58 @@ export interface paths {
                             /** @description The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason */
                             waiting: components["schemas"]["WaitingPushView"][];
                         }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dives/{id}/restore-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Dives restoring this deleted Dive brings back, in start order: itself, or every Dive of its append and of later ones
+         * @description Restoring a Dive an append took (`continuedInto`) undoes that append and every later one to the same Dive (ADR 0063): clients name the Dives that come back before restoring.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            comesBack: string[];
+                        };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
                     };
                 };
             };
@@ -2698,7 +2953,7 @@ export interface paths {
         put?: never;
         /**
          * Bring a deleted Dive back with its Recordings (not to Providers: send it again from there)
-         * @description Send the version from GET /dives/deleted (409 dive_changed). A site deleted meanwhile becomes the one it was merged into, or none.
+         * @description Send the version from GET /dives/deleted (409 dive_changed). A site deleted meanwhile becomes the one it was merged into, or none. A Dive an append took (`continuedInto`) comes back by undoing that append and every later one to the same Dive: each of their Dives comes back with its Recording as its Primary one (GET /dives/{id}/restore-preview names them; ADR 0063).
          */
         post: {
             parameters: {
@@ -2789,7 +3044,7 @@ export interface paths {
                                 name: null | string;
                             };
                             /** @enum {unknown} */
-                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore" | "fill";
+                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore" | "fill" | "continuation" | "continuation-undo";
                             /** @description Field → { from, to }; a field not named here has a value of any shape */
                             changes: {
                                 overrides?: {
@@ -6616,7 +6871,7 @@ export interface paths {
                                 name: null | string;
                             };
                             /** @enum {unknown} */
-                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore" | "fill";
+                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore" | "fill" | "continuation" | "continuation-undo";
                             /** @description Field → { from, to }; a field not named here has a value of any shape */
                             changes: {
                                 position?: {
@@ -11540,7 +11795,7 @@ export interface components {
              * @description Stable, machine-readable reason; clients translate it
              * @enum {unknown}
              */
-            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
+            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
             /** @description English description, for logs and scripts */
             error: string;
             /** @description The Provider a provider_* code is about (ADR 0027) */
@@ -11724,6 +11979,7 @@ export interface components {
                 durationSeconds: number;
                 maxDepthM: null | number;
                 parser: string;
+                partOf: null | string;
                 summary: {
                     diveNumber?: number;
                     /** @enum {unknown} */
@@ -11767,6 +12023,11 @@ export interface components {
                     extras?: {
                         [key: string]: string;
                     };
+                    /** @description A joined Recording's Surface breaks (ADR 0063): where its parts meet, seconds from its start. Clients mark them in the profile and show each one's length with the duration (docs/spec/clients.md) */
+                    surfaceBreaks?: {
+                        startS: number;
+                        endS: number;
+                    }[];
                 };
                 channels: string[];
             }[];
@@ -12115,7 +12376,7 @@ export interface components {
                 source: "osm" | "wikidata" | "ssi";
             })[];
             /** @description Why it failed (a problem code) */
-            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
             /** Format: date-time */
             createdAt: string;
             finishedAt: null | string;
@@ -12127,7 +12388,7 @@ export interface components {
             diverId: string;
             /** @enum {unknown} */
             status: "queued" | "running" | "done" | "cancelled" | "stopped";
-            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
             updates: boolean;
             updatesRemovingVerification: boolean;
             numbers: boolean;
@@ -12294,7 +12555,7 @@ export interface components {
                 remoteNumber: null | number;
                 /** @description The remote dive was found deleted at the Provider */
                 remoteGone: boolean;
-                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
                 leftOut: null | {
                     diverId: string;
                     name: string;

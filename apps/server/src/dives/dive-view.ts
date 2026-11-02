@@ -60,6 +60,10 @@ const SummaryView = Type.Object({
   extras: Type.Optional(Type.Record(Type.String(), Type.String(), {
     description: 'Source values without a word in our vocabulary, by source field name',
   })),
+  surfaceBreaks: Type.Optional(Type.Array(Type.Object({ startS: Type.Number(), endS: Type.Number() }), {
+    description: 'A joined Recording\'s Surface breaks (ADR 0063): where its parts meet, seconds from its start. Clients mark them in the '
+      + 'profile and show each one\'s length with the duration (docs/spec/clients.md)',
+  })),
 });
 
 export const Role = Type.Enum([...PARTICIPANT_ROLES], { description: 'buddy: dived together; guide: led the dive; instructor: taught on it' });
@@ -134,6 +138,9 @@ const RecordingView = Type.Object({
   durationSeconds: Type.Number(),
   maxDepthM: Nullable(Type.Number()),
   parser: Type.String(),
+  partOf: Nullable(Type.String({
+    description: 'The joined Recording this one is a part of (ADR 0063): clients list it under that one, never as Primary or to split off',
+  })),
   summary: SummaryView,
   channels: Type.Array(Type.String()),
 });

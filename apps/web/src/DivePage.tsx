@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
 import { allButDive, api, ApiError, diveNeighboursQuery, diveProvidersQuery, PAGE_SIZE, diveQuery, diversQuery, keys, unwrap, type DiveView, type NeighboursView, type OverridableField, type RecordingSummary } from './api.ts';
+import { useAppend } from './AppendDive.tsx';
 import { AssessmentPanel, AssessmentProvider } from './Assessment.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { DepthProfile } from './DepthProfile.tsx';
@@ -34,6 +35,8 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
   const display = useDisplay();
   const dive = useQuery(diveQuery(id));
   const divers = useQuery(diversQuery());
+  // Appending this Dive to the one before it as its continuation (ADR 0063), when it may be.
+  const append = useAppend(id);
   const neighbours = useQuery(diveNeighboursQuery(id, neighbourParams(logbookParams(new URLSearchParams(list)))));
   // "Logbook" goes back to the list as it was, on the page this Dive is on now (ADR 0042).
   const position = neighbours.data?.position;
@@ -93,6 +96,7 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
                 actions={[
                   ...(several ? [{ id: 'move', label: t('dive.moveTo'), icon: 'move' as const, onAction: () => setMoving(true) }] : []),
                   { id: 'merge', label: t('merge.withAnother'), icon: 'merge', onAction: () => setMerging(true) },
+                  ...append.actions,
                   { id: 'delete', label: t('dive.deleteMenu'), icon: 'delete', onAction: () => setDeleting(true) },
                 ]}
               />
@@ -120,6 +124,7 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
       </div>
       {moving && <MoveDialog dive={d} onClose={() => setMoving(false)} />}
       {merging && <MergePicker dive={d} onClose={() => setMerging(false)} />}
+      {append.dialog(d)}
       {deleting && <DeleteDiveDialog dive={d} name={d.values.number !== null ? t('dive.title', { number: d.values.number }) : display.diveTime(d.values.startsAt.at, d.values.startsAt.utcOffsetSeconds, d.utcOffsetSource)} onClose={() => setDeleting(false)} />}
     </>
   );
@@ -282,7 +287,10 @@ function DiveFacts({ dive: d, onAddNotes, onAddCylinders, onAddWeighting }: {
   const display = useDisplay();
   const [picking, setPicking] = useState(false);
   const weighting = useWeightingText();
-  const gases = useGasNames()(d.recordings.find((r) => r.isPrimary)?.summary.gases);
+  const primary = d.recordings.find((r) => r.isPrimary);
+  const gases = useGasNames()(primary?.summary.gases);
+  // A joined Recording's Surface breaks (ADR 0063): their time is said with the duration, which includes it.
+  const atSurface = (primary?.summary.surfaceBreaks ?? []).reduce((sum, b) => sum + b.endS - b.startS, 0);
   const fact = (field: OverridableField, label: string) => (
     <Fact label={label} mark={<EditedMark dive={d} field={field} />}>{format(field, d.values[field])}</Fact>
   );
@@ -291,7 +299,10 @@ function DiveFacts({ dive: d, onAddNotes, onAddCylinders, onAddWeighting }: {
       <dl className="facts">
         {fact('maxDepthM', t('dive.maxDepth'))}
         {fact('avgDepthM', t('dive.avgDepth'))}
-        {fact('durationSeconds', t('dive.duration'))}
+        <Fact label={t('dive.duration')} mark={<EditedMark dive={d} field="durationSeconds" />}>
+          {format('durationSeconds', d.values.durationSeconds)}
+          {atSurface > 0 && <> <span className="recorded-value">{t('dive.atSurface', { duration: display.duration(atSurface) })}</span></>}
+        </Fact>
         {fact('waterTemperatureC', t('dive.waterTemperature'))}
         {gases && <Fact label={t('dive.gas')}>{gases}</Fact>}
         <WaterFact dive={d} />
@@ -346,16 +357,20 @@ function DiveFacts({ dive: d, onAddNotes, onAddCylinders, onAddWeighting }: {
 /**
  * The Recordings of the Dive, in the panel of its facts: the profile, and under it what recorded it. Several are tabs
  * that say which one is primary. The tab is in the address (?recording=…), and the actions on a Recording are in a
- * menu (UI review C3). The heading is for heading navigation only: the chart is seen as one without a title.
+ * menu (UI review C3). The heading is for heading navigation only: the chart is seen as one without a title. A joined
+ * Recording's parts (ADR 0063) are listed under it, not as tabs: they are never primary nor split off on their own.
  */
 function Recordings({ dive: d, initial, list }: { dive: DiveView; initial: string | undefined; list: string }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
+  const display = useDisplay();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState(initial);
   const [splitting, setSplitting] = useState(false);
   const content = useRef<HTMLDivElement>(null);
-  const recording = d.recordings.find((r) => r.id === selected) ?? d.recordings.find((r) => r.isPrimary) ?? d.recordings[0];
+  const shown = d.recordings.filter((r) => r.partOf === null);
+  const partsOf = (r: DiveView['recordings'][number]) => d.recordings.filter((p) => p.partOf === r.id).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const recording = shown.find((r) => r.id === selected) ?? shown.find((r) => r.isPrimary) ?? shown[0];
   const select = (id: string) => {
     setSelected(id);
     history.replaceState(null, '', diveHref(d.id, list, id));
@@ -382,12 +397,15 @@ function Recordings({ dive: d, initial, list }: { dive: DiveView; initial: strin
   const name = (r: DiveView['recordings'][number]) => (r.device
     ? `${deviceName(r.device.manufacturer, r.device.product)} (${r.device.serialNumber})`
     : t('dive.recordingN', { n: d.recordings.indexOf(r) + 1 }));
+  // A part by its Device and when it began, with how long it lasted.
+  const partText = (p: DiveView['recordings'][number]) =>
+    [name(p), display.diveTime(p.startsAt, d.values.startsAt.utcOffsetSeconds, d.utcOffsetSource), display.duration(p.durationSeconds)].join(' · ');
 
-  if (d.recordings.length === 1) {
+  if (shown.length === 1) {
     return (
       <div className="dive-recording">
         <h2 className="visually-hidden">{t('dive.recording')}</h2>
-        <RecordingDetails recording={recording} cylinders={d.cylinders} named />
+        <RecordingDetails recording={recording} cylinders={d.cylinders} parts={partsOf(recording).map(partText)} named />
       </div>
     );
   }
@@ -397,11 +415,11 @@ function Recordings({ dive: d, initial, list }: { dive: DiveView; initial: strin
       <div ref={content}>
         <Tabs selectedKey={recording.id} onSelectionChange={(key) => select(String(key))}>
           <TabList aria-label={t('dive.recordings')} className="tab-list">
-            {d.recordings.map((r) => (
+            {shown.map((r) => (
               <Tab key={r.id} id={r.id} className="tab"><span translate="no">{name(r)}</span>{r.isPrimary && ` (${t('dive.primary')})`}</Tab>
             ))}
           </TabList>
-          {d.recordings.map((r) => (
+          {shown.map((r) => (
             <TabPanel key={r.id} id={r.id} className="tab-panel">
               <div className="recording-bar">
                 <Muted>{t('dive.primaryHint')}</Muted>
@@ -416,7 +434,7 @@ function Recordings({ dive: d, initial, list }: { dive: DiveView; initial: strin
                 />
               </div>
               {makePrimary.error && <Notice tone="danger">{errorText(makePrimary.error)}</Notice>}
-              <RecordingDetails recording={r} cylinders={d.cylinders} />
+              <RecordingDetails recording={r} cylinders={d.cylinders} parts={partsOf(r).map(partText)} />
             </TabPanel>
           ))}
         </Tabs>
@@ -454,9 +472,14 @@ function NoRecording({ dive: d }: { dive: DiveView }) {
  * One Recording: its profile, and under it one line that says what recorded it (the device when no tab names it, the
  * dive mode, the deco model). Everything else the device says is a step away, as the profile's table is.
  */
-function RecordingDetails({ recording, cylinders, named }: { recording: DiveView['recordings'][number]; cylinders: DiveView['cylinders']; named?: boolean }) {
+function RecordingDetails({ recording, cylinders, parts = [], named }: {
+  recording: DiveView['recordings'][number]; cylinders: DiveView['cylinders'];
+  /** A joined Recording's parts, each said in one line (ADR 0063). */
+  parts?: string[]; named?: boolean;
+}) {
   const { t } = useTranslation();
   const display = useDisplay();
+  const partsId = useId();
   // The Dive's Cylinders tied to this Recording's pressure series: the profile's tanks speak of them (ADR 0045).
   const tied = useMemo(
     () => cylinders.flatMap((c) => (c.series?.recordingId === recording.id ? [{ ...c, channel: c.series.channel }] : [])),
@@ -477,6 +500,12 @@ function RecordingDetails({ recording, cylinders, named }: { recording: DiveView
           {deco && <li>{deco}</li>}
         </ul>
       )}
+      {parts.length > 0 && (
+        <div className="recording-parts">
+          <p id={partsId}>{t('dive.parts')}</p>
+          <ol aria-labelledby={partsId}>{parts.map((p) => <li key={p} translate="no">{p}</li>)}</ol>
+        </div>
+      )}
       {(values.length > 0 || s.extras) && (
         <details className="extras">
           <summary>{t('dive.allValues')}</summary>
@@ -490,7 +519,7 @@ function RecordingDetails({ recording, cylinders, named }: { recording: DiveView
   );
   return (
     <ErrorBoundary key={recording.id} fallback={<><Notice tone="danger">{t('dive.profileFailed')}</Notice>{about}</>}>
-      <DepthProfile recordingId={recording.id} gases={s.gases} sacLpm={s.sacLpm} cylinders={tied}>{about}</DepthProfile>
+      <DepthProfile recordingId={recording.id} gases={s.gases} sacLpm={s.sacLpm} cylinders={tied} surfaceBreaks={s.surfaceBreaks}>{about}</DepthProfile>
     </ErrorBoundary>
   );
 }

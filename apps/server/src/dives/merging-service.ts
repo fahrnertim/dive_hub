@@ -4,6 +4,7 @@
 // of the old Diver's makes it again. Links are read as the Pushes say, for any Provider.
 import { and, desc, eq, gte, inArray, isNull, lte, ne } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
+import { isUnit, unitsOf } from './recording-units.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
 import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localDay } from '../imports/matching.js';
 import type { currentRemote as CurrentRemote, PushRow } from '../providers/remote-state.js';
@@ -45,7 +46,8 @@ const pushesOf = (tx: Queryable, diveIds: string[]) =>
   tx.select().from(push).where(inArray(push.diveId, diveIds)).orderBy(desc(push.createdAt), desc(push.id));
 
 const liveRecordings = (tx: Queryable, diveId: string) =>
-  tx.select({ id: recording.id }).from(recording).where(and(eq(recording.diveId, diveId), isNull(recording.deletedAt))).orderBy(recording.startsAt);
+  tx.select({ id: recording.id, joinedRecordingId: recording.joinedRecordingId }).from(recording)
+    .where(and(eq(recording.diveId, diveId), isNull(recording.deletedAt))).orderBy(recording.startsAt);
 
 /** Of two Dives, the one a merge keeps: the one with a Recording when only one has; else the first. */
 const keptOf = <T>(a: T, aRecordings: number, b: T, bRecordings: number): [kept: T, other: T] =>
@@ -69,14 +71,14 @@ function nearbyDives(db: Queryable, row: DiveRow) {
 type Participant = Awaited<ReturnType<typeof participantsOf>>[number];
 
 /** The other's Participants the kept Dive lacks: not its own Diver, nor one it has already. */
-const addedParticipants = (kept: Participant[], theirs: Participant[], diverId: string) =>
+export const addedParticipants = (kept: Participant[], theirs: Participant[], diverId: string) =>
   theirs.filter((p) => p.diverId !== diverId && !kept.some((k) => k.diverId === p.diverId));
 
 /**
  * The kept Dive's values with its gaps filled from the other's, and its overrides: beside a Recording a filled value is
  * one set by hand, or the next refresh from the Recording would drop it.
  */
-function fillValues(current: DiveRow, other: DiveRow): { values: DiveValues; overrides: OverridableField[] } {
+export function fillValues(current: DiveRow, other: DiveRow): { values: DiveValues; overrides: OverridableField[] } {
   const values: DiveValues = valuesOfDive(current);
   const theirs = valuesOfDive(other);
   const overrides = new Set(current.overrides);
@@ -89,17 +91,17 @@ function fillValues(current: DiveRow, other: DiveRow): { values: DiveValues; ove
 }
 
 /** The kept Dive's notes with the other's appended, unless they are empty or the same. */
-function mergeNotes(kept: string | null, other: string | null): string | null {
+export function mergeNotes(kept: string | null, other: string | null): string | null {
   const own = kept?.trim() ?? '';
   const more = other?.trim() ?? '';
   return !more || own === more ? kept : own ? `${own}\n\n${more}` : more;
 }
 
 /**
- * Deletes the Dive a merge or a move leaves behind (ADR 0026, 0038), its Recordings already gone to the other: one
+ * Deletes the Dive a merge, a move or an append leaves behind (ADR 0026, 0038, 0063), its Recordings already gone to the other: one
  * Revision with the delete and `extra` (where it went). Answers when.
  */
-async function deleteLeftBehind(tx: Tx, diveId: string, actor: Actor, cause: 'merge' | 'move', extra: Changes): Promise<Date> {
+export async function deleteLeftBehind(tx: Tx, diveId: string, actor: Actor, cause: 'merge' | 'move' | 'continuation', extra: Changes): Promise<Date> {
   const at = new Date();
   await tx.update(dive).set({ deletedAt: at, primaryRecordingId: null, ...nextVersion(at) }).where(eq(dive.id, diveId));
   await writeRevision(tx, 'dive', diveId, actor, cause, { deletedAt: { from: null, to: at.toISOString() }, ...extra });
@@ -120,7 +122,7 @@ export function createMergingService(db: Db, checks: LogbookCheckService, { curr
       const near = await nearbyDives(db, row);
       if (near.length === 0) return [];
       const all = [row.id, ...near.map(({ d }) => d.id)];
-      const recs = await db.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, all), isNull(recording.deletedAt)));
+      const recs = await db.select({ diveId: recording.diveId }).from(recording).where(and(inArray(recording.diveId, all), isNull(recording.deletedAt), isUnit()));
       const count = (id: string) => recs.filter((r) => r.diveId === id).length;
       const found = await checks.against(row.id, near.map(({ d }) => ({ ...d, recordings: count(d.id) })), { ...row, recordings: count(row.id) });
       const hits = near
@@ -167,7 +169,8 @@ export function createMergingService(db: Db, checks: LogbookCheckService, { curr
         const b = locked.get(second.id)!;
         if (a.version !== first.version || b.version !== second.version) throw new DiveError('dive_changed');
         if (a.diverId !== b.diverId) throw new DiveError('merge_not_possible');
-        const [kept, other] = keptOf(a, (await liveRecordings(tx, a.id)).length, b, (await liveRecordings(tx, b.id)).length);
+        const units = await unitsOf(tx, [a.id, b.id]);
+        const [kept, other] = keptOf(a, units(a.id).recordings, b, units(b.id).recordings);
         const actor = userActor(userId);
 
         // The other's Recordings first: which becomes primary is attaching's rule (ADR 0016, 0030). Each is a Recording
@@ -244,7 +247,7 @@ export function createMergingService(db: Db, checks: LogbookCheckService, { curr
  * and the kept Dive has none, the other's Pushes there become the kept Dive's, so what Dive Hub sent and saw stays
  * with the link. Where both have one, the other's stays behind on the Dive that is deleted.
  */
-async function moveLinks(tx: Tx, currentRemote: typeof CurrentRemote, userId: string, keptId: string, otherId: string) {
+export async function moveLinks(tx: Tx, currentRemote: typeof CurrentRemote, userId: string, keptId: string, otherId: string) {
   const pushes = await pushesOf(tx, [keptId, otherId]);
   const mine = byProvider(pushes, keptId);
   const moved: { provider: string; remoteId: string; remoteNumber: number | null }[] = [];

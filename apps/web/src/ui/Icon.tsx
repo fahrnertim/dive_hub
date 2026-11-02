@@ -2,7 +2,7 @@
 // imports lucide-react, so the set stays small and consistent; names here say what the icon means.
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
-  ArrowDown, ArrowRightLeft, ArrowUp, Award, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, TriangleAlert,
+  ArrowDown, ArrowLeftToLine, ArrowRightLeft, ArrowUp, Award, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, TriangleAlert,
   CircleCheck, CircleUser, Clock, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Shield, ShieldOff,
   Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, Wrench, X, type LucideIcon,
 } from 'lucide-react';
@@ -49,6 +49,8 @@ const ICONS = {
   splitOff: Scissors,
   /** Two Dives of one descent into one (ADR 0038). */
   merge: Merge,
+  /** A Dive appended to the one before it as its continuation (ADR 0063). */
+  append: ArrowLeftToLine,
   primary: Star,
   delete: Trash,
   resetLink: KeyRound,

@@ -170,6 +170,16 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
   Participants, values; notes appended) and takes the other's link at each Provider where it has none (the Pushes move).
   The other is deleted like any Dive, its last Revision (`merge`) naming the kept one. Where both are at a Provider, the
   other's link stays on the deleted Dive, so that Provider's import skips its entry.
+- *Continuation (ADR 0063, implemented):* consecutive Dives of one Diver, each with one Recording of the same Device, that the
+  computer cut apart at the surface become one Dive. The earlier Dive is kept; its Primary recording becomes a **joined
+  Recording** (see Recording) and the later Dives' Recordings stay on it as its **parts**. The later Dives are deleted like
+  merged ones (values filled, notes appended, links moved where the kept Dive has none, else left so the Provider's import
+  skips them as `deleted_earlier`); their last Revision (`continuation`) names the kept one (`continuedInto`). A later Dive
+  that starts exactly when the earlier ends can't be appended (the gap must be more than 0). **`continuation_append`**
+  records one Appending (the joined Recording, the kept Dive, the User); its parts carry its id. Restoring any Dive it took
+  undoes the whole append and every later append to the same joined Recording (Revision `continuation-undo`): the Dives
+  get their parts back as Primary, the joined Recording is rebuilt from what remains (or deleted), and "two dives" is
+  recorded for the pairs separated. The logbook check `surface_break` (at most 10 minutes) finds them; a chain is one item.
 - *Moving while linked (ADR 0038, implemented):* a Dive linked to a Provider moves to another Diver as a copy with the
   Recordings; the old Dive is deleted and keeps its links, so the old Diver's imports don't make it again.
 - *Deleting (ADR 0026, implemented):* soft, with a Revision (`delete`). The Dive and its Recordings get the same
@@ -213,6 +223,14 @@ and nothing reaches that User.
   ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)); nothing is computed from them yet.
 - *Positions (B6, implemented in ADR 0020):* entry and exit position from the Device, both optional.
   The Dive shows its Primary recording's (exit, else entry); they stay as private as the Dive.
+- *Joined Recording (ADR 0063):* derived, with `parser` `continuation` (version 1), no Original and no Import (`original_id`
+  and `import_id` are null exactly then), and the key `continuation:<its own id>`, so no import matches it. Its samples are its
+  parts' on one time axis; each gap is depth 0 m, one sample per first-part sample interval, from one interval after the
+  earlier part's last sample to one interval before the next part's first. `summary.surfaceBreaks` (`startS`, `endS`) marks
+  each break; the assessment reads them from there (no descent or ascent rate across their edges). Rebuilt whenever a
+  part changes. A **part** is an ordinary Recording of a Device with its Original and key, plus `joined_recording_id`, `append_id`
+  and `from_dive_id` (all set or none); imports update it in place, and it is never Primary or split off alone.
+  The same file uploaded again answers `unchanged`.
 - Detaching a Recording from its Dive is always possible. The Recording then gets its
   own Dive or becomes a Duplicate candidate.
 - *Deleted with its Dive (ADR 0026):* a re-import with its key (the same file, or a re-export) is skipped as

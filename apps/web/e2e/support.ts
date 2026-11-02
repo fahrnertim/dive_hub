@@ -395,6 +395,33 @@ export async function mergePair(api: APIRequestContext): Promise<void> {
   await api.post(`/api/dives/${ids[0]}/merge`, { data: { version: await version(ids[0]!), otherId: ids[1], otherVersion: await version(ids[1]!) }, headers });
 }
 
+/**
+ * The owner's dive 85/86 (ADR 0063): two Dives of one computer, the second starting 241 s after the first ended
+ * (e2e/fixtures/surface-break-*.fit), as two Dives again: uploaded the first time, restored when a test appended them
+ * (restoring undoes the append). Answered "two dives", so the pair never waits as a logbook check for other specs.
+ */
+export async function surfaceBreakPair(api: APIRequestContext): Promise<{ first: string; second: string }> {
+  const [firstStart, secondStart] = ['2026-10-26T06:05', '2026-10-26T06:29'];
+  const live = async (prefix: string) => (await livedAt(api, prefix))[0]?.id;
+  if (!(await live(secondStart))) {
+    const deleted = (await (await api.get('/api/dives/deleted')).json() as DeletedDive[]).find(startsWith(secondStart));
+    if (deleted) await api.post(`/api/dives/${deleted.id}/restore`, { data: { version: deleted.version }, headers });
+  }
+  if (!(await live(firstStart))) {
+    for (const name of ['surface-break-first.fit', 'surface-break-second.fit']) {
+      const upload = await api.post('/api/imports', {
+        headers, multipart: { file: { name, mimeType: 'application/octet-stream', buffer: readFileSync(`e2e/fixtures/${name}`) } },
+      });
+      const url = `/api/imports/${(await upload.json() as { id: string }).id}`;
+      await expect.poll(async () => (await (await api.get(url)).json()).status).toBe('done');
+    }
+  }
+  const first = (await live(firstStart))!;
+  const second = (await live(secondStart))!;
+  await api.put('/api/logbook-checks/answer', { data: { diveIds: [first, second], answer: 'two_dives' }, headers });
+  return { first, second };
+}
+
 const FALSE_START_DAY = '2019-02-03';
 type DatedDive = { id: string; version: number; startsAt: string };
 

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, deletedDivesQuery, diversQuery, keys, unwrap, type DeletedDiveView } from './api.ts';
+import { api, deletedDivesQuery, diveQuery, diversQuery, keys, restorePreviewQuery, unwrap, type DeletedDiveView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { deletedNotice, updateDeletion, useDeletion, type JustDeleted } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -9,7 +9,7 @@ import { focusHeading, refocusAfterRemoval } from './lib/focus.ts';
 import { reviewHref } from './lib/review.ts';
 import { diveTargets, useJoinNames, useProviderOf, useProviders, useProviderText, type ProviderRef } from './lib/providers.ts';
 import { WaitingPushState } from './WaitingPush.tsx';
-import { Button, ConfirmButton, LinkButton, Muted, Notice, Panel } from './ui/index.ts';
+import { Button, ConfirmButton, Dialog, LinkButton, Muted, Notice, Panel } from './ui/index.ts';
 
 /** "Dive 9", or the Dive's time when it has no number. */
 function useDiveName() {
@@ -19,18 +19,18 @@ function useDiveName() {
     d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource);
 }
 
-/** Restoring changes every list and count, like deleting did. */
-function useRestore(d: DeletedDiveView, onRestored: () => void) {
+/** Restoring changes every list and count, like deleting did. `name` says what comes back, for the announcement. */
+function useRestore(d: DeletedDiveView, onRestored: () => void, name?: string) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const name = useDiveName()(d);
+  const own = useDiveName()(d);
   return useMutation({
     mutationFn: async () => unwrap(await api.POST('/api/dives/{id}/restore', { params: { path: { id: d.id } }, body: { version: d.version } })),
     onSuccess: async (restored) => {
       queryClient.setQueryData(keys.dive(d.id), restored);
       await queryClient.invalidateQueries();
       updateDeletion({ justDeleted: undefined });
-      announce(t('deleted.restored', { name }));
+      announce(t('deleted.restored', { name: name ?? own }));
       onRestored();
     },
   });
@@ -95,27 +95,42 @@ export function DeletedDives() {
   const joinNames = useJoinNames();
   const list = useRef<HTMLUListElement>(null);
   const dives = deleted.data ?? [];
-  const count = dives.length;
+  const byId = new Map(dives.map((d) => [d.id, d]));
+  // The Dives of one append are one entry, under the earliest of them (ADR 0063).
+  const entries = dives.filter((d) => !d.appendedWith.some((id) => {
+    const other = byId.get(id);
+    return other !== undefined && Date.parse(other.startsAt) < Date.parse(d.startsAt);
+  }));
+  const count = entries.length;
   if (count === 0) return null;
   return (
     <Panel title={t('deleted.title')}>
       <Muted>{t('deleted.intro', { name: joinNames(diveTargets(providers.data).map((p) => p.name)) })}</Muted>
       <ul className="decisions" ref={list}>
-        {dives.map((d, index) => <DeletedRow key={d.id} dive={d} list={list} index={index} count={count} />)}
+        {entries.map((d, index) => (
+          <DeletedRow key={d.id} dive={d} appended={d.appendedWith.flatMap((id) => byId.get(id) ?? [])} list={list} index={index} count={count} />
+        ))}
       </ul>
     </Panel>
   );
 }
 
-function DeletedRow({ dive: d, list, index, count }: {
-  dive: DeletedDiveView; list: RefObject<HTMLUListElement | null>; index: number; count: number;
+function DeletedRow({ dive: d, appended, list, index, count }: {
+  dive: DeletedDiveView;
+  /** The other Dives deleted by the same append (ADR 0063): one entry, restored together. */
+  appended: DeletedDiveView[];
+  list: RefObject<HTMLUListElement | null>; index: number; count: number;
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
   const divers = useQuery(diversQuery());
   const providerOf = useProviderOf();
-  const name = useDiveName()(d);
+  const joinNames = useJoinNames();
+  const nameOf = useDiveName();
+  const group = [d, ...appended];
+  const name = joinNames(group.map(nameOf));
+  const [asking, setAsking] = useState(false);
   const restoreButton = useRef<HTMLButtonElement>(null);
   // After "Delete in …" the focus goes to Restore once the row shows the dive gone there: the dialog closing and the row
   // losing that button both move focus, later than a frame when the machine is busy.
@@ -126,37 +141,107 @@ function DeletedRow({ dive: d, list, index, count }: {
       restoreButton.current?.focus();
     }
   }, [d.stillAt.length]);
-  const restore = useRestore(d, () => refocusAfterRemoval(list.current, index, count));
+  const removed = () => refocusAfterRemoval(list.current, index, count);
+  const restore = useRestore(d, removed, name);
+  // The Dive it was appended to, by its name; one deleted since is "another dive".
+  const kept = useQuery({ ...diveQuery(d.continuedInto ?? ''), enabled: d.continuedInto !== null });
+  const keptName = kept.data && nameOf({
+    number: kept.data.values.number, startsAt: kept.data.values.startsAt.at, utcOffsetSeconds: kept.data.values.startsAt.utcOffsetSeconds, utcOffsetSource: kept.data.utcOffsetSource,
+  });
   const diverName = (divers.data?.length ?? 0) > 1 ? divers.data?.find((v) => v.id === d.diverId)?.name : undefined;
-  const facts = [
-    ...(d.number !== null ? [display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource)] : []),
-    d.site?.name, display.depth(d.maxDepthM), display.duration(d.durationSeconds), diverName,
-  ].filter(Boolean);
+  // A Dive's facts after its name; in an append's entry each line starts with the name.
+  const facts = (g: DeletedDiveView, named: boolean) => [
+    ...(named ? [nameOf(g)] : []),
+    ...(g.number !== null || named ? [display.diveTime(g.startsAt, g.utcOffsetSeconds, g.utcOffsetSource)] : []),
+    g.site?.name, display.depth(g.maxDepthM), display.duration(g.durationSeconds), diverName,
+  ].filter(Boolean).join(' · ');
+  const own = facts(d, false);
   return (
     <li className="decision">
       <div className="decision-recording">
-        <p><strong>{name}</strong>{facts.length > 0 && ` · ${facts.join(' · ')}`}</p>
+        {appended.length === 0 ? <p><strong>{name}</strong>{own && ` · ${own}`}</p> : (
+          <>
+            <p><strong>{t('deleted.appendedGroup', { dives: group.length, name: keptName ?? t('deleted.anotherDive') })}</strong></p>
+            {group.map((g) => <p key={g.id}>{facts(g, true)}</p>)}
+          </>
+        )}
         <p className="muted">{t('deleted.deletedOn', { date: display.dateTime(d.deletedAt) })}</p>
-        {/* Not deleted by hand (ADR 0038): where it went, so the row explains itself. */}
+        {/* Not deleted by hand (ADR 0038, 0063): where it went, so the row explains itself. */}
         {d.mergedInto && <p>{t('deleted.mergedInto')} <a href={`#/dives/${d.mergedInto}`}>{t('deleted.openKept')}</a></p>}
         {d.movedTo && <p>{t('deleted.movedTo')} <a href={`#/dives/${d.movedTo}`}>{t('deleted.openMoved')}</a></p>}
-        {d.waiting.map((w) => <WaitingPushState key={w.provider} push={w} providerName={providerOf(w.provider).name} variant="panel" diveId={d.id} itemName={name} />)}
-        {d.stillAt.map((c) => <p key={c.provider}>{t('deleted.stillAt', { name: providerOf(c.provider).name, number: c.remoteNumber ?? '' })}</p>)}
+        {d.continuedInto && (
+          <p>
+            {appended.length === 0 && `${t('deleted.continuedInto', { name: keptName ?? t('deleted.anotherDive') })} `}
+            <a href={`#/dives/${d.continuedInto}`}>{t('deleted.openKept')}</a>
+          </p>
+        )}
+        {group.flatMap((g) => g.waiting.map((w) => (
+          <WaitingPushState key={`${g.id}:${w.provider}`} push={w} providerName={providerOf(w.provider).name} variant="panel" diveId={g.id} itemName={nameOf(g)} />
+        )))}
+        {group.flatMap((g) => g.stillAt.map((c) => (
+          <p key={`${g.id}:${c.provider}`}>{t('deleted.stillAt', { name: providerOf(c.provider).name, number: c.remoteNumber ?? '' })}</p>
+        )))}
       </div>
       <div className="form-actions">
+        {/* Restoring an appended Dive undoes its whole append and the later ones: the dialog says so first (ADR 0063). */}
         <Button
           ref={restoreButton} icon="undo" aria-label={t('common.forItem', { action: t('deleted.restore'), item: name })}
-          isPending={restore.isPending} onPress={() => restore.mutate()}
+          isPending={restore.isPending} onPress={() => (d.continuedInto ? setAsking(true) : restore.mutate())}
         >
           {t('deleted.restore')}
         </Button>
-        {d.stillAt.map((c) => (
-          <DeleteThere key={c.provider} provider={providerOf(c.provider)} diveId={d.id} name={name} remoteNumber={c.remoteNumber}
+        {group.flatMap((g) => g.stillAt.map((c) => (
+          <DeleteThere key={`${g.id}:${c.provider}`} provider={providerOf(c.provider)} diveId={g.id} name={nameOf(g)} remoteNumber={c.remoteNumber}
             onDone={() => { focusRestore.current = true; requestAnimationFrame(() => restoreButton.current?.focus()); }} />
-        ))}
+        )))}
       </div>
       {restore.error && <Notice tone="danger">{errorText(restore.error)}</Notice>}
+      {asking && <RestoreDialog dive={d} name={name} keptName={keptName} onClose={() => setAsking(false)} onRestored={removed} />}
     </li>
+  );
+}
+
+/**
+ * Before restoring a Dive an append took (ADR 0063): which Dives come back, each with its Recording, also those of later
+ * appends to the same Dive, which restoring takes back out as well (GET /dives/{id}/restore-preview).
+ */
+function RestoreDialog({ dive: d, name, keptName, onClose, onRestored }: {
+  dive: DeletedDiveView; name: string; keptName: string | undefined; onClose: () => void; onRestored: () => void;
+}) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const joinNames = useJoinNames();
+  const nameOf = useDiveName();
+  const deleted = useQuery(deletedDivesQuery());
+  const preview = useQuery(restorePreviewQuery(d.id));
+  const restore = useRestore(d, () => { onClose(); onRestored(); }, name);
+  const named = (id: string) => {
+    const found = deleted.data?.find((g) => g.id === id);
+    return found ? nameOf(found) : t('dive.titleNoNumber');
+  };
+  const comesBack = preview.data?.comesBack ?? [];
+  // The Dives of later appends to the same Dive: they come back too.
+  const ownAppend = new Set([d.id, ...d.appendedWith]);
+  const later = comesBack.filter((id) => !ownAppend.has(id));
+  return (
+    <Dialog title={t('deleted.restoreTitle', { name })} isOpen onOpenChange={(open) => !open && !restore.isPending && onClose()}>
+      {preview.isPending && <Muted>{t('common.loading')}</Muted>}
+      {preview.error && <Notice tone="danger">{errorText(preview.error)}</Notice>}
+      {preview.data && (
+        <>
+          <p>{t('deleted.comesBack', { count: comesBack.length, names: joinNames(comesBack.map(named)) })}</p>
+          {later.length > 0 && <p>{t('deleted.alsoOut', { count: later.length, names: joinNames(later.map(named)) })}</p>}
+          {keptName && <p>{t('deleted.keptKeeps', { count: comesBack.length, name: keptName })}</p>}
+        </>
+      )}
+      {restore.error && <Notice tone="danger">{errorText(restore.error)}</Notice>}
+      <div className="form-actions">
+        {preview.data && (
+          <Button variant="primary" icon="undo" isPending={restore.isPending} onPress={() => restore.mutate()}>{t('deleted.restore')}</Button>
+        )}
+        <Button isDisabled={restore.isPending} onPress={onClose}>{t('common.cancel')}</Button>
+      </div>
+    </Dialog>
   );
 }
 

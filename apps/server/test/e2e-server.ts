@@ -143,7 +143,7 @@ for (const file of ['main-computer.fit', 'backup-computer.fit']) {
 }
 
 // Lena, a Diver Erika keeps, with four dives from a computer's files (UTC+2): two on 12 and two on 13 August 2025, at 10:00
-// and 10:40 local time each day. Her SSI logbook (ADR 0030): two dives typed by hand at Hausreef, one from a Mares, and
+// and 10:40 local time each day, 25 minutes each (15 minutes apart: no Surface break, ADR 0063). Her SSI logbook (ADR 0030): two dives typed by hand at Hausreef, one from a Mares, and
 // one typed by hand at 10:20 on each of those days, between two of her dives (dive-import.spec.ts decides the first; the
 // second stays to decide).
 const divers = createDiverService(db);
@@ -154,7 +154,7 @@ await divers.update(user.id, (await divers.list(user.id)).find((d) => d.isOwn)!.
 await divers.update(user.id, lena.id, { divesBefore: 500 });
 const dives = createMergingService(db, createLogbookCheckService(db), { currentRemote, deletingItself: (ids) => deletingItself(db, ids) });
 for (const [n, start] of [[501, '2025-08-12T08:00:00Z'], [502, '2025-08-12T08:40:00Z'], [503, '2025-08-13T08:00:00Z'], [504, '2025-08-13T08:40:00Z']] as const) {
-  const created = await imports.createImport(user.id, `lena-${n}.fit`, Readable.from([Buffer.from(makeSyntheticDive({ serialNumber: 7070, start: new Date(start), diveNumber: n }))]), 1 << 26);
+  const created = await imports.createImport(user.id, `lena-${n}.fit`, Readable.from([Buffer.from(makeSyntheticDive({ serialNumber: 7070, start: new Date(start), durationSeconds: 25 * 60, diveNumber: n }))]), 1 << 26);
   const outcome = await imports.processImport(created.id);
   const [moved] = await db.select({ id: dive.id, version: dive.version }).from(dive).where(eq(dive.id, outcome[0]!.diveId!));
   await dives.move(user.id, moved!.id, lena.id, moved!.version);
