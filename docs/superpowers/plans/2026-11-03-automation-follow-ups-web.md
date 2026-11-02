@@ -56,6 +56,11 @@ no new module.
 
 ## Rulings made while executing (2026-11-03)
 
+- **Save errors (final review):** each setting keeps its own last save error, so a second setting's successful save
+  doesn't hide the first one's failure; equal messages show once.
+- **Focus after choosing a site (final review):** the chosen site removes "Choose dive site", so focus goes to the
+  line's own button. It is moved when the Dive has its site (at close, or when the Dive refreshes later), and only once
+  the closing dialog has let go of focus (React Aria keeps it there for a few frames).
 - **Busy switch (13):** React Aria's `Switch` passes no `aria-busy` to its input, so `ui/Choice.tsx` sets it through
   `inputRef`; `data-pending` on the label reuses the Button's busy look (`.btn[data-pending], .switch[data-pending]`).
 - **`fetchNeedsImport` (13):** the wording stays; it reads well as help in en and de.

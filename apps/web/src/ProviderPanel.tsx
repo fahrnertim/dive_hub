@@ -363,12 +363,11 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
   const closeSitePicker = () => {
     line.current = needs.current?.closest<HTMLElement>('.dive-line') ?? null;
     setChoosingSite(false);
-    if (!siteButton.current) rescueFocus();
+    if (d.site) rescueFocus();
   };
-  const siteButtonRef = (el: HTMLButtonElement | null) => {
-    siteButton.current = el;
-    if (!el && line.current) rescueFocus();
-  };
+  useEffect(() => {
+    if (d.site && line.current) rescueFocus();
+  }, [d.site]);
   if (s.unmet.length === 0) return null;
   const sites = s.unmet.filter((u) => u.type === 'site_external_id');
   const people = s.unmet.filter((u) => u.type === 'diver_mapping');
@@ -385,7 +384,7 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
           return (
             <div className="form" key={u.source}>
               <Muted>{pt('needsSite')}</Muted>
-              <div className="form-actions"><Button ref={siteButtonRef} icon="site" onPress={() => setChoosingSite(true)}>{t('dive.chooseSite')}</Button></div>
+              <div className="form-actions"><Button ref={siteButton} icon="site" onPress={() => setChoosingSite(true)}>{t('dive.chooseSite')}</Button></div>
             </div>
           );
         }
