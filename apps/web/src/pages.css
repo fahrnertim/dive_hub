@@ -238,7 +238,7 @@
 .dive-title { justify-self: start; font-weight: var(--weight-semibold); overflow-wrap: anywhere; text-decoration: none; }
 .dive-facts { display: flex; flex-wrap: wrap; align-items: center; row-gap: 2px; margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
 /* The dot is decoration, and it ends a line rather than starting the next one. */
-.dive-facts > span:not(.badge):not(:last-child):not(:has(+ .badge))::after { content: '·' / ''; margin: 0 var(--space-2); }
+.dive-facts > span:not(.badge):not(:last-child):not(:has(+ .badge)):not(:has(+ .waiting-push-error))::after { content: '·' / ''; margin: 0 var(--space-2); }
 .dive-facts > .badge { margin-inline-start: var(--space-2); }
 .dive-buddies { display: inline-flex; }
 /* The profile sketch (UI redesign 3.1): the same box in every row, so rows line up; the box is empty while there is
@@ -679,4 +679,13 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 /* A Dive's Waiting push (ADR 0056): an icon with the words, in a logbook row and beside Send. */
 .waiting-push { display: inline-flex; align-items: center; gap: var(--space-1); margin: 0; }
 .waiting-push-stopped .icon { color: var(--color-danger); }
+/* Retry's error in a logbook row: a line of its own after the words (no dot between them, see .dive-facts). */
+.waiting-push-error { display: inline-flex; align-items: center; gap: var(--space-1); flex-basis: 100%; }
+.waiting-push-error .icon { color: var(--color-danger); }
+/* A logbook row on a phone: the words take the line, so they read as one block; Retry and the fix link go below them. */
+@container dives (max-width: 38rem) {
+  .dive-waiting > .waiting-push { flex: 1 1 100%; flex-wrap: wrap; }
+  .dive-waiting .waiting-push-text { flex: 1 1 0; min-width: 0; }
+  .dive-waiting .waiting-push-retry, .dive-waiting .waiting-push > a { flex-basis: 100%; }
+}
 .waiting-push-panel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }

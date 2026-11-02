@@ -101,6 +101,48 @@ test('a stopped Dive in the logbook has its own Retry, and focus stays in the ro
   }
 });
 
+test('Retry in a logbook row that fails says why', { tag: ['@dives'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    await leaveSsi(request, id);
+    await queueEntry(request, id, { state: 'stopped', reason: 'provider_unavailable' });
+    const n = await diveNumber(request, id);
+    await page.route('**/api/dives/*/providers/*/retry', (route) => route.fulfill({ status: 500, json: { code: 'internal_error' } }));
+    await page.goto('/#/');
+    const row = rowOf(page, n);
+    await row.getByRole('button', { name: `Retry: Number ${n}` }).click();
+    await expect(row.getByRole('alert')).toBeVisible();
+    // The error is phrasing content beside the row's words, not a block inside them.
+    await expect(row.locator('span div')).toHaveCount(0);
+  } finally {
+    await leave(request);
+  }
+});
+
+test('a stopped row on a phone keeps its words together', { tag: ['@dives'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    await leaveSsi(request, id);
+    await queueEntry(request, id, { state: 'stopped', reason: 'provider_unavailable' });
+    const n = await diveNumber(request, id);
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto('/#/');
+    const row = rowOf(page, n);
+    const words = row.getByText(/^Couldn’t send to SSI/);
+    const retry = row.getByRole('button', { name: `Retry: Number ${n}` });
+    await expect(words).toBeVisible();
+    const [rowBox, wordsBox, retryBox] = [await row.boundingBox(), await words.boundingBox(), await retry.boundingBox()];
+    // The words read as one block, Retry comes below them, and nothing scrolls sideways.
+    expect(wordsBox!.width).toBeGreaterThanOrEqual(0.6 * rowBox!.width);
+    expect(retryBox!.y).toBeGreaterThanOrEqual(wordsBox!.y + wordsBox!.height);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  } finally {
+    await leave(request);
+  }
+});
+
 test('the logbook list shows a Dive as sent after its send', { tag: ['@dives'] }, async ({ page, request }) => {
   const id = await deletableDive(request);
   try {

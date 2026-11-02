@@ -57,17 +57,13 @@ function useWaitingText(push: WaitingPush, providerName: string) {
 }
 
 /**
- * Retry for a stopped entry: it waits again, due now. `itemName` tells the buttons of a list apart. The lists
- * refresh, so the entry shows its new state.
+ * Retry for a stopped entry: it waits again, due now. The lists refresh, so the entry shows its new state. Its error
+ * is shown by `WaitingPushState`: in a logbook row it goes after the row's words, not inside them.
  */
-function Retry({ diveId, provider, itemName, settled }: {
-  diveId: string; provider: string; itemName: string | undefined; settled: RefObject<HTMLElement | null>;
-}) {
-  const { t } = useTranslation();
-  const errorText = useErrorText();
+function useRetry(diveId: string | undefined, provider: string, settled: RefObject<HTMLElement | null>) {
   const queryClient = useQueryClient();
-  const retry = useMutation({
-    mutationFn: async () => unwrap(await api.POST('/api/dives/{id}/providers/{provider}/retry', { params: { path: { id: diveId, provider } } })),
+  return useMutation({
+    mutationFn: async () => unwrap(await api.POST('/api/dives/{id}/providers/{provider}/retry', { params: { path: { id: diveId!, provider } } })),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: keys.dives });
       await queryClient.invalidateQueries({ queryKey: keys.deletedDives });
@@ -78,17 +74,19 @@ function Retry({ diveId, provider, itemName, settled }: {
     // The entry may be settled meanwhile (404): the lists then show how it ended.
     onError: async () => { await queryClient.invalidateQueries({ queryKey: keys.dives }); await queryClient.invalidateQueries({ queryKey: keys.deletedDives }); },
   });
+}
+
+/** The Retry button; `itemName` tells the buttons of a list apart. */
+function Retry({ retry, itemName }: { retry: ReturnType<typeof useRetry>; itemName: string | undefined }) {
+  const { t } = useTranslation();
   const label = t('provider.waitingPush.retry');
   return (
-    <>
-      <Button
-        size="small" isPending={retry.isPending} onPress={() => retry.mutate()}
-        {...(itemName && { 'aria-label': t('common.forItem', { action: label, item: itemName }) })}
-      >
-        {label}
-      </Button>
-      {retry.error && <Notice tone="danger">{errorText(retry.error)}</Notice>}
-    </>
+    <Button
+      size="small" isPending={retry.isPending} onPress={() => retry.mutate()}
+      {...(itemName && { 'aria-label': t('common.forItem', { action: label, item: itemName }) })}
+    >
+      {label}
+    </Button>
   );
 }
 
@@ -121,23 +119,31 @@ export function WaitingPushState({ push, providerName, variant, diveId, itemName
   list?: string | undefined;
 }) {
   const text = useWaitingText(push, providerName);
+  const errorText = useErrorText();
   const words = useRef<HTMLSpanElement>(null);
+  const retrying = useRetry(diveId, push.provider, words);
   const icon = <Icon name={push.action === 'delete' && push.state === 'waiting' ? 'delete' : ICON[push.state]} />;
   const state = <span ref={words} tabIndex={-1} className="waiting-push-text">{text}</span>;
-  const retry = push.state === 'stopped' && diveId && <Retry diveId={diveId} provider={push.provider} itemName={itemName} settled={words} />;
+  const retry = push.state === 'stopped' && diveId && <Retry retry={retrying} itemName={itemName} />;
+  const failed = retrying.error && errorText(retrying.error);
   const fix = push.state === 'held' && push.reason === 'requirements' && diveId && <FixLink diveId={diveId} variant={variant} anchor={words} list={list} />;
   if (variant === 'row') {
     return (
-      // The row opens the Dive on a click, also on the words; Retry is its own (the row leaves a link's click alone).
-      <span className={`waiting-push waiting-push-${push.state}`}>
-        {icon}{state}{retry && <span className="waiting-push-retry" onClick={(e) => e.stopPropagation()}>{retry}</span>}{fix}
-      </span>
+      <>
+        {/* The row opens the Dive on a click, also on the words; Retry is its own (the row leaves a link's click alone). */}
+        <span className={`waiting-push waiting-push-${push.state}`}>
+          {icon}{state}{retry && <span className="waiting-push-retry" onClick={(e) => e.stopPropagation()}>{retry}</span>}{fix}
+        </span>
+        {/* Phrasing content after the words: a row's line can't hold a Notice's block. */}
+        {failed && <span role="alert" className="waiting-push-error"><Icon name="danger" />{failed}</span>}
+      </>
     );
   }
   return (
     <div className={`waiting-push-panel waiting-push-${push.state}`}>
       <p className="waiting-push">{icon}{state}</p>
       {retry}{fix}
+      {failed && <Notice tone="danger">{failed}</Notice>}
     </div>
   );
 }
