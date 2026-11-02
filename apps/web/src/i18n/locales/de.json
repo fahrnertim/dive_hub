@@ -934,7 +934,7 @@
     "others": "Andere Taucher",
     "othersIntro": "Leute, mit denen du oder andere Benutzer getaucht sind und die hier kein Logbuch führen. Alle Benutzer sehen ihre Namen und was in ihrem SSI-Code steht; wer jemanden hinzugefügt hat, oder ein Admin, kann ihn löschen, solange kein Tauchgang ihn nennt.",
     "findOther": "Nach Namen suchen",
-    "noOthers": "Noch keine anderen Taucher. Füge sie hier hinzu, bei einem Tauchgang oder aus deiner SSI-Buddyliste auf deiner Kontoseite.",
+    "noOthers": "Noch keine anderen Taucher. Füge sie hier hinzu, bei einem Tauchgang oder aus deiner SSI-Buddyliste unter Einstellungen → Verbindungen.",
     "noOtherMatch": "Kein anderer Taucher namens „{{q}}“.",
     "addOther": "Jemanden hinzufügen, mit dem du getaucht bist",
     "createOther": "Buddy hinzufügen",

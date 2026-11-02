@@ -75,7 +75,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md), [ADR 0013](../decisions/0013-account-management.md)).
   - Take them out of the address once used. *Web:* `useUserChanged` (`history.replaceState`).
   - Invitation and reset links an admin creates are shown once, to copy. Don't store them.
-  *Web:* `AdminPage.tsx` (`LinkToPassOn`), `ui/Overlay.tsx` (`CopyField`).
+  *Web:* `AdminSettings.tsx` (`LinkToPassOn`), `ui/Overlay.tsx` (`CopyField`).
 - **Must not tell whether an e-mail address has an account.** A failed sign-in says "wrong e-mail or password".
   Only "too many attempts" (429) and "disabled" (`BANNED_USER`) get their own message. *Web:* `SignedOut.tsx` (`SignIn`).
 - **Must show the "too many attempts" refusal on the token forms.** Setup, invitation and reset link routes count
@@ -83,7 +83,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   answer 429 `too_many_attempts` with `Retry-After` (seconds). Say to try again later; don't retry by itself.
   *Web:* `SignedOut.tsx` (`Setup`, `AcceptInvitation`, `ResetPassword`, through `useErrorText`).
 - **Changing the password ends the User's other sessions.** The server enforces it, whatever
-  `revokeOtherSessions` says. Tell the User afterwards that their other sessions were signed out. *Web:* `AccountPage.tsx` (`ChangePassword`).
+  `revokeOtherSessions` says. Tell the User afterwards that their other sessions were signed out. *Web:* `AccountSettings.tsx` (`ChangePassword`).
 - **Must ask for the current password** to change it, and the server checks it (`INVALID_PASSWORD`).
 - **Must treat a Provider's password or token as the Provider's** (ADR 0024, 0027): send it only to
   `POST /api/connections/{provider}` and `POST /api/connections/{id}/sign-in`, never keep it on the device, and keep
@@ -101,11 +101,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 
   | Action | Confirmation | *Web:* |
   |---|---|---|
-  | Deleting a User | type the User's e-mail (`confirmEmail`; the server checks it) | `AdminPage.tsx` (`DeleteUserDialog`) |
-  | Disabling a User; signing a User out everywhere | dialog | `AdminPage.tsx` |
-  | Taking one's own admin role away | dialog: the Admin page disappears | `AdminPage.tsx` |
-  | Signing out everywhere else; ending the current session | dialog | `AccountPage.tsx` |
-  | Revoking an Invitation | dialog | `AdminPage.tsx` |
+  | Deleting a User | type the User's e-mail (`confirmEmail`; the server checks it) | `AdminSettings.tsx` (`DeleteUserDialog`) |
+  | Disabling a User; signing a User out everywhere | dialog | `AdminSettings.tsx` |
+  | Taking one's own admin role away | dialog: the Admin page disappears | `AdminSettings.tsx` |
+  | Signing out everywhere else; ending the current session | dialog | `AccountSettings.tsx` |
+  | Revoking an Invitation | dialog | `AdminSettings.tsx` |
   | Deleting a Dive site | dialog | `SitesPage.tsx` |
   | Merging sites (no undo) | dialog with what moves and fills | `SitesPage.tsx` (`NearbySites`) |
   | Splitting a Recording off | dialog | `DivePage.tsx` |
@@ -212,9 +212,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   (another User's Diver has the account) can't be claimed. *Web:* `Connections.tsx` (`ConnectForm`).
 - **Display settings:** language and units, each "same as the device" (null) or a choice, saved at once
   (`PATCH /api/me/preferences`). The UI follows them immediately, including number and date input.
-  *Web:* `AccountPage.tsx`, `main.tsx` (`I18nProvider`), `App.tsx` (`useLanguage`).
+  *Web:* `AccountSettings.tsx`, `main.tsx` (`I18nProvider`), `App.tsx` (`useLanguage`).
 - **Sessions:** list them with device, IP address, sign-in and last activity, and mark the current one. Ending
-  another session is immediate; ending the current one is signing out. *Web:* `AccountPage.tsx` (`Sessions`).
+  another session is immediate; ending the current one is signing out. *Web:* `AccountSettings.tsx` (`Sessions`).
 
 - **AI access** (ADR 0035, `GET /api/me/ai-access`): a User lets an LLM client read their logbook through the
   [MCP endpoint](#the-mcp-endpoint).
@@ -509,7 +509,7 @@ returns findings from fixed rules; the client words them.
 - **The no-fly time** (`noFly`, on the last dive of a diving day, else null) is information beside the findings: show it
   apart from them with its `source`, don't count it, and offer nothing to dismiss.
 - **Muted rules are listed with their Diver** (`mutedRules` of `GET /api/divers`), each with a way to show it again: a
-  muted rule shows on no Dive, so the User needs a place to find it. *Web:* `DiversPage.tsx` (`MutedRules`).
+  muted rule shows on no Dive, so the User needs a place to find it. *Web:* `DiverPage.tsx` (`MutedRules`).
 - **Computer events** (`computerEvents`) are what the dive computer noted. Show them apart from the findings ("your
   computer noted"), never merged, and without the client's own judgement.
 - **The profile's colours** (`ascentBands`: above 4, 9 and 18 m/min) need a legend and the same in words; they must not
@@ -543,7 +543,7 @@ Each change there answers the new status, so the panel needs no second fetch: "S
   sent" when `current.upToDate` is false. Offer "Send to SSI", or "Update in SSI" when the Provider offers `update`.
   A Provider with `delivery: handed_over` gives no ID back: say when it was handed over, and that sending again adds
   another copy there.
-- **Without a Connection** for the Dive's Diver, say so and lead to the account page. With `needs_sign_in`, or the
+- **Without a Connection** for the Dive's Diver, say so and lead to Settings → Connections. With `needs_sign_in`, or the
   error `provider_sign_in_needed`, lead to signing in again.
 - **Must show what the Provider needs first** ([ADR 0029](../decisions/0029-push-requirements-and-buddies.md)): the status's
   `unmet` lists each requirement the Dive doesn't meet, from Dive Hub's data alone. While a `blocking` one is unmet, don't
@@ -752,7 +752,7 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
 - **Admins: sites from a Provider's site data** (`GET /api/admin/provider-site-data`; `PUT …/{provider}`): must show the
   Provider's missing licence and that allowing it is the operator's decision and risk, and send `confirm: true` only after
   the admin ticked that (`provider_site_data_not_confirmed`); show who allowed it and when, and offer stopping it.
-  *Web:* `AdminPage.tsx` (`ProviderSiteData`).
+  *Web:* `AdminSettings.tsx` (`ProviderSiteData`).
 
 ### Dives gone at a Provider
 ([ADR 0051](../decisions/0051-dives-gone-at-a-provider.md); `GET /api/gone-dives`,
@@ -918,7 +918,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   - Two Divers with the same name are allowed, but warn about it.
   - **Dive numbers** ([ADR 0048](../decisions/0048-dive-numbers.md)): `divesBefore` (integer 0 to 100 000, "Dives before this logbook") and
     `apneaCounts` ("Count apnea sessions", on by default) are set with `PATCH /api/divers/{id}` (`name` is optional now; at
-    least one field). The numbers follow at once: refresh the logbook and open Dives afterwards. *Web:* `DiversPage.tsx`.
+    least one field). The numbers follow at once: refresh the logbook and open Dives afterwards. *Web:* `DiverPage.tsx`.
   - *Web:* `DiversPage.tsx`.
 - **Other divers** (external, ADR 0028; `GET /api/external-divers`): anyone renames them; offer deleting only with
   `canDelete` and not `inUse` (`diver_not_deletable`, `diver_in_use`). Say which services an account is known at
@@ -942,7 +942,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   imperial and send kg back (ADR 0014). **Must show it only to the Users who keep the Diver:** every other User, and
   everyone for an external Diver, gets `diver_not_found`, and no other view of a Diver carries it. **Must say who sees it**
   where it is set ("Only you and the other Users who keep this Diver see it"). *Web:* `BodyWeight.tsx`, a dialog opened from
-  the Diver's row on `DiversPage.tsx`.
+  the Diver's page.
 - **Certifications of a Diver** (ADR 0050): `GET /api/divers/{id}/certifications` (newest issue first, **expired cards last**; each
   has `expiry`: `none`, `valid`, `soon` = expires within 90 days, `expired`), `POST` (`agency`, `level`
   required; `cardSeen` makes it `card_seen`), `PUT …/{certificationId}` with `version` (`certification_changed` on 409;
@@ -957,12 +957,12 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   as a second cue) and show it after the valid ones. The Divers list (`GET /api/divers`) carries a `certifications` summary per
   Diver (`count`, `newest` = `{ agency, level }` or null, `expired`, `expiringSoon`), so a client can say "3 cards, 1 expires
   soon" on the Diver's line without fetching the cards; it is the same for every User who keeps the Diver and nobody else sees it.
-  *Web:* `Certifications.tsx`, a section of the Divers page under the Diver's line (open state in the address,
-  `#/divers?certifications=own|<diver id>`; the profile menu links to `own`); the card form is a dialog.
+  *Web:* `Certifications.tsx`, a section of the Diver's page (open state in the address,
+  `#/divers/<diver id>?open=certifications`; `#/divers?certifications=own|<diver id>` only leads there, and the profile menu links to the own one); the card form is a dialog.
 - **Devices from a Provider:** importing a Provider's dives from a computer creates its Device for the Connection's
   Diver, the same Device the computer's own files find later (ADR 0030); list it like any other.
 - **Devices:** assigning one to another Diver affects only Imports from then on (ADR 0016). Say so where it is
-  changed; single Dives move with "Move".
+  changed; single Dives move with "Move". *Web:* `Devices.tsx`, Settings → Devices.
 - **The logbook offers a Diver filter only when the User keeps several Divers,** and then shows the Diver column.
 
 ### Dive sites

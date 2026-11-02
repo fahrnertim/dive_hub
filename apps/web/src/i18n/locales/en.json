@@ -934,7 +934,7 @@
     "others": "Other divers",
     "othersIntro": "People you or other users dived with who keep no logbook here. Every user sees their names and what their SSI code says; whoever added someone, or an admin, can delete them while no dive lists them.",
     "findOther": "Find by name",
-    "noOthers": "No other divers yet. Add them here, from a dive, or from your SSI buddy list on your account page.",
+    "noOthers": "No other divers yet. Add them here, from a dive, or from your SSI buddy list under Settings → Connections.",
     "noOtherMatch": "No other diver called “{{q}}”.",
     "addOther": "Add someone you dived with",
     "createOther": "Add buddy",
