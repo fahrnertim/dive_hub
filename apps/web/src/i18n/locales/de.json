@@ -171,9 +171,9 @@
   },
   "import": {
     "title": "Import",
-    "drop": "Tauchgangsdateien von Garmin oder Suunto oder ZIP-Archive hier ablegen",
+    "drop": "Tauchgangsdateien von Garmin, Suunto oder Oceanic+ oder ZIP-Archive hier ablegen",
     "choose": "Dateien auswählen",
-    "hint": "Garmin: „Export Original“-ZIPs aus Garmin Connect oder direkt von der Uhr kopierte FIT-Dateien. Suunto: der JSON-Export eines Tauchgangs aus der Suunto-App; der FIT-Export geht auch, enthält aber viel weniger.",
+    "hint": "Garmin: „Export Original“-ZIPs aus Garmin Connect oder direkt von der Uhr kopierte FIT-Dateien. Suunto: der JSON-Export eines Tauchgangs aus der Suunto-App; der FIT-Export geht auch, enthält aber viel weniger. Oceanic+: der UDDF-Export des Logbuchs.",
     "status": {
       "pending": "wartet",
       "processing": "wird verarbeitet",
@@ -235,11 +235,11 @@
       "kind_not_chosen": "eine Art von Tauchgang, die diese Verbindung nicht abruft; die Arten stehen in ihren Einstellungen"
     },
     "errorCode": {
-      "unsupported_file": "Das ist weder eine Tauchgangsdatei (FIT, Suunto-JSON) noch ein ZIP-Archiv.",
+      "unsupported_file": "Das ist weder eine Tauchgangsdatei (FIT, Suunto-JSON, UDDF) noch ein ZIP-Archiv.",
       "processing_failed": "Die Verarbeitung ist fehlgeschlagen.",
       "choice_expired": "Innerhalb von 7 Tagen hat niemand ausgewählt, was importiert werden soll. Der Upload wurde deshalb entfernt. Lade die Datei noch einmal hoch."
     },
-    "skipped": "Übersprungen: {{names}}. Nur FIT-Dateien, Suunto-JSON-Dateien und ZIP-Archive lassen sich importieren.",
+    "skipped": "Übersprungen: {{names}}. Nur FIT-Dateien, Suunto-JSON-Dateien, UDDF-Dateien und ZIP-Archive lassen sich importieren.",
     "decision": {
       "attached": "zu einem Tauchgang hinzugefügt",
       "new_dive": "als eigener Tauchgang angelegt",
@@ -258,6 +258,7 @@
     "findConnect": "Garmin-Connect-Website: Tauchgang öffnen, im Zahnrad-Menü „Export Original“ wählen und das ZIP so importieren, wie es ist.",
     "findWatch": "Garmin-Uhr: per USB anschließen und die Dateien aus dem Ordner GARMIN/Activity kopieren.",
     "findSuunto": "Suunto-App: Tauchgang öffnen, oben rechts auf die drei Punkte tippen und „Download JSON file“ wählen.",
+    "findOceanic": "Oceanic+-App: das Logbuch als UDDF-Datei exportieren; die App verschickt sie per E-Mail.",
     "grouped": "{{what}}: {{count}}",
     "fromProvider": "Tauchgänge aus {{name}}"
   },

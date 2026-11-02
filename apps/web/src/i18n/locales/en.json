@@ -171,9 +171,9 @@
   },
   "import": {
     "title": "Import",
-    "drop": "Drop Garmin or Suunto dive files or zips here",
+    "drop": "Drop Garmin, Suunto or Oceanic+ dive files or zips here",
     "choose": "Choose files",
-    "hint": "Garmin: “Export Original” zips from Garmin Connect, or FIT files copied from the watch. Suunto: a dive’s JSON export from the Suunto app; its FIT export works too but holds much less.",
+    "hint": "Garmin: “Export Original” zips from Garmin Connect, or FIT files copied from the watch. Suunto: a dive’s JSON export from the Suunto app; its FIT export works too but holds much less. Oceanic+: the logbook’s UDDF export.",
     "status": {
       "pending": "waiting",
       "processing": "processing",
@@ -235,11 +235,11 @@
       "kind_not_chosen": "a kind of dive this Connection doesn’t fetch; choose the kinds in its settings"
     },
     "errorCode": {
-      "unsupported_file": "This is neither a dive file (FIT, Suunto JSON) nor a zip archive.",
+      "unsupported_file": "This is neither a dive file (FIT, Suunto JSON, UDDF) nor a zip archive.",
       "processing_failed": "Processing failed.",
       "choice_expired": "Nobody chose what to import within 7 days, so the upload was removed. Upload the file again."
     },
-    "skipped": "Skipped {{names}}: only FIT files, Suunto JSON files and zip archives can be imported.",
+    "skipped": "Skipped {{names}}: only FIT files, Suunto JSON files, UDDF files and zip archives can be imported.",
     "decision": {
       "attached": "added to a dive",
       "new_dive": "made a new dive",
@@ -258,6 +258,7 @@
     "findConnect": "Garmin Connect website: open a dive, choose “Export Original” in the gear menu, and import the zip as it is.",
     "findWatch": "Garmin watch: connect it by USB and copy the files from the folder GARMIN/Activity.",
     "findSuunto": "Suunto app: open a dive, tap the three dots at the top right and choose “Download JSON file”.",
+    "findOceanic": "Oceanic+ app: export the logbook as a UDDF file; the app sends it by email.",
     "grouped": "{{what}}: {{count}}",
     "fromProvider": "Dives from {{name}}"
   },

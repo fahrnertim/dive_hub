@@ -162,6 +162,7 @@ export function ImportPanel() {
         <li>{t('import.findConnect')}</li>
         <li>{t('import.findWatch')}</li>
         <li>{t('import.findSuunto')}</li>
+        <li>{t('import.findOceanic')}</li>
       </ul>
       <ImportNotices />
       <ImportList imports={imports.data ?? []} />

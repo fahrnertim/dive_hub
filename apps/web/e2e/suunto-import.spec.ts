@@ -51,5 +51,5 @@ test('says in the import texts that Suunto files are read', { tag: ['@dives'] },
     data.items.add(new File([new Uint8Array([0])], 'dive.fit'));
     document.querySelector('main')!.dispatchEvent(new DragEvent('dragenter', { dataTransfer: data, bubbles: true, cancelable: true }));
   });
-  await expect(page.getByText('Drop Garmin or Suunto dive files or zips here')).toBeVisible();
+  await expect(page.getByText('Drop Garmin, Suunto or Oceanic+ dive files or zips here')).toBeVisible();
 });

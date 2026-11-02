@@ -41,7 +41,7 @@ describe('recognising file formats by their content', () => {
 
   it('gives every format a media type and a parser name', () => {
     expect(formats.map((f) => [f.format, f.mediaType, f.parser])).toEqual([
-      ['fit', 'application/vnd.ant.fit', 'fit-file-parser'], ['suunto_json', 'application/json', 'suunto-json'],
+      ['fit', 'application/vnd.ant.fit', 'fit-file-parser'], ['suunto_json', 'application/json', 'suunto-json'], ['uddf', 'application/xml', 'uddf'],
     ]);
   });
 });
