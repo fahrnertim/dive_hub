@@ -27,7 +27,7 @@ const ACCOUNT_TABS: Record<string, SettingsSection> = { connections: 'connection
 
 /**
  * Where an old address leads now ("#/account?tab=…" and "#/admin…", from before Settings), or null for an address that
- * stays. Provider sign-ins still come back to "#/account?tab=connections&connection=<id>"; the other parameters go along.
+ * stays. Old bookmarks and links may carry parameters ("#/account?tab=connections&connection=<id>"); they go along.
  */
 export function legacyRedirect(route: string): string | null {
   const [path, query = ''] = route.split('?');

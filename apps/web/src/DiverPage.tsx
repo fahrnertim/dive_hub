@@ -7,21 +7,12 @@ import { CertificationsSection } from './Certifications.tsx';
 import { DiverCodesDialog } from './DiverCodes.tsx';
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
+import { useSameName } from './lib/divers.ts';
 import { focusHeading } from './lib/focus.ts';
 import { usePageTitle } from './lib/page.ts';
 import {
   ActionMenu, Button, Checkbox, ConfirmDialog, Disclosure, Form, NotFoundPage, Notice, NumberField, PageHeader, Panel, RowsSkeleton, TextField,
 } from './ui/index.ts';
-
-/** A warning when another Diver already has this name (still allowed; UI review C9). */
-export function useSameName() {
-  const { t } = useTranslation();
-  return (divers: DiverView[] | undefined, name: string, except?: string) => {
-    const wanted = name.trim().toLocaleLowerCase();
-    const twin = wanted && divers?.find((d) => d.id !== except && d.name.toLocaleLowerCase() === wanted);
-    return twin ? t('divers.sameName', { name: twin.name }) : undefined;
-  };
-}
 
 /**
  * A Diver whose logbook the User keeps, on their own page (UI overhaul): certifications, dive numbers, codes, body

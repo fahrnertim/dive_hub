@@ -20,7 +20,7 @@
   --color-active: #e2e9ee;          /* the current page's pill in the navigation */
   --color-text: var(--palette-abyss);
   --color-text-muted: #52626f;
-  --color-border: #e1e7ec;          /* hairline edges and row rules (decorative); panels have no outline (ADR 0019) */
+  --color-border: #e1e7ec;          /* hairline edges, row rules and the line between panels (decorative) */
   --color-border-strong: #6e8497;   /* input and control boundaries: ≥ 3:1 on panel, page and tint */
   --color-primary: var(--palette-abyss);   /* the ink button; the accent means link, focus or data only */
   --color-on-primary: #ffffff;
@@ -77,7 +77,7 @@
   --radius-md: var(--radius-control);
   --radius-lg: var(--radius-box);
 
-  /* Panels lift off the page by tone, not outline or shadow (ADR 0019). */
+  /* Panels are sections of the sheet, divided by a hairline, not boxes (docs/superpowers/specs/2026-11-02-ui-overhaul-design.md). */
   --panel-padding: var(--space-6);
 
   /* Elevation only for things that float above the page (dialogs, popovers) */

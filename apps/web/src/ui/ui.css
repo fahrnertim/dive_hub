@@ -33,7 +33,7 @@
 /* On the sheet a Panel is a section, not a box: no edge, corners or inset of its own; a hairline and space set it off from the
    section before it. A tinted one (waiting for the User) stays a box, by one tone step. */
 .app-main .panel { border-radius: 0; padding: 0; }
-.app-main .panel ~ .panel { border-top: 1px solid var(--color-border); padding-top: var(--space-5); }
+.app-main .panel + .panel { border-top: 1px solid var(--color-border); padding-top: var(--space-5); }
 .app-main .panel-attention { border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); border-top: none; }
 
 @media (hover: hover) {
@@ -101,7 +101,7 @@
 }
 
 /* ---------- Panels, notices, text ---------- */
-/* Panels lift off the page by tone alone: no outline, no shadow (ADR 0019). */
+/* A panel is a section of the sheet (UI overhaul spec, "Surfaces"): no outline, no shadow; a hairline divides it from the section before. */
 .panel { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--panel-padding); min-width: 0; }
 /* Something that waits for the User (Duplicate candidates) is tinted. */
 .panel-attention { background: var(--color-accent-soft); }
@@ -368,9 +368,10 @@ form:not(.form-inline):has(.field-required) > .form-legend { display: block; }
 .menu-sheet .menu-item { min-height: 3rem; border-radius: var(--radius-control); }
 .menu-sheet-dialog { outline: none; }
 /* A disclosure opens by height (the grid row grows from 0fr, the one allowed exception to transform and opacity),
-   fading in. The panel clips only while it grows, so focus rings and shadows at its edge are whole at rest. */
+   fading in. The panel clips only while it grows, so focus rings and shadows at its edge are whole at rest. Only after the
+   User toggled it (`disclosure-toggled`): one open on load stays still (ADR 0018). */
 @media (prefers-reduced-motion: no-preference) {
-  .disclosure-panel:not([hidden]) { animation: open-panel var(--duration-disclosure) var(--ease-out); }
+  .disclosure-toggled > .disclosure-panel:not([hidden]) { animation: open-panel var(--duration-disclosure) var(--ease-out); }
 }
 /* Dialogs stay centred; the backdrop fades. */
 .modal-overlay[data-entering] { animation: enter-fade var(--duration-popover) var(--ease-out); }

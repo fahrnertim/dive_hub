@@ -55,13 +55,19 @@ export function useProviderOf() {
   return (id: string): ProviderRef => providers.data?.find((p) => p.id === id) ?? { id, name: id };
 }
 
-/** Texts about one Provider: `providers.<id>.<key>` where it words them itself, else `provider.<key>` with its name. */
-export function useProviderText(p: ProviderRef) {
+/** Texts about any Provider, for a list of them: `providers.<id>.<key>` where it words them itself, else `provider.<key>` with its name. */
+export function useProviderTexts() {
   const { t, i18n } = useTranslation();
-  return (key: ProviderTextKey, options: Record<string, unknown> = {}): string => {
+  return (p: ProviderRef, key: ProviderTextKey, options: Record<string, unknown> = {}): string => {
     const own = `providers.${p.id}.${key}`;
     return t((i18n.exists(own) ? own : `provider.${key}`) as `provider.${ProviderTextKey}`, { name: p.name, ...options });
   };
+}
+
+/** Texts about one Provider (see `useProviderTexts`). */
+export function useProviderText(p: ProviderRef) {
+  const texts = useProviderTexts();
+  return (key: ProviderTextKey, options: Record<string, unknown> = {}): string => texts(p, key, options);
 }
 
 /**

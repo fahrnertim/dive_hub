@@ -5,7 +5,7 @@ import {
   api, diverSearchQuery, diversQuery, externalDiversQuery, keys, meQuery, unwrap, type DiverView, type ExternalDiverView,
 } from './api.ts';
 import { DiverCodesDialog, TakeCodeDialog } from './DiverCodes.tsx';
-import { useSameName } from './DiverPage.tsx';
+import { useSameName } from './lib/divers.ts';
 import { useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';

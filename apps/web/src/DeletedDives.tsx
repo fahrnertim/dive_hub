@@ -7,9 +7,9 @@ import { deletedNotice, updateDeletion, useDeletion, type JustDeleted } from './
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading, refocusAfterRemoval } from './lib/focus.ts';
 import { reviewHref } from './lib/review.ts';
-import { diveTargets, useJoinNames, useProviderOf, useProviders, useProviderText, type ProviderRef } from './lib/providers.ts';
+import { diveTargets, useJoinNames, useProviderOf, useProviders, useProviderText, useProviderTexts, type ProviderRef } from './lib/providers.ts';
 import { WaitingPushState } from './WaitingPush.tsx';
-import { Button, ConfirmButton, Dialog, LinkButton, Muted, Notice, Panel, RowsSkeleton } from './ui/index.ts';
+import { ActionMenu, Button, ConfirmButton, ConfirmDialog, Dialog, LinkButton, Muted, Notice, Panel, RowsSkeleton, type MenuAction } from './ui/index.ts';
 
 /** "Dive 9", or the Dive's time when it has no number. */
 function useDiveName() {
@@ -127,6 +127,7 @@ function DeletedRow({ dive: d, appended, list, index, count }: {
   const divers = useQuery(diversQuery());
   const providerOf = useProviderOf();
   const joinNames = useJoinNames();
+  const providerTexts = useProviderTexts();
   const nameOf = useDiveName();
   const group = [d, ...appended];
   const name = joinNames(group.map(nameOf));
@@ -156,6 +157,15 @@ function DeletedRow({ dive: d, appended, list, index, count }: {
     g.site?.name, display.depth(g.maxDepthM), display.duration(g.durationSeconds), diverName,
   ].filter(Boolean).join(' · ');
   const own = facts(d, false);
+  // One "Delete in …" per Provider copy of the entry's Dives.
+  const copies = group.flatMap((g) => g.stillAt.map((c) => ({
+    slot: `${g.id}:${c.provider}`, provider: providerOf(c.provider), diveId: g.id, name: nameOf(g), remoteNumber: c.remoteNumber,
+  })));
+  const [deleting, setDeleting] = useState<string>();
+  const afterDelete = () => { focusRestore.current = true; requestAnimationFrame(() => restoreButton.current?.focus()); };
+  const menuAction = (c: (typeof copies)[number]): MenuAction => ({
+    id: c.slot, icon: 'delete', label: t('common.forItem', { action: providerTexts(c.provider, 'delete'), item: c.name }), onAction: () => setDeleting(c.slot),
+  });
   return (
     <li className="decision">
       <div className="decision-recording">
@@ -190,12 +200,16 @@ function DeletedRow({ dive: d, appended, list, index, count }: {
         >
           {t('deleted.restore')}
         </Button>
-        {group.flatMap((g) => g.stillAt.map((c) => (
-          <DeleteThere key={`${g.id}:${c.provider}`} provider={providerOf(c.provider)} diveId={g.id} name={nameOf(g)} remoteNumber={c.remoteNumber}
-            onDone={() => { focusRestore.current = true; requestAnimationFrame(() => restoreButton.current?.focus()); }} />
-        )))}
+        {copies.length <= 1 && copies.map(({ slot, ...c }) => <DeleteThere key={slot} {...c} onDone={afterDelete} />)}
+        {/* Restore and more than one "Delete in …" are more than two actions: the deletes go in one menu, as on the Divers page. */}
+        {copies.length > 1 && (
+          <ActionMenu label={t('common.actions')} aria-label={t('common.forItem', { action: t('common.actions'), item: name })} actions={copies.map(menuAction)} />
+        )}
       </div>
       {restore.error && <Notice tone="danger">{errorText(restore.error)}</Notice>}
+      {copies.length > 1 && copies.map(({ slot, ...c }) => (
+        <DeleteDialog key={slot} {...c} isOpen={deleting === slot} onOpenChange={(open) => setDeleting(open ? slot : undefined)} onDone={afterDelete} />
+      ))}
       {asking && <RestoreDialog dive={d} name={name} keptName={keptName} onClose={() => setAsking(false)} onRestored={removed} />}
     </li>
   );
@@ -245,20 +259,26 @@ function RestoreDialog({ dive: d, name, keptName, onClose, onRestored }: {
   );
 }
 
-/** "Delete in SSI" for a deleted Dive still there: asks first, since the Provider may not bring it back. */
-function DeleteThere({ provider: p, diveId, name, remoteNumber, onDone }: {
-  provider: ProviderRef; diveId: string; name: string; remoteNumber: number | null; onDone: () => void;
-}) {
-  const { t } = useTranslation();
+/** The request behind "Delete in SSI" for a deleted Dive still there. */
+function useDeleteThere(p: ProviderRef, diveId: string) {
   const pt = useProviderText(p);
   const queryClient = useQueryClient();
-  const remove = useMutation({
+  return useMutation({
     mutationFn: async () => unwrap(await api.DELETE('/api/dives/{id}/providers/{provider}', { params: { path: { id: diveId, provider: p.id } } })),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: keys.deletedDives });
       announce(pt('deleted'));
     },
   });
+}
+
+interface DeleteThereProps { provider: ProviderRef; diveId: string; name: string; remoteNumber: number | null; onDone: () => void }
+
+/** "Delete in SSI" for a deleted Dive still there: asks first, since the Provider may not bring it back. */
+function DeleteThere({ provider: p, diveId, name, remoteNumber, onDone }: DeleteThereProps) {
+  const { t } = useTranslation();
+  const pt = useProviderText(p);
+  const remove = useDeleteThere(p, diveId);
   return (
     <ConfirmButton
       icon="delete" aria-label={t('common.forItem', { action: pt('delete'), item: name })}
@@ -267,5 +287,19 @@ function DeleteThere({ provider: p, diveId, name, remoteNumber, onDone }: {
     >
       {pt('delete')}
     </ConfirmButton>
+  );
+}
+
+/** The same question opened from the row's menu. */
+function DeleteDialog({ provider: p, diveId, remoteNumber, onDone, isOpen, onOpenChange }: DeleteThereProps & {
+  isOpen: boolean; onOpenChange: (open: boolean) => void;
+}) {
+  const pt = useProviderText(p);
+  const remove = useDeleteThere(p, diveId);
+  return (
+    <ConfirmDialog
+      isOpen={isOpen} onOpenChange={onOpenChange} title={pt('deleteTitle')} body={pt('deleteBodyDeleted', { number: remoteNumber ?? '' })}
+      confirmLabel={pt('delete')} onConfirm={() => remove.mutateAsync()} onDone={onDone}
+    />
   );
 }

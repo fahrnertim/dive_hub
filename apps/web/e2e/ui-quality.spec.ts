@@ -1527,13 +1527,15 @@ test.describe('behaviour', () => {
     await resetDive(request);
   });
 
-  test('the account is a labelled menu with "Settings", "My certifications" and "Sign out"', { tag: ['@account'] }, async ({ page }) => {
+  test('the account is a labelled menu with "My certifications" and "Sign out"; Settings is in the sidebar, and in the menu below 64rem', { tag: ['@account'] }, async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /^Erika\s*, account$/ }).click();
     await expect(page.getByRole('menuitem', { name: 'Sign out' })).toBeVisible();
     await expect(page.getByRole('menuitem', { name: 'My certifications' })).toBeVisible();
     // The account, its Connections and Administration are sections of Settings (UI overhaul), not in the bar.
-    await expect(page.getByRole('menuitem', { name: 'Settings' })).toHaveAttribute('href', '#/settings');
+    // Beside the sidebar, Settings is its link; the menu repeats it only where the bottom bar has no room for it.
+    await expect(page.getByRole('menuitem', { name: 'Settings' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '#/settings');
     await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Administration' })).toHaveCount(0);
     // The account page's old address leads to the first section of Settings.
     await page.goto('/#/account');
@@ -1754,7 +1756,7 @@ test.describe('behaviour', () => {
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
     expect((await open()).filter((a) => a.duration > 0)).toEqual([]);
-    await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'My certifications' })).toBeVisible();
   });
 
   test('on a phone the user menu is a bottom sheet that rises; with reduced motion, nothing runs', { tag: ['@layout'] }, async ({ page }) => {
@@ -1794,6 +1796,13 @@ test.describe('behaviour', () => {
     // At rest nothing clips, so focus rings and shadows at the panel's edge stay whole.
     const overflow = () => page.locator('.disclosure[data-expanded] .disclosure-body').first().evaluate((el) => getComputedStyle(el).overflow);
     await expect.poll(overflow).toBe('visible');
+
+    // A disclosure that is open when the page loads stays still: only a toggle by the User animates (ADR 0018).
+    await page.goto('/#/?only=no-site');
+    await page.reload(); // a fresh page: the disclosure above was toggled by hand, and this one was not
+    const loaded = page.locator('.disclosure[data-expanded] .disclosure-panel').first();
+    await expect(loaded).toBeVisible();
+    expect(await loaded.evaluate((el) => el.getAnimations().map((x) => (x as CSSAnimation).animationName))).toEqual([]);
 
     // Reduced motion: the sheet, an opened disclosure and a skeleton bar run nothing.
     await page.emulateMedia({ reducedMotion: 'reduce' });

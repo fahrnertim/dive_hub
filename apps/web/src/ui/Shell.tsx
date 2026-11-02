@@ -34,8 +34,9 @@ export function Shell({ me, route, children, logbookMark, onSignOut }: {
         className="shell-user-button"
         label={<><Avatar letters={initials(me.user.name)} /><span className="shell-user-name">{me.user.name}</span><span className="visually-hidden">{t('nav.accountMenu')}</span></>}
         actions={[
-          // Display, Connections, AI access and Administration are sections of Settings.
-          { id: 'settings', label: t('nav.settings'), href: '#/settings', icon: 'settings' },
+          // Display, Connections, AI access and Administration are sections of Settings. Beside the sidebar, which has the
+          // link, the menu holds only the User's own things.
+          ...(wide ? [] : [{ id: 'settings', label: t('nav.settings'), href: '#/settings', icon: 'settings' as const }]),
           // The own Diver's cards are a section of the Divers page; this is only a link to it (ADR 0050).
           { id: 'certifications', label: t('nav.myCertifications'), href: '#/divers?certifications=own', icon: 'certification' },
           { id: 'sign-out', label: t('common.signOut'), onAction: onSignOut, icon: 'signOut' },

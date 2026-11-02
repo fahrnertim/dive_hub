@@ -327,7 +327,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();
     await capture(page, '05k-account-settings-security-1440');
-    // Just past the sidebar's breakpoint the sheet is narrow: its tables stay tables, not cards.
+    // Just past the sidebar's breakpoint the sheet is narrow (about 720px at 1024): its tables are cards, as the 48rem container query wants; they are tables again from about 1100.
     for (const width of [1024, 1100]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/#/settings/security'); await page.locator('table').first().waitFor();

@@ -129,8 +129,8 @@ function Settings({ params, tool, used }: { params: ToolsParams; tool: 'gas' | '
     water: t(`tools.water.${params.water ?? used?.water.value ?? 'salt'}`),
     altitude: altitudeM === 0 ? t('tools.summary.seaLevel') : t('tools.summary.altitude', { value: display.depth(altitudeM) }),
     rule: t(`tools.summary.rule.${rule}`, { bar: display.pressure(reserveBar) }),
-    sac: used?.sacLpm.value ?? params.sac ?? DEFAULTS.sac,
-    gf: used?.gfHigh.value ?? params.gf ?? DEFAULTS.gf,
+    sac: params.sac ?? used?.sacLpm.value ?? DEFAULTS.sac,
+    gf: params.gf ?? used?.gfHigh.value ?? DEFAULTS.gf,
   });
   return (
     <Disclosure

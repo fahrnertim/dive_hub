@@ -69,7 +69,7 @@ New semantic tokens: `--color-active` (the navigation pill), `--color-primary` a
 | Sheet on frame (decorative, no meaning) | 1.1 | 1.1 |
 
 `--color-border` (dividers between rows) is decorative and lighter; anything that marks a control's
-boundary uses `--color-border-strong`. Panels have no outline (ADR 0019); the sheet is set off by tone.
+boundary uses `--color-border-strong`. A panel is a section of the sheet, divided from the section before by a hairline, with no outline of its own (the [overhaul design](../superpowers/specs/2026-11-02-ui-overhaul-design.md), "Surfaces").
 
 ### Type, space, shape
 
@@ -135,7 +135,7 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `Skeleton`, `RowsSkeleton`, `LogbookSkeleton`, `DiveSkeleton` (`ui/Skeleton.tsx`) | Loading: flat bars in the final layout instead of "Loading…", shown after 150 ms so a fast load shows nothing. One hidden "Loading…" for screen readers and `aria-busy`; the bars are decoration. Labels and headings that don't depend on the data render at once. The data fades in over them (`.reveal`). |
 | Settings (`SettingsPage`) | One area at `#/settings/<section>` (Display, Sign-in and security, Connections, AI access, Devices, Administration). From 90 rem the sections are a list beside the view; from 64 rem a row of tabs above it; on a phone `#/settings` is the list and each section its own view. A kept Diver has a page at `#/divers/<id>`. |
 | `Notice` | What just happened: `info`, `success`, `danger` (announced at once). |
-| `Table` | Data tables; numeric columns are right-aligned, header included. The first and last columns line up with the panel's text. A table switches layout by its own width (container query), not the window's: `cards` (tables with an actions column) below 48rem become blocks of label–value lines separated by dividers, and below 22rem the label sits above its value; `stacked` (the Dive sites list) below 40rem becomes two lines per row (`cell-lead` and `cell-main`, then the `cell-sub` cells). Date cells (`date`) don't wrap; e-mail cells (`email`) may break anywhere. |
+| `Table` | Data tables (`className` adds a class to the table); numeric columns are right-aligned, header included. The first and last columns line up with the panel's text. A table switches layout by its own width (container query), not the window's: `cards` (tables with an actions column) below 48rem, which a narrow sheet (the page next to the sidebar, up to about 1100px of window) is, become blocks of label–value lines separated by dividers, and below 22rem the label sits above its value; `stacked` (the Dive sites list) below 40rem becomes two lines per row (`cell-lead` and `cell-main`, then the `cell-sub` cells). Date cells (`date`) don't wrap; e-mail cells (`email`) may break anywhere. |
 | `Dialog` | Modal with focus kept inside, for confirmations that need input (deleting a User). Its title row has a close button ("Close dialog"), so no dialog is closed only by Esc or a tap on the rim. |
 | `Disclosure` | One line that opens what is behind it (a finding's details, the Dive at a Provider, a Dive's history): the title is the button, with an arrow as the cue; a `summary` stays in sight beside it; the whole line can be pressed. Only the arrow moves. For what most Users need now and then; what waits for the User opens by itself. |
 | `ConfirmButton`, `ConfirmDialog` | An action that is hard to undo asks first, in a dialog that says what will happen. The dialog alone serves menu items. |
