@@ -125,8 +125,11 @@ test('the logbook list shows a Dive as sent after its send', { tag: ['@dives'] }
 });
 
 test('a Dive without a site says it needs one', { tag: ['@dives'] }, async ({ page, request }) => {
+  await connectSsi(request);
   const id = await deletableDive(request);
   try {
+    const { version } = await (await request.get(`/api/dives/${id}`)).json() as { version: number };
+    await request.patch(`/api/dives/${id}`, { headers, data: { version, siteId: null } });
     await queueEntry(request, id, { state: 'held', reason: 'requirements' });
     const n = await diveNumber(request, id);
     await page.goto('/#/');
@@ -138,9 +141,16 @@ test('a Dive without a site says it needs one', { tag: ['@dives'] }, async ({ pa
     // A held Dive opens its line by itself.
     const line = page.getByRole('group', { name: 'SSI' });
     await expect(line.getByText('Needs a site with a position before it can go to SSI')).toBeVisible();
-    // Next to the words, a button takes you to what the Dive lacks.
+    // Next to the words, a button takes you to what the Dive lacks: the control that chooses a site.
     await line.getByRole('button', { name: 'See what is needed' }).click();
-    await expect(line.locator('.provider-needs')).toBeFocused();
+    const addSite = line.getByRole('button', { name: 'Choose dive site' });
+    await expect(addSite).toBeFocused();
+    await addSite.click();
+    const picker = page.getByRole('dialog');
+    await expect(picker).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(picker).toHaveCount(0);
+    await expect(addSite).toBeFocused();
   } finally {
     await leave(request);
   }

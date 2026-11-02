@@ -11,7 +11,9 @@ import { announce } from './lib/announce.ts';
 import { LinkOrAddDialog, ListChangeNotice, type ListChange } from './LinkOrAdd.tsx';
 import { useDisplay, useErrorText, useProblemText } from './lib/display.ts';
 import { diveTargets, typedSiteId, useFieldNames, useJoinNames, useProviders, useProviderText, waitsForUser, type SyncedField } from './lib/providers.ts';
+import { useFocusBackWhenClosed } from './lib/focus.ts';
 import { settingsHref } from './lib/settings.ts';
+import { SitePicker } from './SitePicker.tsx';
 import { NumberChainDialog } from './NumberChain.tsx';
 import { ProviderConflicts } from './ProviderConflicts.tsx';
 import { WaitingPushState } from './WaitingPush.tsx';
@@ -337,8 +339,11 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
   provider: ProviderView; dive: DiveView; status: ProviderStatusView; onFind: (diver: { id: string; name: string }) => void;
 }) {
   const pt = useProviderText(p);
+  const { t } = useTranslation();
   const joinNames = useJoinNames();
   const [picking, setPicking] = useState<RequirementView | null>(null);
+  const [choosingSite, setChoosingSite] = useState(false);
+  const siteButton = useFocusBackWhenClosed(choosingSite);
   if (s.unmet.length === 0) return null;
   const sites = s.unmet.filter((u) => u.type === 'site_external_id');
   const people = s.unmet.filter((u) => u.type === 'diver_mapping');
@@ -350,7 +355,16 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
     <div className="provider-needs">
       {sites.map((u) => {
         const r = requirementOf(p, u);
-        if (!u.siteId || !d.site) return <Muted key={u.source}>{pt('needsSite')}</Muted>;
+        // No site: a button chooses one (the fix button above focuses it). A site without a position has nothing to fix here.
+        if (!d.site) {
+          return (
+            <div className="form" key={u.source}>
+              <Muted>{pt('needsSite')}</Muted>
+              <div className="form-actions"><Button ref={siteButton} icon="site" onPress={() => setChoosingSite(true)}>{t('dive.chooseSite')}</Button></div>
+            </div>
+          );
+        }
+        if (!u.siteId) return <Muted key={u.source}>{pt('needsSite')}</Muted>;
         return (
           <div className="form" key={u.source}>
             <Muted>{u.bySend ? pt('siteBySend') : pt('needsSiteId', { site: d.site.name })}</Muted>
@@ -382,6 +396,7 @@ function Requirements({ provider: p, dive: d, status: s, onFind }: {
       {picking && d.site && (
         <ProviderSitePicker provider={p} requirement={picking} connectionId={s.connection!.id} diveId={d.id} diveSiteId={d.site.id} siteName={d.site.name} onClose={() => setPicking(null)} />
       )}
+      {choosingSite && <SitePicker dive={d} onClose={() => setChoosingSite(false)} />}
     </div>
   );
 }
