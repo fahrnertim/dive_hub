@@ -879,6 +879,8 @@ for (const v of variants) {
         await page.getByRole('menuitem', { name: v.english ? 'Delete' : 'Löschen' }).click();
         await expect(dialog.getByRole('heading', { name: v.english ? `Delete ${name}?` : `${name} löschen?` })).toBeVisible();
         await expect(close).toBeVisible();
+        // The menu fades out with its own hidden Dismiss button; checked while both are there, the names look doubled.
+        await expect(page.getByRole('menu')).toHaveCount(0);
         await goodPage(page, name, v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
@@ -1310,11 +1312,17 @@ test.describe('behaviour', () => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(path());
         await page.getByRole('heading', { level: 1 }).waitFor();
-        const overflow = await page.evaluate(() => ({
-          page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-          tables: [...document.querySelectorAll('.table-scroll')].map((t) => t.scrollWidth - t.clientWidth).filter((o) => o > 0),
-        }));
-        expect(overflow, `${path()} at ${width} px`).toEqual({ page: 0, tables: [] });
+        const { wide, ...overflow } = await page.evaluate(() => {
+          const right = document.documentElement.clientWidth;
+          return {
+            page: document.documentElement.scrollWidth - right,
+            tables: [...document.querySelectorAll('.table-scroll')].map((t) => t.scrollWidth - t.clientWidth).filter((o) => o > 0),
+            // What sticks out, so a failure says where to look.
+            wide: [...document.querySelectorAll('body *')].filter((e) => e.getBoundingClientRect().right > right + 0.5).slice(0, 5)
+              .map((e) => `${e.tagName.toLowerCase()}.${[...e.classList].join('.')} "${(e.textContent ?? '').trim().slice(0, 40)}"`),
+          };
+        });
+        expect(overflow, `${path()} at ${width} px; sticking out: ${wide.join(', ') || 'nothing'}`).toEqual({ page: 0, tables: [] });
       }
     });
   }
