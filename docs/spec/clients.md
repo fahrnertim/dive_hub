@@ -560,7 +560,7 @@ Each change there answers the new status, so the panel needs no second fetch: "S
     for the Source, pick and type through it: `PUT /api/connections/{id}/dive-sites/{siteId}` with `{ externalId }` asks the
     Provider first and answers `{ externalId, private }` (`null` clears the account's private ID); `provider_site_unknown`
     (422) means the Provider has no site with that ID (also another account's private one), and nothing is stored; an ID
-    the Provider doesn't say about, or can't be asked about, is stored private; so `private: true` can also mean the Provider didn't confirm the site public (unknown or unreachable), and clients don't present it as the Provider's statement. `external_id_taken` as below. Without a
+    the Provider doesn't say about, or can't be asked about, is stored private; so `private: true` can also mean the Provider didn't confirm the site public (unknown or unreachable), and clients don't present it as the Provider's statement. A public ID replaces the account's private one on the site. `external_id_taken` as below; while the Provider can't be asked, an ID another account holds privately answers `provider_unavailable` (502: try again later) instead. `provider_not_connected` (409) means the Connection's Diver has no account at the Provider. Without a
     Connection, save it on the site (`PUT /api/dive-sites/{id}/external-ids/{source}`), which stores a public ID without
     asking the Provider. When not `typed`, say it can't be fixed here.
   - **`diver_mapping`:** one item per Participant (`diverName`) the Provider can't identify; say they will be left out

@@ -6,7 +6,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { diveSite } from '../db/schema.js';
 import { SiteError } from '../sites/site-error.js';
-import { accountOf, clearId, storeId } from '../sites/site-ids.js';
+import { accountOf, clearId, holderOf, storeId } from '../sites/site-ids.js';
 import { typedId, type SiteSource } from '../sites/sources.js';
 import type { ConnectionService } from './connection-service.js';
 import type { ProviderAdapter } from './provider.js';
@@ -23,7 +23,8 @@ export function createSitePickService(deps: { db: Db; registry: ProviderRegistry
 
   /**
    * What the Provider says about the ID: null when it has no such site for the account (unknown, deleted, another
-   * account's private). When it doesn't say or can't be asked, its logbook list decides if it lists the ID, else `unknown`.
+   * account's private). When it doesn't say, its logbook list decides if it lists the ID, else `unknown`; when neither can be
+   * asked, `unreachable`.
    */
   async function visibilityOf(conn: Parameters<ConnectionService['withAccess']>[0], adapter: ProviderAdapter, externalId: string) {
     const sites = adapter.diveSites!;
@@ -38,7 +39,7 @@ export function createSitePickService(deps: { db: Db; registry: ProviderRegistry
       const listed = (await connections.withAccess(conn, (ctx) => sites.find(ctx))).find((s) => s.id === externalId);
       return listed?.visibility ?? 'unknown';
     } catch (error) {
-      if (error instanceof ProviderServiceError && error.code === 'provider_unavailable') return 'unknown';
+      if (error instanceof ProviderServiceError && error.code === 'provider_unavailable') return 'unreachable';
       throw error;
     }
   }
@@ -56,7 +57,7 @@ export function createSitePickService(deps: { db: Db; registry: ProviderRegistry
       const [site] = await db.select({ id: diveSite.id }).from(diveSite).where(and(eq(diveSite.id, siteId), isNull(diveSite.deletedAt)));
       if (!site) throw new ProviderServiceError('site_not_found');
       const account = await accountOf(db, conn.diverId, source);
-      if (!account) throw new ProviderServiceError('provider_unsupported', named(adapter));
+      if (!account) throw new ProviderServiceError('provider_not_connected', named(adapter));
 
       if (typed === null) {
         await db.transaction((tx) => clearId(tx, siteId, source, account, null));
@@ -69,11 +70,19 @@ export function createSitePickService(deps: { db: Db; registry: ProviderRegistry
       if (visibility === null) throw new ProviderServiceError('provider_site_unknown', named(adapter));
       const isPrivate = visibility !== 'public';
       try {
-        await db.transaction((tx) => storeId(tx, {
-          siteId, source, externalId, accountId: isPrivate ? account : null, actor: isPrivate ? null : { type: 'user', id: userId },
-        }));
+        await db.transaction(async (tx) => {
+          // A public ID replaces the account's private one on this site (SSI made it public, or the User typed another).
+          if (!isPrivate) await clearId(tx, siteId, source, account, null);
+          await storeId(tx, {
+            siteId, source, externalId, accountId: isPrivate ? account : null, actor: isPrivate ? null : { type: 'user', id: userId },
+          });
+        });
       } catch (error) {
-        throw error instanceof SiteError && error.code === 'external_id_taken' ? new ProviderServiceError('external_id_taken', undefined, undefined, { cause: error }) : error;
+        if (!(error instanceof SiteError && error.code === 'external_id_taken')) throw error;
+        // With SSI away, saying that another account holds the ID here would tell what that account keeps private.
+        const held = visibility === 'unreachable' ? await holderOf(db, source, externalId) : null;
+        if (held?.accountId && held.accountId !== account) throw new ProviderServiceError('provider_unavailable', named(adapter), undefined, { cause: error });
+        throw new ProviderServiceError('external_id_taken', undefined, undefined, { cause: error });
       }
       return { externalId, private: isPrivate };
     },
