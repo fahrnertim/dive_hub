@@ -1,7 +1,7 @@
 ---
 title: Document the drift report in the development guide
 summary: Add the "Common tasks" row for scripts/drift-report.mjs to docs/development.md and list the first report in the index - the test task for the first unattended run.
-status: ready
+status: done
 risk: low
 budget_tokens: 1000000
 date: 2026-10-23
