@@ -11,6 +11,7 @@ import { nameDiffers } from '../buddies/buddy-names.js';
 import { forgetEntry, listAccountOf, remember, rememberedFor } from '../list-entries.js';
 import { keyLease, realClock, type Clock } from '../lease-service.js';
 import { ProviderError, type ActionContext, type DiverSource, type ProviderAdapter, type RemoteBuddy } from '../provider.js';
+import { consoleLog, type ProviderLog } from '../waiting-push/waiting-push-queue.js';
 
 export interface BuddiesForSend {
   /** Entries the send made, by Diver. `name` is the entry's name as the Provider answered it. */
@@ -33,6 +34,7 @@ export async function buddiesForSend(db: Db, s: {
   adapter: ProviderAdapter; context: ActionContext; ownerDiverId: string; diveId: string; source: DiverSource;
   /** Where the wait for the list lock takes its time from. */
   clock?: Clock;
+  log?: ProviderLog;
 }): Promise<BuddiesForSend> {
   const result: BuddiesForSend = { added: [], knownAs: [] };
   const buddies = s.adapter.buddies;
@@ -46,7 +48,7 @@ export async function buddiesForSend(db: Db, s: {
   const accounts = new Map((await db.select({ diverId: diverExternalId.diverId, externalId: diverExternalId.externalId }).from(diverExternalId)
     .where(and(inArray(diverExternalId.diverId, diverIds), eq(diverExternalId.source, s.source)))).map((r) => [r.diverId, r.externalId]));
 
-  return keyLease(db, { key: `buddies:${accountId}`, source: s.source, clock: s.clock ?? realClock }, async () => {
+  return keyLease(db, { key: `buddies:${accountId}`, source: s.source, clock: s.clock ?? realClock, log: s.log ?? consoleLog }, async () => {
     let list = await buddies.find(s.context);
     const rememberedBy = await rememberedFor(db, accountId, diverIds);
     // The list may be a read from moments ago: an entry is forgotten only when a fresh read misses it too.

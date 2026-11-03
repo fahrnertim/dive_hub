@@ -12,7 +12,7 @@ import { SiteError } from '../../sites/site-error.js';
 import type { SiteSource } from '../../sites/sources.js';
 import { keyLease, realClock, type Clock } from '../lease-service.js';
 import type { ActionContext, ProviderAdapter, RemoteSite } from '../provider.js';
-import type { ProviderLog } from '../waiting-push/waiting-push-queue.js';
+import { consoleLog, type ProviderLog } from '../waiting-push/waiting-push-queue.js';
 
 export type SiteForSend = 'had' | 'matched' | 'created' | 'none';
 
@@ -38,7 +38,7 @@ export async function siteForSend(db: Db, s: {
   if (!site || site.latitude === null || site.longitude === null) return 'none';
   const position = { latitude: site.latitude, longitude: site.longitude };
   // Another send for the account at this site may be finding or making it now: after it, its stored ID is used.
-  return keyLease(db, { key: `site-for-send:${siteId}:${account}`, source: s.source, clock: s.clock ?? realClock }, async () => {
+  return keyLease(db, { key: `site-for-send:${siteId}:${account}`, source: s.source, clock: s.clock ?? realClock, log: s.log ?? consoleLog }, async () => {
     if (await had()) return 'had';
     return findOrMake(db, s, site, position, account, sites);
   });

@@ -41,7 +41,7 @@ export class TurnTimeout extends Error {}
  * a failed release is logged and the lease runs out by itself.
  */
 export async function keyLease<T>(
-  db: Db, lease: { key: string; source: string; clock: Clock; log?: ProviderLog }, fn: () => Promise<T>,
+  db: Db, lease: { key: string; source: string; clock: Clock; log: ProviderLog }, fn: () => Promise<T>,
 ): Promise<T> {
   const { key, source, clock, log } = lease;
   const holder = randomUUID();
@@ -62,7 +62,7 @@ export async function keyLease<T>(
     return await fn();
   } finally {
     await db.delete(providerLease).where(and(eq(providerLease.key, key), eq(providerLease.holder, holder)))
-      .catch((err: unknown) => log?.error({ err, key }, 'a lease could not be given back; it runs out by itself'));
+      .catch((err: unknown) => log.error({ err, key }, 'a lease could not be given back; it runs out by itself'));
   }
 }
 

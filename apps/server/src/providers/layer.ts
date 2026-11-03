@@ -39,7 +39,7 @@ export function createProviderLayer(deps: {
   const pushes = createPushService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, leases, conflicts, ...clock, log });
   const pushRuns = createPushRunService({ db: deps.db, registry: providers, pushes, conflicts, log });
   const waitingPushes = createWaitingPushService({ db: deps.db, registry: providers, pushes, ...clock, log });
-  const buddies = createBuddyService({ db: deps.db, registry: providers, connections, divers: createDiverService(deps.db) });
+  const buddies = createBuddyService({ db: deps.db, registry: providers, connections, divers: createDiverService(deps.db), log });
   const sitePicks = createSitePickService({ db: deps.db, registry: providers, connections });
   const diveImports = createDiveImportService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, ...clock });
   const scheduledFetch = createScheduledFetch({ db: deps.db, registry: providers, diveImports, ...clock, log });
