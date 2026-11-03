@@ -264,7 +264,7 @@ function UnsentLine({ provider, connectionId, count }: { provider: { id: string;
   const pt = useProviderText(provider);
   return (
     <p className="import-unsent">
-      {pt('automation.unsentByImport' as 'automation.unsentByImport_one', { count })}{' '}
+      {pt('automation.unsentByImport', { count })}{' '}
       <a href={connectionHref(connectionId)}>{pt('automation.unsentOpen')}</a>
     </p>
   );

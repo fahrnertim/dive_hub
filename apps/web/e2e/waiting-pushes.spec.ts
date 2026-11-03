@@ -101,6 +101,48 @@ test('a stopped Dive in the logbook has its own Retry, and focus stays in the ro
   }
 });
 
+test('Retry in a logbook row that fails says why', { tag: ['@dives'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    await leaveSsi(request, id);
+    await queueEntry(request, id, { state: 'stopped', reason: 'provider_unavailable' });
+    const n = await diveNumber(request, id);
+    await page.route('**/api/dives/*/providers/*/retry', (route) => route.fulfill({ status: 500, json: { code: 'internal_error' } }));
+    await page.goto('/#/');
+    const row = rowOf(page, n);
+    await row.getByRole('button', { name: `Retry: Number ${n}` }).click();
+    await expect(row.getByRole('alert')).toBeVisible();
+    // The error is phrasing content beside the row's words, not a block inside them.
+    await expect(row.locator('span div')).toHaveCount(0);
+  } finally {
+    await leave(request);
+  }
+});
+
+test('a stopped row on a phone keeps its words together', { tag: ['@dives'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    await leaveSsi(request, id);
+    await queueEntry(request, id, { state: 'stopped', reason: 'provider_unavailable' });
+    const n = await diveNumber(request, id);
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto('/#/');
+    const row = rowOf(page, n);
+    const words = row.getByText(/^Couldn’t send to SSI/);
+    const retry = row.getByRole('button', { name: `Retry: Number ${n}` });
+    await expect(words).toBeVisible();
+    const [rowBox, wordsBox, retryBox] = [await row.boundingBox(), await words.boundingBox(), await retry.boundingBox()];
+    // The words read as one block, Retry comes below them, and nothing scrolls sideways.
+    expect(wordsBox!.width).toBeGreaterThanOrEqual(0.6 * rowBox!.width);
+    expect(retryBox!.y).toBeGreaterThanOrEqual(wordsBox!.y + wordsBox!.height);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  } finally {
+    await leave(request);
+  }
+});
+
 test('the logbook list shows a Dive as sent after its send', { tag: ['@dives'] }, async ({ page, request }) => {
   const id = await deletableDive(request);
   try {
@@ -125,8 +167,11 @@ test('the logbook list shows a Dive as sent after its send', { tag: ['@dives'] }
 });
 
 test('a Dive without a site says it needs one', { tag: ['@dives'] }, async ({ page, request }) => {
+  await connectSsi(request);
   const id = await deletableDive(request);
   try {
+    const { version } = await (await request.get(`/api/dives/${id}`)).json() as { version: number };
+    await request.patch(`/api/dives/${id}`, { headers, data: { version, siteId: null } });
     await queueEntry(request, id, { state: 'held', reason: 'requirements' });
     const n = await diveNumber(request, id);
     await page.goto('/#/');
@@ -138,10 +183,26 @@ test('a Dive without a site says it needs one', { tag: ['@dives'] }, async ({ pa
     // A held Dive opens its line by itself.
     const line = page.getByRole('group', { name: 'SSI' });
     await expect(line.getByText('Needs a site with a position before it can go to SSI')).toBeVisible();
-    // Next to the words, a button takes you to what the Dive lacks.
+    // Next to the words, a button takes you to what the Dive lacks: the control that chooses a site.
     await line.getByRole('button', { name: 'See what is needed' }).click();
-    await expect(line.locator('.provider-needs')).toBeFocused();
+    const addSite = line.getByRole('button', { name: 'Choose dive site' });
+    await expect(addSite).toBeFocused();
+    await addSite.click();
+    const picker = page.getByRole('dialog');
+    await expect(picker).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(picker).toHaveCount(0);
+    await expect(addSite).toBeFocused();
+    // Choosing a site removes the button: focus goes to the Provider's line, not to the page.
+    await addSite.click();
+    await picker.getByRole('searchbox').fill('Ras Mohammed');
+    await picker.getByRole('option', { name: /Ras Mohammed/ }).first().click();
+    await expect(picker).toHaveCount(0);
+    await expect(addSite).toHaveCount(0);
+    await expect(page.locator('#main').getByRole('button', { name: 'SSI', exact: true })).toBeFocused();
   } finally {
+    const { version } = await (await request.get(`/api/dives/${id}`)).json() as { version: number };
+    await request.patch(`/api/dives/${id}`, { headers, data: { version, siteId: null } });
     await leave(request);
   }
 });
@@ -200,6 +261,8 @@ test('the delete dialog doesn\'t ask for a Provider that deletes by itself, and 
     await page.goto('/#/review?tab=deleted');
     const panel = deletedPanel(page);
     await expect(panel.getByText('Will be deleted in SSI in 5 min')).toBeVisible();
+    // While the automatic delete waits, there is no manual one beside it.
+    await expect(panel.getByRole('listitem').filter({ hasText: 'Will be deleted in SSI in 5 min' }).getByRole('button', { name: /^Delete in SSI/ })).toHaveCount(0);
     // Restoring cancels it (the click is strict: this is the only deleted dive of that day).
     const restore = panel.getByRole('button', { name: /^Restore: Mar 5, 2026/ });
     await restore.click();
@@ -226,6 +289,8 @@ test('a delete that stopped shows the error in the deleted dives and Retry puts 
     await page.goto('/#/review?tab=deleted');
     const panel = deletedPanel(page);
     await expect(panel.getByText(/^Couldn’t delete it in SSI: SSI didn’t answer as expected/)).toBeVisible();
+    // A stopped delete offers the manual one again, beside Retry.
+    await expect(panel.getByRole('listitem').filter({ hasText: /Couldn’t delete it in SSI/ }).getByRole('button', { name: /^Delete in SSI/ })).toBeVisible();
     await panel.getByRole('button', { name: /^Retry/ }).click();
     // Due at once, so the worker may have deleted it by the time the list refreshes: either way the error is gone.
     await expect(panel.getByText(/^Couldn’t delete it in SSI/)).toBeHidden();
@@ -283,6 +348,119 @@ test('the settings show only what the Provider offers and 6 hours is preselected
     // Off again: the choice goes.
     await settingsOf.getByText('Fetch from SSI', { exact: true }).click();
     await expect(every).toHaveCount(0);
+  } finally {
+    await leave(request);
+  }
+});
+
+test('a stored interval the Provider no longer offers is still the selected one', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  try {
+    // Stored every hour, but the Provider now offers every 6 hours at the soonest.
+    let stored = true;
+    const narrowed = (row: { offers: Record<string, unknown> }) =>
+      ({ ...row, ...(stored ? { fetchEveryMinutes: 60 } : {}), offers: { ...row.offers, fetchEvery: [360, 1440] } });
+    await page.route('**/api/connections', async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({ status: response.status(), json: ((await response.json()) as { offers: Record<string, unknown> }[]).map(narrowed) });
+    });
+    const bodies: unknown[] = [];
+    await page.route('**/api/connections/*', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      bodies.push(route.request().postDataJSON());
+      stored = false;
+      const response = await route.fetch();
+      return route.fulfill({ status: response.status(), json: narrowed(await response.json() as { offers: Record<string, unknown> }) });
+    });
+    await openConnections(page);
+    const every = automatic(page).getByRole('radiogroup', { name: 'How often' });
+    await expect(every.getByRole('radio', { name: 'every hour' })).toBeChecked();
+    await expect(every.getByRole('radio')).toHaveCount(3);
+    await every.getByText('every 6 hours').click();
+    await expect.poll(() => bodies).toEqual([{ fetchEveryMinutes: 360 }]);
+    await expect(every.getByRole('radio', { name: 'every 6 hours' })).toBeChecked();
+  } finally {
+    await leave(request);
+  }
+});
+
+test('the fetch switch says first that it needs the import', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  try {
+    await page.route('**/api/connections', async (route) => {
+      const response = await route.fetch();
+      const rows = (await response.json()) as Record<string, unknown>[];
+      await route.fulfill({ status: response.status(), json: rows.map((row) => ({ ...row, diveImport: { mode: 'off', windowMinutes: 15 } })) });
+    });
+    await openConnections(page);
+    const fetch = automatic(page).getByRole('switch', { name: 'Fetch from SSI' });
+    await expect(fetch).not.toBeChecked();
+    await expect(fetch).toHaveAccessibleDescription('A fetch does nothing while the import below is off.');
+  } finally {
+    await leave(request);
+  }
+});
+
+test('a switch is busy while its setting saves', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    const connectionId = await ssiConnectionOf(request, id);
+    // The save of "send changes" waits until released; the others go through.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    let changesSaves = 0;
+    await page.route('**/api/connections/*', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      if ('sendChanges' in (route.request().postDataJSON() as object)) {
+        changesSaves += 1;
+        await held;
+      }
+      return route.fallback();
+    });
+    await openConnections(page);
+    const settingsOf = automatic(page);
+    const changes = settingsOf.getByRole('switch', { name: 'Send changes automatically' });
+    const newDives = settingsOf.getByRole('switch', { name: 'Send new dives automatically' });
+    await settingsOf.getByText('Send changes automatically', { exact: true }).click();
+    await expect(changes).toHaveAttribute('aria-busy', 'true');
+    // A second press while it saves sends nothing.
+    await settingsOf.getByText('Send changes automatically', { exact: true }).click();
+    // The other switch saves at once.
+    await settingsOf.getByText('Send new dives automatically', { exact: true }).click();
+    await expect(newDives).not.toHaveAttribute('aria-busy', 'true');
+    await expect.poll(async () => (await connectionRow(request, connectionId) as { sendNewDives?: boolean } | undefined)?.sendNewDives).toBe(true);
+    expect(changesSaves).toBe(1);
+    release();
+    await expect(changes).toBeChecked();
+    await expect(changes).not.toHaveAttribute('aria-busy', 'true');
+    await expect(newDives).toBeChecked();
+    expect(changesSaves).toBe(1);
+  } finally {
+    await leave(request);
+  }
+});
+
+test('a save that fails says so while another setting saves', { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  try {
+    // The save of "send changes" waits, then fails; "send new dives" saves meanwhile.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    await page.route('**/api/connections/*', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      if (!('sendChanges' in (route.request().postDataJSON() as object))) return route.fallback();
+      await held;
+      return route.fulfill({ status: 500, json: { code: 'internal_error' } });
+    });
+    await openConnections(page);
+    const settingsOf = automatic(page);
+    await settingsOf.getByText('Send changes automatically', { exact: true }).click();
+    await settingsOf.getByText('Send new dives automatically', { exact: true }).click();
+    await expect(settingsOf.getByRole('switch', { name: 'Send new dives automatically' })).toBeChecked();
+    release();
+    await expect(settingsOf.getByRole('alert')).toBeVisible();
+    await expect(settingsOf.getByRole('switch', { name: 'Send changes automatically' })).not.toBeChecked();
   } finally {
     await leave(request);
   }

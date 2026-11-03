@@ -7,7 +7,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { useProviderText } from './lib/providers.ts';
 import { reviewHref } from './lib/review.ts';
 import { SendDivesDialog } from './PushRun.tsx';
-import { Button, Muted, Notice, RadioGroup, Switch } from './ui/index.ts';
+import { Button, Notice, RadioGroup, Switch } from './ui/index.ts';
 
 type Interval = 60 | 360 | 1440;
 /** The interval chosen when the fetch is turned on (the owner's choice, ADR 0056), else the shortest the Provider offers. */
@@ -35,6 +35,13 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
   const offerId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
   const [sending, setSending] = useState(false);
+  // The settings whose save runs: their controls are busy, the others stay usable and save at once.
+  const [pending, setPending] = useState<ReadonlySet<keyof Settings>>(new Set());
+  const keysOf = (body: Settings) => Object.keys(body) as (keyof Settings)[];
+  // Each setting's last save error: a second save of another setting must not hide it.
+  const [failed, setFailed] = useState<Partial<Record<keyof Settings, Error>>>({});
+  const without = (now: Partial<Record<keyof Settings, Error>>, body: Settings) =>
+    Object.fromEntries(Object.entries(now).filter(([k]) => !keysOf(body).includes(k as keyof Settings)));
   useEffect(() => {
     if (!focused) return;
     heading.current?.focus();
@@ -42,6 +49,12 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
   }, [focused]);
   const save = useMutation({
     mutationFn: async (body: Settings) => unwrap(await api.PATCH('/api/connections/{id}', { params: { path: { id: c.id } }, body })),
+    onMutate: (body) => {
+      setPending((now) => new Set([...now, ...keysOf(body)]));
+      setFailed((now) => without(now, body));
+    },
+    onError: (error, body) => setFailed((now) => ({ ...now, ...Object.fromEntries(keysOf(body).map((k) => [k, error])) })),
+    onSettled: (_data, _error, body) => setPending((now) => new Set([...now].filter((k) => !keysOf(body).includes(k)))),
     onSuccess: (updated) => {
       queryClient.setQueryData<ConnectionView[]>(keys.connections, (all) => all?.map((x) => (x.id === updated.id ? updated : x)));
       announce(pt('automation.saved'));
@@ -57,6 +70,9 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
   });
   const { offers, lastFetch, unsentDives, waiting } = c;
   const intervals = offers.fetchEvery.filter(isInterval);
+  // A stored interval the Provider no longer offers is still listed, as the selected one (backlog 0010, point 13).
+  const stored = c.fetchEveryMinutes;
+  const choices = stored !== null && isInterval(stored) && !intervals.includes(stored) ? [...intervals, stored].sort((a, b) => a - b) : intervals;
   const hasSettings = offers.sendChanges || offers.sendNewDives || offers.deleteAtProvider || intervals.length > 0;
   if (!hasSettings && !lastFetch && unsentDives.length === 0) return null;
 
@@ -66,6 +82,8 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
     ...(waiting.stopped > 0 ? [pt('automation.queueStopped', { count: waiting.stopped })] : []),
   ];
   const deleteHelpId = `${headingId}-delete-help`;
+  const fetchHelpId = `${headingId}-fetch-help`;
+  const importOff = c.diveImport?.mode === 'off';
   const askImport = () => {
     // The import under this one asks for what a fetch left to the User.
     const target = document.getElementById(`import-${c.id}`);
@@ -81,7 +99,7 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
       {unsentDives.length > 0 && (
         <div role="group" aria-labelledby={offerId}>
           <Notice tone="info">
-            <p id={offerId}>{pt('automation.unsent' as 'automation.unsent_one', { count: unsentDives.length })}</p>
+            <p id={offerId}>{pt('automation.unsent', { count: unsentDives.length })}</p>
             <div className="form-actions">
               <Button variant="primary" icon="send" onPress={() => setSending(true)}>{pt('automation.unsentSend')}</Button>
               <Button isPending={dismiss.isPending} onPress={() => dismiss.mutate()}>{t('common.dismiss')}</Button>
@@ -93,19 +111,19 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
       {hasSettings && (
         <div className="provider-settings">
           {offers.sendChanges && (
-            <Switch isSelected={c.sendChanges} onChange={(sendChanges) => save.mutate({ sendChanges })}>
+            <Switch isSelected={c.sendChanges} isPending={pending.has('sendChanges')} onChange={(sendChanges) => save.mutate({ sendChanges })}>
               {pt('automation.sendChanges')}
             </Switch>
           )}
           {offers.sendNewDives && (
-            <Switch isSelected={c.sendNewDives} onChange={(sendNewDives) => save.mutate({ sendNewDives })}>
+            <Switch isSelected={c.sendNewDives} isPending={pending.has('sendNewDives')} onChange={(sendNewDives) => save.mutate({ sendNewDives })}>
               {pt('automation.sendNewDives')}
             </Switch>
           )}
           {offers.deleteAtProvider && (
             <>
               <Switch
-                isSelected={c.deleteAtProvider} aria-describedby={deleteHelpId}
+                isSelected={c.deleteAtProvider} isPending={pending.has('deleteAtProvider')} aria-describedby={deleteHelpId}
                 onChange={(deleteAtProvider) => save.mutate({ deleteAtProvider })}
               >
                 {pt('automation.deleteAtProvider')}
@@ -116,22 +134,24 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
           {intervals.length > 0 && (
             <>
               <Switch
-                isSelected={c.fetchEveryMinutes !== null}
+                isSelected={c.fetchEveryMinutes !== null} isPending={pending.has('fetchEveryMinutes')}
+                {...(importOff ? { 'aria-describedby': fetchHelpId } : {})}
                 onChange={(on) => save.mutate({ fetchEveryMinutes: on ? (intervals.includes(PRESELECTED) ? PRESELECTED : intervals[0]!) : null })}
               >
                 {pt('automation.fetch')}
               </Switch>
+              {/* Read before switching on, not after: a fetch does nothing while the import is off. */}
+              {importOff && <p id={fetchHelpId} className="muted provider-settings-help">{pt('automation.fetchNeedsImport')}</p>}
               {c.fetchEveryMinutes !== null && (
                 <RadioGroup
-                  label={pt('automation.fetchEvery')} value={String(c.fetchEveryMinutes)}
+                  label={pt('automation.fetchEvery')} value={String(c.fetchEveryMinutes)} isReadOnly={pending.has('fetchEveryMinutes')}
                   onChange={(value) => save.mutate({ fetchEveryMinutes: Number(value) as Interval })}
-                  options={intervals.map((m) => ({ value: String(m), label: pt(`automation.${INTERVAL_TEXT[m]}`) }))}
+                  options={choices.map((m) => ({ value: String(m), label: pt(`automation.${INTERVAL_TEXT[m]}`) }))}
                 />
               )}
-              {c.fetchEveryMinutes !== null && c.diveImport?.mode === 'off' && <Muted>{pt('automation.fetchNeedsImport')}</Muted>}
             </>
           )}
-          {save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
+          {[...new Map(Object.values(failed).map((e) => [e.message, e])).values()].map((error) => <Notice key={error.message} tone="danger">{errorText(error)}</Notice>)}
         </div>
       )}
       {lastFetch && (
@@ -146,7 +166,7 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
           )}
           {/* Conflicts aren't decided by an import: they wait in Needs your decision. */}
           {lastFetch.conflicts > 0 && (
-            <p><a href={reviewHref('decide')}>{pt('automation.conflicts' as 'automation.conflicts_one', { count: lastFetch.conflicts })}</a></p>
+            <p><a href={reviewHref('decide')}>{pt('automation.conflicts', { count: lastFetch.conflicts })}</a></p>
           )}
         </div>
       )}

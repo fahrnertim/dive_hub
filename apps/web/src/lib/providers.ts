@@ -9,8 +9,10 @@ import type en from '../i18n/locales/en.json';
 export type SyncedField = ConflictFieldView['field'];
 
 type Paths<T> = { [K in keyof T & string]: T[K] extends string ? K : `${K}.${Paths<T[K]>}` }[keyof T & string];
+/** A plural's base key: `automation.unsent` for `automation.unsent_one` and `_other` (i18next picks the form by `count`). */
+type PluralBase<K> = K extends `${infer B}_${'zero' | 'one' | 'two' | 'few' | 'many' | 'other'}` ? B : never;
 /** A text under `provider` in en.json; a Provider may word it itself under `providers.<id>`. */
-export type ProviderTextKey = Paths<(typeof en)['provider']>;
+export type ProviderTextKey = Paths<(typeof en)['provider']> | PluralBase<Paths<(typeof en)['provider']>>;
 /**
  * What a Provider may word itself under `providers.<id>`: a text of `provider.*` (useProviderText), or a problem's
  * text `errors.<code>` (useProblemText in display.ts). Anything else there would never be shown.

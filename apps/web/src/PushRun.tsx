@@ -74,7 +74,7 @@ export function SendToProvider({ params, filterName }: { params: LogbookParams; 
 export function SendDivesDialog({ connection, provider, ids, onClose }: {
   connection: ConnectionView; provider: ProviderView | undefined; ids: string[]; onClose: () => void;
 }) {
-  return <SendDialog connection={connection} provider={provider} params={{}} filterName={String} ids={ids} onClose={onClose} />;
+  return <SendDialog connection={connection} provider={provider} params={{}} ids={ids} onClose={onClose} />;
 }
 
 /** What the dialog can send: the logbook's list as it is now, every Dive not at the Provider yet, or the ones changed since sent. */
@@ -106,7 +106,7 @@ const scopeLabel = (label: string, count: number | undefined, hint: string | und
  * that would go with a checkbox each, and sends exactly the ticked ones. The logbook behind it is never changed.
  */
 function SendDialog({ connection, provider, params, filterName, ids, onClose }: {
-  connection: ConnectionView; provider: ProviderView | undefined; params: LogbookParams; filterName: (filter: LogbookFilter) => string;
+  connection: ConnectionView; provider: ProviderView | undefined; params: LogbookParams; filterName?: (filter: LogbookFilter) => string;
   /** Exactly these Dives (the offer of a large Import's new ones): no scope to choose, the Dives can still be taken out. */
   ids?: string[] | undefined; onClose: () => void;
 }) {
@@ -147,7 +147,7 @@ function SendDialog({ connection, provider, params, filterName, ids, onClose }: 
   return (
     <Dialog title={t('pushRun.title', { name })} isOpen onOpenChange={(open) => { if (!open) onClose(); }}>
       <div className="push-run-dialog">
-        {!ids && <ScopePicker connection={connection} name={name} params={params} filterName={filterName} scopes={scopes} scope={scope} onChange={chooseScope} />}
+        {!ids && filterName && <ScopePicker connection={connection} name={name} params={params} filterName={filterName} scopes={scopes} scope={scope} onChange={chooseScope} />}
         {preview.isError && <Notice tone="danger">{errorText(preview.error)}</Notice>}
         {!p && !preview.isError && <Muted>{t('pushRun.loading')}</Muted>}
         {p && (

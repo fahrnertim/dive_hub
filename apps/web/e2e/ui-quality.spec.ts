@@ -669,6 +669,26 @@ for (const v of variants) {
       }
     });
 
+    // The fetch's help shown while the import is off, and a switch busy while its save runs (backlog 0010, point 13).
+    test('my account, automatic settings: the fetch needs the import, a switch saving', { tag: ['@account'] }, async ({ page, request }) => {
+      await connectSsi(request);
+      await page.route('**/api/connections', async (route) => {
+        const response = await route.fetch();
+        const rows = (await response.json()) as Record<string, unknown>[];
+        await route.fulfill({ status: response.status(), json: rows.map((row) => ({ ...row, diveImport: { mode: 'off', windowMinutes: 15 } })) });
+      });
+      // The save never answers here: the switch stays busy while the page is checked.
+      await page.route('**/api/connections/*', (route) => (route.request().method() === 'PATCH' ? new Promise<void>(() => {}) : route.fallback()));
+      await page.goto('/#/account?tab=connections');
+      const settingsOf = page.getByRole('region', { name: v.english ? /^Automatic/ : /^Automatisch/ });
+      await expect(settingsOf.getByText(v.english ? 'A fetch does nothing while the import below is off.' : 'Ein Abruf tut nichts, solange der Import darunter aus ist.')).toBeVisible();
+      const first = settingsOf.getByRole('switch').first();
+      await first.focus();
+      await page.keyboard.press('Space');
+      await expect(first).toHaveAttribute('aria-busy', 'true');
+      await goodPage(page, title('Connections'), v);
+    });
+
     // Waiting under Needs your decision: a dive the Provider already has (ADR 0056).
     test('review, a dive already at SSI', { tag: ['@dives'] }, async ({ page, request }) => {
       await connectSsi(request);
@@ -859,6 +879,8 @@ for (const v of variants) {
         await page.getByRole('menuitem', { name: v.english ? 'Delete' : 'Löschen' }).click();
         await expect(dialog.getByRole('heading', { name: v.english ? `Delete ${name}?` : `${name} löschen?` })).toBeVisible();
         await expect(close).toBeVisible();
+        // The menu fades out with its own hidden Dismiss button; checked while both are there, the names look doubled.
+        await expect(page.getByRole('menu')).toHaveCount(0);
         await goodPage(page, name, v);
       } finally {
         await request.delete(`/api/divers/${created.id}`, { headers });
@@ -1290,11 +1312,17 @@ test.describe('behaviour', () => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(path());
         await page.getByRole('heading', { level: 1 }).waitFor();
-        const overflow = await page.evaluate(() => ({
-          page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-          tables: [...document.querySelectorAll('.table-scroll')].map((t) => t.scrollWidth - t.clientWidth).filter((o) => o > 0),
-        }));
-        expect(overflow, `${path()} at ${width} px`).toEqual({ page: 0, tables: [] });
+        const { wide, ...overflow } = await page.evaluate(() => {
+          const right = document.documentElement.clientWidth;
+          return {
+            page: document.documentElement.scrollWidth - right,
+            tables: [...document.querySelectorAll('.table-scroll')].map((t) => t.scrollWidth - t.clientWidth).filter((o) => o > 0),
+            // What sticks out, so a failure says where to look.
+            wide: [...document.querySelectorAll('body *')].filter((e) => e.getBoundingClientRect().right > right + 0.5).slice(0, 5)
+              .map((e) => `${e.tagName.toLowerCase()}.${[...e.classList].join('.')} "${(e.textContent ?? '').trim().slice(0, 40)}"`),
+          };
+        });
+        expect(overflow, `${path()} at ${width} px; sticking out: ${wide.join(', ') || 'nothing'}`).toEqual({ page: 0, tables: [] });
       }
     });
   }

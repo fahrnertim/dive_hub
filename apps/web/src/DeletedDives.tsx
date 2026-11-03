@@ -157,8 +157,10 @@ function DeletedRow({ dive: d, appended, list, index, count }: {
     g.site?.name, display.depth(g.maxDepthM), display.duration(g.durationSeconds), diverName,
   ].filter(Boolean).join(' · ');
   const own = facts(d, false);
-  // One "Delete in …" per Provider copy of the entry's Dives.
-  const copies = group.flatMap((g) => g.stillAt.map((c) => ({
+  // One "Delete in …" per Provider copy of the entry's Dives; none while the Provider's automatic delete waits.
+  const deleteWaits = (g: DeletedDiveView, provider: string) =>
+    g.waiting.some((w) => w.provider === provider && w.action === 'delete' && w.state === 'waiting');
+  const copies = group.flatMap((g) => g.stillAt.filter((c) => !deleteWaits(g, c.provider)).map((c) => ({
     slot: `${g.id}:${c.provider}`, provider: providerOf(c.provider), diveId: g.id, name: nameOf(g), remoteNumber: c.remoteNumber,
   })));
   const [deleting, setDeleting] = useState<string>();
