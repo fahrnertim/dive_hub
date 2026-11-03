@@ -2,7 +2,7 @@
 // `dive_site_external_id`. A row without `accountId` is public (every User and every send may use it); a row with one
 // is private to that account (`diver_external_id`): only sends for its Diver use it, only Users who manage that Diver
 // see it. A Source has one ID space, so `(source, external_id)` is held once, public or private.
-import { and, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import type { Queryable, Tx } from '../db/client.js';
 import { diveSite, diveSiteExternalId, diverExternalId, diverManagement } from '../db/schema.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
@@ -226,17 +226,34 @@ export async function publishIds(tx: Tx, source: SiteSource, externalIds: string
  * accounts stay. A change that would give a site two rows of one kind is skipped.
  */
 export async function settleVisibility(tx: Tx, source: SiteSource, accountId: string, remote: { externalId: string; private: boolean }[]): Promise<void> {
+  if (remote.length === 0) return;
+  const sites = tx.select({ siteId: diveSiteExternalId.siteId }).from(diveSiteExternalId)
+    .where(and(eq(diveSiteExternalId.source, source), inArray(diveSiteExternalId.externalId, remote.map((r) => r.externalId))));
+  // Every row at the Source of the sites these IDs are on, to see clashes.
+  const rows = await tx.select({ id: diveSiteExternalId.id, siteId: diveSiteExternalId.siteId, externalId: diveSiteExternalId.externalId, accountId: diveSiteExternalId.accountId })
+    .from(diveSiteExternalId).where(and(eq(diveSiteExternalId.source, source), inArray(diveSiteExternalId.siteId, sites)));
+  const { toPublic, toPrivate } = settledRows(rows, accountId, remote);
+  const updatedAt = new Date();
+  if (toPublic.length > 0) await tx.update(diveSiteExternalId).set({ accountId: null, updatedAt }).where(inArray(diveSiteExternalId.id, toPublic));
+  if (toPrivate.length > 0) await tx.update(diveSiteExternalId).set({ accountId, updatedAt }).where(inArray(diveSiteExternalId.id, toPrivate));
+}
+
+/** Which rows settling changes, decided in order: each change sees those before it, as one statement after another would. */
+function settledRows(
+  rows: { id: string; siteId: string; externalId: string; accountId: string | null }[], accountId: string, remote: { externalId: string; private: boolean }[],
+): { toPublic: string[]; toPrivate: string[] } {
+  const toPublic: string[] = [];
+  const toPrivate: string[] = [];
   for (const r of remote) {
-    const [row] = await tx.select().from(diveSiteExternalId)
-      .where(and(eq(diveSiteExternalId.source, source), eq(diveSiteExternalId.externalId, r.externalId)));
+    const row = rows.find((o) => o.externalId === r.externalId);
     if (!row) continue;
     const target = r.private ? accountId : null;
     if (r.private ? row.accountId !== null : row.accountId !== accountId) continue;
-    const [clash] = await tx.select({ id: diveSiteExternalId.id }).from(diveSiteExternalId)
-      .where(and(sameKey(row.siteId, source, target), ne(diveSiteExternalId.id, row.id)));
-    if (clash) continue;
-    await tx.update(diveSiteExternalId).set({ accountId: target, updatedAt: new Date() }).where(eq(diveSiteExternalId.id, row.id));
+    if (rows.some((o) => o.siteId === row.siteId && o.accountId === target && o.id !== row.id)) continue;
+    row.accountId = target;
+    (target === null ? toPublic : toPrivate).push(row.id);
   }
+  return { toPublic, toPrivate };
 }
 
 /** The remote site nearest to the logbook site within `MATCH_WITHIN_M` whose name matches, or none. */

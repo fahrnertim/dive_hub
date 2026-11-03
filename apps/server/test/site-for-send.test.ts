@@ -171,6 +171,23 @@ describe.skipIf(!(await databaseReachable()))('the send finds or creates the sit
     }
   });
 
+  it('logs a site made at SSI whose ID could not be stored', async () => {
+    const site = await newSite('Orphan Reef', 25);
+    const holder = await newSite('Orphan Holder', 26);
+    // The ID SSI will give the new site is already held here, so storing it fails after SSI made the site.
+    const next = String(Math.max(9_000_000, ...ctx.fakeSsi.sites.map((x) => x.odin_dive_sites_id)) + 1);
+    await t.db.transaction((tx) => storeId(tx, { siteId: holder, source: 'ssi', externalId: next, accountId: null, actor: null }));
+    const adapter = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: ctx.fakeSsi.fetch }) });
+    const { account, access } = await adapter.signIn({ kind: 'password', login: 'x@example.com', password: 'ssi-password' });
+    const log = { error: vi.fn(), warn: () => undefined };
+    await expect(siteForSend(t.db, {
+      adapter, context: { connectionId: connectionX, accountId: account.id, access }, diverId: divers.x, siteId: site, source: 'ssi',
+      actor: { type: 'user', id: 'tim' }, log,
+    })).rejects.toThrow();
+    expect(log.error).toHaveBeenCalledOnce();
+    expect(log.error.mock.calls[0]![0]).toMatchObject({ externalId: next, site, source: 'ssi', account: accounts.x });
+  });
+
   it('a holder needs no connection of its own: sends at two new sites on a pool of one finish', async () => {
     const sites = [await newSite('Lone A', 23), await newSite('Lone B', 24)];
     const adapter = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: ctx.fakeSsi.fetch }) });

@@ -176,13 +176,15 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
         const plan = planSiteImport({ sources: row.sources, area: row.area, incoming, existing, createSites: row.createSites });
         const work = [...plan.creates.map((c) => ({ create: c })), ...plan.updates.map((u) => ({ update: u }))];
         const findings: SiteImportFinding[] = [];
+        // A create the plan counted but `create` skipped (its IDs are held privately) is not counted as made.
+        let skipped = 0;
         await setProgress(id, { step: 'saving', done: 0, total: work.length });
         for (let i = 0; i < work.length; i += BATCH) {
           await db.transaction(async (tx) => {
             for (const item of work.slice(i, i + BATCH)) {
               if ('create' in item) {
                 const siteId = await create(tx, actor, item.create);
-                if (!siteId) continue;
+                if (!siteId) { skipped += 1; continue; }
                 const near = item.create.near;
                 if (near) findings.push({ kind: 'near', siteId, name: item.create.values.name!, nearSiteId: near.siteId, nearName: near.name, distanceM: near.distanceM });
               } else {
@@ -195,7 +197,8 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
           });
           await setProgress(id, { step: 'saving', done: Math.min(i + BATCH, work.length), total: work.length });
         }
-        await db.update(siteImport).set({ status: 'done', counts: plan.counts, findings, finishedAt: new Date() }).where(eq(siteImport.id, id));
+        const counts = { ...plan.counts, created: plan.counts.created - skipped };
+        await db.update(siteImport).set({ status: 'done', counts, findings, finishedAt: new Date() }).where(eq(siteImport.id, id));
       } catch (error) {
         const code: ProblemCode = error instanceof SiteSourceError
           ? (error.reason === 'rate_limited' ? 'source_rate_limited' : 'source_unavailable')

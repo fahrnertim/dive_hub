@@ -673,3 +673,42 @@ describe.skipIf(!(await databaseReachable()))('a field the Provider does not imp
     expect(rec.maxDepthM).not.toBe(30);
   }, 30_000);
 });
+
+describe.skipIf(!(await databaseReachable()))('the preview of an SSI dive import, for sites', () => {
+  let t: TestDatabase;
+  let ctx: Awaited<ReturnType<typeof createTestApp>>;
+
+  beforeAll(async () => {
+    t = await createTestDatabase();
+    ctx = await createTestApp(t, {
+      fakeSsi: createFakeSsi({
+        sites: [
+          { odin_dive_sites_id: 7001, odin_dive_sites_name: '', odin_dive_sites_lat: 27.1, odin_dive_sites_lon: 33.1, odin_countries_code_iso: 'EG' },
+          { odin_dive_sites_id: 7002, odin_dive_sites_name: 'Named Reef', odin_dive_sites_lat: 27.2, odin_dive_sites_lon: 33.2, odin_countries_code_iso: 'EG' },
+        ],
+      }),
+    });
+  });
+  afterAll(async () => {
+    await ctx?.app.close();
+    await t?.drop();
+  });
+
+  it('counts a nameless site of a dive import\'s preview as missing', async () => {
+    await createUser(ctx.auth, 'admin@example.com', 'admin');
+    const cookie = await signIn(ctx.app, 'admin@example.com');
+    const call = (method: 'GET' | 'POST' | 'PUT' | 'PATCH', url: string, payload?: object) =>
+      ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
+    expect((await call('PUT', '/api/admin/provider-site-data/ssi', { allowed: true, confirm: true })).statusCode).toBe(200);
+    const own = ((await call('GET', '/api/divers')).json() as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
+    const connectionId = (await call('POST', '/api/connections/ssi', {
+      diverId: own, login: 'erika@example.com', password: 'ssi-password', keepSignedIn: false,
+    })).json().id as string;
+    await call('PATCH', `/api/connections/${connectionId}`, { diveImport: { mode: 'create' } });
+    ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2025-05-01 10:00', depthM: 12, minutes: 30, siteId: 7001 }));
+    ctx.fakeSsi.addDive(ERIKA, handTypedDive({ at: '2025-05-02 10:00', depthM: 12, minutes: 30, siteId: 7002 }));
+    const preview = (await call('GET', `/api/connections/${connectionId}/dive-import`)).json() as { sitesAllowed: boolean; sites: Record<string, number> };
+    // Allowed, the named new site would be made; the nameless one can't be.
+    expect(preview).toMatchObject({ sitesAllowed: true, sites: { create: 1, missing: 1 } });
+  });
+});

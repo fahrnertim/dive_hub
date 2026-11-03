@@ -12,6 +12,7 @@ import { SiteError } from '../../sites/site-error.js';
 import type { SiteSource } from '../../sites/sources.js';
 import { keyLease, realClock, type Clock } from '../lease-service.js';
 import type { ActionContext, ProviderAdapter, RemoteSite } from '../provider.js';
+import type { ProviderLog } from '../waiting-push/waiting-push-queue.js';
 
 export type SiteForSend = 'had' | 'matched' | 'created' | 'none';
 
@@ -24,6 +25,7 @@ export async function siteForSend(db: Db, s: {
   adapter: ProviderAdapter; context: ActionContext; diverId: string; siteId: string | null; source: SiteSource; actor: Actor;
   /** Where the wait for the site lock takes its time from. */
   clock?: Clock;
+  log?: ProviderLog;
 }): Promise<SiteForSend> {
   const sites = s.adapter.diveSites;
   if (!s.siteId || !sites?.create) return 'none';
@@ -44,7 +46,7 @@ export async function siteForSend(db: Db, s: {
 
 /** Under the lock: a logbook site nearby, else a site made at the Provider; its ID stored for the account. */
 async function findOrMake(
-  db: Db, s: { context: ActionContext; source: SiteSource; actor: Actor }, site: typeof diveSite.$inferSelect, position: { latitude: number; longitude: number },
+  db: Db, s: { context: ActionContext; source: SiteSource; actor: Actor; log?: ProviderLog }, site: typeof diveSite.$inferSelect, position: { latitude: number; longitude: number },
   account: string, sites: NonNullable<ProviderAdapter['diveSites']>,
 ): Promise<SiteForSend> {
   // Another account's private site is never listed (the adapter drops it).
@@ -73,6 +75,11 @@ async function findOrMake(
 
   // The ID `create` answers is the one used: the adapter's kept logbook read doesn't list the new site yet.
   const created = await sites.create!(s.context, { name: site.name, position, country: site.country, waterType: site.waterType });
-  await db.transaction((tx) => storeId(tx, { siteId: site.id, source: s.source, externalId: created, accountId: account, actor: null }));
+  try {
+    await db.transaction((tx) => storeId(tx, { siteId: site.id, source: s.source, externalId: created, accountId: account, actor: null }));
+  } catch (err) {
+    s.log?.error({ err, site: site.id, source: s.source, externalId: created, account }, 'a site made at the Provider could not be stored; it is orphaned there');
+    throw err;
+  }
   return 'created';
 }

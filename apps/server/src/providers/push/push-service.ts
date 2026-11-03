@@ -514,7 +514,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
           // The Dive's site as it is under the lease, not as it was before.
           const [now] = await db.select({ siteId: dive.siteId }).from(dive).where(eq(dive.id, diveId));
           await siteForSend(db, {
-            adapter, context: ctx, diverId: first.row.diverId, siteId: now?.siteId ?? null, source: bySend.source, actor: { type: 'user', id: userId },
+            adapter, context: ctx, diverId: first.row.diverId, siteId: now?.siteId ?? null, source: bySend.source, actor: { type: 'user', id: userId }, log,
           });
         }
         await settleBuddies(ctx);
