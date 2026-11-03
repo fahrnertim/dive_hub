@@ -1200,7 +1200,7 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
 
 ## 5. Accessibility and feel
 - **WCAG 2.2 AA:** contrast, labels, keyboard, one h1 per screen and a title per page, focus on the new page's
-  heading after navigation, announcements for results ([design system](design-system.md#rules-every-page-follows)).
+  heading after navigation (or on the section a link opened, such as a Connection's settings), announcements for results ([design system](design-system.md#rules-every-page-follows)).
   A native app follows the platform's equivalents (VoiceOver, TalkBack, Dynamic Type). *Web:* `lib/page.ts`, `lib/announce.ts`.
 - **Focus never falls to nothing:** when a row or button disappears, focus goes to the next row or the panel's
   heading; when a form closes, back to the button that opened it. *Web:* `lib/focus.ts`.
