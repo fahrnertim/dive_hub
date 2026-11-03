@@ -382,6 +382,25 @@ test("an Import's result says its new dives weren't sent and leads to the Connec
   }
 });
 
+test("the link to a Connection's settings focuses them also when the page and its data are already loaded", { tag: ['@account'] }, async ({ page, request }) => {
+  await connectSsi(request);
+  const id = await deletableDive(request);
+  try {
+    const connectionId = await ssiConnectionOf(request, id);
+    await fetchState(request, connectionId, { created: 1, unsent: [id] });
+    // The settings page's code and the Connections are loaded first: the section's heading and the page's h1 then
+    // appear together, and the page's move to its h1 must not take the focus back.
+    await page.goto('/#/settings/connections');
+    await expect(page.getByRole('heading', { name: 'Automatic: Erika' })).toBeVisible();
+    await page.goto('/#/review?tab=imports');
+    await expect(page.getByText('1 new dive wasn’t sent to SSI by itself.')).toBeVisible();
+    await page.getByRole('link', { name: 'Open the SSI settings to send them' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Automatic: Erika' })).toBeFocused();
+  } finally {
+    await leave(request);
+  }
+});
+
 test('a dive already at the Provider is decided under Needs your decision', { tag: ['@account'] }, async ({ page, request }) => {
   await connectSsi(request);
   const id = await deletableDive(request);

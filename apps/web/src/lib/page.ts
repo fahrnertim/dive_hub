@@ -17,11 +17,20 @@ export function usePageTitle(title: string | undefined) {
  * After moving to another page (not on the first load, and not when only the query changes, such as
  * the logbook's Diver filter): scroll to the top and put focus on the new page's h1, so keyboard and
  * screen reader users start at the new content (WCAG 2.4.3). Pages load data first, so this waits
- * for the h1 to appear, for up to two seconds; then it falls back to <main>.
+ * for the h1 to appear, for up to two seconds; then it falls back to <main>. A page that puts the focus somewhere in
+ * its content itself (a link to a Connection's settings) keeps it there.
  */
 export function useFocusOnNavigate(route: string) {
   const path = route.split('?')[0];
   const first = useRef(true);
+  // What had the focus when the address changed, read while rendering: the new page's own effects run before this
+  // hook's, so by then the focus may already be where the page put it.
+  const seenPath = useRef(path);
+  const before = useRef<Element | null>(null);
+  if (seenPath.current !== path) {
+    seenPath.current = path;
+    before.current = document.activeElement;
+  }
   useEffect(() => {
     if (first.current) {
       first.current = false;
@@ -30,7 +39,10 @@ export function useFocusOnNavigate(route: string) {
     scrollTo(0, 0);
     const started = performance.now();
     let frame = 0;
+    const main = document.getElementById('main');
     const focus = () => {
+      const active = document.activeElement;
+      if (active && active !== before.current && active !== main && main?.contains(active)) return;
       const heading = document.querySelector<HTMLElement>('#main h1');
       if (heading) {
         heading.tabIndex = -1;
@@ -38,7 +50,7 @@ export function useFocusOnNavigate(route: string) {
       } else if (performance.now() - started < 2000) {
         frame = requestAnimationFrame(focus);
       } else {
-        document.getElementById('main')?.focus({ preventScroll: true });
+        main?.focus({ preventScroll: true });
       }
     };
     frame = requestAnimationFrame(focus);
