@@ -1,7 +1,7 @@
 ---
 title: The Connection's settings get the focus reliably when opened from an Import's result
 summary: waiting-pushes.spec.ts:368 fails now and then (CI on PR #15, locally once) - the "Automatic: <Diver>" heading isn't focused after the link from an Import's result; find why and make the focus reliable, not the test looser.
-status: draft
+status: done
 risk: low
 date: 2026-10-31
 ---
@@ -11,6 +11,16 @@ date: 2026-10-31
 ## Goal
 The link "Open the SSI settings to send them" on an Import's result always puts the focus on that Connection's
 settings heading. `waiting-pushes.spec.ts:368` passes every time, with no retries added and no wait made looser.
+
+## Done (2026-11-03, branch `flaky-settings-focus`)
+- Cause: not ProviderAutomation's effect. After a route change, `useFocusOnNavigate` (apps/web/src/lib/page.ts) puts
+  the focus on the page's h1 on the next frame. When the Account page's data was already cached (the settings visited
+  before), the Connection's heading took the focus at once, and the hook moved it to the h1 a frame later. With nothing
+  cached, the heading mounted only after the h1 had the focus and took it last, so the test passed when run alone.
+- Fix: the hook remembers what had the focus before the route changed, and leaves the focus where it is when the new
+  page has put it somewhere else in its content.
+- Test: `waiting-pushes.spec.ts`, "the link to a Connection's settings focuses them also when the page and its data
+  are already loaded" visits the settings first; red 3 of 3 before the fix, green after.
 
 ## State
 - CI on PR #15 (2026-10-31, run 41191520153): `expect(heading 'Automatic: Erika').toBeFocused()` timed out after

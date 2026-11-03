@@ -206,7 +206,7 @@ It also sweeps every page from 320 to 1440 px and checks text at 200 % ([respons
 - **One `h1` per page.** It is the page's title, in `PageHeader` (single forms: `<Panel narrow level={1}>`).
   Headings inside a panel go one level down (`h2.subheading`).
 - **The browser tab names the page.** Each page calls `usePageTitle()` (`lib/page.ts`) with its
-  h1 text, giving e.g. "Dive 42 – Dive Hub". After navigating, focus moves to the new h1.
+  h1 text, giving e.g. "Dive 42 – Dive Hub". After navigating, focus moves to the new h1, unless the link opened a section of the page (a Connection's settings), which then has it.
 - **axe-core finds nothing** (WCAG 2.2 AA plus best practices), in both themes.
 - **Nothing scrolls sideways**, neither the page nor a table, from 320 to 1440 px and at 200 % text (WCAG 1.4.10,
   1.4.4). A table that would scroll uses `cards` or `stacked` instead. The `Table` box is positioned so that
