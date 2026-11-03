@@ -993,6 +993,17 @@ export const diveLease = pgTable(
 );
 
 /**
+ * One holder per key at a time (src/providers/lease-service.ts, `keyLease`), across every app process: a site's
+ * find-or-make at a Provider (`site-for-send:<site>:<account>`) or an account's buddy list (`buddies:<account>`). Held
+ * until `locked_until` by `holder`, removed when the work ends. A row left by a process that crashed runs out by itself.
+ */
+export const providerLease = pgTable('provider_lease', {
+  key: text('key').primaryKey(),
+  holder: uuid('holder').notNull(),
+  lockedUntil: timestamp('locked_until', { withTimezone: true }).notNull(),
+});
+
+/**
  * A Dive whose remote dive was not in the Provider's logbook at a complete, fresh read (ADR 0051): waits for the User's
  * choice. One per Dive and Provider. Whether it still waits (the Dive is live, this remote dive is still its current
  * one) is worked out on reading; a later read that lists the dive removes it.
