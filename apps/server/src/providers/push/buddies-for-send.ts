@@ -7,10 +7,9 @@ import { and, eq, inArray } from 'drizzle-orm';
 import type { Db } from '../../db/client.js';
 import { diver, diverExternalId } from '../../db/schema.js';
 import { participantsOf } from '../../dives/dive-service.js';
-import { locked } from '../advisory-lock.js';
 import { nameDiffers } from '../buddies/buddy-names.js';
 import { forgetEntry, listAccountOf, remember, rememberedFor } from '../list-entries.js';
-import { realClock, type Clock } from '../lease-service.js';
+import { keyLease, realClock, type Clock } from '../lease-service.js';
 import { ProviderError, type ActionContext, type DiverSource, type ProviderAdapter, type RemoteBuddy } from '../provider.js';
 
 export interface BuddiesForSend {
@@ -47,7 +46,7 @@ export async function buddiesForSend(db: Db, s: {
   const accounts = new Map((await db.select({ diverId: diverExternalId.diverId, externalId: diverExternalId.externalId }).from(diverExternalId)
     .where(and(inArray(diverExternalId.diverId, diverIds), eq(diverExternalId.source, s.source)))).map((r) => [r.diverId, r.externalId]));
 
-  return locked(db, `buddies:${accountId}`, s.source, s.clock ?? realClock, async () => {
+  return keyLease(db, { key: `buddies:${accountId}`, source: s.source, clock: s.clock ?? realClock }, async () => {
     let list = await buddies.find(s.context);
     const rememberedBy = await rememberedFor(db, accountId, diverIds);
     // The list may be a read from moments ago: an entry is forgotten only when a fresh read misses it too.

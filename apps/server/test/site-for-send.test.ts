@@ -171,6 +171,24 @@ describe.skipIf(!(await databaseReachable()))('the send finds or creates the sit
     }
   });
 
+  it('a holder needs no connection of its own: sends at two new sites on a pool of one finish', async () => {
+    const sites = [await newSite('Lone A', 23), await newSite('Lone B', 24)];
+    const adapter = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: ctx.fakeSsi.fetch }) });
+    const { account, access } = await adapter.signIn({ kind: 'password', login: 'x@example.com', password: 'ssi-password' });
+    const before = siteSaves();
+    const small = new pg.Pool({ connectionString: t.pool.options.connectionString, max: 1 });
+    try {
+      const once = (siteId: string) => siteForSend(drizzle(small, { schema }), {
+        adapter, context: { connectionId: connectionX, accountId: account.id, access }, diverId: divers.x, siteId, source: 'ssi',
+        actor: { type: 'user', id: 'tim' },
+      });
+      expect(await Promise.all(sites.map(once))).toEqual(['created', 'created']);
+      expect(siteSaves()).toBe(before + 2);
+    } finally {
+      await small.end();
+    }
+  });
+
   it('makes the site when the ID of the logbook match is stored by another process after the held IDs were read', async () => {
     const site = await newSite('Raced Reef', 22);
     const other = await newSite('Raced Reef Far', 22.5);
