@@ -10,13 +10,13 @@ import { diver as diverTable } from '../../db/schema.js';
 import { tidyName } from '../../divers/diver-name.js';
 import type { DiverDetails, DiverService } from '../../divers/diver-service.js';
 import type { Caller } from '../../http/caller.js';
-import { locked } from '../advisory-lock.js';
 import { foldName, nameDiffers } from './buddy-names.js';
 import type { ConnectionService } from '../connection-service.js';
-import { realClock } from '../lease-service.js';
+import { keyLease, realClock } from '../lease-service.js';
 import { listAccountOf, remember, rememberedEntries } from '../list-entries.js';
 import type { ActionContext, DiverSource, RemoteBuddy } from '../provider.js';
 import { named, ProviderServiceError, type ProviderRegistry } from '../registry.js';
+import type { ProviderLog } from '../waiting-push/waiting-push-queue.js';
 
 export interface Buddy {
   /** The entry's ID at the Provider, to link it with. */
@@ -30,7 +30,7 @@ export interface Buddy {
   matches: boolean;
 }
 
-export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; connections: ConnectionService; divers: DiverService }) {
+export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; connections: ConnectionService; divers: DiverService; log: ProviderLog }) {
   const { db, registry, connections, divers } = deps;
 
   /** The Connection and the adapter's `buddies`; `provider_unsupported` at a Provider without. */
@@ -98,7 +98,7 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
 
   /** Runs `fn` with the Connection's access, holding the lock the send holds for the list (the send takes access first). */
   function underLock<T>(row: Parameters<ConnectionService['withAccess']>[0], source: DiverSource, accountId: string, fn: (ctx: ActionContext) => Promise<T>) {
-    return connections.withAccess(row, (ctx) => locked(db, `buddies:${accountId}`, source, realClock, () => fn(ctx)));
+    return connections.withAccess(row, (ctx) => keyLease(db, { key: `buddies:${accountId}`, source, clock: realClock, log: deps.log }, () => fn(ctx)));
   }
 
   /** Links the entry to the Diver: an entry with an account gives the Diver that account (the rules of the PUT), and is remembered. */
@@ -120,7 +120,7 @@ export function createBuddyService(deps: { db: Db; registry: ProviderRegistry; c
     }
     if (!accountId) throw new ProviderServiceError('provider_unsupported');
     // Under the list's lock, so a send settling the list does not see a Diver half made.
-    return locked(db, `buddies:${accountId}`, source, realClock, async () => {
+    return keyLease(db, { key: `buddies:${accountId}`, source, clock: realClock, log: deps.log }, async () => {
       const id = await divers.createExternal(actor, name, undefined, buddy.details);
       await remember(db, accountId, id, buddy.entryId);
       return { id, name };

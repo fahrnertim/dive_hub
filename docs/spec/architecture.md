@@ -526,7 +526,9 @@ Implemented:
   request waits what is left of the pause, or looks again every 250 ms, for at most 30 s, then `provider_busy`). Leases
   hold at most 5 minutes, so a crashed process frees them by itself. No advisory locks, no transaction around a Provider
   call. Times come from the app's clock (`Clock`; `skippingClock` in tests and the browser tests' server). The SSI logbook
-  snapshot stays per process. Migration 0014 (generated, reviewed: one table, one nullable column).
+  snapshot stays per process. Migration 0014 (generated, reviewed: one table, one nullable column). Since backlog 0005,
+  `provider_lease` (one row per key, `keyLease`) holds a site's find-or-make and an account's buddy list the same way
+  (migration 0054).
 - **Deleting at several Providers** (`pushes.removeAt`): each checked first (Connection, signed in, `exists` at the
   adapter), then deleted under the Dive's leases at all; one that still fails stops it, keeps the Dive, and the refusal
   carries `providers` with each `copy`. At one Provider as before, without a check.
@@ -600,7 +602,7 @@ Implemented:
 - **The site step of a send** (manual or Push run; `providers/push/site-for-send.ts`): the ID sent is the remote dive's ID if
   usable, else the public one, else the Diver's own private one, never another account's. With none, the send finds a
   nearby same-name site in the account's SSI logbook whose ID no site here holds, else creates a private site
-  (`save_divesite`). One find-or-make per site and account, under an advisory lock.
+  (`save_divesite`). One find-or-make per site and account, under a lease (`provider_lease`, `keyLease`; backlog 0005).
 - **SSI:** logbook rows carry the private flag; a missing flag is 'unknown' and stored private to the account, never public.
   `get_divesite` and `save_divesite`: [SSI app API](../references/ssi-app-api.md#sites-save_divesite-get_divesite-checked-2026-10-24-app-5043).
 - **Route:** `PUT /api/connections/{id}/dive-sites/{siteId}` asks SSI first: unknown is 422 `provider_site_unknown`,

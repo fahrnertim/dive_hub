@@ -10,7 +10,7 @@ import { getSite, searchSites } from '../src/mcp/tools-sites.js';
 import { loadOutgoingDive } from '../src/providers/push/outgoing-dive.js';
 import type { SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { siteForProvider } from '../src/sites/provider-sites.js';
-import { accountOf, storeId } from '../src/sites/site-ids.js';
+import { accountOf, settleVisibility, storeId } from '../src/sites/site-ids.js';
 import { createFakeSsi, handTypedDive } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -62,8 +62,9 @@ describe.skipIf(!(await databaseReachable()))('private SSI site IDs', () => {
     });
     expect(started.statusCode).toBe(202);
     await ctx.siteImports.run(started.json().id);
-    const done = (await call('GET', `/api/admin/site-imports/${started.json().id}`, cookies.admin)).json() as { status: string };
+    const done = (await call('GET', `/api/admin/site-imports/${started.json().id}`, cookies.admin)).json() as { status: string; counts: { created: number } };
     expect(done.status).toBe('done');
+    return done;
   };
   const toolContext = (who: 'a' | 'b') => ({ tx: t.db as unknown as Tx, userId: users[who], diverIds: [divers[who]], positions: false });
 
@@ -233,5 +234,45 @@ describe.skipIf(!(await databaseReachable()))('private SSI site IDs', () => {
     // The site can't have two public SSI IDs: 701 stays A's.
     const [row] = await t.db.select().from(diveSiteExternalId).where(eq(diveSiteExternalId.externalId, '701'));
     expect(row).toMatchObject({ siteId: both.id, accountId: accounts.a });
+  });
+
+  it('counts no create the import skipped because the ID is held privately', async () => {
+    const held = await site('Held Reef', { latitude: 42, longitude: 42 });
+    await store(held.id, '5005', null);
+    await store(held.id, '5006', accounts.a);
+    ssiAnswer = [{
+      source: 'ssi', externalId: '5006', sameAs: {},
+      values: { name: 'Far Away Reef', position: { latitude: 50, longitude: 50 }, country: 'EG', waterBody: null, description: null, maxDepthM: null, waterType: null },
+    }];
+    const done = await runSiteImport();
+    expect((await call('GET', '/api/dive-sites?q=Far%20Away%20Reef', cookies.a)).json()).toMatchObject({ sites: [] });
+    expect(done.counts.created).toBe(0);
+  });
+
+  it('settle skips a change that would give the site two public rows', async () => {
+    const both = await site('Settle Clash', { latitude: 43, longitude: 43 });
+    await store(both.id, '5001', null);
+    await store(both.id, '5002', accounts.a);
+    await t.db.transaction((tx) => settleVisibility(tx, 'ssi', accounts.a, [{ externalId: '5002', private: false }]));
+    const rows = await t.db.select({ externalId: diveSiteExternalId.externalId, accountId: diveSiteExternalId.accountId }).from(diveSiteExternalId)
+      .where(eq(diveSiteExternalId.siteId, both.id));
+    expect(rows.sort((x, y) => x.externalId.localeCompare(y.externalId))).toEqual([
+      { externalId: '5001', accountId: null }, { externalId: '5002', accountId: accounts.a },
+    ]);
+  });
+
+  it('settle makes a public row private and a private one public in one call', async () => {
+    const pub = await site('Settle Public', { latitude: 44, longitude: 44 });
+    const priv = await site('Settle Private', { latitude: 45, longitude: 45 });
+    await store(pub.id, '5003', null);
+    await store(priv.id, '5004', accounts.a);
+    await t.db.transaction((tx) => settleVisibility(tx, 'ssi', accounts.a, [
+      { externalId: '5003', private: true }, { externalId: '5004', private: false }, { externalId: '5999', private: true },
+    ]));
+    const rows = await t.db.select({ externalId: diveSiteExternalId.externalId, accountId: diveSiteExternalId.accountId }).from(diveSiteExternalId)
+      .where(inArray(diveSiteExternalId.externalId, ['5003', '5004']));
+    expect(rows.sort((x, y) => x.externalId.localeCompare(y.externalId))).toEqual([
+      { externalId: '5003', accountId: accounts.a }, { externalId: '5004', accountId: null },
+    ]);
   });
 });

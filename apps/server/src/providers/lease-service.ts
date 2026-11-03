@@ -5,7 +5,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, isNull, lt, lte, or } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { connection, diveLease, type ConnectionRow } from '../db/schema.js';
+import { connection, diveLease, providerLease, type ConnectionRow } from '../db/schema.js';
 import type { ProviderLog } from './waiting-push/waiting-push-queue.js';
 
 /** Where leases take their time from. Every app process on one database must agree on it (NTP is enough). */
@@ -32,6 +32,39 @@ export class LeaseBusy extends Error {
 
 /** The Connection's turn didn't come within MAX_WAIT_MS. */
 export class TurnTimeout extends Error {}
+
+/**
+ * Runs `fn` holding the lease on `key`: one holder per key at a time in every app process (a site's find-or-make, which
+ * can't be undone at the Provider, or an account's buddy list). A waiter looks again every POLL_MS for up to MAX_WAIT_MS,
+ * then gets LeaseBusy naming `source`. Each statement borrows a pool connection and gives it back: nothing is held while
+ * waiting or while `fn` runs. Given back when `fn` ends, unless another holder took it over after it ran out (LEASE_MS);
+ * a failed release is logged and the lease runs out by itself.
+ */
+export async function keyLease<T>(
+  db: Db, lease: { key: string; source: string; clock: Clock; log: ProviderLog }, fn: () => Promise<T>,
+): Promise<T> {
+  const { key, source, clock, log } = lease;
+  const holder = randomUUID();
+  const started = clock.now();
+  for (;;) {
+    const now = clock.now();
+    const won = await db.insert(providerLease).values({ key, holder, lockedUntil: new Date(now + LEASE_MS) })
+      .onConflictDoUpdate({
+        target: providerLease.key, set: { holder, lockedUntil: new Date(now + LEASE_MS) },
+        setWhere: lt(providerLease.lockedUntil, new Date(now)),
+      })
+      .returning({ holder: providerLease.holder });
+    if (won.length > 0) break;
+    if (clock.now() - started + POLL_MS > MAX_WAIT_MS) throw new LeaseBusy(source);
+    await clock.sleep(POLL_MS);
+  }
+  try {
+    return await fn();
+  } finally {
+    await db.delete(providerLease).where(and(eq(providerLease.key, key), eq(providerLease.holder, holder)))
+      .catch((err: unknown) => log.error({ err, key }, 'a lease could not be given back; it runs out by itself'));
+  }
+}
 
 export function createLeaseService(deps: { db: Db; clock?: Clock; log: ProviderLog }) {
   const { db } = deps;

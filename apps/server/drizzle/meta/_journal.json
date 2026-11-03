@@ -379,6 +379,13 @@
       "when": 1793471731408,
       "tag": "0053_living_solo",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1793690227293,
+      "tag": "0054_military_garia",
+      "breakpoints": true
     }
   ]
 }

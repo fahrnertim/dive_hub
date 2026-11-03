@@ -4,7 +4,7 @@
 // never public (Review Focus 4). Clearing removes only the account's private row.
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { diveSiteExternalId, revision } from '../src/db/schema.js';
+import { diveSiteExternalId, diverExternalId, revision } from '../src/db/schema.js';
 import { accountOf, storeId } from '../src/sites/site-ids.js';
 import { createFakeSsi, type FakeSsiSite } from './fake-ssi.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';
@@ -153,6 +153,74 @@ describe.skipIf(!(await databaseReachable()))('picking a site ID through the Con
     expect((await pick(site, null)).statusCode).toBe(200);
     expect(await rowsOf(site)).toEqual([{ externalId: '4109', accountId: null }]);
     expect(ctx.fakeSsi.calls.filter((c) => c.what === 'get_divesite')).toEqual([]);
+  });
+
+  it('answers provider_unavailable, not external_id_taken, when SSI can\'t be asked and another account holds the ID privately', async () => {
+    const site = await newSite('Hidden holder');
+    const holder = await newSite('Ann\'s private');
+    const annAccount = (await t.db.select({ id: diverExternalId.id }).from(diverExternalId)
+      .where(and(eq(diverExternalId.source, 'ssi'), eq(diverExternalId.externalId, String(ACCOUNT_Y)))))[0]!.id;
+    await t.db.transaction((tx) => storeId(tx, { siteId: holder, source: 'ssi', externalId: '4120', accountId: annAccount, actor: null }));
+    ctx.fakeSsi.failWith = 503;
+    const response = await pick(site, '4120');
+    expect(response.statusCode).toBe(502);
+    expect(response.json()).toMatchObject({ code: 'provider_unavailable' });
+    expect(await rowsOf(site)).toEqual([]);
+  });
+
+  it('still answers external_id_taken when SSI can\'t be asked and a public row holds the ID', async () => {
+    const site = await newSite('Public holder asks');
+    const holder = await newSite('Public holder');
+    await t.db.transaction((tx) => storeId(tx, { siteId: holder, source: 'ssi', externalId: '4125', accountId: null, actor: null }));
+    ctx.fakeSsi.failWith = 503;
+    const response = await pick(site, '4125');
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toMatchObject({ code: 'external_id_taken' });
+  });
+
+  it('stores a public ID over the account\'s own private row on the site, with a Revision', async () => {
+    const same = await newSite('Now public');
+    await t.db.transaction((tx) => storeId(tx, { siteId: same, source: 'ssi', externalId: '4121', accountId: account, actor: null }));
+    ssiSite(4121, { odin_dive_sites_is_private: 0 });
+    expect((await pick(same, '4121')).json()).toEqual({ externalId: '4121', private: false });
+    expect(await rowsOf(same)).toEqual([{ externalId: '4121', accountId: null }]);
+    expect(await revisionsOf(same)).toHaveLength(1);
+
+    const other = await newSite('Replaced private');
+    await t.db.transaction((tx) => storeId(tx, { siteId: other, source: 'ssi', externalId: '4122', accountId: account, actor: null }));
+    ssiSite(4123, { odin_dive_sites_is_private: 0 });
+    expect((await pick(other, '4123')).json()).toEqual({ externalId: '4123', private: false });
+    expect(await rowsOf(other)).toEqual([{ externalId: '4123', accountId: null }]);
+  });
+
+  it('refuses an ID that doesn\'t match SSI\'s pattern', async () => {
+    const site = await newSite('Pattern');
+    const response = await pick(site, 'abc');
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ code: 'invalid_input' });
+    expect(ctx.fakeSsi.calls).toEqual([]);
+    expect(await rowsOf(site)).toEqual([]);
+  });
+
+  it('stores private when neither get nor find says', async () => {
+    const site = await newSite('Silent');
+    ssiSite(4124, { odin_dive_sites_is_private: null });
+    expect((await pick(site, '4124')).json()).toEqual({ externalId: '4124', private: true });
+    expect(await rowsOf(site)).toEqual([{ externalId: '4124', accountId: account }]);
+  });
+
+  it('answers provider_not_connected when the Connection\'s Diver has no SSI account', async () => {
+    const site = await newSite('No account');
+    ssiSite(4126, { odin_dive_sites_is_private: 0 });
+    const [row] = await t.db.select().from(diverExternalId).where(eq(diverExternalId.id, account));
+    await t.db.delete(diverExternalId).where(eq(diverExternalId.id, account));
+    try {
+      const response = await pick(site, '4126');
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toMatchObject({ code: 'provider_not_connected' });
+    } finally {
+      await t.db.insert(diverExternalId).values(row!);
+    }
   });
 
   it('is for the User\'s own Connections and live sites', async () => {

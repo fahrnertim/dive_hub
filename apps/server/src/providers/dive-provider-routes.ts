@@ -72,6 +72,8 @@ export const diveProviderRoutes: FastifyPluginAsyncTypebox<DiveProviderRouteDeps
       description: "The Provider is asked about the ID first. One it calls public is stored public (with a Revision); the account's own "
         + "private one is stored private to the Connection's account; an ID it has no site for (also another account's private site) is "
         + '422 provider_site_unknown and nothing is stored. When it does not say or cannot be asked, the ID is stored private, never public. '
+        + "A public ID replaces the account's private ID of the site. 409 provider_not_connected when the Connection's Diver has no account "
+        + 'there; 502 provider_unavailable when the Provider cannot be asked and another account holds the ID privately. '
         + "null clears the account's private ID of the site only (the public ID is cleared with PUT /api/dive-sites/{id}/external-ids/{source}). "
         + '409 external_id_taken when another site has the ID.',
       params: Type.Object({ id: Type.String({ format: 'uuid' }), siteId: Type.String({ format: 'uuid' }) }),

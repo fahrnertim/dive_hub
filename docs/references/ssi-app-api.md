@@ -433,7 +433,7 @@ operator's risk: **SSI gives no licence for it**, and the EU database right prot
   | `odin_countries_code_iso` | ISO 3166-1 **alpha-3**; 639 empty; withdrawn `ANT` (Netherlands Antilles) still used | country (alpha-2; `ANT` → none) |
   | `bow` | body of water: `salt` 20,664, `fresh` 2,992, `artificial` 835, missing 19 | water type (artificial → none) |
   | `odin_dive_sites_deleted` | `0`, or `""` for 66 sites | truthy → left out; `""` is not deleted |
-  | `odin_dive_sites_is_private`, `_is_private_owner` | 43 private sites, with an SSI user ID; probably older private sites that got published (owner, 2026-10-06) [?] | **left out entirely** |
+  | `odin_dive_sites_is_private`, `_is_private_owner` | 43 private sites, with an SSI user ID; probably older private sites that got published (owner, 2026-10-06) [?] | **left out entirely**, so the Site import's `publishIds` never publishes an ID SSI flags private, and the public/private flip feared in backlog 0005 can't happen while that holds |
   | `odin_dive_sites_comment` | moderation notes, 18,217 non-empty; **contain submitters' IP addresses** | **never kept** |
   | `alias_names`, `alias_names_search` | other names, 7,623 sites | not kept (no field yet) |
   | `iso2` | a **language** code (`ja`, `el`), empty for 14,452; not a country | ignored |

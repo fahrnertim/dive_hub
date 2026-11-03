@@ -505,7 +505,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
       // The Participants' entries in the Provider's list, settled after the site and before the Dive is read.
       const settleBuddies = async (context: ActionContext) => {
         if (!adapter.accountSource) return;
-        keepBuddies(settled, await buddiesForSend(db, { adapter, context, ownerDiverId: first.row.diverId, diveId, source: adapter.accountSource }));
+        keepBuddies(settled, await buddiesForSend(db, { adapter, context, ownerDiverId: first.row.diverId, diveId, source: adapter.accountSource, log }));
       };
       const result = await leased(diveId, [adapter], () => connections.withAccess(conn, async (ctx) => {
         // The site at the Provider first, found or made (stored at once, so a retry after a sign-in makes none), then
@@ -514,7 +514,7 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
           // The Dive's site as it is under the lease, not as it was before.
           const [now] = await db.select({ siteId: dive.siteId }).from(dive).where(eq(dive.id, diveId));
           await siteForSend(db, {
-            adapter, context: ctx, diverId: first.row.diverId, siteId: now?.siteId ?? null, source: bySend.source, actor: { type: 'user', id: userId },
+            adapter, context: ctx, diverId: first.row.diverId, siteId: now?.siteId ?? null, source: bySend.source, actor: { type: 'user', id: userId }, log,
           });
         }
         await settleBuddies(ctx);
