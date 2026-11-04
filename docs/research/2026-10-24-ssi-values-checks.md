@@ -7,7 +7,7 @@ date: 2026-10-24
 
 # SSI checks of the dive type, tank, lead, surface interval and pressure curve
 
-Run by the controller with the kept token, announced in the session: `values start` on 2026-10-23, the owner's look in the app and `values finish` on 2026-10-24. Site 83913 (the one the earlier `write` check used). MySSI app on the owner's phone, German UI; app version 5.0.43 per the plan, not re-read on screen. Background: [the plan](../superpowers/plans/2026-10-23-ssi-both-ways.md), [the foundation checks](2026-10-23-ssi-foundation-checks.md), [the opportunities note](2026-10-22-ssi-app-opportunities.md). [T] means tested on the owner's account.
+Run by the controller with the kept token, announced in the session: `values start` on 2026-10-23, the owner's look in the app and `values finish` on 2026-10-24. Site 83913 (the one the earlier `write` check used). MySSI app on the owner's phone, German UI; app version 5.0.43 per the plan, not re-read on screen. Background: the plan, [the foundation checks](2026-10-23-ssi-foundation-checks.md), [the opportunities note](2026-10-22-ssi-app-opportunities.md). [T] means tested on the owner's account.
 
 ## What was sent, and what SSI stored
 

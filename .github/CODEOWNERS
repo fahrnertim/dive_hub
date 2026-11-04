@@ -1,0 +1,4 @@
+# The owner decides migrations, the schema and ADRs.
+/apps/server/drizzle/ @fahrnertim
+**/db/schema.ts @fahrnertim
+/docs/decisions/ @fahrnertim

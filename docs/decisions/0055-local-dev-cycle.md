@@ -1,13 +1,15 @@
 ---
 title: "ADR 0055: Feature work with Superpowers"
 summary: Local feature work follows obra/superpowers, installed as the marketplace plugin and enabled in the project settings. The flow is brainstorming, a design doc, writing-plans, then subagent-driven development in a fresh session, with its TDD, per-task review, fix loop, final review and branch finish. Designs and plans live in docs/superpowers/, as the plugin ships it. Our gates, ADRs, spec, architecture-review and the owner's merge stay. Overrides cover frontmatter, ADR drafts, test rules, review checklists, finishing a branch and protected paths. Superpowers' TDD replaces mattpocock tdd. The unattended path of ADR 0054 stays built and off.
-status: proposed
+status: superseded by 0065
 date: 2026-10-23
 ---
 
 # ADR 0055: Feature work with Superpowers
 
 ## Status
+Superseded by [ADR 0065](0065-work-runs-through-paperclip.md) – 2026-11-04. Original status below.
+
 Proposed – 2026-10-23. Drafted by an agent after the owner's choices of 2026-10-23 (below); the owner accepts it
 (or doesn't). Installed on 2026-10-23 (v7.0.0, commit bb92a77; the install slice, steps 1–6 below), with the
 owner's answers to the questions at the end.

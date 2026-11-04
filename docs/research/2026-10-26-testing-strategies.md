@@ -7,7 +7,7 @@ date: 2026-10-26
 
 # Testing strategies: fast checks with enough certainty
 
-The research that [backlog 0004](../backlog/0004-coverage-based-test-selection.md) asks for before its design. Web
+The research that backlog 0004 asks for before its design. Web
 research through the `researcher` subagent on 2026-10-26; our own numbers from
 [ADR 0023](../decisions/0023-faster-checks.md#amendment-2026-10-24-a-faster-pnpm-check-and-ci-as-the-only-full-check).
 Marks: [S] seen in the source, [I] inferred, [NV] not verified (often: only a search summary or a secondary source was
@@ -23,7 +23,7 @@ read).
 - Locally the check already runs only what changed since the last green run, browser tests by hand-kept area tags; CI
   runs everything and is the gate.
 
-*Measured again on 2026-10-26* ([design](../superpowers/specs/2026-10-26-faster-local-check-design.md#what-was-measured-2026-10-26)):
+*Measured again on 2026-10-26* (design):
 the same local plan took 334 s wall (229 tests, 2.6 s a test, ui-quality 42 % of worker time, axe at every check +33 s
 on ui-quality), 4 workers 284 s without timeouts. The 7.3 s did not reproduce; the ranking below was written before.
 

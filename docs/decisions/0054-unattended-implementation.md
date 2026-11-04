@@ -1,13 +1,15 @@
 ---
 title: "ADR 0054: Unattended implementation (step 2 of the automation ladder)"
 summary: An agent picks one ready task from docs/backlog/, builds it on a branch and opens a pull request that the owner reviews and merges; a GitHub Actions workflow runs it (not a cloud routine), protected paths and four stops are enforced in code, a drift report says when to step back down.
-status: proposed
+status: superseded by 0065
 date: 2026-10-23
 ---
 
 # ADR 0054: Unattended implementation (step 2 of the automation ladder)
 
 ## Status
+Superseded by [ADR 0065](0065-work-runs-through-paperclip.md) – 2026-11-04. Original status below.
+
 Proposed – 2026-10-23. Drafted by an agent; the owner accepts it (or doesn't). Numbered 0054 because 0047 was
 already taken by [push runs](0047-push-runs.md).
 

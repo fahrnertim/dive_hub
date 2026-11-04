@@ -14,12 +14,6 @@ apps/web/playwright-report/
 apps/web/e2e/.state/
 apps/web/review-output/
 
-# Unattended runs (ADR 0054): the agent's PR text and output
-.agent/
-
-# Superpowers working files: briefs, reports and review diffs of a run (ADR 0055)
-.superpowers/
-
 # desloppify: local scan state
 .desloppify/
 scorecard.png
