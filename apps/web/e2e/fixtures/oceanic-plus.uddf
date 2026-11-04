@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<uddf version="3.2.1" xmlns="http://www.streit.cc/uddf/3.2/">
+    <generator>
+        <manufacturer>
+            <contact>
+                <homepage>https://www.oceanicworldwide.com/it/oceanic-plus/</homepage>
+            </contact>
+        </manufacturer>
+        <version>0.0.1</version>
+        <datetime>2026-03-20T08:00:00.000Z</datetime>
+    </generator>
+    <divesite>
+        <site id="site_6a2b00c0ffee0000000e2e01">
+            <name>site_6a2b00c0ffee0000000e2e01</name>
+            <geography>
+                <location>site_6a2b00c0ffee0000000e2e01</location>
+                <latitude>18.3</latitude>
+                <longitude>-65.6</longitude>
+                <altitude>-1.0671948</altitude>
+            </geography>
+        </site>
+    </divesite>
+    <gasdefinitions>
+        <mix id="air">
+            <name>air</name>
+            <o2>0.21</o2>
+            <n2>0.79</n2>
+        </mix>
+    </gasdefinitions>
+    <profiledata>
+        <repetitiongroup id="repetition_group_6a2b00c0ffee0000000e2e01">
+            <dive id="dive_6a2b00c0ffee0000000e2e01">
+                <informationbeforedive>
+                    <link ref="site_6a2b00c0ffee0000000e2e01"/>
+                    <datetime>2025-12-06T10:05:20.000-00:04</datetime>
+                    <altitude>-1.0671948</altitude>
+                </informationbeforedive>
+                <samples>
+                    <waypoint>
+                        <depth>0.0</depth>
+                        <divetime>0.0</divetime>
+                        <switchmix ref="air"/>
+                        <divemode type="opencircuit"/>
+                    </waypoint>
+                    <waypoint>
+                        <depth>0.4</depth>
+                        <divetime>15.0</divetime>
+                        <temperature>300.15</temperature>
+                    </waypoint>
+                    <waypoint>
+                        <depth>3.25</depth>
+                        <divetime>30.0</divetime>
+                        <temperature>300.05</temperature>
+                    </waypoint>
+                    <waypoint>
+                        <depth>7.5</depth>
+                        <divetime>45.0</divetime>
+                        <temperature>299.95</temperature>
+                    </waypoint>
+                    <waypoint>
+                        <depth>12.4</depth>
+                        <divetime>60.0</divetime>
+                        <temperature>299.85</temperature>
+                    </waypoint>
+                    <waypoint>
+                        <depth>8.1</depth>
+                        <divetime>75.0</divetime>
+                        <temperature>299.9</temperature>
+                    </waypoint>
+                    <waypoint>
+                        <depth>0.3</depth>
+                        <divetime>90.0</divetime>
+                        <temperature>300</temperature>
+                    </waypoint>
+                </samples>
+                <tankdata id="tank_6a2b00c0ffee0000000e2e01">
+                    <link ref="air"/>
+                </tankdata>
+                <informationafterdive>
+                    <lowesttemperature>299.85</lowesttemperature>
+                    <greatestdepth>12.4</greatestdepth>
+                    <diveduration>85.0</diveduration>
+                    <equipmentused>
+                        <leadquantity>0.0</leadquantity>
+                        <link ref="tank_6a2b00c0ffee0000000e2e01"/>
+                    </equipmentused>
+                    <rating>
+                        <ratingvalue>8</ratingvalue>
+                    </rating>
+                </informationafterdive>
+            </dive>
+        </repetitiongroup>
+    </profiledata>
+</uddf>

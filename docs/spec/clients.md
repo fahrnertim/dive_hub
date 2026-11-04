@@ -249,10 +249,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Site imports:** see [Dive sites](#dive-sites).
 
 ### Imports
-- **Files:** FIT files (Garmin; the Suunto app's FIT export), the Suunto app's JSON export and zip archives of them
+- **Files:** FIT files (Garmin; the Suunto app's FIT export), the Suunto app's JSON export, UDDF files (the Oceanic+ app's
+  logbook export; any UDDF, read leniently) and zip archives of them
   (Garmin "Export Original", account exports), one file per request. The server recognises a file by its content, not
   its name ([ADR 0037](../decisions/0037-suunto-file-import-and-file-formats.md)): don't filter more strictly than by
-  the endings `.fit`, `.json`, `.zip`, and tell Suunto owners that the JSON holds far more than the FIT.
+  the endings `.fit`, `.json`, `.uddf`, `.zip`, and tell Suunto owners that the JSON holds far more than the FIT.
   (`POST /api/imports`, multipart field `file`), up to the server's limit (413 `upload_too_large`).
   *Web:* `api.ts` (`uploadFile`), `lib/importable.ts`.
 - **New words to translate (ADR 0037):** reasons `no_dive_file` (and the older `no_fit_file`, still on stored Imports: same
