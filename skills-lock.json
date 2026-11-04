@@ -7,53 +7,11 @@
       "skillPath": "skills/accessibility/SKILL.md",
       "computedHash": "88c64dead9bb55925c7b983f5fd95cfecf30bd8c076fd384cdb17019d1becd87"
     },
-    "api-and-interface-design": {
-      "source": "addyosmani/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/api-and-interface-design/SKILL.md",
-      "computedHash": "26f5a9e7abfd332d7a2e5887cf19bddd3393f47514c379b36bf227c1f15cdec4"
-    },
-    "better-auth-best-practices": {
-      "source": "better-auth/skills",
-      "sourceType": "github",
-      "skillPath": "better-auth/best-practices/SKILL.md",
-      "computedHash": "f35281e7a0c07b3fd3c4e96c7833dafb294a3a8662cb68a8544f4225008d6568"
-    },
-    "better-auth-security-best-practices": {
-      "source": "better-auth/skills",
-      "sourceType": "github",
-      "skillPath": "security/SKILL.md",
-      "computedHash": "087c1094fa5f1834af4785c058dcc8c9abe4c1321b853883c76ea46c93a21cfe"
-    },
-    "better-colors": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-colors/SKILL.md",
-      "computedHash": "47c25cca097d0993190ca12b416ec0be08429d8086d99adcac4621aa0e1f110f"
-    },
-    "better-layout": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-layout/SKILL.md",
-      "computedHash": "c8d251ca0542cd92996b70d86d573e3972ba99fd23f5161d0b3ddf642516802e"
-    },
-    "better-typography": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-typography/SKILL.md",
-      "computedHash": "3fb90fed3aeb57a6a545be4e4f285f0d1babdaff9644ec3526857437481747a1"
-    },
     "codebase-design": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/codebase-design/SKILL.md",
       "computedHash": "fb1d8ab98ad151551eeade003e3ae55a46578a380fd9fc3ed4dbf9c2fbce0a9f"
-    },
-    "design-taste-frontend": {
-      "source": "Leonxlnx/taste-skill",
-      "sourceType": "github",
-      "skillPath": "skills/taste-skill/SKILL.md",
-      "computedHash": "53590ee9325bee34d7888bf0d81bd3941a108b1e7850df46802d93104e3f2b90"
     },
     "domain-modeling": {
       "source": "mattpocock/skills",
@@ -61,59 +19,17 @@
       "skillPath": "skills/engineering/domain-modeling/SKILL.md",
       "computedHash": "f377a1341e1b368833cfe5889ace3e61d7df48d7a9e5da9253dba75d062bbfbc"
     },
-    "email-and-password-best-practices": {
-      "source": "better-auth/skills",
-      "sourceType": "github",
-      "skillPath": "better-auth/emailAndPassword/SKILL.md",
-      "computedHash": "ac9f9b0a549390f157ec62f5421a0bc90ac622c7e425af13155953847e0b68ea"
-    },
-    "emil-design-eng": {
-      "source": "emilkowalski/skills",
-      "sourceType": "github",
-      "skillPath": "skills/emil-design-eng/SKILL.md",
-      "computedHash": "77853cec799207f80868c611374c6ed5fdf34a55355c5ab544b59e791c63ad98"
-    },
     "fastify-best-practices": {
       "source": "mcollina/skills",
       "sourceType": "github",
       "skillPath": "skills/fastify/SKILL.md",
       "computedHash": "980cf47d3f104df8be0a2767ccc604e4fa1b94db4405589594dd9f5029b40d25"
     },
-    "find-animation-opportunities": {
-      "source": "emilkowalski/skills",
-      "sourceType": "github",
-      "skillPath": "skills/find-animation-opportunities/SKILL.md",
-      "computedHash": "c6673fadf179233cc0a52c978ea9acc9b82a210665c749307a571a86ed4c092e"
-    },
-    "frontend-design": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "skillPath": "skills/frontend-design/SKILL.md",
-      "computedHash": "106acf230014cbb43ca34e6410371321b56ca742f9ee0442e8ec05bf02eb0384"
-    },
     "karpathy-guidelines": {
       "source": "forrestchang/andrej-karpathy-skills",
       "sourceType": "github",
       "skillPath": "skills/karpathy-guidelines/SKILL.md",
       "computedHash": "0ec1641120accbb458780e0bd19a50a4182f2b97863e90851b91307f29802c9f"
-    },
-    "mcp-builder": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "skillPath": "skills/mcp-builder/SKILL.md",
-      "computedHash": "6498a736a8dc5c645047c8a875b8ea7417e2ad97146f005200e50d20a9337ada"
-    },
-    "media-capture-device-contracts": {
-      "source": "voidmatcha/frontend-niche-skills",
-      "sourceType": "github",
-      "skillPath": "skills/media-capture-device-contracts/SKILL.md",
-      "computedHash": "e36ca602809e9695b3e8105a8d9ff724d3104bd18eefd8b6ea68f1475829c031"
-    },
-    "mobile-native": {
-      "source": "emilkowalski/skills",
-      "sourceType": "github",
-      "skillPath": "skills/mobile-native/SKILL.md",
-      "computedHash": "8d77850a34ec20f745aed3215aa0d587e90438599bb09dc72d9d09ce896a5765"
     },
     "playwright-cli": {
       "source": "microsoft/playwright-cli",
@@ -133,89 +49,11 @@
       "skillPath": "skills/postgres-drizzle/SKILL.md",
       "computedHash": "ca5ca0541ebfaf262181ff4aa6d80c2dc8d241f514b22beaab510ba1b52571d0"
     },
-    "postgresql-table-design": {
-      "source": "wshobson/agents",
-      "sourceType": "github",
-      "skillPath": "plugins/database-design/skills/postgresql-table-design/SKILL.md",
-      "computedHash": "d9832627098bddf570aef2219092625faf6b2a14aeeb0f6fb96ed691a020100a"
-    },
-    "review-animations": {
-      "source": "emilkowalski/skills",
-      "sourceType": "github",
-      "skillPath": "skills/review-animations/SKILL.md",
-      "computedHash": "8c2befeb28bb484bf2de7b2fc228774857e266d32a65d76895e78651a536d8cf"
-    },
-    "security-and-hardening": {
-      "source": "addyosmani/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/security-and-hardening/SKILL.md",
-      "computedHash": "1e0cd727cccd3c8c0834ce7722a8a2851e2e849f1352ee972f39311437b021d3"
-    },
-    "suggest-lucide-icons": {
-      "source": "nweii/agent-stuff",
-      "sourceType": "github",
-      "skillPath": "skills/suggest-lucide-icons/SKILL.md",
-      "computedHash": "88994235b7a45d143ee03780ffef34d9f9053058206eaf5a137f25bc74dc9a51"
-    },
     "tanstack-query-best-practices": {
       "source": "deckardger/tanstack-agent-skills",
       "sourceType": "github",
       "skillPath": "skills/tanstack-query/SKILL.md",
       "computedHash": "c4f52bec76935d74a0bd6bcd5017119fc05e904a4c5d425f16d6b254cb69f46a"
-    },
-    "ux-empty-states": {
-      "source": "uxcel-lab/product-skills",
-      "sourceType": "github",
-      "skillPath": "ux/screens/empty-states/SKILL.md",
-      "computedHash": "3e41d5a8e3947d74ed213c01dd582582a973e61746868afc2d256aedcf319b35"
-    },
-    "ux-inputs-and-forms": {
-      "source": "uxcel-lab/product-skills",
-      "sourceType": "github",
-      "skillPath": "ux/components/inputs-and-forms/SKILL.md",
-      "computedHash": "66d7f60a1a776ac22fbf50a7df96a2db83cff6d213a62236f0e7eda37ba82f72"
-    },
-    "ux-loaders-and-progress": {
-      "source": "uxcel-lab/product-skills",
-      "sourceType": "github",
-      "skillPath": "ux/components/loaders-and-progress/SKILL.md",
-      "computedHash": "0880913945549c50c828ff43689a868a90c487d35819e53a5a03edd201b4f7b7"
-    },
-    "ux-menus": {
-      "source": "uxcel-lab/product-skills",
-      "sourceType": "github",
-      "skillPath": "ux/components/menus/SKILL.md",
-      "computedHash": "f8947ebc9844d540db607b833bc0a7103d5531977fcf591343f918ab22f4890a"
-    },
-    "ux-navigation": {
-      "source": "uxcel-lab/product-skills",
-      "sourceType": "github",
-      "skillPath": "ux/components/navigation/SKILL.md",
-      "computedHash": "57506b865158a7988f370897a6ac549f7be808e7d594a33dfbc172dbf7a79211"
-    },
-    "ux-notifications-and-toasts": {
-      "source": "uxcel-lab/product-skills",
-      "sourceType": "github",
-      "skillPath": "ux/components/notifications-and-toasts/SKILL.md",
-      "computedHash": "ccff158e3800c0213507a52b3b169f742df30557c4e3433c7533568b94f6e4f6"
-    },
-    "ux-search": {
-      "source": "uxcel-lab/product-skills",
-      "sourceType": "github",
-      "skillPath": "ux/components/search/SKILL.md",
-      "computedHash": "48c0409f39d8b7b108f646cef7755aaff513c581723733470c8f9c485755fc69"
-    },
-    "ux-selection-controls": {
-      "source": "uxcel-lab/product-skills",
-      "sourceType": "github",
-      "skillPath": "ux/components/selection-controls/SKILL.md",
-      "computedHash": "e722f66d8dbb625bad7b8b8de903c7496f38e8383aa81febcc4c3bdcaacc1804"
-    },
-    "ux-tables": {
-      "source": "uxcel-lab/product-skills",
-      "sourceType": "github",
-      "skillPath": "ux/components/tables/SKILL.md",
-      "computedHash": "b4bf5b94ee2b54908aeb9df6f1d01308ca9421cff1533f727ed46f0de5b16152"
     },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",

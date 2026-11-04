@@ -592,7 +592,7 @@ Implemented:
   dive's buddies, both dialogs, the SSI buddy list and other divers. `leases.test.ts` now checks the 30 s bound on the
   time that passed, not on the sum of the test clock's sleeps (it failed under load since slice 13a).
 
-**Private site IDs (2026-10-24, SSI alignment piece 4;** [design](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md#piece-4-settled-2026-10-24)**).**
+**Private site IDs (2026-10-24, SSI alignment piece 4;** design**).**
 - **Site requirement, amended:** the unmet entry carries `bySend`: a send finds or makes the site, so the missing ID
   doesn't block. A typed ID through the old route still counts.
 - **Storage:** `dive_site_external_id.account_id` is the Diver's provider account; null = public. Only
@@ -953,7 +953,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - Tests: `ssi-target.test.ts` (the three-way send through the fake SSI, whose tokens can expire right after a logbook read).
 
 **Piece 6 (2026-10-27): automation for every Provider** ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md),
-[plan](../superpowers/plans/2026-10-27-provider-automation.md)).
+plan).
 - The Waiting push queue: one `waiting_push` row per Dive and Connection (`providers/waiting-push/waiting-push-queue.ts`: `noteDiveChange`,
   `noteSiteChange`, `queueNow`, `settle`), written in the same transaction as the change; quiet periods 30 s (edit) and 5 min
   (delete). An Import from the same Provider is not sent back.
@@ -967,7 +967,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   [client contract](clients.md) ("Sending by itself").
 
 **Continuation (2026-11-01): appending a Dive cut in two by a surface break** ([ADR 0063](../decisions/0063-dive-continuation.md),
-[design](../superpowers/specs/2026-10-31-dive-continuation-design.md)).
+design).
 - `apps/server/src/dives/continuation/`: `joined-recording.ts` (builds and rebuilds the derived Recording, `parser` `continuation`),
   `join-parts.ts` (the parts' series on one axis, the break as 0 m), `append-service.ts` (`POST /api/dives/{id}/continuation`: deletes the later Dives' copies at the Providers asked
   (`alsoAt`), then calls the continuation service's `append`),

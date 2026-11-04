@@ -184,7 +184,7 @@ Not proposed: a sidebar. Five areas don't need one, and it would take the width 
 
 ## Order and size
 
-Each row is a slice of its own ([one slice, one session](../agents/working-economically.md)).
+Each row is a slice of its own (one slice, one session).
 
 | Slice | Contains | Needs |
 |---|---|---|

@@ -1,5 +1,5 @@
 // When an open page asks again about the queue of Waiting pushes (ADR 0056): at the time the earliest entry that waits
-// is due, not every few seconds. Until live updates come (docs/backlog/0009), this is how the page follows the worker.
+// is due, not every few seconds. Until live updates come, this is how the page follows the worker.
 
 /** The longest timer the browser keeps (about 24.8 days); a later time is asked for at that point. */
 const MAX_TIMER_MS = 2_147_483_647;
