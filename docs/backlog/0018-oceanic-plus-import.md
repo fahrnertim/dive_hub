@@ -3,15 +3,15 @@ title: Oceanic+ import - confirm the UDDF reader on real files, then the cloud A
 summary: The UDDF adapter reads the Oceanic+ logbook export from one public, sanitised sample; check it against the owner's Apple Watch Ultra exports, then decide on an Oceanic+ Provider over its private cloud API.
 status: draft
 risk: medium
-date: 2026-11-03
+date: 2026-11-04
 ---
 
 # Oceanic+ import - real files, then the cloud API
 
 ## Goal
-1. **Files (started 2026-11-03, branch `oceanic-plus-uddf-import`):** UDDF import with the Oceanic+ dialect
-   ([reference](../references/oceanic-plus.md)). Done when the owner's exports in `samples/private/oceanic-plus/`
-   pass `apps/server/test/uddf-format.test.ts`, and each open point in the reference is answered there.
+1. **Files (done 2026-11-04, PR #20):** UDDF import with the Oceanic+ dialect
+   ([reference](../references/oceanic-plus.md)). The owner's export in `samples/private/oceanic-plus/` passes
+   `apps/server/test/uddf-format.test.ts`; the reference answers the open points, except the menu path in the app.
 2. **API (later):** an import-only Oceanic+ Provider like Garmin's (ADR 0062), if the cloud API can be used. Needs a
    research note and the owner's decision first: the API is private and not documented.
 
@@ -20,8 +20,10 @@ date: 2026-11-03
 - ADR 0003 (UDDF as a lenient adapter), ADR 0037 (file formats as adapters), ADR 0062 (Garmin, import-only Provider).
 
 ## Open for the owner
-- Real exports from the Apple Watch Ultra (several dives; ideally one with a gas switch and one with a site name).
-- Where the export is in the app (for the import page's "Where to find your dives").
+- Where the export is in the app: the import page shows a best guess (*Logbook → Share/Export (UDDF)*) to confirm.
+
+## Follow-ups
+- Oceanic+ notes → Dive notes (today they are kept as an extra on the Recording).
 
 ## Don't
 - Commit real exports or the GPL sample; derive anonymised fixtures (samples/README.md).

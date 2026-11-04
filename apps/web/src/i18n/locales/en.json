@@ -173,7 +173,7 @@
     "title": "Import",
     "drop": "Drop Garmin, Suunto or Oceanic+ dive files or zips here",
     "choose": "Choose files",
-    "hint": "Garmin: “Export Original” zips from Garmin Connect, or FIT files copied from the watch. Suunto: a dive’s JSON export from the Suunto app; its FIT export works too but holds much less. Oceanic+: the logbook’s UDDF export.",
+    "hint": "Garmin: “Export Original” zips from Garmin Connect, or FIT files copied from the watch. Suunto: a dive’s JSON export from the Suunto app; its FIT export works too but holds much less. Oceanic+: the logbook’s UDDF export, or the zip the app sends, as it is.",
     "status": {
       "pending": "waiting",
       "processing": "processing",
@@ -258,7 +258,7 @@
     "findConnect": "Garmin Connect website: open a dive, choose “Export Original” in the gear menu, and import the zip as it is.",
     "findWatch": "Garmin watch: connect it by USB and copy the files from the folder GARMIN/Activity.",
     "findSuunto": "Suunto app: open a dive, tap the three dots at the top right and choose “Download JSON file”.",
-    "findOceanic": "Oceanic+ app: export the logbook as a UDDF file; the app sends it by email.",
+    "findOceanic": "Oceanic+ app: the logbook’s UDDF export, probably under Logbook → Share/Export. The app sends a zip by email; upload it as it is.",
     "grouped": "{{what}}: {{count}}",
     "fromProvider": "Dives from {{name}}"
   },

@@ -19,6 +19,8 @@ const MAX_BYTES = 32 * 1024 * 1024;
 /** Tank pressures read for a dive without tank data: a crafted file could name a new tank in every waypoint. */
 const MAX_TANKS = 8;
 const PROLOG_BYTES = 4096;
+/** Fewer Oceanic+ waypoints are no profile: the app writes two made-up ones (start and deepest point) for a breath-hold session. */
+const MIN_WAYPOINTS = 3;
 
 /** A document whose root element is `uddf`, with any prefix; only the prolog's first bytes are read. */
 export function looksLikeUddf(data: Uint8Array): boolean {
@@ -107,7 +109,7 @@ const divesOf = (root: XmlElement) => childrenOf(child(root, 'profiledata'), 're
 export function createUddfAdapter(): UddfAdapter {
   return {
     parser: 'uddf',
-    parserVersion: '1',
+    parserVersion: '2',
     async parse(data) {
       if (!looksLikeUddf(data)) throw new ParseError('Not a UDDF file');
       let root: XmlElement;
@@ -133,12 +135,13 @@ const WAYPOINT_CHANNELS: [string, string, (v: number) => number][] = [
   ['nodecotime', 'ndl', (v) => v],
 ];
 
-function samplesOf(dive: XmlElement) {
+function samplesOf(dive: XmlElement, dialect: Dialect) {
   const declared = childrenOf(dive, 'tankdata').map((t) => t.attributes.id).filter((id): id is string => !!id);
   const waypoints = childrenOf(child(dive, 'samples'), 'waypoint')
     .map((w) => ({ w, ms: num(child(w, 'divetime')) }))
     .filter((x): x is { w: XmlElement; ms: number } => x.ms !== undefined)
     .map(({ w, ms }) => ({ w, ms: Math.round(ms * 1000) }));
+  const profiled = dialect !== 'oceanicplus' || waypoints.length >= MIN_WAYPOINTS;
 
   const series: ParsedSeries[] = [];
   const push = (channel: string, read: (w: XmlElement) => number | undefined) => {
@@ -150,7 +153,7 @@ function samplesOf(dive: XmlElement) {
       offsetsMs.push(ms);
       values.push(value);
     }
-    if (values.length > 0) series.push({ channel, offsetsMs, values });
+    if (profiled && values.length > 0) series.push({ channel, offsetsMs, values });
   };
   for (const [element, channel, convert] of WAYPOINT_CHANNELS) {
     push(channel, (w) => { const v = num(child(w, element)); return v === undefined ? undefined : convert(v); });
@@ -163,7 +166,7 @@ function samplesOf(dive: XmlElement) {
   // The mix a dive starts on is no switch; every later one is.
   const events: ParsedEvent[] = waypoints.flatMap(({ w, ms }) => {
     const ref = child(w, 'switchmix')?.attributes.ref;
-    return ref && ms > 0 ? [{ offsetMs: ms, type: 'gas_switch', data: { mix: ref } }] : [];
+    return profiled && ref && ms > 0 ? [{ offsetMs: ms, type: 'gas_switch', data: { mix: ref } }] : [];
   });
   const mode = waypoints.map(({ w }) => child(w, 'divemode')?.attributes.type).find(Boolean);
   const mixes = waypoints.map(({ w }) => child(w, 'switchmix')?.attributes.ref).filter((r): r is string => !!r);
@@ -171,15 +174,19 @@ function samplesOf(dive: XmlElement) {
   return { series, events, mode, mixes, lastMs };
 }
 
-function gasesOf(dive: XmlElement, mixes: Map<string, Mix>, switched: string[]): RecordingSummary['gases'] {
+function gasesOf(dive: XmlElement, mixes: Map<string, Mix>, switched: string[], dialect: Dialect): RecordingSummary['gases'] {
   const tanks = childrenOf(dive, 'tankdata').map((tank) => {
     const mix = mixes.get(child(tank, 'link')?.attributes.ref ?? '') ?? { o2: 21, he: 0 };
     const volume = num(child(tank, 'tankvolume'));
+    const begin = positive(bar(num(child(tank, 'tankpressurebegin')), 1));
+    const end = positive(bar(num(child(tank, 'tankpressureend')), 1));
+    // In Oceanic+, the same pressure at the start and the end is a filled-in default (220/220), not a reading.
+    const read = dialect !== 'oceanicplus' || begin === undefined || begin !== end;
     return stripUndefined({
       ...mix,
       tankVolumeL: volume === undefined || volume <= 0 ? undefined : round(volume * 1000, 2),
-      startPressureBar: positive(bar(num(child(tank, 'tankpressurebegin')), 1)),
-      endPressureBar: positive(bar(num(child(tank, 'tankpressureend')), 1)),
+      startPressureBar: read ? begin : undefined,
+      endPressureBar: read ? end : undefined,
     });
   });
   if (tanks.length > 0) return tanks;
@@ -193,7 +200,7 @@ function toRecording(dive: XmlElement, context: Context): ParsedRecording {
   const start = time(str(child(before, 'datetime')), context.dialect);
   if (!start) throw new ParseError('UDDF dive has no start time');
 
-  const { series, events, mode, mixes, lastMs } = samplesOf(dive);
+  const { series, events, mode, mixes, lastMs } = samplesOf(dive, context.dialect);
   const depths = series.find((s) => s.channel === 'depth')?.values ?? [];
   const temps = series.find((s) => s.channel === 'temperature')?.values ?? [];
   const durationSeconds = num(child(after, 'diveduration')) ?? lastMs / 1000;
@@ -201,8 +208,12 @@ function toRecording(dive: XmlElement, context: Context): ParsedRecording {
   const site = childrenOf(before, 'link').map((l) => context.sites.get(l.attributes.ref ?? '')).find(Boolean);
 
   // Values without a place in a Recording are kept as extras, not dropped.
+  // A rating or lead of 0 is the app's default, not a value.
+  const notes = childrenOf(child(after, 'notes'), 'para').map((p) => p.text).filter(Boolean).join('\n\n');
   const extras: Record<string, string> = stripUndefined({
-    rating: str(at(after, 'rating', 'ratingvalue')),
+    rating: positive(num(at(after, 'rating', 'ratingvalue')))?.toString(),
+    leadKg: positive(num(at(after, 'equipmentused', 'leadquantity')))?.toString(),
+    notes: notes || undefined,
     generator: context.generator,
     diveMode: mode && !DIVE_MODES[mode] ? mode : undefined,
   }) as Record<string, string>;
@@ -210,7 +221,7 @@ function toRecording(dive: XmlElement, context: Context): ParsedRecording {
   const summary: RecordingSummary = stripUndefined({
     diveNumber: num(child(before, 'divenumber')),
     diveMode: mode ? DIVE_MODES[mode] : undefined,
-    gases: gasesOf(dive, context.mixes, mixes),
+    gases: gasesOf(dive, context.mixes, mixes, context.dialect),
     minTemperatureC: lowest ?? smallest(temps),
     maxTemperatureC: largest(temps),
     surfaceIntervalSeconds: num(at(before, 'surfaceintervalbeforedive', 'passedtime')),

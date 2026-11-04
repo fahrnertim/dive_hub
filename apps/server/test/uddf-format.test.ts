@@ -1,5 +1,6 @@
 // UDDF files (ADR 0003: a lenient reader) and the Oceanic+ app's dialect of them (docs/references/oceanic-plus.md), on
-// hand-made fixtures. When real exports are in samples/private/oceanic-plus (never committed), each is read too.
+// hand-made fixtures and on one derived from a real export (samples/README.md). When real exports are in
+// samples/private/oceanic-plus (never committed), each is read too.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -12,6 +13,7 @@ import { makeOceanicPlusUddf, OCEANIC_DIVES } from './fixtures/oceanic-plus-uddf
 const uddf = createUddfAdapter();
 const text = (value: string) => new TextEncoder().encode(value);
 const series = (rec: ParsedRecording, channel: string) => rec.series.find((s) => s.channel === channel);
+const exported = readFileSync(new URL('../../web/e2e/fixtures/oceanic-plus.uddf', import.meta.url));
 
 describe('reading XML', () => {
   it('reads elements, attributes, text, entities, CDATA and comments, without namespace prefixes', () => {
@@ -80,6 +82,55 @@ describe('an Oceanic+ logbook export', () => {
   });
 });
 
+describe('an Oceanic+ export, anonymised from a real one (apps/web/e2e/fixtures/oceanic-plus.uddf)', () => {
+  it('holds two nitrox dives, an air dive and a breath-hold session, at the offset +00:02 read as two hours', async () => {
+    const recs = await uddf.parse(exported);
+    expect(recs.map((r) => [r.startsAt.toISOString(), r.utcOffsetSeconds, r.durationSeconds, r.maxDepthM, r.summary.diveMode])).toEqual([
+      ['2021-08-12T10:31:25.000Z', 7200, 2317, 7.357322, 'open_circuit'],
+      ['2021-08-12T09:07:57.000Z', 7200, 2113, 19.635355, 'open_circuit'],
+      ['2021-04-21T13:27:47.000Z', 7200, 2830, 13.867274, 'open_circuit'],
+      ['2021-04-19T11:29:37.000Z', 7200, 2242, 3.5979068, 'apnea'],
+    ]);
+    expect(recs.every((r) => /^oceanicplus:[0-9a-f]{24}$/.test(r.recordingKey))).toBe(true);
+  });
+
+  it('reads each tank\'s mix, and the mix a dive starts on is no gas switch', async () => {
+    const recs = await uddf.parse(exported);
+    expect(recs.map((r) => r.summary.gases?.map((g) => g.o2))).toEqual([[32], [31], [21], undefined]);
+    expect(recs.flatMap((r) => r.events)).toEqual([]);
+  });
+
+  it('drops a tank\'s pressures when start and end are the same (the app\'s 220/220 default, not a reading)', async () => {
+    const [, defaulted] = await uddf.parse(exported);
+    expect(defaulted!.summary.gases).toEqual([{ o2: 31, he: 0 }]);
+    const read = await uddf.parse(text(new TextDecoder().decode(exported).replace('<tankpressureend>2.2E7', '<tankpressureend>5.5E6')));
+    expect(read[1]!.summary.gases).toEqual([{ o2: 31, he: 0, startPressureBar: 220, endPressureBar: 55 }]);
+  });
+
+  it('keeps no profile for a breath-hold session: its two waypoints are made up', async () => {
+    const recs = await uddf.parse(exported);
+    expect(recs[3]!.series).toEqual([]);
+    expect(recs[3]!.summary).toMatchObject({ minTemperatureC: 24.1 });
+    expect(series(recs[0]!, 'depth')?.values.length).toBeGreaterThan(40);
+  });
+
+  it('keeps notes and lead as extras; a rating or lead of 0 is no value', async () => {
+    const recs = await uddf.parse(exported);
+    expect(recs.map((r) => r.summary.extras)).toEqual([
+      { generator: 'Oceanic+ 0.0.1' },
+      { generator: 'Oceanic+ 0.0.1', leadKg: '6' },
+      { generator: 'Oceanic+ 0.0.1', leadKg: '10', notes: expect.stringMatching(/^Lorem ipsum/) },
+      { generator: 'Oceanic+ 0.0.1' },
+    ]);
+  });
+
+  it('takes positions from the sites and never their names, which are ids', async () => {
+    const recs = await uddf.parse(exported);
+    expect(recs.map((r) => r.entryPosition && [Math.round(r.entryPosition.latitude), Math.round(r.entryPosition.longitude)])).toEqual([[50, 8], [50, 8], [27, 34], [27, 34]]);
+    expect(JSON.stringify(recs)).not.toMatch(/site_/);
+  });
+});
+
 describe('a UDDF file from another program', () => {
   const file = text(`<?xml version="1.0" encoding="utf-8"?>
 <uddf version="3.2.3" xmlns="http://www.streit.cc/uddf/3.2/">
@@ -120,6 +171,14 @@ describe('a UDDF file from another program', () => {
     expect(many!.series.filter((s) => s.channel.startsWith('tankPressure'))).toHaveLength(8);
   });
 
+  it('keeps the same start and end pressure and a two-waypoint profile: the Oceanic+ defaults are its own', async () => {
+    const source = new TextDecoder().decode(file).replace('<tankpressureend>5000000', '<tankpressureend>20000000')
+      .replace(/<waypoint><divetime>120<\/divetime>.*?<\/waypoint>/, '');
+    const [rec] = await uddf.parse(text(source));
+    expect(rec!.summary.gases).toMatchObject([{ startPressureBar: 200, endPressureBar: 200 }]);
+    expect(series(rec!, 'depth')?.values).toEqual([0, 18.5]);
+  });
+
   it('reads a time without an offset as wall-clock time', async () => {
     const [rec] = await uddf.parse(text(new TextDecoder().decode(file).replace('+02:00', '')));
     expect(rec!.startsAt.toISOString()).toBe('2026-05-02T09:30:00.000Z');
@@ -136,17 +195,22 @@ describe('UDDF that is not a logbook', () => {
   });
 });
 
-// Real exports, when there are any (samples/README.md): each dive has a start, a profile and a plausible depth.
+// The owner's export, when it is there (samples/README.md): 14 scuba dives and 4 breath-hold sessions, all at +02:00.
 const privateDir = fileURLToPath(new URL('../../../samples/private/oceanic-plus', import.meta.url));
-const privateFiles = existsSync(privateDir) ? readdirSync(privateDir).filter((f) => /\.uddf$/i.test(f)) : [];
+const privateFiles = existsSync(privateDir) ? readdirSync(privateDir, { recursive: true, encoding: 'utf8' }).filter((f) => /\.uddf$/i.test(f)) : [];
 describe.skipIf(privateFiles.length === 0)('real Oceanic+ exports in samples/private', () => {
   it.each(privateFiles)('%s', async (name) => {
     const recs = await uddf.parse(readFileSync(`${privateDir}/${name}`));
-    expect(recs.length).toBeGreaterThan(0);
+    expect(recs.map((r) => r.summary.diveMode).sort()).toEqual([...Array(4).fill('apnea'), ...Array(14).fill('open_circuit')]);
     for (const rec of recs) {
       expect(rec.recordingKey).toMatch(/^oceanicplus:/);
-      expect(series(rec, 'depth')?.values.length).toBeGreaterThan(1);
+      expect(rec.utcOffsetSeconds).toBe(7200);
+      expect(rec.events).toEqual([]);
       expect(rec.maxDepthM).toBeLessThan(200);
+      if (rec.summary.diveMode === 'apnea') expect(rec.series).toEqual([]);
+      else expect(series(rec, 'depth')?.values.length).toBeGreaterThan(2);
+      expect(rec.summary.gases?.every((g) => g.startPressureBar !== g.endPressureBar || g.startPressureBar === undefined) ?? true).toBe(true);
     }
+    expect(JSON.stringify(recs)).not.toMatch(/site_/);
   });
 });
