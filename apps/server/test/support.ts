@@ -20,8 +20,9 @@ import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createFakeSsi, type FakeSsi } from './fake-ssi.js';
+import { resolveTestDatabaseUrl } from './test-database-url.js';
 
-const baseDbUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? 'postgres://divehub:divehub-dev@127.0.0.1:5432/divehub';
+const baseDbUrl = resolveTestDatabaseUrl();
 export const BASE_URL = 'http://localhost:3000';
 /** A password that satisfies the length rule (ADR 0011). */
 export const PASSWORD = 'correct horse battery staple';
@@ -30,7 +31,7 @@ let skipWarned = false;
 
 /**
  * Whether the database tests can run. Without PostgreSQL they are skipped with a warning; with REQUIRE_DATABASE=1
- * (CI) an unreachable database fails the file instead, so a broken DATABASE_URL never passes as skipped tests.
+ * (CI) an unreachable database fails the file instead, so a broken test database URL never passes as skipped tests.
  */
 export async function databaseReachable(): Promise<boolean> {
   const client = new pg.Client({ connectionString: baseDbUrl, connectionTimeoutMillis: 2000 });

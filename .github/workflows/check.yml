@@ -31,7 +31,9 @@ jobs:
           --health-timeout 5s
           --health-retries 30
     env:
-      DATABASE_URL: postgres://divehub:divehub-dev@127.0.0.1:5432/divehub
+      # The tests create and drop databases on this server only; DATABASE_URL (the application's own database) is
+      # deliberately not set here (FAH-39).
+      DIVEHUB_TEST_DATABASE_URL: postgres://divehub:divehub-dev@127.0.0.1:5432/divehub
       # An unreachable database fails the server tests here instead of skipping them (test/support.ts).
       REQUIRE_DATABASE: '1'
       # Playwright's own Chromium (cached below); on a laptop the tests use the installed Edge.
