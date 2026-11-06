@@ -68,8 +68,10 @@ dialect is recognised by the generator's homepage or name containing "oceanic".
   `device`.
 - **No Device:** the file doesn't name the computer (Apple Watch or Oceanic+ computer), so the Recording has none.
 - **Position:** the linked site's coordinates are the entry position, so site matching works as for a FIT file.
-- **Gases:** each `tankdata`'s linked mix. Pressures that are the same at the start and the end are dropped (a default,
-  not a reading, which would make the gas use 0). A dive without `tankdata` (a breath-hold session) has no gas, not air.
+- **Gases:** each `tankdata`'s linked mix, and each `tankdata` is a tank the diver used: it makes one Cylinder even
+  without a pressure. Pressures that are the same at the start and the end are dropped (a default, not a reading,
+  which would make the gas use 0). A dive without `tankdata` (a breath-hold session) has no gas and no Cylinder, not
+  a made-up one of air.
 - **Profile:** none for fewer than 3 waypoints (a breath-hold session's two are made up); duration, depth and the
   lowest temperature still come from `informationafterdive`. The mix a dive starts on is no gas switch.
 - **Kept as extras:** the generator (`Oceanic+ 0.0.1`), the notes, the rating and the lead (`leadKg`) when above 0

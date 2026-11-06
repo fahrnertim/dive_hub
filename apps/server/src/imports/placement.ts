@@ -13,7 +13,7 @@ import { managedDiverIds } from '../divers/management.js';
 import { reviseDive, untieLostSeries } from '../dives/cylinders.js';
 import { probablyNoDive } from '../dives/checks/logbook-check-rules.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
-import type { ParsedRecording } from './parsed-recording.js';
+import { recordingKeySource, type ParsedRecording } from './parsed-recording.js';
 import { linkNearbySite, positionColumns } from '../sites/dive-site-link.js';
 import { DAY_MS, MAX_OFFSET_MS, alignedForMatching, decideMatch, overlapWindow } from './matching.js';
 
@@ -171,15 +171,24 @@ async function matchDecision(tx: Tx, rec: ParsedRecording, values: RecordingValu
   const found = await nearbyDives(tx, rec, diverId);
   const candidates = alignedForMatching({ utcOffsetSeconds: values.utcOffsetSeconds, utcOffsetSource: values.utcOffsetSource }, found);
   // A probable non-dive, as the logbook check sees it (ADR 0038), is matched by the User, not by itself (ADR 0030, amended).
-  const onFound = found.length === 0 ? [] : await tx.selectDistinct({ diveId: recording.diveId, deviceId: recording.deviceId }).from(recording)
+  const onFound = found.length === 0 ? [] : await tx.selectDistinct({ diveId: recording.diveId, deviceId: recording.deviceId, recordingKey: recording.recordingKey }).from(recording)
     .where(and(inArray(recording.diveId, found.map((d) => d.id)), isNull(recording.deletedAt)));
   const withRecording = new Set(onFound.map((r) => r.diveId));
+  // A Source's keys name its dives: one of its other keys on the Dive is another dive, never a copy.
+  const sameSource = new Set(
+    values.deviceId === null
+      ? onFound
+        .filter((r) => r.deviceId === null && r.recordingKey !== rec.recordingKey
+          && recordingKeySource(r.recordingKey) === recordingKeySource(rec.recordingKey))
+        .map((r) => r.diveId)
+      : [],
+  );
   // One Device doesn't record a dive twice: its next Recording is in reach of such a Dive only when they overlap (ADR 0044).
   const { deviceId } = values;
   const ofThisDevice = new Set(onFound.filter((r) => deviceId !== null && r.deviceId === deviceId).map((r) => r.diveId));
   return decideMatch(
     { ...rec, probablyNoDive: probablyNoDive({ recordings: 1, durationSeconds: rec.durationSeconds, maxDepthM: rec.maxDepthM ?? null }) },
-    candidates.map((d) => ({ ...d, maxDepthM: d.maxDepthM ?? undefined, sameDevice: ofThisDevice.has(d.id), probablyNoDive: probablyNoDive({ ...d, recordings: withRecording.has(d.id) ? 1 : 0 }) })),
+    candidates.map((d) => ({ ...d, maxDepthM: d.maxDepthM ?? undefined, sameDevice: ofThisDevice.has(d.id), sameSource: sameSource.has(d.id), probablyNoDive: probablyNoDive({ ...d, recordings: withRecording.has(d.id) ? 1 : 0 }) })),
   );
 }
 

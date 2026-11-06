@@ -70,3 +70,20 @@ export type WithoutUndefined<T> = { [K in keyof T as undefined extends T[K] ? ne
 export function stripUndefined<T extends Record<string, unknown>>(o: T): WithoutUndefined<T> {
   return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as WithoutUndefined<T>;
 }
+
+/** The Source a Recording key belongs to: its namespace before the first `:` (ADR 0037). */
+export function recordingKeySource(recordingKey: string): string {
+  const colon = recordingKey.indexOf(':');
+  return colon === -1 ? recordingKey : recordingKey.slice(0, colon);
+}
+
+/**
+ * Sources that name each dive's own tanks even when the file has no pressure or size for them: Oceanic+ links one
+ * `tankdata` per scuba dive. A tank it names is a tank the diver used, not a mix the computer merely lists.
+ */
+const NAMES_TANKS_WITHOUT_PRESSURE = new Set(['oceanicplus']);
+
+/** The gases that are tanks the file names for this Recording even without a pressure (ADR 0045, `tankdata`). */
+export function namedTanks(recordingKey: string, summary: RecordingSummary): NonNullable<RecordingSummary['gases']> {
+  return NAMES_TANKS_WITHOUT_PRESSURE.has(recordingKeySource(recordingKey)) ? summary.gases ?? [] : [];
+}

@@ -5,9 +5,10 @@ import { Readable } from 'node:stream';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Db } from '../src/db/client.js';
-import { cylinder, dive, importJob, recording } from '../src/db/schema.js';
+import { cylinder, dive, duplicateCandidate, importJob, recording } from '../src/db/schema.js';
 import { createImportService, type ImportService } from '../src/imports/import-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
+import { makeOceanicPlusUddf } from './fixtures/oceanic-plus-uddf.js';
 import { createTestAuth, createTestDatabase, createUser, databaseReachable, listenToNoChanges, type TestDatabase } from './support.js';
 import { zipOf } from './zip.js';
 
@@ -74,8 +75,57 @@ describe.skipIf(!(await databaseReachable()))('an Oceanic+ export through the im
   });
 
   it('reads the app\'s zip as it is, with the file in exports/, and finds the same dives', async () => {
+    const before = await divesAndCylinders();
     const done = await upload('export.zip', await zipOf({ 'exports/logbook.uddf': exported }));
-    expect(done.outcome.map((o) => [o.fileName.endsWith('exports/logbook.uddf'), o.result])).toEqual(Array(4).fill([true, 'unchanged']));
-    expect(await db.select().from(dive)).toHaveLength(4);
+    // An archive's entry is shown by its base name, and a zip is a new file whose Recordings are refreshed in place.
+    expect(done.outcome.map((o) => [o.fileName, o.result])).toEqual(Array(4).fill(['logbook.uddf', 'updated']));
+    expect(await divesAndCylinders()).toEqual(before);
+  });
+});
+
+describe.skipIf(!(await databaseReachable()))('two back-to-back Oceanic+ dives from one export (PostgreSQL)', () => {
+  let t: TestDatabase;
+  let db: Db;
+  let imports: ImportService;
+  let alice: string;
+
+  const backToBack = makeOceanicPlusUddf([
+    {
+      id: '0123456789abcdef01234567',
+      local: '2023-05-19T10:53:15.000',
+      offset: '+00:02',
+      waypoints: [[0, 0, undefined], [15, 3.0, 300.15], [90, 18.3, 299.15]],
+      greatestDepth: 18.3,
+      duration: 1690,
+      lowestTemperature: 299.15,
+    },
+    {
+      id: '0123456789abcdef01234568',
+      local: '2023-05-19T11:21:27.000',
+      offset: '+00:02',
+      waypoints: [[0, 0, undefined], [15, 2.5, 300.15], [60, 7.0, 299.65]],
+      greatestDepth: 7.0,
+      duration: 1562,
+      lowestTemperature: 299.65,
+    },
+  ]);
+
+  beforeAll(async () => {
+    t = await createTestDatabase();
+    db = t.db;
+    alice = (await createUser(createTestAuth(db), 'alice@example.com')).id;
+    imports = createImportService({ db, blobs: createLocalBlobStore(t.dataDir) });
+    listenToNoChanges();
+  });
+
+  afterAll(async () => { await t?.drop(); });
+
+  it('makes two Dives: distinct keys of one Source are two dives, not a duplicate candidate', async () => {
+    const created = await imports.createImport(alice, 'logbook.uddf', Readable.from([backToBack]), 1 << 26);
+    await imports.processImport(created.id);
+    const done = (await db.select().from(importJob).where(eq(importJob.id, created.id)))[0]!;
+    expect(done.outcome.map((o) => o.result)).toEqual(['created', 'created']);
+    expect(await db.select().from(dive)).toHaveLength(2);
+    expect(await db.select().from(duplicateCandidate)).toEqual([]);
   });
 });
