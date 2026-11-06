@@ -38,6 +38,11 @@ describe('reading XML', () => {
     expect(() => parseXml('<a></a><b></b>')).toThrow(XmlError);
     expect(() => parseXml('')).toThrow(XmlError);
   });
+
+  it('refuses an entity named after an Object property', () => {
+    expect(() => parseXml('<a>&constructor;</a>')).toThrow(/Unknown entity/);
+    expect(() => parseXml('<a>&__proto__;</a>')).toThrow(/Unknown entity/);
+  });
 });
 
 describe('recognising UDDF by its content', () => {
@@ -55,6 +60,7 @@ describe('an Oceanic+ logbook export', () => {
   it('holds one Recording per dive, keyed by the app\'s own dive id', async () => {
     const recs = await uddf.parse(makeOceanicPlusUddf());
     expect(recs.map((r) => r.recordingKey)).toEqual(OCEANIC_DIVES.map((d) => `oceanicplus:${d.id}`));
+    expect(recs.every((r) => r.stableDiveIdKey)).toBe(true);
     expect(recs[0]!.device).toBeUndefined();
   });
 
@@ -171,6 +177,7 @@ describe('a UDDF file from another program', () => {
     expect(rec!.utcOffsetSeconds).toBe(7200);
     // UDDF ids hold only within one file (ADR 0003): not an identity across files.
     expect(rec!.recordingKey).toBe(`uddf:${Date.parse('2026-05-02T07:30:00Z') / 1000}:120:1850`);
+    expect(rec!.stableDiveIdKey).toBe(false);
     expect(rec).toMatchObject({ durationSeconds: 120, maxDepthM: 18.5, avgDepthM: 9.2 });
     expect(rec!.summary).toMatchObject({ diveNumber: 412, surfaceIntervalSeconds: 5400, gases: [{ o2: 32, he: 0, tankVolumeL: 12, startPressureBar: 200, endPressureBar: 50 }] });
     expect(series(rec!, 'tankPressure')).toEqual({ channel: 'tankPressure', offsetsMs: [0, 60000], values: [200, 180] });
@@ -185,6 +192,23 @@ describe('a UDDF file from another program', () => {
     const waypoints = Array.from({ length: 50 }, (_, n) => `<waypoint><divetime>${n}</divetime><depth>1</depth><tankpressure ref="r${n}">10000000</tankpressure></waypoint>`).join('');
     const [many] = await uddf.parse(text(`<uddf><profiledata><repetitiongroup><dive><informationbeforedive><datetime>2026-05-02T09:30:00Z</datetime></informationbeforedive><samples>${waypoints}</samples></dive></repetitiongroup></profiledata></uddf>`));
     expect(many!.series.filter((s) => s.channel.startsWith('tankPressure'))).toHaveLength(8);
+  });
+
+  it('caps the tanks a crafted file declares', async () => {
+    const tanks = Array.from({ length: 50 }, (_, n) => `<tankdata id="t${n}"><tankpressurebegin>20000000</tankpressurebegin><tankpressureend>5000000</tankpressureend></tankdata>`).join('');
+    const waypoints = Array.from({ length: 5 }, (_, n) => `<waypoint><divetime>${n}</divetime><depth>1</depth>${Array.from({ length: 50 }, (_, i) => `<tankpressure ref="t${i}">${20000000 - n * 1000}</tankpressure>`).join('')}</waypoint>`).join('');
+    const [rec] = await uddf.parse(text(`<uddf><profiledata><repetitiongroup><dive><informationbeforedive><datetime>2026-05-02T09:30:00Z</datetime></informationbeforedive>${tanks}<samples>${waypoints}</samples></dive></repetitiongroup></profiledata></uddf>`));
+    expect(rec!.series.filter((s) => s.channel.startsWith('tankPressure'))).toHaveLength(8);
+    expect(rec!.summary.gases).toHaveLength(8);
+  });
+
+  it('emits a gas switch only when the mix changes, and caps how many', async () => {
+    const dive = (refs: string[]) => `<uddf><profiledata><repetitiongroup><dive><informationbeforedive><datetime>2026-05-02T09:30:00Z</datetime></informationbeforedive><samples>${refs.map((ref, n) => `<waypoint><divetime>${n}</divetime><depth>1</depth><switchmix ref="${ref}"/></waypoint>`).join('')}</samples></dive></repetitiongroup></profiledata></uddf>`;
+    const repeated = await uddf.parse(text(dive(Array.from({ length: 100 }, () => 'ean32'))));
+    expect(repeated[0]!.events).toEqual([]);
+    const alternating = await uddf.parse(text(dive(Array.from({ length: 100 }, (_, n) => (n % 2 ? 'ean50' : 'ean32')))));
+    expect(alternating[0]!.events).toHaveLength(64);
+    expect(alternating[0]!.events.every((e) => e.type === 'gas_switch')).toBe(true);
   });
 
   it('keeps the same start and end pressure and a two-waypoint profile: the Oceanic+ defaults are its own', async () => {

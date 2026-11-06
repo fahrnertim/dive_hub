@@ -16,8 +16,10 @@ export interface UddfAdapter {
 
 /** A logbook of a few hundred dives is a few tens of megabytes; anything far larger is not parsed. */
 const MAX_BYTES = 32 * 1024 * 1024;
-/** Tank pressures read for a dive without tank data: a crafted file could name a new tank in every waypoint. */
+/** Tanks read for a dive, declared or named in waypoints: a crafted file could name one per element. */
 const MAX_TANKS = 8;
+/** A dive has a handful of gas switches; a crafted file could put one on every waypoint. */
+const MAX_GAS_SWITCHES = 64;
 const PROLOG_BYTES = 4096;
 /** Fewer Oceanic+ waypoints are no profile: the app writes two made-up ones (start and deepest point) for a breath-hold session. */
 const MIN_WAYPOINTS = 3;
@@ -109,7 +111,7 @@ const divesOf = (root: XmlElement) => childrenOf(child(root, 'profiledata'), 're
 export function createUddfAdapter(): UddfAdapter {
   return {
     parser: 'uddf',
-    parserVersion: '2',
+    parserVersion: '3',
     async parse(data) {
       if (!looksLikeUddf(data)) throw new ParseError('Not a UDDF file');
       let root: XmlElement;
@@ -135,8 +137,11 @@ const WAYPOINT_CHANNELS: [string, string, (v: number) => number][] = [
   ['nodecotime', 'ndl', (v) => v],
 ];
 
+/** The dive's own tank data, at most `MAX_TANKS`: a crafted file can declare one per element. */
+const declaredTankDataOf = (dive: XmlElement) => childrenOf(dive, 'tankdata').slice(0, MAX_TANKS);
+
 function samplesOf(dive: XmlElement, dialect: Dialect) {
-  const declared = childrenOf(dive, 'tankdata').map((t) => t.attributes.id).filter((id): id is string => !!id);
+  const declared = declaredTankDataOf(dive).map((t) => t.attributes.id).filter((id): id is string => !!id);
   const waypoints = childrenOf(child(dive, 'samples'), 'waypoint')
     .map((w) => ({ w, ms: num(child(w, 'divetime')) }))
     .filter((x): x is { w: XmlElement; ms: number } => x.ms !== undefined)
@@ -163,11 +168,18 @@ function samplesOf(dive: XmlElement, dialect: Dialect) {
   const tanks = declared.length > 0 ? declared : firstOf(MAX_TANKS, waypoints.flatMap(({ w }) => [...pressures.get(w)!.keys()]));
   tanks.forEach((ref, index) => push(index === 0 ? 'tankPressure' : `tankPressure:${index + 1}`, (w) => pressures.get(w)!.get(ref)));
 
-  // The mix a dive starts on is no switch; every later one is.
-  const events: ParsedEvent[] = waypoints.flatMap(({ w, ms }) => {
+  // The mix a dive starts on is no switch; a later one is only when it changes.
+  const events: ParsedEvent[] = [];
+  let lastMix: string | undefined;
+  for (const { w, ms } of profiled ? waypoints : []) {
     const ref = child(w, 'switchmix')?.attributes.ref;
-    return profiled && ref && ms > 0 ? [{ offsetMs: ms, type: 'gas_switch', data: { mix: ref } }] : [];
-  });
+    if (!ref) continue;
+    if (ms === 0) { lastMix = ref; continue; }
+    if (ref === lastMix) continue;
+    lastMix = ref;
+    if (events.length >= MAX_GAS_SWITCHES) break;
+    events.push({ offsetMs: ms, type: 'gas_switch', data: { mix: ref } });
+  }
   const mode = waypoints.map(({ w }) => child(w, 'divemode')?.attributes.type).find(Boolean);
   const mixes = waypoints.map(({ w }) => child(w, 'switchmix')?.attributes.ref).filter((r): r is string => !!r);
   const lastMs = waypoints.reduce((most, x) => Math.max(most, x.ms), 0);
@@ -175,7 +187,7 @@ function samplesOf(dive: XmlElement, dialect: Dialect) {
 }
 
 function gasesOf(dive: XmlElement, mixes: Map<string, Mix>, switched: string[], dialect: Dialect): RecordingSummary['gases'] {
-  const tanks = childrenOf(dive, 'tankdata').map((tank) => {
+  const tanks = declaredTankDataOf(dive).map((tank) => {
     const mix = mixes.get(child(tank, 'link')?.attributes.ref ?? '') ?? { o2: 21, he: 0 };
     const volume = num(child(tank, 'tankvolume'));
     const begin = positive(bar(num(child(tank, 'tankpressurebegin')), 1));
@@ -242,6 +254,7 @@ function toRecording(dive: XmlElement, context: Context): ParsedRecording {
   return {
     device: undefined,
     recordingKey,
+    stableDiveIdKey: context.dialect === 'oceanicplus' && appId !== undefined,
     startsAt: new Date(start.ms),
     utcOffsetSeconds: start.utcOffsetSeconds,
     utcOffsetSource: start.source,

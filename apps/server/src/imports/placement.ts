@@ -13,7 +13,7 @@ import { managedDiverIds } from '../divers/management.js';
 import { reviseDive, untieLostSeries } from '../dives/cylinders.js';
 import { probablyNoDive } from '../dives/checks/logbook-check-rules.js';
 import { writeRevision, type Actor } from '../dives/revisions.js';
-import { keyIsStableDiveId, recordingKeySource, type ParsedRecording } from './parsed-recording.js';
+import { recordingKeySource, type ParsedRecording } from './parsed-recording.js';
 import { linkNearbySite, positionColumns } from '../sites/dive-site-link.js';
 import { DAY_MS, MAX_OFFSET_MS, alignedForMatching, decideMatch, overlapWindow } from './matching.js';
 
@@ -177,9 +177,9 @@ async function matchDecision(tx: Tx, rec: ParsedRecording, values: RecordingValu
   // A Source's stable dive ids name its dives: one of its other keys on the Dive is another dive, never a copy. A
   // content-derived key can change on a re-export, so it keeps ordinary overlap matching (ADR 0037).
   const sameSource = new Set(
-    values.deviceId === null && keyIsStableDiveId(rec.recordingKey)
+    rec.stableDiveIdKey
       ? onFound
-        .filter((r) => r.deviceId === null && r.recordingKey !== rec.recordingKey
+        .filter((r) => r.deviceId === values.deviceId && r.recordingKey !== rec.recordingKey
           && recordingKeySource(r.recordingKey) === recordingKeySource(rec.recordingKey))
         .map((r) => r.diveId)
       : [],

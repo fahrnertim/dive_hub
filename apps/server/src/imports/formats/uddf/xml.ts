@@ -30,9 +30,8 @@ function decode(raw: string): string {
       if (!Number.isInteger(code) || code < 0 || code > 0x10ffff) throw new XmlError(`Invalid character reference: ${match}`);
       return String.fromCodePoint(code);
     }
-    const value = ENTITIES[ref];
-    if (value === undefined) throw new XmlError(`Unknown entity: ${match}`);
-    return value;
+    if (!Object.hasOwn(ENTITIES, ref)) throw new XmlError(`Unknown entity: ${match}`);
+    return ENTITIES[ref]!;
   });
 }
 

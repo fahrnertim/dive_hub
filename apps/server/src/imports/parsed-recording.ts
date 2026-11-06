@@ -38,6 +38,11 @@ export interface ParsedRecording {
   /** Identity for re-imports, stable across copies of the same file. */
   recordingKey: string;
   /**
+   * Whether the key is a stable id of the dive itself, given by the Source (ADR 0037): two such keys are two dives. A
+   * key built from the dive's values can change on a re-export, so it never proves that two Recordings are two dives.
+   */
+  stableDiveIdKey?: boolean;
+  /**
    * The key the same dive has when read from a poorer file of the same Source (ADR 0037: Suunto's FIT beside its JSON).
    * A Recording with that key is replaced by this one in place.
    */
@@ -75,16 +80,4 @@ export function stripUndefined<T extends Record<string, unknown>>(o: T): Without
 export function recordingKeySource(recordingKey: string): string {
   const colon = recordingKey.indexOf(':');
   return colon === -1 ? recordingKey : recordingKey.slice(0, colon);
-}
-
-/**
- * Sources whose key is a stable external id of the dive itself (ADR 0037): two such keys are two dives. A key built
- * from the dive's values (start, duration, depth) can change when a re-export rounds differently, so it never proves
- * that two Recordings are two dives.
- */
-const KEY_IS_STABLE_DIVE_ID = new Set(['oceanicplus']);
-
-/** Whether a Recording key names its dive by a stable id the Source gave it, rather than by the dive's values. */
-export function keyIsStableDiveId(recordingKey: string): boolean {
-  return KEY_IS_STABLE_DIVE_ID.has(recordingKeySource(recordingKey));
 }

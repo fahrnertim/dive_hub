@@ -95,9 +95,7 @@ export async function setCylinders(tx: Tx, diveId: string, list: CylinderInput[]
  * first and last reading where the computer sums up no pressure. A gas without a pressure makes none: a computer lists
  * every gas it was set to. Answers the change for the caller's Revision (empty when nothing was made).
  */
-export async function fillCylindersFromRecording(
-  tx: Tx, diveId: string, rec: Pick<typeof recording.$inferSelect, 'id' | 'summary'>,
-): Promise<Changes> {
+export async function fillCylindersFromRecording(tx: Tx, diveId: string, rec: Pick<typeof recording.$inferSelect, 'id' | 'summary'>): Promise<Changes> {
   const order = (channel: string) => Number(PRESSURE_CHANNEL.exec(channel)?.[1] ?? 0);
   const series = (await tx.select().from(sampleSeries).where(eq(sampleSeries.recordingId, rec.id)))
     .filter((s) => PRESSURE_CHANNEL.test(s.channel) && s.values.length > 0)
