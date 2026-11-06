@@ -77,7 +77,7 @@
   --radius-md: var(--radius-control);
   --radius-lg: var(--radius-box);
 
-  /* Panels are sections of the sheet, divided by a hairline, not boxes (docs/superpowers/specs/2026-11-02-ui-overhaul-design.md). */
+  /* Panels are sections of the sheet, divided by a hairline, not boxes. */
   --panel-padding: var(--space-6);
 
   /* Elevation only for things that float above the page (dialogs, popovers) */

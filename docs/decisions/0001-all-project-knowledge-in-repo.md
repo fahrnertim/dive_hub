@@ -1,13 +1,15 @@
 ---
 title: "ADR 0001: All project knowledge lives in this repository"
 summary: No local, account-specific or external-service memory; everything is committed here.
-status: accepted
+status: superseded by 0065
 date: 2026-10-02
 ---
 
 # ADR 0001: All project knowledge lives in this repository
 
 ## Status
+Superseded by [ADR 0065](0065-work-runs-through-paperclip.md) – 2026-11-04. Original status below.
+
 Accepted – 2026-10-02
 
 ## Context

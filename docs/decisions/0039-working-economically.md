@@ -1,13 +1,15 @@
 ---
 title: "ADR 0039: Working economically with LLM agents"
 summary: One slice per session with a hand-over prompt, narrow reading, smaller models for research and search, compaction at 300,000 tokens, the skill overrides moved out of AGENTS.md.
-status: accepted
+status: superseded by 0065
 date: 2026-10-07
 ---
 
 # ADR 0039: Working economically with LLM agents
 
 ## Status
+Superseded by [ADR 0065](0065-work-runs-through-paperclip.md) – 2026-11-04. Original status below.
+
 Accepted – 2026-10-07 (owner)
 
 ## Context

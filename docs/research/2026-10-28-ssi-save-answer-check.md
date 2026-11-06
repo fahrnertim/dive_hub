@@ -11,7 +11,7 @@ Run by the agent with the kept token on 2026-10-28, announced in the session and
 `round-trip.ts answer` (`apps/server/test/fixtures/ssi/answer-checks.ts`). Account 3664600, MySSI app 5.0.43. [T] tested
 on the owner's account. Background: the [SSI reference](../references/ssi-app-api.md#ssis-app-how-it-uploads-dives-checked-2026-10-10-app-5043)
 (the app's save answer [R]), [ADR 0049](../decisions/0049-ssi-app-user-agent.md) (SSI's invented answer to other clients),
-the design's piece 7 ([SSI app alignment](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md)). The raw answers
+the design's piece 7 (SSI app alignment). The raw answers
 are in git-ignored `samples/private/ssi/answer.json`.
 
 ## What was sent

@@ -21,4 +21,17 @@ pnpm --filter @dive-hub/server dev   # API on :3000
 pnpm --filter @dive-hub/web dev      # open http://localhost:5173
 ```
 
-Details: [development guide](docs/development.md). Licensed under [Apache-2.0](LICENSE).
+## Tests
+
+The tests need PostgreSQL, so start it first if it is not running:
+
+```sh
+docker compose -f compose.dev.yaml up -d
+pnpm test                            # unit and component tests
+pnpm --filter @dive-hub/web test:e2e # browser tests (builds the web client)
+```
+
+While working, `pnpm check` runs the type check, lint and only the tests affected by the changed files. CI runs
+the full suite (`pnpm check:full`) on every pull request. Details: [development guide](docs/development.md).
+
+Licensed under [Apache-2.0](LICENSE).

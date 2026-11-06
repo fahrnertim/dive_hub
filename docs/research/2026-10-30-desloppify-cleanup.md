@@ -191,8 +191,8 @@ Items skipped as later work (temporary skips in desloppify's plan):
 | Item | Why |
 |---|---|
 | `schema_single_file_hub` | see above |
-| `mutual_domain_module_dependencies` | [backlog 0012](../backlog/0012-domain-module-layering.md) |
-| `web_src_root_flat` | [backlog 0013](../backlog/0013-web-feature-folders.md) |
+| `mutual_domain_module_dependencies` | backlog 0012 |
+| `web_src_root_flat` | backlog 0013 |
 
 Small follow-ups: the web's `WATER_TYPES` copies could derive from the api-client; `db/schema.ts` still
 names `providers/leases.ts` in two comments.

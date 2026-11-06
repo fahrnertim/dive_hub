@@ -138,9 +138,8 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.lint = 'all';
       continue;
     }
-    // The scripts of unattended implementation have tests of their own, and nothing else reads them.
-    // So have the protected-path hooks (agent-lib.test.mjs runs them).
-    if (/^scripts\/(agent|drift)/.test(path) || /^\.claude\/hooks\/(ask|guard)-protected\.mjs$/.test(path)) { plan.scripts = true; continue; }
+    // The drift report has tests of its own, and nothing else reads it.
+    if (/^scripts\/drift/.test(path)) { plan.scripts = true; continue; }
     // So has the check script (amendment of 2026-10-24); its lint part also lints everything.
     if (/^scripts\/check/.test(path)) {
       plan.scripts = true;

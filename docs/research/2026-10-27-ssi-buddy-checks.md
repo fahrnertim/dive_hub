@@ -10,7 +10,7 @@ date: 2026-10-27
 Run by the controller with the kept token on 2026-10-27, each step announced in the session, as `round-trip.ts buddy …`
 (modes in `apps/server/test/fixtures/ssi/buddy-checks.ts`). Account 3664600, MySSI app 5.0.43. [T] tested on the owner's
 account. Background: [SSI app API](../references/ssi-app-api.md#buddies-checked-2026-10-05), the design's piece 5
-([design](../superpowers/specs/2026-10-23-ssi-app-alignment-design.md)). Test entries are named "Dive Hub" / "test …",
+(design). Test entries are named "Dive Hub" / "test …",
 the test dive is dated 2000-01-01 with notes "Dive Hub test". The output printed no real person's name, e-mail or account.
 
 ## What the app sends [R]

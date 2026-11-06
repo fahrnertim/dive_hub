@@ -25,7 +25,7 @@ radius) on a pale frame; the logbook and the dive page stand on it, and everythi
 profile's area darkens from the surface to the deepest point, like the water column, and is the one bold
 element. The diver-down flag is the brand mark. The primary button is ink (near-black, inverted in the dark);
 the accent colour means only "link, focus or data". One typeface, no decoration that carries no information.
-Design of the overhaul: [spec](../superpowers/specs/2026-11-02-ui-overhaul-design.md).
+Design of the overhaul: spec.
 
 Checked against generic defaults (frontend-design skill). No cream background, no all-caps labels,
 no identical shadowed cards, no gradients as decoration (the only gradient encodes depth), no
@@ -69,7 +69,7 @@ New semantic tokens: `--color-active` (the navigation pill), `--color-primary` a
 | Sheet on frame (decorative, no meaning) | 1.1 | 1.1 |
 
 `--color-border` (dividers between rows) is decorative and lighter; anything that marks a control's
-boundary uses `--color-border-strong`. A panel is a section of the sheet, divided from the section before by a hairline, with no outline of its own (the [overhaul design](../superpowers/specs/2026-11-02-ui-overhaul-design.md), "Surfaces").
+boundary uses `--color-border-strong`. A panel is a section of the sheet, divided from the section before by a hairline, with no outline of its own (the overhaul design, "Surfaces").
 
 ### Type, space, shape
 
@@ -84,7 +84,7 @@ boundary uses `--color-border-strong`. A panel is a section of the sheet, divide
   and avatars are fully round.
 - **Shell and durations:** `--shell-sidebar` 14.5 rem, `--shell-topbar` 3.25 rem; `--duration-hover` 120 ms,
   `--duration-reveal` 150 ms, `--duration-disclosure` 200 ms (all 0 with reduced motion).
-- **Surfaces** (the [overhaul design](../superpowers/specs/2026-11-02-ui-overhaul-design.md), which replaces ADR 0019's white panels): the page is one
+- **Surfaces** (the overhaul design, which replaces ADR 0019's white panels): the page is one
   white sheet on the tinted frame; a `Panel` on it is a section, not a box. It has no edge, corners or padding of its own;
   the sheet's padding holds it, and a hairline with `--space-5` above sets it off from the section before. A box inside
   the sheet is one tone step (the candidate cards, `.terms`). Something that waits for the User (Duplicate
