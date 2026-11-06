@@ -10,7 +10,7 @@ url: https://www.oceanicworldwide.com/oceanic-plus/
 
 ## What it is
 Oceanic+ is Huish's dive app for the Apple Watch Ultra and Oceanic+ dive computers. Since Oceanic+ 2.0 it exports the
-whole logbook as **one UDDF file**, sent by email as a zip ([research](../research/2026-11-03-oceanic-plus-uddf.md)).
+whole logbook as **one UDDF file**, sent by email as a zip.
 The menu path in the app is a best guess (*Logbook → Share/Export (UDDF)*), shown on the import page until the owner
 confirms it. There is no public API; a cloud API is later work and needs reverse engineering.
 
@@ -67,14 +67,16 @@ dialect is recognised by the generator's homepage or name containing "oceanic".
   `device`.
 - **No Device:** the file doesn't name the computer (Apple Watch or Oceanic+ computer), so the Recording has none.
 - **Position:** the linked site's coordinates are the entry position, so site matching works as for a FIT file.
-- **Gases:** each `tankdata`'s linked mix, and each `tankdata` is a tank the diver used: it makes one Cylinder even
-  without a pressure. Pressures that are the same at the start and the end are dropped (a default, not a reading,
-  which would make the gas use 0). A dive without `tankdata` (a breath-hold session) has no gas and no Cylinder, not
-  a made-up one of air.
+- **Gases:** each `tankdata`'s linked mix is the dive's gas. Oceanic+ writes a `tankdata` on every scuba dive
+  whether or not the diver entered tank values (the owner's export has one per scuba dive and no pressures), so a
+  link alone is no evidence of a tank used and makes no Cylinder (ADR 0045): a Cylinder comes only from a pressure
+  or a size the file actually has. Pressures that are the same at the start and the end are dropped (a default, not
+  a reading, which would make the gas use 0). A dive without `tankdata` (a breath-hold session) has no gas and no
+  Cylinder, not a made-up one of air.
 - **Profile:** none for fewer than 3 waypoints (a breath-hold session's two are made up); duration, depth and the
   lowest temperature still come from `informationafterdive`. The mix a dive starts on is no gas switch.
 - **Kept as extras:** the generator (`Oceanic+ 0.0.1`), the notes, the rating and the lead (`leadKg`) when above 0
-  (0 is the app's default). Notes moving into the Dive's own notes is a follow-up (backlog 0018).
+  (0 is the app's default). Notes moving into the Dive's own notes is a follow-up.
 - **XML reader of our own** (`xml.ts`), not a library: UDDF needs only elements, attributes and text, and the
   libraries bring several dependencies. It refuses a document type, so nothing expands entities or loads outside
   files; it decodes only the five predefined entities and character references. Limits: 32 MB per file, 1,000,000

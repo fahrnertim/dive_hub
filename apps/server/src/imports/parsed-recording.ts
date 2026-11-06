@@ -88,15 +88,3 @@ const KEY_IS_STABLE_DIVE_ID = new Set(['oceanicplus']);
 export function keyIsStableDiveId(recordingKey: string): boolean {
   return KEY_IS_STABLE_DIVE_ID.has(recordingKeySource(recordingKey));
 }
-
-/**
- * Sources that name each dive's own tanks even when the file has no pressure or size for them: Oceanic+ links one
- * `tankdata` per scuba dive. A tank it names is a tank the diver used, not a mix the computer merely lists. The
- * adapter fills `summary.gases` from `tankdata` alone for such a Source, never from a `switchmix` it merely lists.
- */
-const NAMES_TANKS_WITHOUT_PRESSURE = new Set(['oceanicplus']);
-
-/** The gases that are tanks the file names for this Recording even without a pressure (ADR 0045, `tankdata`). */
-export function namedTanks(recordingKey: string, summary: RecordingSummary): NonNullable<RecordingSummary['gases']> {
-  return NAMES_TANKS_WITHOUT_PRESSURE.has(recordingKeySource(recordingKey)) ? summary.gases ?? [] : [];
-}

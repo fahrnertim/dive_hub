@@ -55,9 +55,10 @@ describe.skipIf(!(await databaseReachable()))('an Oceanic+ export through the im
     const apnea = recs.filter((r) => r.summary.diveMode === 'apnea');
     expect(apnea).toHaveLength(1);
     expect(await db.select().from(dive)).toHaveLength(4);
-    // A breath-hold session has no tank data: no Cylinder, not a made-up one of air.
+    // A `tankdata` link only names the mix; without a pressure or a size it is no tank the diver used (ADR 0045).
+    // The breath-hold session has no tank data either, so the export makes no Cylinder at all.
     expect(await db.select().from(cylinder).where(eq(cylinder.diveId, apnea[0]!.diveId!))).toEqual([]);
-    expect((await db.select().from(cylinder)).map((c) => c.o2).sort()).toEqual([21, 31, 32]);
+    expect(await db.select().from(cylinder)).toEqual([]);
   });
 
   it('finds the same dives unchanged when the file comes again', async () => {

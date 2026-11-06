@@ -4,7 +4,6 @@ import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Queryable, Tx } from '../db/client.js';
 import { cylinder, dive, recording, revision, sampleSeries, type CylinderMaterial } from '../db/schema.js';
 import type { ProviderCylinder } from '../providers/provider.js';
-import { namedTanks } from '../imports/parsed-recording.js';
 import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
 
 export class CylinderError extends Error {
@@ -90,29 +89,26 @@ export async function setCylinders(tx: Tx, diveId: string, list: CylinderInput[]
 
 /**
  * Where the Dive has no Cylinders, makes them from what a Recording that just came to it knows of its tanks (ADR 0045):
- * one per gas the computer gives a start or an end pressure for, with its size, one per tank the file names even
- * without a pressure (Oceanic+ `tankdata`), and one per pressure series of a tank pod. The first series is
- * `tankPressure` whatever its gas's number, so the series in their order belong to the gases that carry pressures,
- * in theirs; such a Cylinder is tied to its series and marked as from the pod, and takes the first and last reading
- * where the computer sums up no pressure. A gas without a pressure and not named as a tank makes none: a computer
- * lists every gas it was set to. Answers the change for the caller's Revision (empty when nothing was made).
+ * one per gas the computer gives a start or an end pressure for, with its size, and one per pressure series of a tank
+ * pod. The first series is `tankPressure` whatever its gas's number, so the series in their order belong to the gases
+ * that carry pressures, in theirs; such a Cylinder is tied to its series and marked as from the pod, and takes the
+ * first and last reading where the computer sums up no pressure. A gas without a pressure makes none: a computer lists
+ * every gas it was set to. Answers the change for the caller's Revision (empty when nothing was made).
  */
 export async function fillCylindersFromRecording(
-  tx: Tx, diveId: string, rec: Pick<typeof recording.$inferSelect, 'id' | 'summary' | 'recordingKey'>,
+  tx: Tx, diveId: string, rec: Pick<typeof recording.$inferSelect, 'id' | 'summary'>,
 ): Promise<Changes> {
   const order = (channel: string) => Number(PRESSURE_CHANNEL.exec(channel)?.[1] ?? 0);
   const series = (await tx.select().from(sampleSeries).where(eq(sampleSeries.recordingId, rec.id)))
     .filter((s) => PRESSURE_CHANNEL.test(s.channel) && s.values.length > 0)
     .sort((a, b) => order(a.channel) - order(b.channel));
   const measured = (rec.summary.gases ?? []).filter((g) => g.startPressureBar !== undefined || g.endPressureBar !== undefined);
-  const named = namedTanks(rec.recordingKey, rec.summary).filter((g) => !measured.includes(g));
-  const gases = [...measured, ...named];
-  const count = Math.max(series.length, gases.length);
+  const count = Math.max(series.length, measured.length);
   if (count === 0) return {};
   const [has] = await tx.select({ position: cylinder.position }).from(cylinder).where(eq(cylinder.diveId, diveId)).limit(1);
   if (has) return {};
   const made: Cylinder[] = Array.from({ length: count }, (_, i) => {
-    const gas = gases[i];
+    const gas = measured[i];
     const s = series[i];
     return {
       volumeL: gas?.tankVolumeL ?? null, workingPressureBar: null, material: null, gas: gas ? { o2: gas.o2, he: gas.he } : null,
