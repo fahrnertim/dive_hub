@@ -69,8 +69,9 @@ dialect is recognised by the generator's homepage or name containing "oceanic".
 - **Position:** the linked site's coordinates are the entry position, so site matching works as for a FIT file.
 - **Gases:** each `tankdata`'s linked mix is the dive's gas. Oceanic+ writes a `tankdata` on every scuba dive
   whether or not the diver entered tank values (the owner's export has one per scuba dive and no pressures), so a
-  link alone is no evidence of a tank used and makes no Cylinder (ADR 0045): a Cylinder comes only from a pressure
-  or a size the file actually has. Pressures that are the same at the start and the end are dropped (a default, not
+  link alone is no evidence of a tank used and makes no Cylinder (ADR 0045): a Cylinder comes only from a start or
+  an end pressure the file actually has, with its size when it has one; a size alone is a setting, not a tank that
+  was dived. Pressures that are the same at the start and the end are dropped (a default, not
   a reading, which would make the gas use 0). A dive without `tankdata` (a breath-hold session) has no gas and no
   Cylinder, not a made-up one of air.
 - **Profile:** none for fewer than 3 waypoints (a breath-hold session's two are made up); duration, depth and the
