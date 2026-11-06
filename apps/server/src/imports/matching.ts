@@ -17,8 +17,8 @@ export interface CandidateDive extends TimeSpan {
    */
   sameDevice?: boolean;
   /**
-   * The Dive has a Recording of this Recording's Source under another key. A Source's keys name its dives, so two of
-   * them are two dives: overlap is for matching copies across Sources, never within one (ADR 0037).
+   * The Dive has a Recording of this Recording's Source under another key that is a stable id the Source gave its
+   * dives. Two such keys are two dives: overlap is for matching copies across Sources, never within one (ADR 0037).
    */
   sameSource?: boolean;
 }

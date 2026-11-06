@@ -177,6 +177,17 @@ describe.skipIf(!(await databaseReachable()))('Suunto files through the import p
       expect(his).toMatchObject({ result: 'created' });
       expect(his!.diveId).not.toBe(mine!.diveId);
     });
+
+    it('a device-less re-export whose rounded duration changes its key stays one Dive, never a second', async () => {
+      const [first] = await runImport('thin.fit', makeSuuntoAppFit({ start: day(20), durationSeconds: 30 * 60 }));
+      expect(first).toMatchObject({ result: 'created' });
+      const [again] = await runImport('thin-again.fit', makeSuuntoAppFit({ start: day(20), durationSeconds: 30 * 60 + 1 }));
+      expect(again).toMatchObject({ result: 'attached', diveId: first!.diveId });
+      expect(await db.select().from(dive).where(eq(dive.id, first!.diveId!))).toHaveLength(1);
+      const recs = await recordingsOf(first!.diveId!);
+      expect(recs).toHaveLength(2);
+      expect(new Set(recs.map((r) => r.recordingKey)).size).toBe(2);
+    });
   });
 
   describe('the same dive from a Garmin and a Suunto (scenario 1)', () => {

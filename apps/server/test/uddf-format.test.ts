@@ -100,6 +100,22 @@ describe('an Oceanic+ export, anonymised from a real one (apps/web/e2e/fixtures/
     expect(recs.flatMap((r) => r.events)).toEqual([]);
   });
 
+  it('gives a dive without tankdata no gas, even when its starting switchmix names one', async () => {
+    const [rec] = await uddf.parse(makeOceanicPlusUddf([{
+      id: '6a1f00c0ffee00000000f00d',
+      local: '2026-03-15T09:00:00.000',
+      offset: '-00:04',
+      waypoints: [[0, 0, undefined], [15, 8.5, 300.15], [30, 1.0, 300.15]],
+      greatestDepth: 8.5,
+      duration: 30,
+      lowestTemperature: 300.15,
+      tankData: false,
+    }]));
+    expect(rec!.summary.diveMode).toBe('open_circuit');
+    expect(rec!.summary.gases).toBeUndefined();
+    expect(rec!.events).toEqual([]);
+  });
+
   it('drops a tank\'s pressures when start and end are the same (the app\'s 220/220 default, not a reading)', async () => {
     const [, defaulted] = await uddf.parse(exported);
     expect(defaulted!.summary.gases).toEqual([{ o2: 31, he: 0 }]);

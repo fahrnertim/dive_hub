@@ -12,8 +12,7 @@ url: https://www.oceanicworldwide.com/oceanic-plus/
 Oceanic+ is Huish's dive app for the Apple Watch Ultra and Oceanic+ dive computers. Since Oceanic+ 2.0 it exports the
 whole logbook as **one UDDF file**, sent by email as a zip ([research](../research/2026-11-03-oceanic-plus-uddf.md)).
 The menu path in the app is a best guess (*Logbook → Share/Export (UDDF)*), shown on the import page until the owner
-confirms it. There is no public API; a cloud API is
-later work and needs reverse engineering ([backlog 0018](../backlog/0018-oceanic-plus-import.md)).
+confirms it. There is no public API; a cloud API is later work and needs reverse engineering.
 
 ## The file, as read from the one public sample
 Source: the Submersion project's test file

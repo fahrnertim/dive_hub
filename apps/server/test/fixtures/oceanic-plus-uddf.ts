@@ -15,6 +15,8 @@ export interface OceanicDive {
   duration: number;
   lowestTemperature: number;
   rating?: number;
+  /** Whether the app links a tank (default true): a dive without it has no gas and no Cylinder. */
+  tankData?: boolean;
 }
 
 export const OCEANIC_DIVES: OceanicDive[] = [
@@ -72,17 +74,17 @@ const dive = (d: OceanicDive) => `
                     <altitude>-1.0671948</altitude>
                 </informationbeforedive>
                 <samples>${d.waypoints.map((w, i) => waypoint(w, i === 0)).join('')}
-                </samples>
+                </samples>${d.tankData === false ? '' : `
                 <tankdata id="tank_${d.id}">
                     <link ref="air"/>
-                </tankdata>
+                </tankdata>`}
                 <informationafterdive>
                     <lowesttemperature>${d.lowestTemperature}</lowesttemperature>
                     <greatestdepth>${d.greatestDepth}</greatestdepth>
                     <diveduration>${d.duration.toFixed(1)}</diveduration>
                     <equipmentused>
-                        <leadquantity>0.0</leadquantity>
-                        <link ref="tank_${d.id}"/>
+                        <leadquantity>0.0</leadquantity>${d.tankData === false ? '' : `
+                        <link ref="tank_${d.id}"/>`}
                     </equipmentused>${d.rating === undefined ? '' : `
                     <rating>
                         <ratingvalue>${d.rating}</ratingvalue>

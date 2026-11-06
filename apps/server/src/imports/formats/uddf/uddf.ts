@@ -190,6 +190,9 @@ function gasesOf(dive: XmlElement, mixes: Map<string, Mix>, switched: string[], 
     });
   });
   if (tanks.length > 0) return tanks;
+  // Only another program's gas switches name gases of their own. Oceanic+ links a tank per scuba dive in `tankdata`;
+  // a dive without it has no gas, and a starting `switchmix` is a mix the computer lists, not a tank the diver used.
+  if (dialect === 'oceanicplus') return undefined;
   const used = [...new Set(switched)].flatMap((ref) => { const mix = mixes.get(ref); return mix ? [mix] : []; });
   return used.length > 0 ? used : undefined;
 }

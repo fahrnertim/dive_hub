@@ -78,8 +78,21 @@ export function recordingKeySource(recordingKey: string): string {
 }
 
 /**
+ * Sources whose key is a stable external id of the dive itself (ADR 0037): two such keys are two dives. A key built
+ * from the dive's values (start, duration, depth) can change when a re-export rounds differently, so it never proves
+ * that two Recordings are two dives.
+ */
+const KEY_IS_STABLE_DIVE_ID = new Set(['oceanicplus']);
+
+/** Whether a Recording key names its dive by a stable id the Source gave it, rather than by the dive's values. */
+export function keyIsStableDiveId(recordingKey: string): boolean {
+  return KEY_IS_STABLE_DIVE_ID.has(recordingKeySource(recordingKey));
+}
+
+/**
  * Sources that name each dive's own tanks even when the file has no pressure or size for them: Oceanic+ links one
- * `tankdata` per scuba dive. A tank it names is a tank the diver used, not a mix the computer merely lists.
+ * `tankdata` per scuba dive. A tank it names is a tank the diver used, not a mix the computer merely lists. The
+ * adapter fills `summary.gases` from `tankdata` alone for such a Source, never from a `switchmix` it merely lists.
  */
 const NAMES_TANKS_WITHOUT_PRESSURE = new Set(['oceanicplus']);
 

@@ -35,4 +35,4 @@ the sources and what is uncertain.
 - **The offset quirk** (`-00:04` for UTC−4) is the main risk: it is consistent across the sample's three regions and
   seasons, but the sample was sanitised. The owner's files settle it.
 - **An Oceanic+ Provider** (account sign-in, fetching dives like Garmin's) needs the cloud API, which is not public;
-  that is reverse engineering and a decision first. Backlog [0018](../backlog/0018-oceanic-plus-import.md).
+  that is reverse engineering and a decision first.

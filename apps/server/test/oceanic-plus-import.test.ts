@@ -129,3 +129,40 @@ describe.skipIf(!(await databaseReachable()))('two back-to-back Oceanic+ dives f
     expect(await db.select().from(duplicateCandidate)).toEqual([]);
   });
 });
+
+describe.skipIf(!(await databaseReachable()))('an Oceanic+ scuba dive without tankdata (PostgreSQL)', () => {
+  let t: TestDatabase;
+  let db: Db;
+  let imports: ImportService;
+  let alice: string;
+
+  beforeAll(async () => {
+    t = await createTestDatabase();
+    db = t.db;
+    alice = (await createUser(createTestAuth(db), 'alice@example.com')).id;
+    imports = createImportService({ db, blobs: createLocalBlobStore(t.dataDir) });
+    listenToNoChanges();
+  });
+
+  afterAll(async () => { await t?.drop(); });
+
+  it('has no gas and no Cylinder, even when its starting switchmix names one', async () => {
+    const file = makeOceanicPlusUddf([{
+      id: '6a1f00c0ffee00000000f00d',
+      local: '2026-03-15T09:00:00.000',
+      offset: '-00:04',
+      waypoints: [[0, 0, undefined], [15, 8.5, 300.15], [30, 1.0, 300.15]],
+      greatestDepth: 8.5,
+      duration: 30,
+      lowestTemperature: 300.15,
+      tankData: false,
+    }]);
+    const created = await imports.createImport(alice, 'scuba.uddf', Readable.from([file]), 1 << 26);
+    await imports.processImport(created.id);
+    const done = (await db.select().from(importJob).where(eq(importJob.id, created.id)))[0]!;
+    expect(done.outcome.map((o) => o.result)).toEqual(['created']);
+    const [rec] = await db.select().from(recording);
+    expect(rec!.summary.gases).toBeUndefined();
+    expect(await db.select().from(cylinder)).toEqual([]);
+  });
+});
