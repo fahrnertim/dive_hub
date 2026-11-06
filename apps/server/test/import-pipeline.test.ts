@@ -1,5 +1,5 @@
 // Integration test of the import pipeline against PostgreSQL (docs/spec/data-model.md, scenario 1).
-// Uses a throwaway database on the server from TEST_DATABASE_URL / DATABASE_URL; skipped when unreachable.
+// Uses a throwaway database on the test server (DIVEHUB_TEST_DATABASE_URL); skipped when unreachable.
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
