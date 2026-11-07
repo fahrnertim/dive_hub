@@ -54,7 +54,9 @@ export async function start(config: Config) {
     // Deliberately logged: whoever can read the server log may create the first admin (ADR 0012).
     app.log.warn(`No admin yet. Open ${config.baseUrl}/#/setup and enter this setup token (valid 24 h, until the first admin exists): ${setupToken}`);
   }
-  // The worker starts after the migrations, and the server listens last.
+  // The worker starts after the migrations, and the server listens last. The live layer listens for hints in this app
+  // process (a worker-only process emits but has no streams, ADR 0066).
+  services.live.start();
   const worker = config.inProcessWorker ? await startWorker(pool, workerDeps(services, app.log)) : undefined;
   await app.listen({ host: config.host, port: config.port });
 
@@ -62,6 +64,7 @@ export async function start(config: Config) {
     app, worker,
     async stop() {
       app.log.info('shutting down');
+      await services.live.stop();
       await app.close();
       await worker?.stop();
       await pool.end();

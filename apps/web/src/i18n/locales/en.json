@@ -315,7 +315,11 @@
     "fromProvider": "from {{name}}",
     "surfaceInterval": "{{time}} after the dive before",
     "with": "with {{people}}",
-    "morePeople": "+{{count}}"
+    "morePeople": "+{{count}}",
+    "newDives_one": "{{count}} new dive",
+    "newDives_other": "{{count}} new dives",
+    "showNewDives_one": "Show {{count}} new dive",
+    "showNewDives_other": "Show {{count}} new dives"
   },
   "dive": {
     "numberOnComputer": "Number on the computer",
@@ -426,7 +430,14 @@
     },
     "noRecording": "This dive has no recording.",
     "noRecordingFrom": "No recording yet: this dive comes from your {{name}} logbook, typed in by hand.",
-    "noRecordingNext": "When you import the dive computer’s file, its recording is added, and its values replace these."
+    "noRecordingNext": "When you import the dive computer’s file, its recording is added, and its values replace these.",
+    "changedElsewhere": "This dive changed elsewhere. Your edits are still here.",
+    "loadNewVersion": "Load the new version",
+    "loadNewVersionTitle": "Load the new version?",
+    "loadNewVersionLost": "Your edits to this dive will be lost. The version from elsewhere will replace them.",
+    "loadNewVersionConfirm": "Load new version",
+    "newVersionLoaded": "New version loaded.",
+    "deletedElsewhere": "This dive was deleted elsewhere. Your edits are still here, but they can't be saved."
   },
   "errors": {
     "unknown": "Something went wrong. Try again.",
@@ -544,7 +555,8 @@
     "cylinder_series_not_found": "This dive has no such tank pod. Reload it and try again.",
     "weighting_feedback_invalid": "Weighting that felt right has no amount. Leave “By how much” empty.",
     "suit_invalid": "The suit’s values don’t fit: a thickness is for a wetsuit or a semidry suit, an undergarment for a drysuit.",
-    "gas_not_breathable": "A mix with under 16 % oxygen can’t be breathed at the surface."
+    "gas_not_breathable": "A mix with under 16 % oxygen can’t be breathed at the surface.",
+    "too_many_live_streams": "Too many live connections are open for this account; close another tab or wait a moment."
   },
   "vocabulary": {
     "waterType": {

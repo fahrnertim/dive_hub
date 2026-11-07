@@ -4,6 +4,7 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../../db/client.js';
 import { diveSite, siteImport, type SiteImportFinding, type SiteImportProgress } from '../../db/schema.js';
+import { emitHint } from '../../live/emit.js';
 import { changeListener, writeRevision, type Actor, type Changes } from '../../dives/revisions.js';
 import { errorMessage } from '../../errors.js';
 import type { ProblemCode } from '../../http/problems.js';
@@ -136,6 +137,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
           }).returning();
           // One attempt: a failed import says why and is started again by the admin, not retried behind their back.
           await tx.execute(sql`select graphile_worker.add_job(${IMPORT_DIVE_SITES_TASK}, json_build_object('siteImportId', ${row!.id}::text), max_attempts => 1)`);
+          await emitHint(tx, { kind: 'siteImport', id: row!.id, audience: [userId] });
           return row!;
         });
       } catch (error) {
@@ -160,6 +162,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
       const [row] = await db.update(siteImport).set({ status: 'running' })
         .where(and(eq(siteImport.id, id), eq(siteImport.status, 'queued'))).returning();
       if (!row) return;
+      await emitHint(db, { kind: 'siteImport', id, audience: row.startedBy ? [row.startedBy] : [] });
       const actor: Actor = { type: 'site_import', id };
       try {
         const incoming: SourceSite[] = [];
@@ -196,6 +199,7 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
           await setProgress(id, { step: 'saving', done: Math.min(i + BATCH, work.length), total: work.length });
         }
         await db.update(siteImport).set({ status: 'done', counts: plan.counts, findings, finishedAt: new Date() }).where(eq(siteImport.id, id));
+        await emitHint(db, { kind: 'siteImport', id, audience: row.startedBy ? [row.startedBy] : [] });
       } catch (error) {
         const code: ProblemCode = error instanceof SiteSourceError
           ? (error.reason === 'rate_limited' ? 'source_rate_limited' : 'source_unavailable')
@@ -203,14 +207,16 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
         await db.update(siteImport).set({
           status: 'failed', errorCode: code, errorDetail: errorMessage(error).slice(0, 500), finishedAt: new Date(),
         }).where(eq(siteImport.id, id));
+        await emitHint(db, { kind: 'siteImport', id, audience: row.startedBy ? [row.startedBy] : [] });
         if (!(error instanceof SiteSourceError)) throw error;
       }
     },
 
     /** At worker start: an import still running was cut off by a stop or crash. */
     async failInterrupted() {
-      await db.update(siteImport).set({ status: 'failed', errorCode: 'site_import_interrupted', finishedAt: new Date() })
-        .where(inArray(siteImport.status, ['running']));
+      const rows = await db.update(siteImport).set({ status: 'failed', errorCode: 'site_import_interrupted', finishedAt: new Date() })
+        .where(inArray(siteImport.status, ['running'])).returning({ id: siteImport.id, startedBy: siteImport.startedBy });
+      for (const row of rows) await emitHint(db, { kind: 'siteImport', id: row.id, audience: row.startedBy ? [row.startedBy] : [] });
     },
   };
 }

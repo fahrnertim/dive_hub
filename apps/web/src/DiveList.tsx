@@ -10,6 +10,7 @@ import {
 import { useAddressSearch } from './lib/address-search.ts';
 import { useNarrow } from './lib/narrow.ts';
 import { usePageTitle } from './lib/page.ts';
+import { useLiveArrivals } from './lib/live-arrivals.ts';
 import { diveTargets, useJoinNames, useProviders } from './lib/providers.ts';
 import { SendToProvider } from './PushRun.tsx';
 import { ProfileSketch } from './ProfileSketch.tsx';
@@ -67,6 +68,12 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
 
   const page = params.page ?? 1;
   const total = dives.data?.total ?? 0;
+  const arrivals = useLiveArrivals({
+    pageKey: JSON.stringify(params), enabled: page === 1, data: dives.data, isPlaceholderData: dives.isPlaceholderData,
+    count: (n) => t('logbook.newDives', { count: n }),
+  });
+  const firstUnseen = arrivals.unseen[0];
+  const unseenIndex = firstUnseen ? (dives.data?.dives.findIndex((d) => d.id === firstUnseen) ?? -1) : -1;
   const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const to = Math.min(page * PAGE_SIZE, total);
   const range = t('logbook.range', { from, to, count: total });
@@ -175,6 +182,14 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
       {dives.data && dives.data.total > 0 && (
         <>
           <p className="logbook-range meta">{range}</p>
+          {arrivals.unseen.length > 0 && (
+            <Button
+              className="new-dives-pill" size="small" icon={unseenIndex <= 0 ? 'newAbove' : 'newBelow'}
+              aria-label={t('logbook.showNewDives', { count: arrivals.unseen.length })} onPress={arrivals.show}
+            >
+              {t('logbook.newDives', { count: arrivals.unseen.length })}
+            </Button>
+          )}
           <section className="dive-list reveal" aria-label={t('logbook.dives')}>
             <div className="dive-grid">
             {monthGroups(dives.data.dives, dives.data.months).map((group) => (
@@ -186,6 +201,7 @@ export function DiveList({ params, searchable = true }: { params: LogbookParams;
                       key={d.id} dive={d} list={listQuery(params)} year={!byDate} scaleM={sketchScale(dives.data.totals.deepestM)}
                       diver={several ? nameOf.get(d.diverId) : undefined}
                       from={d.fromProvider ? providerName(d.fromProvider) : undefined} providerName={providerName}
+                      arrived={arrivals.tinted.has(d.id)}
                     />
                   ))}
                 </ul>
@@ -272,9 +288,11 @@ function MonthHead({ month, figures }: { month: string; figures: MonthFigures | 
  * One Dive: the site as its title (the date while it has none), then what makes it this dive, who was there, and the
  * two numbers in columns. The title is the link (keyboard and screen readers); the whole row is a larger click target.
  */
-function DiveRow({ dive: d, diver, from, providerName, year, scaleM, list }: {
+function DiveRow({ dive: d, diver, from, providerName, year, scaleM, list, arrived }: {
   /** The list the row is in; it goes into the Dive's address (ADR 0042). */
   list: string;
+  /** The row just arrived through a background refresh: tint it once. */
+  arrived: boolean;
   dive: DiveSummary;
   /** The metres a sketch's height stands for, the same in every row. */
   scaleM: number;
@@ -296,7 +314,7 @@ function DiveRow({ dive: d, diver, from, providerName, year, scaleM, list }: {
   };
   const itemName = d.number === null ? (d.site?.name ?? display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource)) : `${t('logbook.numberLabel')} ${d.number}`;
   return (
-    <li className="dive-row" onClick={open}>
+    <li className={arrived ? 'dive-row is-arrival' : 'dive-row'} data-dive-id={d.id} onClick={open}>
       <span className="dive-no num">
         {d.number === null ? <span aria-hidden="true">{t('common.none')}</span> : <><span className="visually-hidden">{t('logbook.numberLabel')} </span>{d.number}</>}
       </span>

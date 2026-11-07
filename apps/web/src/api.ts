@@ -4,6 +4,7 @@ import { createAuthClient } from 'better-auth/client';
 import { SITES_PAGE, type SitesParams } from './lib/sites-list.ts';
 import { neighbourParams, type LogbookParams } from './lib/logbook.ts';
 import { BOTTOM_TIME_RULES, type ToolsParams } from './lib/tools.ts';
+import { liveHealthy } from './lib/live.ts';
 import { pollUntilDue } from './lib/waiting-push.ts';
 
 export const api = createApiClient();
@@ -235,7 +236,7 @@ export const importsQuery = () =>
     queryKey: keys.imports,
     queryFn: async () => unwrap(await api.GET('/api/imports')),
     // Poll while an Import is still being processed.
-    refetchInterval: (q) => (q.state.data?.some((i) => i.status === 'pending' || i.status === 'processing') ? 1000 : false),
+    refetchInterval: (q) => (liveHealthy() ? false : (q.state.data?.some((i) => i.status === 'pending' || i.status === 'processing') ? 1000 : false)),
   });
 
 export const PAGE_SIZE = 25;
@@ -247,6 +248,8 @@ export const divesQuery = (p: LogbookParams = {}) => queryOptions({
     params: { query: { ...neighbourParams(p), limit: PAGE_SIZE, offset: ((p.page ?? 1) - 1) * PAGE_SIZE } },
   })),
   placeholderData: keepPreviousData,
+  // The channel carries new Dives; without it, the list falls back to asking again (ADR 0066). Never while healthy.
+  refetchInterval: () => (liveHealthy() ? false : 5_000),
 });
 
 /** The cylinder catalogue (ADR 0031): a list in the server's code, the same until the next release. */
@@ -277,7 +280,7 @@ export const allButDive = (...ids: string[]) => ({ predicate: (q: { queryKey: re
  */
 export const deletedDivesQuery = () => queryOptions({
   queryKey: keys.deletedDives, queryFn: async () => unwrap(await api.GET('/api/dives/deleted')),
-  refetchInterval: (q) => pollUntilDue(q.state.data?.flatMap((d) => d.waiting), Date.now()),
+  refetchInterval: (q) => (liveHealthy() ? false : pollUntilDue(q.state.data?.flatMap((d) => d.waiting), Date.now())),
 });
 
 /** Pairs of Dives that can't both be right as they stand, or those the User said are two dives (ADR 0038). */
@@ -365,7 +368,7 @@ const running = (i: SiteImportView) => i.status === 'queued' || i.status === 'ru
 export const siteImportsQuery = () => queryOptions({
   queryKey: keys.siteImports,
   queryFn: async () => unwrap(await api.GET('/api/admin/site-imports')),
-  refetchInterval: (query) => (query.state.data?.some(running) ? 2000 : false),
+  refetchInterval: (query) => (liveHealthy() ? false : (query.state.data?.some(running) ? 2000 : false)),
 });
 
 /** A multipart upload, which openapi-fetch's JSON body doesn't carry; its answer goes through unwrap like any other. */
@@ -394,7 +397,7 @@ export const providerStatusQuery = (diveId: string, provider: string) =>
     queryKey: keys.providerStatus(diveId, provider),
     queryFn: async () => unwrap(await api.GET('/api/dives/{id}/providers/{provider}', { params: { path: { id: diveId, provider } } })),
     // An entry that waits goes out at its due time (ADR 0056): the page asks again then, until it is settled.
-    refetchInterval: (q) => pollUntilDue(q.state.data?.waiting ? [q.state.data.waiting] : [], Date.now()),
+    refetchInterval: (q) => (liveHealthy() ? false : pollUntilDue(q.state.data?.waiting ? [q.state.data.waiting] : [], Date.now())),
   });
 /** Every Diver of the instance whose name matches, the User's own first (ADR 0028). */
 export const diverSearchQuery = (q: string) =>
@@ -496,7 +499,7 @@ export const aiAccessSettingQuery = () => queryOptions({
 export const importQuery = (id: string) => queryOptions({
   queryKey: keys.importOf(id),
   queryFn: async () => unwrap(await api.GET('/api/imports/{id}', { params: { path: { id } } })),
-  refetchInterval: (q) => (q.state.data && (q.state.data.status === 'pending' || q.state.data.status === 'processing') ? 1000 : false),
+  refetchInterval: (q) => (liveHealthy() ? false : (q.state.data && (q.state.data.status === 'pending' || q.state.data.status === 'processing') ? 1000 : false)),
 });
 
 /** The Provider's sites near the Dive, nearest first; asks the Provider, so only when the User wants to pick one. */
@@ -610,7 +613,7 @@ const pushRunBody = (c: PushRunChoices) => ({
 export const pushRunActive = (r: Pick<PushRunView, 'status'>) => r.status === 'queued' || r.status === 'running';
 /** The User's runs, newest first; asked again every two seconds while one is going (no faster: ADR 0047). */
 export const pushRunsQuery = () => queryOptions({
-  queryKey: keys.pushRuns, queryFn: async () => unwrap(await api.GET('/api/push-runs')), refetchInterval: (q) => (q.state.data?.some(pushRunActive) ? 2000 : false),
+  queryKey: keys.pushRuns, queryFn: async () => unwrap(await api.GET('/api/push-runs')), refetchInterval: (q) => (liveHealthy() ? false : (q.state.data?.some(pushRunActive) ? 2000 : false)),
 });
 /** One run with its items; the list above has the progress, this has what happened to each Dive. */
 export const pushRunQuery = (id: string) => queryOptions({ queryKey: keys.pushRun(id), queryFn: async () => unwrap(await api.GET('/api/push-runs/{id}', { params: { path: { id } } })) });

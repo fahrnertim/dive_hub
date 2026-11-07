@@ -45,7 +45,11 @@ export function createProviderLayer(deps: {
   const scheduledFetch = createScheduledFetch({ db: deps.db, registry: providers, diveImports, ...clock, log });
   const goneDives = createGoneDiveService({ db: deps.db, registry: providers, connections, leases });
   const certifications = createCertificationService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });
-  return { providers, connections, pushes, pushRuns, waitingPushes, buddies, sitePicks, diveImports, scheduledFetch, goneDives, conflicts, certifications };
+  return {
+    providers, connections, pushes, pushRuns, waitingPushes, buddies, sitePicks, diveImports, scheduledFetch, goneDives, conflicts, certifications,
+    // What the layer does when a Revision or a site changes; compose.ts wraps it with the live hints (ADR 0066).
+    noteChanges: { diveChanged: noteDiveChange, siteChanged: noteSiteChange },
+  };
 }
 
 export type ProviderLayer = ReturnType<typeof createProviderLayer>;

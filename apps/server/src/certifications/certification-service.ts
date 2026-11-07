@@ -7,6 +7,7 @@ import type { Db, Queryable } from '../db/client.js';
 import { certification, original } from '../db/schema.js';
 import type { CertificationImageState, CertificationVerification } from '../db/schema.js';
 import { managementOf } from '../divers/management.js';
+import { audienceOfDiver, emitHint } from '../live/emit.js';
 import { writeRevision } from '../dives/revisions.js';
 import type { ConnectionService } from '../providers/connection-service.js';
 import { ProviderError, type RemoteCertification } from '../providers/provider.js';
@@ -243,6 +244,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
           diverId, ...values, verification: input.cardSeen ? 'card_seen' : 'self_declared',
         }).returning();
         await writeRevision(tx, 'diver', diverId, { type: 'user', id: userId }, 'create', { certification: { from: null, to: label(row!) } });
+        await emitHint(tx, { kind: 'certification', id: row!.id, audience: await audienceOfDiver(tx, diverId) });
         return view(row!);
       });
     },
@@ -277,6 +279,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
           .returning();
         if (!row) throw new CertificationError('certification_changed');
         await writeRevision(tx, 'diver', diverId, { type: 'user', id: userId }, 'edit', { certification: { from: label(current), to: label(row) } });
+        await emitHint(tx, { kind: 'certification', id: row.id, audience: await audienceOfDiver(tx, diverId) });
         return view(row);
       });
     },
@@ -291,7 +294,10 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
           deletedAt: new Date(), updatedAt: new Date(), version: sql`${certification.version} + 1`,
           imageKey: null, imageSha256: null, imageBytes: null, imageState: 'none',
         }).where(and(eq(certification.id, id), isNull(certification.deletedAt))).returning({ id: certification.id });
-        if (row) await writeRevision(tx, 'diver', diverId, { type: 'user', id: userId }, 'delete', { certification: { from: label(current), to: null } });
+        if (row) {
+          await writeRevision(tx, 'diver', diverId, { type: 'user', id: userId }, 'delete', { certification: { from: label(current), to: null } });
+          await emitHint(tx, { kind: 'certification', id, audience: await audienceOfDiver(tx, diverId) });
+        }
         return !!row;
       });
       if (!deleted) throw new CertificationError('certification_not_found');
@@ -414,10 +420,12 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
         const [after] = await db.select({ deletedAt: certification.deletedAt }).from(certification).where(eq(certification.id, id));
         if (after?.deletedAt) await releaseBlob(stored.key, id);
         else if (old && old !== stored.key) await releaseBlob(old, id);
+        await emitHint(db, { kind: 'certification', id, audience: await audienceOfDiver(db, row.diverId) });
         return 'stored';
       } catch (error) {
         if (!options.final) throw error;
         await db.update(certification).set({ imageState: 'failed', updatedAt: new Date() }).where(eq(certification.id, id));
+        await emitHint(db, { kind: 'certification', id, audience: await audienceOfDiver(db, row.diverId) });
         // Only the kind of failure; the address holds a card ID.
         if (!(error instanceof ProviderError || error instanceof ProviderServiceError)) throw error;
         return 'failed';

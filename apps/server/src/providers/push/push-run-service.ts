@@ -7,6 +7,7 @@ import type { Db, Queryable } from '../../db/client.js';
 import { connection, dive, diveSite, push, pushRun, pushRunItem, type PushRunLeftOut, type ConnectionRow } from '../../db/schema.js';
 import { asksFor, diveListFilter } from '../../dives/list-filter.js';
 import type { ProblemCode } from '../../http/problems.js';
+import { emitHint } from '../../live/emit.js';
 import { managedDiverIds } from '../../divers/management.js';
 import { isUniqueViolation } from '../../sites/site-service.js';
 import type { ConflictService } from '../conflicts/conflict-service.js';
@@ -216,10 +217,14 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
   }
 
   async function finish(runId: string, status: 'done' | 'cancelled') {
-    await db.update(pushRun).set({ status, finishedAt: new Date() }).where(and(eq(pushRun.id, runId), inArray(pushRun.status, ['queued', 'running'])));
+    const [row] = await db.update(pushRun).set({ status, finishedAt: new Date() })
+      .where(and(eq(pushRun.id, runId), inArray(pushRun.status, ['queued', 'running']))).returning({ userId: pushRun.userId });
+    if (row) await emitHint(db, { kind: 'pushRun', id: runId, audience: [row.userId] });
   }
   async function stop(runId: string, code: ProblemCode) {
-    await db.update(pushRun).set({ status: 'stopped', stopCode: code, finishedAt: new Date() }).where(and(eq(pushRun.id, runId), inArray(pushRun.status, ['queued', 'running'])));
+    const [row] = await db.update(pushRun).set({ status: 'stopped', stopCode: code, finishedAt: new Date() })
+      .where(and(eq(pushRun.id, runId), inArray(pushRun.status, ['queued', 'running']))).returning({ userId: pushRun.userId });
+    if (row) await emitHint(db, { kind: 'pushRun', id: runId, audience: [row.userId] });
   }
 
   /** The next waiting item of a run, now "sending" with one more try; null when none waits. */
@@ -342,6 +347,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
         if (isUniqueViolation(e, 'push_run_one_active_uq')) throw error('push_run_active', { runId: await activeRunOf(conn.id) });
         throw e;
       }
+      await emitHint(db, { kind: 'pushRun', id: created.id, audience: [userId] });
       // Older finished runs go: the newest five of a Connection stay.
       await db.execute(sql`delete from push_run where connection_id = ${conn.id}::uuid and status not in ('queued', 'running')
         and id not in (select id from push_run where connection_id = ${conn.id}::uuid order by created_at desc, id desc limit ${KEPT_RUNS})`);
@@ -386,6 +392,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       await db.update(pushRun).set({ cancelRequestedAt: new Date() }).where(and(eq(pushRun.id, runId), isNull(pushRun.cancelRequestedAt)));
       const [sending] = await db.select({ id: pushRunItem.diveId }).from(pushRunItem).where(and(eq(pushRunItem.runId, runId), eq(pushRunItem.state, 'sending'))).limit(1);
       if (!sending) await finish(runId, 'cancelled');
+      await emitHint(db, { kind: 'pushRun', id: runId, audience: [userId] });
       return view(await ownRun(userId, runId));
     },
 
@@ -415,6 +422,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
         if (isUniqueViolation(e, 'push_run_one_active_uq')) throw error('push_run_active', { runId: await activeRunOf(row.connectionId) });
         throw e;
       }
+      await emitHint(db, { kind: 'pushRun', id: runId, audience: [userId] });
       return view(await ownRun(userId, runId));
     },
 
@@ -427,6 +435,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       if (!run || (run.status !== 'queued' && run.status !== 'running')) return null;
       if (run.cancelRequestedAt) { await finish(runId, 'cancelled'); return null; }
       await db.update(pushRun).set({ status: 'running', startedAt: run.startedAt ?? new Date() }).where(eq(pushRun.id, runId));
+      await emitHint(db, { kind: 'pushRun', id: runId, audience: [run.userId] });
       const item = await claimNext(runId);
       if (!item) {
         await finish(runId, 'done');
@@ -440,6 +449,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       const [now] = await db.select({ state: pushRunItem.state }).from(pushRunItem).where(itemOf(runId, item.dive_id));
       const failures = failure ? run.consecutiveFailures + 1 : now?.state === 'sent' ? 0 : run.consecutiveFailures;
       await db.update(pushRun).set({ consecutiveFailures: failures }).where(eq(pushRun.id, runId));
+      await emitHint(db, { kind: 'pushRun', id: runId, audience: [run.userId] });
       if (failure && failures >= FAILURES_IN_A_ROW) {
         await stop(runId, failure);
         return null;

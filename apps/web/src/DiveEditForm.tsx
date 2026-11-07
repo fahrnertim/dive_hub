@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarDateTime } from '@internationalized/date';
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError, keys, unwrap, type DiveValues, type DiveView, type OverridableField } from './api.ts';
 import { CylinderFields, useCylinderProblem } from './Cylinders.tsx';
@@ -9,11 +9,13 @@ import { cylindersOfDrafts, draftOfCylinder, emptyDraft, fromLastDive as cylinde
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { useLeaveGuard } from './lib/leave-guard.ts';
 import { useFormatValue } from './lib/dive-values.ts';
+import { logbookHref } from './lib/logbook.ts';
+import { onDiveChanged, pinDive } from './lib/live.ts';
 import { draftOfWeighting, emptyLead, fromLastDive as weightingFromLastDive, lacks, sameWeighting, weightingOfDraft } from './lib/weighting.ts';
 import { depthFromDisplay, depthIn, temperatureFromDisplay, temperatureIn } from './lib/units.ts';
 import { LeadHint } from './LeadHint.tsx';
 import { WeightingFields } from './Weighting.tsx';
-import { Badge, Button, CancelButton, DateTimeField, Form, Muted, Notice, NumberField, TextArea } from './ui/index.ts';
+import { Badge, Button, CancelButton, ConfirmDialog, DateTimeField, Form, Muted, Notice, NumberField, TextArea } from './ui/index.ts';
 
 /** The form's values, in the User's display units (feet, °F, minutes, local time at the site). */
 interface Draft {
@@ -66,6 +68,10 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
   const [notes, setNotes] = useState(d.notes ?? '');
   const [touched, setTouched] = useState<Set<OverridableField>>(new Set());
   const [reset, setReset] = useState<Set<OverridableField>>(new Set());
+  const [changedElsewhere, setChangedElsewhere] = useState(false);
+  const [deletedElsewhere, setDeletedElsewhere] = useState(false);
+  const [confirmLoad, setConfirmLoad] = useState(false);
+  const deletedNotice = useRef<HTMLDivElement>(null);
   const [loadedCylinders] = useState(() => d.cylinders.map((c) => draftOfCylinder(c, units)));
   // Opened to add Cylinders: the first one's fields are there already. Left empty, it is not saved.
   const [cylinders, setCylinders] = useState(() => (focus === 'cylinders' && loadedCylinders.length === 0 ? [emptyDraft()] : loadedCylinders));
@@ -77,6 +83,17 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
   // One lead entry's fields are always there; left empty, it is not saved.
   const [weighting, setWeighting] = useState(() => (loadedWeighting.lead.length === 0 ? { ...loadedWeighting, lead: [emptyLead()] } : loadedWeighting));
   const weightingChanged = !sameWeighting(weighting, loadedWeighting, units);
+  // Unsaved changes: leaving the page or cancelling asks first (UI review B3); a live hint must not replace them (FAH-37).
+  const dirty = touched.size > 0 || reset.size > 0 || notes !== (d.notes ?? '') || cylindersChanged || weightingChanged;
+  useEffect(() => (dirty ? pinDive(d.id) : undefined), [dirty, d.id]);
+  useEffect(() => (dirty ? onDiveChanged(d.id, () => setChangedElsewhere(true)) : undefined), [dirty, d.id]);
+  // Clean again while the notice shows: there is nothing left to lose, so the latest version may take the form.
+  useEffect(() => {
+    if (dirty || !changedElsewhere) return;
+    setChangedElsewhere(false);
+    void queryClient.invalidateQueries({ queryKey: keys.dive(d.id) });
+  }, [dirty, changedElsewhere, queryClient, d.id]);
+  useEffect(() => { if (deletedElsewhere) deletedNotice.current?.focus(); }, [deletedElsewhere]);
   // "Same as last dive" copies into the form only: nothing is saved until the User saves (ADR 0031). Offered while a
   // part is still empty, and it fills only those: there is nothing to lose.
   const empty = { cylinders: typedCylinders.length === 0, ...lacks(weighting) };
@@ -145,10 +162,26 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
       onDone();
     },
   });
-  // Unsaved changes: leaving the page or cancelling asks first (UI review B3).
-  const dirty = touched.size > 0 || reset.size > 0 || notes !== (d.notes ?? '') || cylindersChanged || weightingChanged;
+  const loadLatest = async () => {
+    try {
+      const latest = unwrap(await api.GET('/api/dives/{id}', { params: { path: { id: d.id } } }));
+      // The parent keys the form by the Dive's version, so the new baseline mounts in place of this one.
+      queryClient.setQueryData(keys.dive(d.id), latest);
+      setChangedElsewhere(false);
+      setDeletedElsewhere(false);
+      announce(t('dive.newVersionLoaded'));
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        setChangedElsewhere(false);
+        setDeletedElsewhere(true);
+        return;
+      }
+      throw error;
+    }
+  };
   useLeaveGuard(dirty && !save.isSuccess, t('common.unsavedQuestion', { lost: t('dive.unsavedLost') }));
   const changedMeanwhile = save.error instanceof ApiError && save.error.code === 'dive_changed';
+  const goneMeanwhile = deletedElsewhere || (save.error instanceof ApiError && save.error.code === 'dive_not_found');
 
   /** The field's description: what the recording says, or that it goes back to that on save. */
   const hint = (field: OverridableField): string => {
@@ -179,7 +212,20 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
   };
 
   return (
-    <Form className="form" onSubmit={(e) => { e.preventDefault(); if (cylindersFit) save.mutate(); }}>
+    <Form className="form" onSubmit={(e) => { e.preventDefault(); if (cylindersFit && !goneMeanwhile) save.mutate(); }}>
+      {goneMeanwhile ? (
+        <div ref={deletedNotice} tabIndex={-1}>
+          <Notice tone="danger">
+            <p>{t('dive.deletedElsewhere')}</p>
+            <a href={logbookHref({})}>{t('dive.backToLogbook')}</a>
+          </Notice>
+        </div>
+      ) : changedElsewhere && !save.error && (
+        <Notice tone="info">
+          <p>{t('dive.changedElsewhere')}</p>
+          <Button size="small" onPress={() => setConfirmLoad(true)}>{t('dive.loadNewVersion')}</Button>
+        </Notice>
+      )}
       <div className="form-grid">
         <div className="field-block">
           <DateTimeField autoFocus={focus === undefined} label={t('dive.start')} description={hint('startsAt')} value={draft.start} onChange={(v) => v && change('start', v as CalendarDateTime)} isRequired />
@@ -223,18 +269,20 @@ export function DiveEditForm({ dive: d, onDone, focus }: { dive: DiveView; onDon
         hint={<LeadHint diveId={d.id} diverId={d.diverId} water={d.waterType} weighting={weighting} cylinders={typedCylinders} />}
       />
       <TextArea autoFocus={focus === 'notes'} label={t('dive.notes')} value={notes} onChange={setNotes} maxLength={20_000} />
-      {save.error && (
+      {save.error && !goneMeanwhile && (
         <Notice tone="danger">
-          <p>{changedMeanwhile ? t('dive.changedMeanwhile') : errorText(save.error)}</p>
-          {changedMeanwhile && (
-            <Button onPress={() => { void queryClient.invalidateQueries({ queryKey: keys.dive(d.id) }); onDone(); }}>{t('dive.reload')}</Button>
-          )}
+          <p>{changedMeanwhile ? t('dive.changedElsewhere') : errorText(save.error)}</p>
+          {changedMeanwhile && <Button onPress={() => setConfirmLoad(true)}>{t('dive.loadNewVersion')}</Button>}
         </Notice>
       )}
       <div className="form-actions form-actions-sticky">
-        <Button type="submit" variant="primary" icon="save" isPending={save.isPending}>{t('dive.save')}</Button>
+        <Button type="submit" variant="primary" icon="save" isPending={save.isPending} isDisabled={goneMeanwhile}>{t('dive.save')}</Button>
         <CancelButton unsaved={dirty} lost={t('dive.unsavedLost')} onCancel={onDone} />
       </div>
+      <ConfirmDialog
+        isOpen={confirmLoad} onOpenChange={setConfirmLoad} title={t('dive.loadNewVersionTitle')} body={t('dive.loadNewVersionLost')}
+        confirmLabel={t('dive.loadNewVersionConfirm')} cancelLabel={t('common.keepEditing')} onConfirm={loadLatest} tone="danger"
+      />
     </Form>
   );
 }

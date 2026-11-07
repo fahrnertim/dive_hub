@@ -96,6 +96,8 @@
   --duration-reveal: 150ms;
   --duration-disclosure: 200ms;
   --duration-pulse: 1600ms;
+  /* The arrival tint stays a moment longer than the other motions (design system: live arrivals). */
+  --duration-arrival: 2400ms;
   /* Strong ease-out: starts fast, settles softly (ADR 0018, emil-design-eng). */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-pulse: ease-in-out;

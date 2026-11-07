@@ -114,14 +114,18 @@ test('switches the Primary recording; values without Override follow it', { tag:
 });
 
 test('refuses to overwrite a change made elsewhere meanwhile', { tag: ['@dives'] }, async ({ page, request }) => {
+  // This is the save conflict: keep the live channel out of it, so the notice can only come from the 409 (its own
+  // dirty-form path is covered in live.spec.ts).
+  await page.route('**/api/live', (route) => route.abort());
   await page.goto(`/#/dives/${diveId}`);
   await page.getByRole('button', { name: 'Edit dive' }).click();
   await editElsewhere(request, diveId, 'Written on the phone');
   await page.getByRole('textbox', { name: 'Notes' }).fill('Written on the laptop');
   await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByText('This dive was changed meanwhile.')).toBeVisible();
-  await page.getByRole('button', { name: 'Reload' }).click();
-  await expect(page.getByText('Written on the phone')).toBeVisible();
+  await expect(page.getByText('This dive changed elsewhere. Your edits are still here.')).toBeVisible();
+  await page.getByRole('button', { name: 'Load the new version' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Load new version' }).click();
+  await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveValue('Written on the phone');
 });
 
 test('speaks German and works in feet, including typing a decimal comma', { tag: ['@dives'] }, async ({ page, request }) => {

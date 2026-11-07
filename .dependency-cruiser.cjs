@@ -10,15 +10,17 @@ const SERVER = '^apps/server/src/';
 const MODULE_IMPORTS = {
   assessment: ['divers', 'imports'],
   centres: ['divers:type', 'dives', 'sites'],
-  certifications: ['divers', 'dives', 'providers'],
+  certifications: ['divers', 'dives', 'live', 'providers'],
   divers: ['centres', 'certifications', 'dives', 'providers'],
   dives: ['assessment:type', 'centres', 'divers', 'imports', 'providers:type', 'sites'],
-  imports: ['divers', 'dives', 'sites'],
+  imports: ['divers', 'dives', 'live', 'sites'],
   lead: ['divers', 'dives'],
   mcp: ['assessment', 'divers', 'dives', 'planning', 'sites'],
   planning: ['divers', 'dives'],
-  providers: ['certifications', 'divers', 'dives', 'imports', 'sites'],
-  sites: ['dives'],
+  providers: ['certifications', 'divers', 'dives', 'imports', 'live', 'sites'],
+  sites: ['dives', 'live'],
+  // Live hints (ADR 0066) read Dive and site Revisions only through dives/revisions.ts's type.
+  live: ['dives:type'],
   users: ['dives'],
 };
 const target = (names) => `${SERVER}(${names.join('|')})/`;
@@ -109,9 +111,9 @@ module.exports = {
       // inputs. A new lib/ file for api.ts joins this list, with the reason in the commit message.
       name: 'api-imports-only-query-inputs-from-lib',
       severity: 'error',
-      comment: 'api.ts takes from lib/ only the types and constants of its queries\' inputs: lib/logbook, sites-list, tools and waiting-push (ADR 0053, amendment of 2026-10-29).',
+      comment: 'api.ts takes from lib/ only the types and constants of its queries\' inputs: lib/logbook, sites-list, tools, waiting-push and the live channel\'s health (ADR 0053, amendment of 2026-10-29 and 2026-11-07).',
       from: { path: '^apps/web/src/api[.]ts$' },
-      to: { path: '^apps/web/src/lib/', pathNot: '^apps/web/src/lib/(logbook|sites-list|tools|waiting-push)[.]ts$' },
+      to: { path: '^apps/web/src/lib/', pathNot: '^apps/web/src/lib/(logbook|sites-list|tools|waiting-push|live)[.]ts$' },
     },
   ],
   options: {

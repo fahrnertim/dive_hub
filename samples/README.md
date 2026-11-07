@@ -42,6 +42,7 @@ date: 2026-10-02
 | `apps/server/test/fixtures/suunto-dive.ts` (no file: built in memory) | Hand-made Suunto D5 dive in the shape of the Suunto app's JSON export and of its FIT export (same dive): Device, summary, tank pod, events, 10 s samples |
 | `apps/web/e2e/fixtures/account-export.zip` | Hand-made upload in the layout of Garmin's account export (a nested zip with the seeded dive, one synthetic apnea session and one run; nothing from a real export), written by `write-account-export-fixture.ts`, for the browser test of the choice of kinds (ADR 0044) |
 | `apps/web/e2e/fixtures/suunto-d5.json` | The same, written by `write-suunto-fixture.ts`, for the browser test of a Suunto import |
+| `apps/web/e2e/fixtures/live-computer.fit`, `live-computer-2.fit` | Two synthetic dives from computers no other spec uses, written by `write-live-fixtures.ts`, for the browser tests of live arrivals (ADR 0066) |
 
 When `samples/private/suunto/` holds real exports, `suunto-formats.test.ts` reads each JSON and compares each FIT with
 the JSON of the same name.

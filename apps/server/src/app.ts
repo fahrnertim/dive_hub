@@ -6,6 +6,7 @@ import swagger from '@fastify/swagger';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { sql } from 'drizzle-orm';
 import { authHandler } from './auth/fastify.js';
+import { liveRoutes } from './live/routes.js';
 import type { Services } from './compose.js';
 import { withAuthEndpoints } from './auth/openapi.js';
 import { problem, ProblemSchema, useProblemErrors } from './http/problems.js';
@@ -94,6 +95,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   app.get('/api/openapi.json', { schema: { hide: true } }, async () => withAuthEndpoints(app.swagger(), deps.auth));
 
   await app.register(authHandler, { auth: deps.auth });
+  await app.register(liveRoutes, { auth: deps.auth, hub: deps.live.hub });
   const { db, auth, assessments, baseUrl, passwordResets, tokenAttempts, logbook, divers, centres, dives, merging, checks } = deps;
   const { pushes, waitingPushes, certifications } = deps.providers;
   await app.register(userRoutes, { prefix: '/api', auth, profiles: deps.profiles, setup: deps.setup, invitations: deps.invitations, tokenAttempts });
