@@ -6,6 +6,7 @@
 import { and, arrayOverlaps, asc, count, desc, eq, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../../db/client.js';
 import { connection, dive, importJob, providerConflict, push, pushRun, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../../db/schema.js';
+import { audienceOfConnection, audienceOfDive, emitHint } from '../../live/emit.js';
 import { managedDiverIds } from '../../divers/management.js';
 import { currentRemote } from '../current-remote.js';
 import { realClock, type Clock } from '../lease-service.js';
@@ -48,10 +49,16 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     .where(and(eq(waitingPush.connectionId, connectionId), eq(waitingPush.state, 'waiting'), lte(waitingPush.dueAt, now())))
     .orderBy(asc(waitingPush.dueAt)).limit(limit);
 
+  /** Tells open pages that this Dive's Waiting push changed (ADR 0066). */
+  async function hintDive(diveId: string): Promise<void> {
+    await emitHint(db, { kind: 'waitingPush', id: diveId, audience: await audienceOfDive(db, diveId) });
+  }
+
   /** The Connection needs the User to sign in: its waiting entries wait for that; the tick wakes them after it. */
   async function holdForSignIn(connectionId: string) {
     await db.update(waitingPush).set({ state: 'held', reason: 'sign_in' })
       .where(and(eq(waitingPush.connectionId, connectionId), eq(waitingPush.state, 'waiting')));
+    await emitHint(db, { kind: 'waitingPush', id: connectionId, audience: await audienceOfConnection(db, connectionId) });
   }
 
   const hold = (entry: Entry, seen: QueueStamp, reason: string, detail?: Entry['detail']) =>
@@ -72,6 +79,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     // The send found the Dive short of a blocking requirement after all: it goes out after the save that meets it.
     if (code === 'provider_requirements_unmet') {
       await hold(entry, seen, 'requirements');
+      await hintDive(entry.diveId);
       return;
     }
     const attempts = entry.attempts + 1;
@@ -81,9 +89,11 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
       const dueAt = new Date(Math.min(at.getTime() + RETRY_AFTER_MS[Math.min(attempts - 1, RETRY_AFTER_MS.length - 1)]!,
         firstFailedAt.getTime() + GIVE_UP_MS));
       await db.update(waitingPush).set({ attempts, firstFailedAt, dueAt }).where(unchanged(entry, seen));
+      await hintDive(entry.diveId);
       return;
     }
     await db.update(waitingPush).set({ state: 'stopped', reason: code, attempts, firstFailedAt, stoppedAt: at }).where(unchanged(entry, seen));
+    await hintDive(entry.diveId);
   }
 
   /** A `send` entry: held, dropped as up to date, or sent as the Connection's User. */
@@ -92,11 +102,13 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     // Deleted here (delete at the Provider off, or never there): nothing to send.
     if (!row || row.deletedAt) {
       await db.delete(waitingPush).where(unchanged(entry, seen));
+      await hintDive(entry.diveId);
       return;
     }
     const status = await pushes.status(conn.userId, entry.diveId, entry.provider);
     if (blocking(status.unmet, { beforeSite: true }).length > 0) {
       await hold(entry, seen, 'requirements');
+      await hintDive(entry.diveId);
       return;
     }
     const { current } = status;
@@ -104,21 +116,25 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     // A number the Connection follows that an update would set counts as a change, as in the logbook's filter.
     if (current && current.upToDate && !(current.number?.differs && current.number.canSet) && !decided) {
       await clearIfUnchanged(db, entry.diveId, entry.provider, seen, 'send');
+      await hintDive(entry.diveId);
       return;
     }
     if (current?.updateRemovesVerification) {
       await hold(entry, seen, 'removes_verification');
+      await hintDive(entry.diveId);
       return;
     }
     const sent = await pushes.send(conn.userId, entry.diveId, entry.provider, { onConflict: 'defer', ...entry.options });
     if (sent.result === 'exists') {
       const { remoteId, number, startsAt } = sent.existing;
       await hold(entry, seen, 'exists', { remoteId, remoteNumber: number, startsAt: startsAt ?? '' });
+      await hintDive(entry.diveId);
     } else if (sent.result === 'conflicts') {
       throw new Error('a deferred send answers no Conflicts');
     } else if (sent.push.state !== 'confirmed') {
       // Handed over without an ID: the send settles only confirmed Pushes, but this one is done too.
       await clearIfUnchanged(db, entry.diveId, entry.provider, seen, 'send');
+      await hintDive(entry.diveId);
     }
   }
 
@@ -126,8 +142,10 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
   async function attempt(conn: ConnectionRow, entry: Entry): Promise<'signed_out' | void> {
     const seen = await stampOf(db, entry.diveId, entry.provider);
     try {
-      if (entry.action === 'delete') await pushes.remove(conn.userId, entry.diveId, entry.provider);
-      else await sendOne(conn, entry, seen);
+      if (entry.action === 'delete') {
+        await pushes.remove(conn.userId, entry.diveId, entry.provider);
+        await hintDive(entry.diveId);
+      } else await sendOne(conn, entry, seen);
     } catch (error) {
       if (error instanceof ProviderServiceError) return failed(entry, seen, error.code);
       // Dive Hub's own fault: the entry is retried and then stopped as `internal_error`; the error is for the operator.
@@ -272,7 +290,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
     /** The User dismisses the Connection's offer (every Import in it); `connection_not_found` unless the Connection is theirs. */
     async dismissOffer(userId: string, connectionId: string): Promise<void> {
       const done = await db.update(connection).set({ unsentImportIds: [] })
-        .where(and(eq(connection.id, connectionId), eq(connection.userId, userId))).returning({ id: connection.id });
+        .where(and(eq(connection.id, connectionId), eq(connection.userId, userId))).returning({ id: connection.id, diverId: connection.diverId });
       if (done.length === 0) throw new ProviderServiceError('connection_not_found');
     },
 
@@ -343,6 +361,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
       await db.update(waitingPush).set({ state: 'waiting', reason: null, dueAt: now(), attempts: 0, firstFailedAt: null, stoppedAt: null })
         .where(the(entry.entry));
       await scheduleConnection(db, entry.entry.connectionId);
+      await hintDive(diveId);
     },
 
     /**
@@ -363,6 +382,7 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
         : await db.select().from(connection).where(and(eq(connection.userId, userId), eq(connection.diverId, diverId), eq(connection.provider, provider)));
       if (!conn || conn.userId !== userId) throw new ProviderServiceError('connection_not_found');
       await queueNow(db, diveId, provider, conn.id, options, now());
+      await hintDive(diveId);
     },
 
     /**

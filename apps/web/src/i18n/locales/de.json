@@ -314,7 +314,11 @@
     "fromProvider": "aus {{name}}",
     "surfaceInterval": "{{time}} nach dem Tauchgang davor",
     "with": "mit {{people}}",
-    "morePeople": "+{{count}}"
+    "morePeople": "+{{count}}",
+    "newDives_one": "{{count}} neuer Tauchgang",
+    "newDives_other": "{{count}} neue Tauchgänge",
+    "showNewDives_one": "{{count}} neuen Tauchgang zeigen",
+    "showNewDives_other": "{{count}} neue Tauchgänge zeigen"
   },
   "dive": {
     "numberOnComputer": "Nummer auf dem Computer",
@@ -425,7 +429,14 @@
     },
     "noRecording": "Dieser Tauchgang hat keine Aufzeichnung.",
     "noRecordingFrom": "Noch keine Aufzeichnung: dieser Tauchgang kommt aus deinem {{name}}-Logbuch, von Hand eingetragen.",
-    "noRecordingNext": "Wenn du die Datei des Tauchcomputers importierst, kommt ihre Aufzeichnung dazu, und ihre Werte ersetzen diese."
+    "noRecordingNext": "Wenn du die Datei des Tauchcomputers importierst, kommt ihre Aufzeichnung dazu, und ihre Werte ersetzen diese.",
+    "changedElsewhere": "Dieser Tauchgang wurde anderswo geändert. Deine Eingaben sind noch da.",
+    "loadNewVersion": "Neue Version laden",
+    "loadNewVersionTitle": "Neue Version laden?",
+    "loadNewVersionLost": "Deine Änderungen an diesem Tauchgang gehen verloren. Die Version von anderswo ersetzt sie.",
+    "loadNewVersionConfirm": "Neue Version laden",
+    "newVersionLoaded": "Neue Version geladen.",
+    "deletedElsewhere": "Dieser Tauchgang wurde anderswo gelöscht. Deine Eingaben sind noch da, können aber nicht gespeichert werden."
   },
   "errors": {
     "unknown": "Etwas ist schiefgegangen. Versuch es noch einmal.",
@@ -543,7 +554,8 @@
     "cylinder_series_not_found": "Dieser Tauchgang hat keinen solchen Flaschensender. Lade ihn neu und versuch es noch einmal.",
     "weighting_feedback_invalid": "Zu passendem Blei gehört keine Angabe, um wie viel. Lass „Um wie viel“ leer.",
     "suit_invalid": "Die Angaben zum Anzug passen nicht: Eine Dicke gehört zu einem Nass- oder Halbtrockenanzug, ein Unterzieher zu einem Trockenanzug.",
-    "gas_not_breathable": "Ein Gemisch mit unter 16 % Sauerstoff ist an der Oberfläche nicht atembar."
+    "gas_not_breathable": "Ein Gemisch mit unter 16 % Sauerstoff ist an der Oberfläche nicht atembar.",
+    "too_many_live_streams": "Für dieses Konto sind zu viele Live-Verbindungen offen; schließe einen anderen Tab oder warte einen Moment."
   },
   "vocabulary": {
     "waterType": {

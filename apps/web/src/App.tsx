@@ -1,4 +1,4 @@
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './SignedOut.tsx';
@@ -14,6 +14,7 @@ import { PushRunStrip, RunMark } from './PushRun.tsx';
 import { ReviewMore, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
+import { startLive } from './lib/live.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
 import { reviewTab } from './lib/review.ts';
 import { legacyRedirect } from './lib/settings.ts';
@@ -90,6 +91,10 @@ export function App() {
   const { t } = useTranslation();
   const route = useRoute();
   const me = useQuery(meQuery());
+  const queryClient = useQueryClient();
+  const signedIn = !!me.data;
+  // One live channel per browser while signed in (ADR 0066); hints only invalidate, the normal API answers.
+  useEffect(() => (signedIn ? startLive(queryClient) : undefined), [signedIn, queryClient]);
   useLanguage(me.data);
   useFetchOnOpening(!!me.data);
   useFocusOnNavigate(route);

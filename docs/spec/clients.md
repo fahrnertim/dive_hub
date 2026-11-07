@@ -138,6 +138,16 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - A device value without our word shows as recorded, under "other values from the device".
 - **Use the generated client or the OpenAPI document** (`/api/openapi.json`). Its enums are the complete lists
   to translate.
+- **Live hints (`GET /api/live`, [ADR 0066](../decisions/0066-live-updates-via-sse-hints.md)).** A client may open
+  one `text/event-stream` per signed-in User with the session cookie; the browser's `EventSource` sends it
+  same-origin. The stream carries only `event: hint` frames whose `data` is `{ v: 1, kind, id }` — never data
+  or the audience. Kinds: `dive`, `site`, `waitingPush`, `import`, `siteImport`, `pushRun`, `certification`,
+  `connection`. On a hint, refetch the matching queries through the normal API (the web client invalidates their
+  query keys); a client may batch hints that arrive within ~250 ms into one refetch. **On every reconnect after
+  the first**, refetch what is on screen (`invalidateQueries` with `refetchType: 'active'` in TanStack Query):
+  hints are not replayed, so a gap is covered only that way. Polling remains fully valid: a client that ignores
+  the stream, or sits behind a proxy that strips it, loses nothing but freshness. Close the stream when signed
+  out. The server sends `:hb` every 15 s; treat a stream that dies as a reconnect and refetch again.
 - **Background work is polled** until it is `done` or `failed`:
   - Imports (`GET /api/imports`), every second while one runs;
   - Site imports (`GET /api/admin/site-imports`), every two seconds.

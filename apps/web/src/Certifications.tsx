@@ -6,6 +6,7 @@ import {
 } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { liveHealthy } from './lib/live.ts';
 import { useProviders } from './lib/providers.ts';
 import { Badge, Button, Checkbox, ConfirmButton, Dialog, Disclosure, Form, Muted, Notice, NumberField, RowsSkeleton, TextArea, TextField } from './ui/index.ts';
 
@@ -53,7 +54,7 @@ function CertificationsPanel({ diverId, name }: { diverId: string; name: string 
   const cards = useQuery({
     ...certificationsQuery(diverId),
     // Pictures come afterwards, by a job: look again while one is on its way.
-    refetchInterval: (q) => (q.state.data?.some((c) => c.imageState === 'pending') ? 3000 : false),
+    refetchInterval: (q) => (liveHealthy() ? false : (q.state.data?.some((c) => c.imageState === 'pending') ? 3000 : false)),
   });
   const providers = useProviders();
   const connections = useQuery(connectionsQuery());

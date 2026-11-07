@@ -155,6 +155,7 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `ErrorBoundary` | Keeps a failing part (e.g. the chart) from blanking the page. |
 | `BrandMark` | The diver-down flag. |
 | `Icon` | A Lucide icon by meaning (`edit`, `import`, `move`, …); the set lives in `ui/Icon.tsx`. |
+| Live arrivals (`DiveList`) | A row that arrived through a live hint, a reconnect or polling gets a 2.4 s `--color-accent-soft` overlay (opacity only; reduced motion removes the fade) when it first becomes at least half visible, and a small "N new dives" pill fixed to the bottom of the content column when the rows are out of sight. The pill uses `Button size="small"` with a fully round radius, `--color-surface`, `--color-border-strong` and no shadow; pressing it scrolls to the first unseen row and focuses its link. Arrival changes no layout and moves no focus. A Dive that changed while its dirty edit form is open shows a quiet `Notice tone="info"` ("This dive changed elsewhere. Your edits are still here.") with "Load the new version", which asks before discarding the edits. There is no "live" badge, connection indicator or toast. |
 
 ## Writing
 

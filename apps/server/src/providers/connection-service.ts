@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { connection, diver, diverExternalId, type ConnectionRow } from '../db/schema.js';
+import { audienceOfDiver, emitHint } from '../live/emit.js';
 import { managedDiverIds } from '../divers/management.js';
 import { DiverError } from '../divers/diver-error.js';
 import { externalDiver, mergeExternalDiver, participations } from '../divers/merge.js';
@@ -188,6 +189,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const row = await ownConnection(userId, connectionId);
       checkFollowNumbers(row, follow);
       await db.update(connection).set({ followNumbers: follow, updatedAt: new Date() }).where(eq(connection.id, row.id));
+      await emitHint(db, { kind: 'connection', id: row.id, audience: await audienceOfDiver(db, row.diverId) });
     },
 
     /**
@@ -199,6 +201,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
       const row = await ownConnection(userId, connectionId);
       checkAutomation(row, settings);
       await db.update(connection).set({ ...settings, updatedAt: new Date() }).where(eq(connection.id, row.id));
+      await emitHint(db, { kind: 'connection', id: row.id, audience: await audienceOfDiver(db, row.diverId) });
     },
 
     /**
@@ -251,6 +254,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
           keepSignedIn: fields.keepSignedIn, credentials: seal(id, credentialsFrom(input, signedIn.access, fields.keepSignedIn)),
           lastUsedAt: usedNow(), keyExpiresOn,
         });
+        await emitHint(tx, { kind: 'connection', id, audience: await audienceOfDiver(tx, diverId) });
       });
       return id;
     },
@@ -268,12 +272,14 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
         credentials: seal(row.id, credentialsFrom(input, signedIn.access, fields.keepSignedIn)),
         keepSignedIn: fields.keepSignedIn, keyExpiresOn, state: 'active', lastUsedAt: usedNow(), updatedAt: new Date(),
       }).where(eq(connection.id, row.id));
+      await emitHint(db, { kind: 'connection', id: row.id, audience: await audienceOfDiver(db, row.diverId) });
     },
 
     /** Forgets the credentials. Pushes stay in the Dives' history; the Provider keeps its dives. */
     async disconnect(userId: string, connectionId: string) {
-      await ownConnection(userId, connectionId);
+      const row = await ownConnection(userId, connectionId);
       await db.delete(connection).where(eq(connection.id, connectionId));
+      await emitHint(db, { kind: 'connection', id: connectionId, audience: await audienceOfDiver(db, row.diverId) });
     },
 
     /**

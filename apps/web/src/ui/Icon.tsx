@@ -75,6 +75,9 @@ const ICONS = {
   hide: EyeOff,
   // A pressed chip: a filter that is applied.
   pressed: Check,
+  /** The "new dives" pill points at rows above or below the viewport (FAH-37). */
+  newAbove: ArrowUp,
+  newBelow: ArrowDown,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

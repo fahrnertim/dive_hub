@@ -18,6 +18,9 @@ import { createMergeService } from './dives/merge-service.js';
 import { createMergingService } from './dives/merging-service.js';
 import { createDiverService } from './divers/diver-service.js';
 import { createImportService } from './imports/import-service.js';
+import { listenToChanges } from './dives/revisions.js';
+import { createLive } from './live/service.js';
+import { withRevisionHints } from './live/revision-hints.js';
 import { createAttemptLimit, TOKEN_ATTEMPTS } from './http/attempt-limit.js';
 import { createLeadService } from './lead/lead-service.js';
 import { createAiAccessService } from './mcp/access-service.js';
@@ -59,6 +62,9 @@ export interface ServiceParts {
 export function createServices({ db, blobs, auth, secrets, adapters, siteSources, clock, log }: ServiceParts) {
   const assessments = createAssessmentService(db);
   const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
+  // Dive and site Revisions also tell open pages (ADR 0066), through the same listener seam as the Waiting pushes.
+  listenToChanges(withRevisionHints(providers.noteChanges));
+  const live = createLive({ db, ...(log && { log }) });
   // Imports of a Provider's dives run in the worker like uploads (ADR 0030).
   const imports = createImportService({ db, blobs, providerImports: providers.diveImports, afterImport: (userId) => assessments.refreshUser(userId) });
   const { pushes, waitingPushes } = providers;
@@ -91,6 +97,7 @@ export function createServices({ db, blobs, auth, secrets, adapters, siteSources
     planning: createPlanningService(db),
     lead: createLeadService(db),
     sites: createSiteService(db),
+    live,
   };
 }
 

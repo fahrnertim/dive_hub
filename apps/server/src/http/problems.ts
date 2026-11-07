@@ -19,6 +19,7 @@ export const PROBLEMS = {
   email_taken: 'A User with this e-mail already exists',
   reset_link_invalid: 'This link is invalid, used or expired',
   too_many_attempts: 'Too many attempts from this address; try again after Retry-After seconds',
+  too_many_live_streams: 'This account has too many live connections open; close another tab or wait for one to reconnect',
   user_not_found: 'No such User',
   user_disabled: 'Enable the User first',
   last_admin: 'This is the only admin; make someone else admin first',

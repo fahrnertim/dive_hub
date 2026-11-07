@@ -5,6 +5,7 @@ import {
   api, connectionsQuery, keys, providerConflictsQuery, unwrap, type ConflictChoices, type ConflictEntryView, type ConflictsOfConnection,
 } from './api.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
+import { liveHealthy } from './lib/live.ts';
 import { ProviderConflicts, useConflictValueText } from './ProviderConflicts.tsx';
 import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
 import { Button, Icon, Muted, Notice, Panel } from './ui/index.ts';
@@ -28,7 +29,7 @@ export function ProviderConflictsSection() {
   // What is queued is the server's to say (`queued`), so a reload or a second device sees it too.
   const conflicts = useQuery({
     ...providerConflictsQuery(),
-    refetchInterval: (q) => (q.state.data?.some((g) => g.entries.some((e) => e.queued)) ? WHILE_QUEUED_MS : false),
+    refetchInterval: (q) => (liveHealthy() ? false : (q.state.data?.some((g) => g.entries.some((e) => e.queued)) ? WHILE_QUEUED_MS : false)),
   });
   const connections = useQuery(connectionsQuery());
   const [told, setTold] = useState<Told[]>([]);
