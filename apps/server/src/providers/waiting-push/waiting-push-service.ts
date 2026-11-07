@@ -289,9 +289,10 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
 
     /** The User dismisses the Connection's offer (every Import in it); `connection_not_found` unless the Connection is theirs. */
     async dismissOffer(userId: string, connectionId: string): Promise<void> {
-      const done = await db.update(connection).set({ unsentImportIds: [] })
-        .where(and(eq(connection.id, connectionId), eq(connection.userId, userId))).returning({ id: connection.id, diverId: connection.diverId });
-      if (done.length === 0) throw new ProviderServiceError('connection_not_found');
+      const [done] = await db.update(connection).set({ unsentImportIds: [] })
+        .where(and(eq(connection.id, connectionId), eq(connection.userId, userId))).returning({ id: connection.id });
+      if (!done) throw new ProviderServiceError('connection_not_found');
+      await emitHint(db, { kind: 'connection', id: connectionId, audience: await audienceOfConnection(db, done.id) });
     },
 
     /**

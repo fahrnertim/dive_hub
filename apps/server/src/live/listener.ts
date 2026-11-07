@@ -72,7 +72,7 @@ export function createListener({ connectionString, hub, log }: {
 
   return {
     start() {
-      if (stopped || client) return;
+      if (client) return;
       stopped = false;
       void connect();
     },

@@ -90,8 +90,12 @@ test('a reconnect refetches what is on screen', { tag: ['@live', '@dives'] }, as
 });
 
 test('no polling fires while the live channel is healthy', { tag: ['@live', '@dives'] }, async ({ page }) => {
+  const streamOpen = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/live' && response.status() === 200);
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeVisible();
+  // The first load is done and the channel is open; only now is the page sitting there with live updates.
+  await expect(page.locator('[data-dive-id]').first()).toBeVisible();
+  await streamOpen;
   // The logbook would ask again every five seconds without a channel (ADR 0066); with one, none of those fire.
   let asked = 0;
   page.on('request', (request) => {

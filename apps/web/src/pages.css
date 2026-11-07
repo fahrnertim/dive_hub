@@ -698,7 +698,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
   inset: 0;
   border-radius: var(--radius-sm);
   background: var(--color-accent-soft);
-  animation: dive-arrival 2.4s ease-out forwards;
+  animation: dive-arrival var(--duration-arrival) ease-out forwards;
   pointer-events: none;
 }
 @keyframes dive-arrival {

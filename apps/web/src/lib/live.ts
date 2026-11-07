@@ -45,18 +45,22 @@ const notifyChanged = (id: string) => {
 const isPinnedDiveQuery = (key: readonly unknown[]) =>
   key.length === 2 && key[0] === 'dives' && typeof key[1] === 'string' && pinnedDives.has(key[1]);
 
-/** Invalidate the Dive queries except a dirty form's own; notify that form instead. */
-async function invalidateDives(queryClient: QueryClient, changedId?: string): Promise<void> {
-  if (changedId && pinnedDives.has(changedId)) notifyChanged(changedId);
+/** Invalidate the Dive queries except a dirty form's own; the forms that changed are told instead. */
+async function invalidateDives(queryClient: QueryClient): Promise<void> {
   await queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'dives' && !isPinnedDiveQuery(q.queryKey) });
 }
 
 async function applyHints(queryClient: QueryClient, hints: LiveHint[]): Promise<void> {
   const kindsSeen = new Set(hints.map((h) => h.kind));
-  // A Dive hint names its Dive: its form stays pinned, and only the lists and other Dives' queries refetch.
-  for (const hint of hints) if (hint.kind === 'dive') await invalidateDives(queryClient, hint.id);
-  if (kindsSeen.has('waitingPush')) await invalidateDives(queryClient);
-  if (kindsSeen.has('site')) await queryClient.invalidateQueries({ queryKey: ['sites'] });
+  // A Dive hint names its Dive: its form stays pinned and hears the change, but the batch is one refetch, not one per
+  // Dive (an import of a whole logbook names every one of them).
+  for (const hint of hints) if (hint.kind === 'dive' && pinnedDives.has(hint.id)) notifyChanged(hint.id);
+  if (kindsSeen.has('dive') || kindsSeen.has('waitingPush')) await invalidateDives(queryClient);
+  if (kindsSeen.has('site')) await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['sites'] }),
+    // A Dive's title and list row carry its site's name and position.
+    invalidateDives(queryClient),
+  ]);
   if (kindsSeen.has('import')) await queryClient.invalidateQueries({ queryKey: ['imports'] });
   if (kindsSeen.has('siteImport')) await queryClient.invalidateQueries({ queryKey: ['site-imports'] });
   if (kindsSeen.has('pushRun')) await queryClient.invalidateQueries({ queryKey: ['push-runs'] });
@@ -98,11 +102,17 @@ export function onLiveEvent(listener: () => void): () => void {
 let healthy = false;
 const healthListeners = new Set<() => void>();
 
+/** TanStack only re-reads a `refetchInterval` when an observer's options are set again (ADR 0066). */
+let reschedulePolling: (() => void) | null = null;
+
 export const liveHealthy = () => healthy;
 
 function setHealthy(next: boolean): void {
   if (healthy === next) return;
   healthy = next;
+  // `refetchInterval` reads this flag, but a timer scheduled before the stream opened would still fire once, and a
+  // channel that drops would never get its polling back. Re-setting the observers makes them re-read their timers.
+  reschedulePolling?.();
   for (const listener of healthListeners) listener();
 }
 
@@ -130,6 +140,14 @@ const LOCK = 'divehub-live';
 /** Starts the live channel for a signed-in page. Safe to call more than once; does nothing without EventSource. */
 export function startLive(queryClient: QueryClient): () => void {
   if (typeof window === 'undefined' || typeof EventSource === 'undefined') return () => undefined;
+
+  // Health reaches TanStack's timers only when an observer sets its options again; do that once per change.
+  const reschedule = () => {
+    for (const query of queryClient.getQueryCache().getAll()) {
+      for (const observer of query.observers) observer.setOptions(observer.options);
+    }
+  };
+  reschedulePolling = reschedule;
 
   let stopped = false;
   let source: EventSource | null = null;
@@ -251,6 +269,7 @@ export function startLive(queryClient: QueryClient): () => void {
     source?.close();
     broadcast?.close();
     setHealthy(false);
+    if (reschedulePolling === reschedule) reschedulePolling = null;
   };
 }
 
