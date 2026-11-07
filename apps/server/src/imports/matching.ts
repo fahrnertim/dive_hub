@@ -16,6 +16,11 @@ export interface CandidateDive extends TimeSpan {
    * one dive; one Device doesn't record a dive twice, so only a real overlap counts (ADR 0044).
    */
   sameDevice?: boolean;
+  /**
+   * The Dive has a Recording of this Recording's Source under another key that is a stable id the Source gave its
+   * dives. Two such keys are two dives: overlap is for matching copies across Sources, never within one (ADR 0037).
+   */
+  sameSource?: boolean;
 }
 
 export type MatchDecision =
@@ -55,7 +60,7 @@ export function decideMatch(
   dives: CandidateDive[],
   tolerance = OVERLAP_TOLERANCE_SECONDS,
 ): MatchDecision {
-  const inReach = dives.filter((d) => overlaps(recording, d, d.sameDevice ? 0 : tolerance));
+  const inReach = dives.filter((d) => !d.sameSource && overlaps(recording, d, d.sameDevice ? 0 : tolerance));
   // A probable non-dive never attaches by itself (ADR 0030, amended): the User decides beside every Dive in reach.
   if (recording.probablyNoDive && inReach.length > 0) {
     return { kind: 'duplicate-candidate', diveIds: inReach.map((d) => d.id), reason: 'probably_no_dive' };

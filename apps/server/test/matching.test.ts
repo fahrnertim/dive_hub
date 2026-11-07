@@ -39,6 +39,11 @@ describe('decideMatch', () => {
     });
   });
 
+  it('makes a Dive of a Recording from the same Source under another key, whatever time and depth say', () => {
+    // A Source's own keys name its dives: two of them are two dives, not one recorded twice (a logbook's back-to-back).
+    expect(decideMatch(span(10, 4, 6.2), [{ id: 'a', ...span(0, 30, 6.2), sameSource: true }])).toEqual({ kind: 'create' });
+  });
+
   describe('a probable non-dive (ADR 0030, amended)', () => {
     // The owner's 2024-04-19: 50 s at 1.8 m, the real dive 5 min 24 s later.
     const falseStart = { startsAt: plus(0), durationSeconds: 50, maxDepthM: 1.8, probablyNoDive: true };

@@ -28,7 +28,7 @@ interface FileToPlace { name: string; data: Buffer }
 
 /** The upload is neither a dive file in a format we read nor a zip archive: the Import's error code `unsupported_file`. */
 export class UnsupportedFileError extends Error {
-  constructor() { super('Unsupported file: expected a dive file (FIT, Suunto JSON) or a zip archive'); }
+  constructor() { super('Unsupported file: expected a dive file (FIT, Suunto JSON, UDDF) or a zip archive'); }
 }
 
 /** The error code and detail a failed Import keeps: only an unsupported upload has a code of its own. */

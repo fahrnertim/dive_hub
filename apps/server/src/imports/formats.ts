@@ -2,6 +2,7 @@
 // registry and name no format; a new format is one adapter and one line here.
 import { createFitAdapter, looksLikeFit } from './formats/fit/fit-adapter.js';
 import { createSuuntoJsonAdapter, looksLikeSuuntoJson } from './formats/suunto/suunto-json.js';
+import { createUddfAdapter, looksLikeUddf } from './formats/uddf/uddf.js';
 import type { ParsedRecording } from './parsed-recording.js';
 
 export interface FileFormat {
@@ -21,9 +22,11 @@ export interface FileFormat {
 export function createFileFormats(): FileFormat[] {
   const fit = createFitAdapter();
   const suuntoJson = createSuuntoJsonAdapter();
+  const uddf = createUddfAdapter();
   return [
     { format: 'fit', mediaType: 'application/vnd.ant.fit', parser: fit.parser, parserVersion: fit.parserVersion, detect: looksLikeFit, parse: (data) => fit.parse(data) },
     { format: 'suunto_json', mediaType: 'application/json', parser: suuntoJson.parser, parserVersion: suuntoJson.parserVersion, detect: looksLikeSuuntoJson, parse: (data) => suuntoJson.parse(data) },
+    { format: 'uddf', mediaType: 'application/xml', parser: uddf.parser, parserVersion: uddf.parserVersion, detect: looksLikeUddf, parse: (data) => uddf.parse(data) },
   ];
 }
 

@@ -50,10 +50,11 @@ vendor or platform.
   its private app API: dives with profile, updated in place, with SSI's dive ID kept on the Push. Passwords
   are stored only when the User chooses, always encrypted. QR payload follows as the fallback
   ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md), [SSI API research](../research/2026-10-04-ssi-api.md)).
-- **Phase 1 ingestion:** file import only, and only Garmin FIT files. No cloud APIs
+- **Phase 1 ingestion:** file import only (Garmin FIT, Suunto and UDDF files). No cloud APIs
   (Garmin's and Suunto's are business-only, see [dive data sources](../research/2026-10-02-dive-data-sources.md)).
   Suunto files (the app's JSON and FIT exports) are read since slice 18a
-  ([ADR 0037](../decisions/0037-suunto-file-import-and-file-formats.md)).
+  ([ADR 0037](../decisions/0037-suunto-file-import-and-file-formats.md)); UDDF files, as the Oceanic+ app
+  exports them, are read too ([UDDF](../references/uddf.md), [Oceanic+](../references/oceanic-plus.md)).
 - **Architecture and deployment:** API-first; one app image (API + web client + worker)
   plus PostgreSQL, deployed with Docker Compose; built-in accounts, OIDC later
   ([ADR 0004](../decisions/0004-system-architecture.md), [architecture](architecture.md)).
@@ -67,7 +68,8 @@ vendor or platform.
 |---|---|
 | Garmin (FIT file import) | phase 1 |
 | Suunto (the app's JSON and FIT exports, file import) | built (slice 18a, [ADR 0037](../decisions/0037-suunto-file-import-and-file-formats.md)); legacy DM5 formats later |
-| Other logbooks (UDDF, Subsurface) | later phase |
+| UDDF (the Oceanic+ app's export, file import) | built ([UDDF](../references/uddf.md), [Oceanic+](../references/oceanic-plus.md)) |
+| Other logbooks (Subsurface) | later phase |
 | Cloud APIs (Garmin, Suunto) | not planned (business-only access) |
 | Own app connecting directly to dive computers | later |
 

@@ -38,6 +38,11 @@ export interface ParsedRecording {
   /** Identity for re-imports, stable across copies of the same file. */
   recordingKey: string;
   /**
+   * Whether the key is a stable id of the dive itself, given by the Source (ADR 0037): two such keys are two dives. A
+   * key built from the dive's values can change on a re-export, so it never proves that two Recordings are two dives.
+   */
+  stableDiveIdKey?: boolean;
+  /**
    * The key the same dive has when read from a poorer file of the same Source (ADR 0037: Suunto's FIT beside its JSON).
    * A Recording with that key is replaced by this one in place.
    */
@@ -69,4 +74,10 @@ export type WithoutUndefined<T> = { [K in keyof T as undefined extends T[K] ? ne
 
 export function stripUndefined<T extends Record<string, unknown>>(o: T): WithoutUndefined<T> {
   return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as WithoutUndefined<T>;
+}
+
+/** The Source a Recording key belongs to: its namespace before the first `:` (ADR 0037). */
+export function recordingKeySource(recordingKey: string): string {
+  const colon = recordingKey.indexOf(':');
+  return colon === -1 ? recordingKey : recordingKey.slice(0, colon);
 }
